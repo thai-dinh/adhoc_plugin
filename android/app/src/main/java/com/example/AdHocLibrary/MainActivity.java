@@ -45,6 +45,12 @@ public class MainActivity extends FlutterActivity {
                             final String name = call.argument("name");
                             btAdapter.setName(name);
                             break;
+                        case "isDiscovering":
+                            result.success(btAdapter.isDiscovering());
+                            break;
+                        case "cancelDiscovery":
+                            btAdapter.cancelDiscovery();
+                            break;
                         default:
                             result.notImplemented();
                     }
@@ -52,7 +58,7 @@ public class MainActivity extends FlutterActivity {
             );
     }
 
-    private int enableBtDiscovery(int duration) {
+    private void enableBtDiscovery(int duration) {
         if (btAdapter != null) {
             Intent discoverableIntent = 
                 new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
@@ -62,9 +68,6 @@ public class MainActivity extends FlutterActivity {
                 BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
 
             startActivity(discoverableIntent); // Context relevant for now ?
-            return 0;
         }
-
-        return 1;
     }
 }

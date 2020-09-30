@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
+import 'package:AdHocLibrary/src/datalink/service/discovery_listener.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
   static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
   
   String _initialName;
+  DiscoveryListener _discoveryListener;
 
   BluetoothAdHocManager() {
     initialisation();
@@ -37,10 +39,10 @@ class BluetoothAdHocManager {
   }
 
   Future<void> enableDiscovery(int duration) async {
-    bool isEnabled = false;
+    bool _isEnabled = false;
 
     try {
-      isEnabled = await platform.invokeMethod('isBtAdapterEnabled');
+      _isEnabled = await platform.invokeMethod('isBtAdapterEnabled');
     } on PlatformException catch (error) {
       print(error.message);
     }
@@ -50,37 +52,33 @@ class BluetoothAdHocManager {
       throw new BluetoothBadDuration(msg);
     }
 
-    if (isEnabled) {
+    if (_isEnabled) {
       try {
-        final int code = await platform.invokeMethod('enableBtDiscovery', 
-                                                     <String, dynamic> {
-                                                       'duration': duration,
-                                                     });
-        if (code != 0) {
-          // Something went wrong
-        }
+        await platform.invokeMethod('enableBtDiscovery', <String, dynamic> {
+          'duration': duration,
+        });
       } on PlatformException catch (error) {
         print(error.message);
       }
     } else {
-      print("Enabling discovery failed!");
+      print("Enabling discovery mode failed.");
     }
   }
 
   // To check this method
   Future<bool> updateDeviceName(String name) async {
-    bool result = false;
+    bool _result = false;
 
     try {
-      result = await platform.invokeMethod('updateDeviceName', 
-                                           <String, dynamic> {
-                                             'name': name,
-                                           });
+      _result = await platform.invokeMethod('updateDeviceName', 
+        <String, dynamic> {
+          'name': name,
+        });
     } on PlatformException catch (error) {
       print(error.message);
     }
 
-    return result;
+    return _result;
   }
 
   // To check this method when [updateDeviceName] is updated
@@ -88,11 +86,40 @@ class BluetoothAdHocManager {
     if (_initialName != null) {
       try {
         await platform.invokeMethod('resetDeviceName', <String, dynamic> {
-                                                        'name': _initialName,
-                                                      });
+          'name': _initialName,
+        });
       } on PlatformException catch (error) {
         print(error.message);
-      }    
+      }
     }
+  }
+
+  Future<void> _cancelDiscovery() async {
+    bool _isDiscovering = false;
+    try {
+      _isDiscovering = await platform.invokeMethod('isDiscovering');
+    } on PlatformException catch (error) {
+      print(error.message);
+    }
+
+    if (_isDiscovering) {
+      try {
+        platform.invokeMethod('cancelDiscovery');
+      } on PlatformException catch (error) {
+        print(error.message);
+      }
+    }
+
+    // %TODO: unregisterDiscovery ?
+  }
+
+  void discovery(DiscoveryListener discoveryListener) {
+    // Check if the device is already "discovering". If it is, then cancel it.
+    _cancelDiscovery();
+
+    // Update Listener
+    this._discoveryListener = discoveryListener;
+
+    // %TODO: finish
   }
 }
