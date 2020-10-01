@@ -1,68 +1,47 @@
 import 'dart:async';
 
 import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
-import 'package:AdHocLibrary/src/datalink/service/discovery_listener.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
   static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
   
   String _initialName;
-  DiscoveryListener _discoveryListener;
 
   BluetoothAdHocManager() {
-    initialisation();
+    getAdapterName().then((value) => _initialName = value);
   }
 
-  Future<void> initialisation() async {
+  Future<void> _invokeMethod(String methodName, [dynamic arguments]) async {
     try {
-      _initialName = await platform.invokeMethod('getName');
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
-  }
-
-  Future<void> enable() async {
-    try {
-      await platform.invokeMethod('enableBtAdapter');
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
-  }
-
-  Future<void> disable() async {
-    try {
-      await platform.invokeMethod('disableBtAdapter');
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
-  }
-
-  Future<void> enableDiscovery(int duration) async {
-    bool _isEnabled = false;
-
-    try {
-      _isEnabled = await platform.invokeMethod('isBtAdapterEnabled');
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
-
-    if (duration < 0 || duration > 3600) {
-      String msg = 'Duration must be between [0; 3600] second(s).';
-      throw new BluetoothBadDuration(msg);
-    }
-
-    if (_isEnabled) {
-      try {
-        await platform.invokeMethod('enableBtDiscovery', <String, dynamic> {
-          'duration': duration,
-        });
-      } on PlatformException catch (error) {
-        print(error.message);
+      if (arguments != null) {
+        await platform.invokeMethod(methodName, arguments);
+      } else {
+        await platform.invokeMethod(methodName);
       }
-    } else {
-      print("Enabling discovery mode failed.");
+    } on PlatformException catch (error) {
+      print(error.message);
     }
+  }
+
+  void enable() {
+    _invokeMethod('enable');
+  }
+
+  void disable() {
+    _invokeMethod('disable');
+  }
+
+  Future<String> getAdapterName() async {
+    String _name;
+
+    try {
+      _name = await platform.invokeMethod('getName');
+    } on PlatformException catch (error) {
+      print(error.message);
+    }
+
+    return _name;
   }
 
   // To check this method
@@ -74,6 +53,7 @@ class BluetoothAdHocManager {
         <String, dynamic> {
           'name': name,
         });
+      print(_result);
     } on PlatformException catch (error) {
       print(error.message);
     }
@@ -82,20 +62,46 @@ class BluetoothAdHocManager {
   }
 
   // To check this method when [updateDeviceName] is updated
-  Future<void> resetDeviceName() async {
+  void resetDeviceName() {
     if (_initialName != null) {
-      try {
-        await platform.invokeMethod('resetDeviceName', <String, dynamic> {
-          'name': _initialName,
-        });
-      } on PlatformException catch (error) {
-        print(error.message);
-      }
+      _invokeMethod('resetDeviceName', <String, dynamic> {
+        'name': _initialName,
+      });
     }
+  }
+
+  Future<void> enableDiscovery(int duration) async {
+    bool _isEnabled = false;
+
+    try {
+      _isEnabled = await platform.invokeMethod('isEnabled');
+    } on PlatformException catch (error) {
+      print(error.message);
+    }
+
+    if (duration < 0 || duration > 3600) {
+      String msg = 'Duration must be between [0; 3600] second(s).';
+      throw new BluetoothBadDuration(msg);
+    }
+
+    if (_isEnabled) {
+      _invokeMethod('enableDiscovery', <String, dynamic> { 
+        'duration': duration,
+      });
+    } else {
+      print("Enabling discovery mode failed.");
+    }
+  }
+
+  void discovery() {
+    _cancelDiscovery();
+
+    _invokeMethod('startDiscovery');
   }
 
   Future<void> _cancelDiscovery() async {
     bool _isDiscovering = false;
+
     try {
       _isDiscovering = await platform.invokeMethod('isDiscovering');
     } on PlatformException catch (error) {
@@ -103,23 +109,7 @@ class BluetoothAdHocManager {
     }
 
     if (_isDiscovering) {
-      try {
-        platform.invokeMethod('cancelDiscovery');
-      } on PlatformException catch (error) {
-        print(error.message);
-      }
+      _invokeMethod('cancelDiscovery');
     }
-
-    // %TODO: unregisterDiscovery ?
-  }
-
-  void discovery(DiscoveryListener discoveryListener) {
-    // Check if the device is already "discovering". If it is, then cancel it.
-    _cancelDiscovery();
-
-    // Update Listener
-    this._discoveryListener = discoveryListener;
-
-    // %TODO: finish
   }
 }

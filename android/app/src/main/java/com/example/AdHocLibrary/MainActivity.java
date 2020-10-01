@@ -21,21 +21,17 @@ public class MainActivity extends FlutterActivity {
             .setMethodCallHandler(
                 (call, result) -> {
                     switch (call.method) {
-                        case "getName":
-                            result.success(btAdapter.getName());
-                            break;
-                        case "enableBtAdapter":
+                        case "enable":
                             btAdapter.enable();
                             break;
-                        case "disableBtAdapter":
+                        case "disable":
                             btAdapter.disable();
                             break;
-                        case "isBtAdapterEnabled":
+                        case "isEnabled":
                             result.success(btAdapter.isEnabled());
                             break;
-                        case "enableBtDiscovery":
-                            final int duration = call.argument("duration");
-                            result.success(enableBtDiscovery(duration));
+                        case "getName":
+                            result.success(btAdapter.getName());
                             break;
                         case "updateDeviceName":
                             final String deviceName = call.argument("name");
@@ -45,11 +41,18 @@ public class MainActivity extends FlutterActivity {
                             final String name = call.argument("name");
                             btAdapter.setName(name);
                             break;
+                        case "enableDiscovery":
+                            final int duration = call.argument("duration");
+                            enableDiscovery(duration);
+                            break;
                         case "isDiscovering":
                             result.success(btAdapter.isDiscovering());
                             break;
                         case "cancelDiscovery":
                             btAdapter.cancelDiscovery();
+                            break;
+                        case "startDiscovery":
+                            btAdapter.startDiscovery();
                             break;
                         default:
                             result.notImplemented();
@@ -58,7 +61,7 @@ public class MainActivity extends FlutterActivity {
             );
     }
 
-    private void enableBtDiscovery(int duration) {
+    private void enableDiscovery(int duration) {
         if (btAdapter != null) {
             Intent discoverableIntent = 
                 new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
