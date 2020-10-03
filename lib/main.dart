@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_manager.dart';
+import 'package:AdHocLibrary/src/datalink/bluetooth/bt_util.dart';
 
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_ad_hoc_manager.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(MyApp());
@@ -31,6 +32,21 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothAdHocManager bt = BluetoothAdHocManager();
+  String _macAddress = "Unknown";
+
+  @override
+  void initState() {
+    super.initState();
+    initPlatformState();
+  }
+
+  Future<void> initPlatformState() async {
+    String mac = await new BluetoothUtil().getCurrentMac();
+
+    setState(() {
+      _macAddress = mac;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +78,12 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text('UpdateName'),
               onPressed: () => bt.updateDeviceName('Galaxy A6 TD-OP'),
             ),
+            RaisedButton(
+              child: Text('Discovery'),
+              onPressed: bt.discovery,
+            ),
+            RaisedButton(onPressed: initPlatformState),
+            Text('MAC Address : $_macAddress\n'),
           ],
         ),
       ),

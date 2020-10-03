@@ -44,7 +44,6 @@ class BluetoothAdHocManager {
     return _name;
   }
 
-  // To check this method
   Future<bool> updateDeviceName(String name) async {
     bool _result = false;
 
@@ -61,7 +60,6 @@ class BluetoothAdHocManager {
     return _result;
   }
 
-  // To check this method when [updateDeviceName] is updated
   void resetDeviceName() {
     if (_initialName != null) {
       _invokeMethod('resetDeviceName', <String, dynamic> {
