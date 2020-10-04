@@ -12,7 +12,7 @@ class BluetoothUtil {
     String _name;
 
     try {
-      _name = await platform.invokeMethod('getCurrentName');
+      _name = await platform.invokeMethod('getName');
     } on PlatformException catch (error) {
       print(error.message);
     }

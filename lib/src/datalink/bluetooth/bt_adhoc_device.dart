@@ -10,23 +10,17 @@ class BluetoothAdHocDevice extends AdHocDevice {
 
   BluetoothAdHocDevice.rssi(this._rssi) : super();
 
-  String getUuid() {
-      return _uuidString;
-  }
+  String getUuid() => _uuidString;
 
-  int getRssi() {
-      return _rssi;
-  }
+  int getRssi() => _rssi;
 
-  String toString() {
-      return "BluetoothAdHocDevice{" +
-              "uuidString='" + _uuidString + '\'' +
-              // ", uuid=" + uuid +
-              ", rssi=" + _rssi.toString() +
-              ", label='" + label + '\'' +
-              ", deviceName='" + deviceName + '\'' +
-              ", macAddress='" + macAddress + '\'' +
-              ", type=" + type.toString() +
-              '}';
-  }
+  String toString() => "BluetoothAdHocDevice{" +
+                        "uuidString='" + _uuidString + '\'' +
+                        // ", uuid=" + uuid +
+                        ", rssi=" + _rssi.toString() +
+                        ", label='" + label + '\'' +
+                        ", deviceName='" + deviceName + '\'' +
+                        ", macAddress='" + macAddress + '\'' +
+                        ", type=" + type.toString() +
+                        '}';
 }

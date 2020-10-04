@@ -1,3 +1,5 @@
+import 'package:AdHocLibrary/src/datalink/service/service_message_listener.dart';
+
 class Service {
   // Constant for type
   static const int WIFI = 0;
@@ -20,4 +22,20 @@ class Service {
   static const int LOG_EXCEPTION = 9;         // log exception
   static const int MESSAGE_EXCEPTION = 10;    // catch message exception
   static const int NETWORK_UNREACHABLE = 11;
+
+  int state;
+  bool verbose;
+  bool json;
+
+  ServiceMessageListener serviceMessageListener;
+
+  Service(this.verbose, this.json, this.serviceMessageListener) {
+    this.state = 0;
+  }
+
+  void setState(int state) {
+    this.state = state;
+  }
+
+  int getState() => state;
 }

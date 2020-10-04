@@ -1,5 +1,5 @@
 class BluetoothBadDuration implements Exception{
-  String error;
+  String message;
 
-  BluetoothBadDuration(this.error);
+  BluetoothBadDuration(this.message);
 }

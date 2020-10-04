@@ -32,21 +32,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothAdHocManager bt = BluetoothAdHocManager();
-  String _macAddress = "Unknown";
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  Future<void> initPlatformState() async {
-    String mac = await new BluetoothUtil().getCurrentMac();
-
-    setState(() {
-      _macAddress = mac;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,23 +52,13 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: bt.disable,
             ),
             RaisedButton(
-              child: Text('Discovery'),
+              child: Text('EnabelDiscovery'),
               onPressed: () => bt.enableDiscovery(300),
-            ),
-            RaisedButton(
-              child: Text('ResetName'),
-              onPressed: bt.resetDeviceName,
-            ),
-            RaisedButton(
-              child: Text('UpdateName'),
-              onPressed: () => bt.updateDeviceName('Galaxy A6 TD-OP'),
             ),
             RaisedButton(
               child: Text('Discovery'),
               onPressed: bt.discovery,
             ),
-            RaisedButton(onPressed: initPlatformState),
-            Text('MAC Address : $_macAddress\n'),
           ],
         ),
       ),

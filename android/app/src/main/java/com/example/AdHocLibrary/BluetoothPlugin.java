@@ -1,12 +1,18 @@
 package com.example.AdHocLibrary;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.util.Log;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+
+import java.util.ArrayList;
 
 public class BluetoothPlugin implements MethodCallHandler {
     private final BluetoothAdapter bluetoothAdapter;
@@ -29,6 +35,9 @@ public class BluetoothPlugin implements MethodCallHandler {
                 break;
             case "disable":
                 bluetoothAdapter.disable();
+                break;
+            case "isEnabled":
+                result.success(bluetoothAdapter.isEnabled());
                 break;
 
             case "getName":
@@ -56,11 +65,7 @@ public class BluetoothPlugin implements MethodCallHandler {
                 discovery();
                 break;
 
-            case "getCurrentName":
-                result.success(getCurrentName());
-                break;
-            case "isEnabled":
-                result.success(isEnabled());
+            case "getBondedDevices":
                 break;
 
             default:
@@ -82,18 +87,30 @@ public class BluetoothPlugin implements MethodCallHandler {
     }
 
     private void discovery() {
+        Log.d(TAG, "DISCOVERY");
+
+        IntentFilter filter = new IntentFilter();
+
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
+        context.registerReceiver(mReceiver, filter);
+
         bluetoothAdapter.startDiscovery();
     }
 
-    private static String getCurrentName() {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter != null)
-            return adapter.getName();
-        return null;
-    }
-
-    private static boolean isEnabled() {
-        return BluetoothAdapter.getDefaultAdapter() != null 
-            && BluetoothAdapter.getDefaultAdapter().isEnabled();
-    }
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Log.d(TAG, "onReceive");
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                Log.d(TAG, "DEVICE_FOUND");
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                Log.d(TAG, "ACTION_DISCOVERY_STARTED");
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                Log.d(TAG, "ACTION_DISCOVERY_FINISHED");
+            }
+        }
+    };
 }

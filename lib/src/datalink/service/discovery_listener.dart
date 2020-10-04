@@ -1,7 +1,11 @@
-abstract class DiscoveryListener {
-  void onDeviceDiscovered();
+import 'dart:collection';
 
-  void onDiscoveryCompleted();
+import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
+
+abstract class DiscoveryListener {
+  void onDeviceDiscovered(AdHocDevice device);
+
+  void onDiscoveryCompleted(HashMap<String, AdHocDevice> mapNameDevice);
 
   void onDiscoveryStarted();
 

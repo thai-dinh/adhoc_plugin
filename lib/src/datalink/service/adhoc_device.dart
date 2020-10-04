@@ -50,21 +50,13 @@ class AdHocDevice {
     this._connected = connected;
   }
 
-  String getLabel() {
-      return label;
-  }
+  String getLabel() => label;
 
-  String getMacAddress() {
-      return macAddress;
-  }
+  String getMacAddress() => macAddress;
 
-  String getDeviceName() {
-      return deviceName;
-  }
+  String getDeviceName() => deviceName;
 
-  int getType() {
-      return type;
-  }
+  int getType() => type;
 
   String getStringType() {
     switch (type) {
@@ -77,9 +69,7 @@ class AdHocDevice {
     }
   }
 
-  bool isDirectedConnected() {
-      return _connected;
-  }
+  bool isDirectedConnected() => _connected;
 
   String toString() {
       return "AdHocDevice{" +
