@@ -5,6 +5,7 @@ import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_device.dart';
 import 'package:AdHocLibrary/src/datalink/bluetooth/bt_device.dart';
 import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
 import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
+
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
@@ -55,21 +56,9 @@ class BluetoothAdHocManager {
       _invokeMethod('enableDiscovery', <String, dynamic> { 'duration': duration });
   }
 
-  Future<void> _cancelDiscovery() async {
-    bool _isDiscovering = await _invokeMethod('isDiscovering');
-
-    if (_isDiscovering)
-      _invokeMethod('cancelDiscovery');
-  }
-
-  void discovery() {
-    _cancelDiscovery();
-
-    _invokeMethod('startDiscovery');
-  }
+  void discovery() => _invokeMethod('startDiscovery');
 
   HashMap<String, BluetoothAdHocDevice> getPairedDevices() {
-
     HashMap<String, BluetoothAdHocDevice> _pairedDevices = 
       new HashMap<String, BluetoothAdHocDevice>();
 

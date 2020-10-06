@@ -1,14 +1,21 @@
 import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
+import 'package:AdHocLibrary/src/datalink/service/service.dart';
+
+import 'package:flutter/services.dart';
 
 class BluetoothAdHocDevice extends AdHocDevice {
+  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
+
   String _uuidString;
   int _rssi;
 
-  BluetoothAdHocDevice() : super() {
+  BluetoothAdHocDevice(String deviceName, String macAddress) 
+    : super.init(deviceName, macAddress.toUpperCase(), Service.BLUETOOTH) {
     this._rssi = -1;
   }
 
-  BluetoothAdHocDevice.rssi(this._rssi) : super();
+  BluetoothAdHocDevice.rssi(String deviceName, String macAddress, this._rssi) 
+    : super.init(deviceName, macAddress.toUpperCase(), Service.BLUETOOTH);
 
   String getUuid() => _uuidString;
 
