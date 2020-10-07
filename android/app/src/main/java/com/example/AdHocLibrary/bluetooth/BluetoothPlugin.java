@@ -8,18 +8,23 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import com.example.AdHocLibrary.bluetooth.BluetoothAdHocDevice;
+
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class BluetoothPlugin implements MethodCallHandler {
+    private static final String TAG = "[AdHoc][Blue.Manager]";
+
     private final BluetoothAdapter bluetoothAdapter;
-    private final String TAG = "[AdHoc][Blue.Manager]";
-    private final HashMap<String, BluetoothDevice> hashMapdiscoveredDevices;
-    private final HashMap<String, BluetoothDevice> hashMapPairedDevices;
+    private final HashMap<String, BluetoothAdHocDevice> discoveredDevices;
     
     private Context context;
     private String initialName;
@@ -29,8 +34,7 @@ public class BluetoothPlugin implements MethodCallHandler {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
         this.context = context;
-        this.hashMapdiscoveredDevices = new HashMap<>();
-        this.hashMapPairedDevices = new HashMap<>();
+        this.discoveredDevices = new HashMap<>();
         this.registeredDiscovery = false;
     }
 
@@ -64,6 +68,10 @@ public class BluetoothPlugin implements MethodCallHandler {
                 break;
             case "startDiscovery":
                 discovery();
+                break;
+
+            case "getPairedDevices":
+                result.success(getPairedDevices());
                 break;
 
             default:
@@ -114,20 +122,23 @@ public class BluetoothPlugin implements MethodCallHandler {
             String action = intent.getAction();
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = 
-                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                BluetoothAdHocDevice adhocDevice = 
+                    new BluetoothAdHocDevice(device.getName(), device.getAddress(),
+                                             intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,
+                                                                  Short.MIN_VALUE));
 
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress();
 
-                if (!hashMapdiscoveredDevices.containsKey(deviceHardwareAddress)) {
+                if (!discoveredDevices.containsKey(deviceHardwareAddress)) {
                     Log.d(TAG, deviceName + " " + deviceHardwareAddress);
-                    hashMapdiscoveredDevices.put(deviceHardwareAddress, device);
+                    discoveredDevices.put(deviceHardwareAddress, adhocDevice);
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
                 Log.d(TAG, "ACTION_DISCOVERY_STARTED");
 
-                hashMapdiscoveredDevices.clear();
+                discoveredDevices.clear();
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 Log.d(TAG, "ACTION_DISCOVERY_FINISHED");
             }
@@ -142,21 +153,24 @@ public class BluetoothPlugin implements MethodCallHandler {
         }
     }
 
-    private List<String> getPairedDevicesInfo() {
+    private List<Map<String, Object>> getPairedDevices() {
         Log.d(TAG, "getPairedDevicesInfo()");
 
-        List<String> devicesAddress = new ArrayList<>();
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+        List<Map<String, Object>> pairedDevices = new ArrayList<>();
 
-        if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
+        if (bondedDevices.size() > 0) {
+            for (BluetoothDevice device : bondedDevices) {
                 Log.d(TAG, "Name: " + device.getName() + " - MAC: " + device.getAddress());
 
-                hashMapPairedDevices.put(device.getAddress(), device);
-                devicesAddress.add(device.getAddress());
+                Map<String, Object> bondedDevice = new HashMap<>();
+                bondedDevice.put("deviceName", device.getName());
+                bondedDevice.put("macAddress", device.getAddress());
+
+                pairedDevices.add(bondedDevice);
             }
         }
 
-        return devicesAddress;
+        return pairedDevices;
     }
 }

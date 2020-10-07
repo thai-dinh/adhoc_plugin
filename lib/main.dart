@@ -1,5 +1,4 @@
 import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_manager.dart';
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_util.dart';
 
 import 'package:flutter/material.dart';
 

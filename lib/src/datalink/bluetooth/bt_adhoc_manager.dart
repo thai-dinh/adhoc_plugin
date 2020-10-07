@@ -14,6 +14,7 @@ class BluetoothAdHocManager {
   HashMap<String, AdHocDevice> _hashMapBtDevice;
   String _initialName;
 
+  /// Constructor
   BluetoothAdHocManager() {
     getAdapterName().then((value) => _initialName = value);
   }
@@ -58,16 +59,15 @@ class BluetoothAdHocManager {
 
   void discovery() => _invokeMethod('startDiscovery');
 
-  HashMap<String, BluetoothAdHocDevice> getPairedDevices() {
-    HashMap<String, BluetoothAdHocDevice> _pairedDevices = 
-      new HashMap<String, BluetoothAdHocDevice>();
+  Future<HashMap<String, BluetoothAdHocDevice>> getPairedDevices() async {
+    HashMap<String, BluetoothAdHocDevice> _pairedDevices = HashMap<String, BluetoothAdHocDevice>();
+    List<dynamic> devices = await _invokeMethod('getPairedDevices');
+
+    devices.forEach((element) { 
+      BluetoothAdHocDevice device = BluetoothAdHocDevice.map(element);
+      _pairedDevices[device.getMacAddress()] = device;
+    });
 
     return _pairedDevices;
-  }
-
-  Future<List<BluetoothDevice>> getBondedDevices() async {
-    List<dynamic> _devices = await _invokeMethod('getBondedDevices');
-
-    return _devices.map(BluetoothDevice.fromJson).toList();
   }
 }
