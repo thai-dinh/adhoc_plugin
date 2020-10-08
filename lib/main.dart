@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_manager.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(MyApp());
@@ -31,6 +34,16 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothAdHocManager bt = BluetoothAdHocManager();
+  static const stream = const EventChannel('ad.hoc.library.dev/bluetooths.stream');
+  StreamSubscription _subscription;
+
+  void _listen() {
+    _subscription = stream.receiveBroadcastStream().listen((event) { print(event); });
+  }
+
+  void _cancel() {
+    _subscription.cancel();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +70,18 @@ class _MyHomePageState extends State<MyHomePage> {
             RaisedButton(
               child: Text('Discovery'),
               onPressed: bt.discovery,
+            ),
+            RaisedButton(
+              child: Text('PairedDevices'),
+              onPressed: bt.getPairedDevices,
+            ),
+            RaisedButton(
+              child: Text('Listen'),
+              onPressed: _listen,
+            ),
+            RaisedButton(
+              child: Text('Cancel'),
+              onPressed: _cancel,
             ),
           ],
         ),

@@ -1,5 +1,7 @@
 package com.example.AdHocLibrary;
 
+import java.util.logging.StreamHandler;
+
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.android.FlutterActivity;
@@ -9,9 +11,10 @@ import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "ad.hoc.library.dev/bluetooth";
-    private static final String STREAM = "ad.hoc.library.dev/bt_stream";
-    private final BluetoothPlugin bluetooth = new BluetoothPlugin(getContext());
+    private static final String STREAM = "ad.hoc.library.dev/bluetooths.stream";
 
+    private final BluetoothPlugin bluetooth = new BluetoothPlugin(getContext());
+    
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
@@ -28,14 +31,14 @@ public class MainActivity extends FlutterActivity {
                 new EventChannel.StreamHandler() {
                     @Override
                     public void onListen(Object arguments, EventChannel.EventSink events) {
-
+                        events.success("hello");
                     }
 
                     @Override
                     public void onCancel(Object arguments) {
-                        
+
                     }
-                }
+                } 
             );
     }
 }

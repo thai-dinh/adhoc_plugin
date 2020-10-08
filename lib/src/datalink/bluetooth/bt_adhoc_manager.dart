@@ -2,16 +2,13 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_device.dart';
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_device.dart';
 import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
-import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
 
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
   static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
-  
-  HashMap<String, AdHocDevice> _hashMapBtDevice;
+
   String _initialName;
 
   /// Constructor

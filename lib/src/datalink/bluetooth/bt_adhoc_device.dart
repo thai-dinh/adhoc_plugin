@@ -1,11 +1,7 @@
 import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
 import 'package:AdHocLibrary/src/datalink/service/service.dart';
 
-import 'package:flutter/services.dart';
-
 class BluetoothAdHocDevice extends AdHocDevice {
-  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
-
   String _uuidString;
   int _rssi;
 

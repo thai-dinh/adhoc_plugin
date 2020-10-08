@@ -102,7 +102,7 @@ public class BluetoothPlugin implements MethodCallHandler {
     }
 
     private void discovery() {
-        Log.d(TAG, "DISCOVERY");
+        Log.d(TAG, "discovery()");
 
         cancelDiscovery();
 
