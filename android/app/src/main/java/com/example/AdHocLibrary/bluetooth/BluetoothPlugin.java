@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.flutter.plugin.common.EventChannel;
+
 public class BluetoothPlugin implements MethodCallHandler {
     private static final String TAG = "[AdHoc][Blue.Manager]";
 
@@ -30,12 +32,30 @@ public class BluetoothPlugin implements MethodCallHandler {
     private String initialName;
     private boolean registeredDiscovery;
 
+    private EventChannel.EventSink event;
+
     BluetoothPlugin(Context context) {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
         this.context = context;
         this.discoveredDevices = new HashMap<>();
         this.registeredDiscovery = false;
+    }
+
+    public void test(EventChannel eventChannel) {
+        eventChannel.setStreamHandler(
+            new EventChannel.StreamHandler() {
+                @Override
+                public void onListen(Object arguments, EventChannel.EventSink events) {
+                    event = events;
+                }
+
+                @Override
+                public void onCancel(Object arguments) {
+
+                }
+            } 
+        );
     }
 
     @Override
@@ -134,6 +154,12 @@ public class BluetoothPlugin implements MethodCallHandler {
                 if (!discoveredDevices.containsKey(deviceHardwareAddress)) {
                     Log.d(TAG, deviceName + " " + deviceHardwareAddress);
                     discoveredDevices.put(deviceHardwareAddress, adhocDevice);
+
+                    Map<String, Object> btDevice = new HashMap<>();
+                    btDevice.put("deviceName", deviceName);
+                    btDevice.put("macAddress", deviceHardwareAddress);
+
+                    event.success(btDevice);
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
                 Log.d(TAG, "ACTION_DISCOVERY_STARTED");

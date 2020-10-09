@@ -1,7 +1,5 @@
 package com.example.AdHocLibrary;
 
-import java.util.logging.StreamHandler;
-
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.android.FlutterActivity;
@@ -26,19 +24,7 @@ public class MainActivity extends FlutterActivity {
                 }
             );
 
-        new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), STREAM)
-            .setStreamHandler(
-                new EventChannel.StreamHandler() {
-                    @Override
-                    public void onListen(Object arguments, EventChannel.EventSink events) {
-                        events.success("hello");
-                    }
-
-                    @Override
-                    public void onCancel(Object arguments) {
-
-                    }
-                } 
-            );
+        EventChannel eventChannel = new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), STREAM);
+        bluetooth.test(eventChannel);
     }
 }
