@@ -7,6 +7,7 @@ import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
+  static const stream = const EventChannel('ad.hoc.library.dev/bluetooths.stream');
   static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
 
   String _initialName;
@@ -54,7 +55,11 @@ class BluetoothAdHocManager {
       _invokeMethod('enableDiscovery', <String, dynamic> { 'duration': duration });
   }
 
-  void discovery() => _invokeMethod('startDiscovery');
+  void discovery() {
+    stream.receiveBroadcastStream().listen((event) { print(event); });
+
+    _invokeMethod('startDiscovery');
+  }
 
   Future<HashMap<String, BluetoothAdHocDevice>> getPairedDevices() async {
     HashMap<String, BluetoothAdHocDevice> _pairedDevices = HashMap<String, BluetoothAdHocDevice>();

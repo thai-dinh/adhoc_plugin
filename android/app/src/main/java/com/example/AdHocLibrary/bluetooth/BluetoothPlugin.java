@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -30,8 +31,6 @@ public class BluetoothPlugin implements MethodCallHandler {
     private String initialName;
     private boolean registeredDiscovery;
 
-    private EventChannel.EventSink event;
-
     BluetoothPlugin(Context context) {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
@@ -39,22 +38,6 @@ public class BluetoothPlugin implements MethodCallHandler {
         this.discoveredDevices = new ArrayList<>();
         this.devicesFound = new ArrayList<>();
         this.registeredDiscovery = false;
-    }
-
-    public void test(EventChannel eventChannel) {
-        eventChannel.setStreamHandler(
-            new EventChannel.StreamHandler() {
-                @Override
-                public void onListen(Object arguments, EventChannel.EventSink events) {
-                    event = events;
-                }
-
-                @Override
-                public void onCancel(Object arguments) {
-
-                }
-            } 
-        );
     }
 
     @Override
@@ -100,87 +83,100 @@ public class BluetoothPlugin implements MethodCallHandler {
 
     private void enableDiscovery(int duration) {
         if (bluetoothAdapter != null) {
-            Intent discoverableIntent = 
-                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 
-            discoverableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            discoverableIntent.putExtra(
-                BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
 
-            context.startActivity(discoverableIntent);
+            context.startActivity(intent);
         }
-    }
-
-    private void cancelDiscovery() {
-        if (bluetoothAdapter.isDiscovering()) {
-            Log.d(TAG, "cancelDiscovery()");
-            bluetoothAdapter.cancelDiscovery();
-        }
-
-        unregisterDiscovery();
     }
 
     private void discovery() {
         Log.d(TAG, "discovery()");
 
-        cancelDiscovery();
-
-        IntentFilter filter = new IntentFilter();
-
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-
-        context.registerReceiver(receiver, filter);
+        if (bluetoothAdapter.isDiscovering()) {
+            Log.d(TAG, "cancelDiscovery");
+            bluetoothAdapter.cancelDiscovery();
+        }
 
         bluetoothAdapter.startDiscovery();
     }
 
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
+    public void setStreamHandler(EventChannel eventChannel) {
+        eventChannel.setStreamHandler(
+            new EventChannel.StreamHandler() {
+                private BroadcastReceiver receiver;
 
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                @Override
+                public void onListen(Object arguments, EventSink events) {
+                    receiver = getDiscoveryBroadcastReceiver(events);
 
-                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress();
+                    IntentFilter filter = new IntentFilter();
 
-                if (!devicesFound.contains(deviceHardwareAddress)) {
-                    Log.d(TAG, deviceName + " " + deviceHardwareAddress);
+                    filter.addAction(BluetoothDevice.ACTION_FOUND);
+                    filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+                    filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 
-                    devicesFound.add(deviceHardwareAddress);
-
-                    Map<String, Object> btDevice = new HashMap<>();
-                    btDevice.put("deviceName", deviceName);
-                    btDevice.put("macAddress", deviceHardwareAddress);
-                    btDevice.put("rssi", rssi);
-
-                    discoveredDevices.add(btDevice);
-
-                    event.success(btDevice);
+                    context.registerReceiver(receiver, filter);
+                    registeredDiscovery = true;
                 }
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-                Log.d(TAG, "ACTION_DISCOVERY_STARTED");
 
-                discoveredDevices.clear();
-                devicesFound.clear();
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                Log.d(TAG, "ACTION_DISCOVERY_FINISHED");
+                @Override
+                public void onCancel(Object arguments) {
+                    unregisterReceiver(receiver);
+                }
+            } 
+        );
+    }
 
-                event.success(discoveredDevices);
-                event.endOfStream();
-            }
-        }
-    };
-
-    private void unregisterDiscovery() {
+    private void unregisterReceiver(BroadcastReceiver receiver) {
         if (registeredDiscovery) {
             Log.d(TAG, "unregisterDiscovery()");
             context.unregisterReceiver(receiver);
             registeredDiscovery = false;
         }
+    }
+
+    private BroadcastReceiver getDiscoveryBroadcastReceiver(final EventSink events) {
+        return new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+    
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    
+                    int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
+                    String deviceName = device.getName();
+                    String deviceHardwareAddress = device.getAddress();
+    
+                    if (!devicesFound.contains(deviceHardwareAddress)) {
+                        Log.d(TAG, deviceName + " " + deviceHardwareAddress);
+    
+                        devicesFound.add(deviceHardwareAddress);
+    
+                        Map<String, Object> btDevice = new HashMap<>();
+                        btDevice.put("deviceName", deviceName);
+                        btDevice.put("macAddress", deviceHardwareAddress);
+                        btDevice.put("rssi", rssi);
+    
+                        discoveredDevices.add(btDevice);
+    
+                        events.success(btDevice);
+                    }
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                    Log.d(TAG, "ACTION_DISCOVERY_STARTED");
+    
+                    discoveredDevices.clear();
+                    devicesFound.clear();
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                    Log.d(TAG, "ACTION_DISCOVERY_FINISHED");
+    
+                    events.success(discoveredDevices);
+                    events.endOfStream();
+                }
+            }
+        };
     }
 
     private List<Map<String, Object>> getPairedDevices() {

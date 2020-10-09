@@ -25,6 +25,6 @@ public class MainActivity extends FlutterActivity {
             );
 
         EventChannel eventChannel = new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), STREAM);
-        bluetooth.test(eventChannel);
+        bluetooth.setStreamHandler(eventChannel);
     }
 }
