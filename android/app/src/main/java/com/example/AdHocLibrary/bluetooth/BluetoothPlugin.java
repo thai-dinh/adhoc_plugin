@@ -8,8 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import com.example.AdHocLibrary.bluetooth.BluetoothAdHocDevice;
-
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -20,13 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.flutter.plugin.common.EventChannel;
-
 public class BluetoothPlugin implements MethodCallHandler {
     private static final String TAG = "[AdHoc][Blue.Manager]";
 
     private final BluetoothAdapter bluetoothAdapter;
-    private final HashMap<String, BluetoothAdHocDevice> discoveredDevices;
+    private final List<Map<String, Object>> discoveredDevices;
+    private final ArrayList<String> devicesFound;
     
     private Context context;
     private String initialName;
@@ -38,7 +36,8 @@ public class BluetoothPlugin implements MethodCallHandler {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
         this.context = context;
-        this.discoveredDevices = new HashMap<>();
+        this.discoveredDevices = new ArrayList<>();
+        this.devicesFound = new ArrayList<>();
         this.registeredDiscovery = false;
     }
 
@@ -143,21 +142,22 @@ public class BluetoothPlugin implements MethodCallHandler {
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                BluetoothAdHocDevice adhocDevice = 
-                    new BluetoothAdHocDevice(device.getName(), device.getAddress(),
-                                             intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,
-                                                                  Short.MIN_VALUE));
 
+                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress();
 
-                if (!discoveredDevices.containsKey(deviceHardwareAddress)) {
+                if (!devicesFound.contains(deviceHardwareAddress)) {
                     Log.d(TAG, deviceName + " " + deviceHardwareAddress);
-                    discoveredDevices.put(deviceHardwareAddress, adhocDevice);
+
+                    devicesFound.add(deviceHardwareAddress);
 
                     Map<String, Object> btDevice = new HashMap<>();
                     btDevice.put("deviceName", deviceName);
                     btDevice.put("macAddress", deviceHardwareAddress);
+                    btDevice.put("rssi", rssi);
+
+                    discoveredDevices.add(btDevice);
 
                     event.success(btDevice);
                 }
@@ -165,8 +165,12 @@ public class BluetoothPlugin implements MethodCallHandler {
                 Log.d(TAG, "ACTION_DISCOVERY_STARTED");
 
                 discoveredDevices.clear();
+                devicesFound.clear();
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 Log.d(TAG, "ACTION_DISCOVERY_FINISHED");
+
+                event.success(discoveredDevices);
+                event.endOfStream();
             }
         }
     };
