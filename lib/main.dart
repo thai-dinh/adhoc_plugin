@@ -10,12 +10,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Ad Hoc Library',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Ad Hoc Library Dev'),
     );
   }
 }
@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: bt.disable,
             ),
             RaisedButton(
-              child: Text('EnabelDiscovery'),
+              child: Text('EnableDiscovery'),
               onPressed: () => bt.enableDiscovery(300),
             ),
             RaisedButton(

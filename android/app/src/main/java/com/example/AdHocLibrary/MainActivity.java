@@ -11,7 +11,7 @@ public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "ad.hoc.library.dev/bluetooth";
     private static final String STREAM = "ad.hoc.library.dev/bluetooths.stream";
 
-    private final BluetoothPlugin bluetooth = new BluetoothPlugin(getContext());
+    private final BluetoothPlugin bluetooth = new BluetoothPlugin(true, getContext());
     
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
