@@ -7,8 +7,8 @@ import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
-  static const stream = const EventChannel('ad.hoc.library.dev/bluetooths.stream');
-  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
+  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth.channel');
+  static const stream = const EventChannel('ad.hoc.library.dev/bluetooth.stream');
 
   String _initialName;
 
@@ -68,7 +68,7 @@ class BluetoothAdHocManager {
 
     devices.forEach((element) { 
       BluetoothAdHocDevice device = BluetoothAdHocDevice.map(element);
-      _pairedDevices[device.getMacAddress()] = device;
+      _pairedDevices[device.macAddress] = device;
     });
 
     return _pairedDevices;

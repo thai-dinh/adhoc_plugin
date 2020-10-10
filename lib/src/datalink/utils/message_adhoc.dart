@@ -5,11 +5,9 @@ class MessageAdHoc {
 
   MessageAdHoc([this._header]);
 
-  void setHeader(Header header) {
-    this._header = header;
-  }
+  set header(Header header) => this._header = header;
 
-  Header getHeader() => _header;
+  Header get header => _header;
 
   String toString() => "MessageAdHoc{" +
                         "header=" + _header.toString() +

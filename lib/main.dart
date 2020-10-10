@@ -71,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text('UnpairDevice'),
               onPressed: () => {
                 devices.forEach((key, value) {
-                  if (value.getDeviceName() == 'Device A')
+                  if (value.deviceName == 'Device A')
                     bt.unpairDevice(key);
                 })
               }

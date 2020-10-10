@@ -1,6 +1,6 @@
 import 'package:AdHocLibrary/src/datalink/service/service_message_listener.dart';
 
-class Service {
+abstract class Service {
   // Constant for type
   static const int WIFI = 0;
   static const int BLUETOOTH = 1;
@@ -23,19 +23,24 @@ class Service {
   static const int MESSAGE_EXCEPTION = 10;    // catch message exception
   static const int NETWORK_UNREACHABLE = 11;
 
-  int state;
-  bool verbose;
-  bool json;
+  bool _json;
+  bool _verbose;
+  int _state;
 
-  ServiceMessageListener serviceMessageListener;
+  ServiceMessageListener _serviceMessageListener;
 
-  Service(this.verbose, this.json, this.serviceMessageListener) {
-    this.state = 0;
+  Service() {
+    this._json = false;
+    this._verbose = false;
+    this._state = 0;
+    this._serviceMessageListener = null;
   }
 
-  void setState(int state) {
-    this.state = state;
+  Service.init(this._verbose, this._json, this._serviceMessageListener) {
+    this._state = 0;
   }
 
-  int getState() => state;
+  set state(int state) => this._state = state;
+
+  int get state => _state;
 }

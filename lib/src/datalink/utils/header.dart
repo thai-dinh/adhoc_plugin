@@ -1,32 +1,29 @@
 class Header {
-  int type;
-  String label;
-  String name;
-
-  String _address;
-  String _mac;
   int _deviceType;
+  int _type;
+  String _address;
+  String _label;
+  String _mac;
+  String _name;
 
   Header();
 
-  Header.init(this.type, this.label, this.name, 
+  Header.init(this._type, this._label, this._name, 
              [this._mac, this._address, this._deviceType]);
 
-  void setType(int type) {
-    this.type = type;
-  }
+  set type(int type) => this._type = type;
 
-  int getType() => type;
+  int get deviceType => _deviceType;
 
-  String getLabel() => label;
+  int get type => _type;
 
-  String getName() => name;
+  String get address => _address;
 
-  String getAddress() => _address;
+  String get label => _label;
 
-  String getMac() => _mac;
+  String get mac => _mac;
 
-  int getDeviceType() => _deviceType;
+  String get name => _name;
 
   String toString() => "Header{" +
                         "type=" + type.toString() +

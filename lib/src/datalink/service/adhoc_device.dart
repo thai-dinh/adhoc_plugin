@@ -2,32 +2,30 @@ import 'package:AdHocLibrary/src/datalink/service/service.dart';
 
 class AdHocDevice {
   bool _connected;
-
-  String label;
-  String deviceName;
-  String macAddress;
-  int type;
+  String _label;
+  String _deviceName;
+  String _macAddress;
+  int _type;
 
   /// Default constructor
   AdHocDevice() {
     this._connected = false;
-    this.label = null;
-    this.deviceName = null;
-    this.macAddress = null;
-    this.type = 0;
+    this._label = null;
+    this._deviceName = null;
+    this._macAddress = null;
+    this._type = 0;
   }
 
   /// Named constructor
-  AdHocDevice.init(String deviceName, this.macAddress, this.type, [this.label]) {
-    this.deviceName = deviceName == null ? "" : deviceName;
+  AdHocDevice.init(String deviceName, this._macAddress, this._type, [this._label]) {
+    this._deviceName = deviceName == null ? "" : deviceName;
     this._connected = true;
   }
 
   /// Factory named constructor
   factory AdHocDevice.connected(String deviceName, String macAddress, int type, 
                                 String label, bool connected) {
-    AdHocDevice device = 
-      new AdHocDevice.init(deviceName, macAddress, type, label);
+    AdHocDevice device = new AdHocDevice.init(deviceName, macAddress, type, label);
     device._connected = connected;
 
     return device;
@@ -37,29 +35,27 @@ class AdHocDevice {
   factory AdHocDevice.label(String label) {
     AdHocDevice device = new AdHocDevice();
     device._connected = false;
-    device.label = label;
+    device._label = label;
 
     return device;
   }
 
-  void setLabel(String label) {
-    this.label = label;
-  }
+  set directedConnected(bool connected) => this._connected = connected;
 
-  void setDirectedConnected(bool connected) {
-    this._connected = connected;
-  }
+  set label(String label) =>  this._label = label;
 
-  String getLabel() => label;
+  bool get directedConnected => _connected;
 
-  String getMacAddress() => macAddress;
+  String get deviceName => _deviceName;
 
-  String getDeviceName() => deviceName;
+  String get label => _label;
 
-  int getType() => type;
+  String get macAddress => _macAddress;
+
+  int get type => _type;
 
   String getStringType() {
-    switch (type) {
+    switch (_type) {
       case Service.BLUETOOTH:
         return "Bluetooth";
       case Service.WIFI:
@@ -68,8 +64,6 @@ class AdHocDevice {
         return "UNKNOWN";
     }
   }
-
-  bool isDirectedConnected() => _connected;
 
   String toString() {
       return "AdHocDevice{" +

@@ -16,9 +16,9 @@ class BluetoothAdHocDevice extends AdHocDevice {
   factory BluetoothAdHocDevice.map(Map map) 
     => BluetoothAdHocDevice(map['deviceName'], map['macAddress']);
 
-  String getUuid() => _uuidString;
+  String get uuid => _uuidString;
 
-  int getRssi() => _rssi;
+  int get rssi => _rssi;
 
   String toString() => "BluetoothAdHocDevice{" +
                         "uuidString='" + _uuidString + '\'' +

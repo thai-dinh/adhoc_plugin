@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get_mac/get_mac.dart';
 
 class BluetoothUtil {
-  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth');
+  static const platform = const MethodChannel('ad.hoc.library.dev/bluetooth.channel');
 
   Future<String> getCurrentMac() async => await GetMac.macAddress;
 

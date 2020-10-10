@@ -27,7 +27,7 @@ import java.util.Set;
  * retrieving paired devices, and many more. It also defines the StreamHandler
  * of the EventChannel.
  */
-public class BluetoothPlugin implements MethodCallHandler {
+public class BluetoothAdHocManager implements MethodCallHandler {
     private static final String TAG = "[AdHoc][Blue.Manager]";
 
     private final boolean verbose;
@@ -47,7 +47,7 @@ public class BluetoothPlugin implements MethodCallHandler {
      * @param context   Context object which gives global information about an 
      *                  application environment.
      */
-    BluetoothPlugin(Boolean verbose, Context context) {
+    BluetoothAdHocManager(Boolean verbose, Context context) {
         this.verbose = verbose;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
@@ -74,8 +74,7 @@ public class BluetoothPlugin implements MethodCallHandler {
                 result.success(bluetoothAdapter.getName());
                 break;
             case "updateDeviceName":
-                final String deviceName = call.argument("name");
-                result.success(bluetoothAdapter.setName(deviceName));
+                result.success(bluetoothAdapter.setName(call.argument("name")));
                 break;
             case "resetDeviceName":
                 if (initialName != null)
@@ -83,8 +82,7 @@ public class BluetoothPlugin implements MethodCallHandler {
                 break;
 
             case "enableDiscovery":
-                final int duration = call.argument("duration");
-                enableDiscovery(duration);
+                enableDiscovery(call.argument("duration"));
                 break;
             case "startDiscovery":
                 discovery();
@@ -94,10 +92,8 @@ public class BluetoothPlugin implements MethodCallHandler {
                 result.success(getPairedDevices());
                 break;
             case "unpairDevice":
-                final String macAddress = call.argument("address");
-
                 try { 
-                    unpairDevice(macAddress);
+                    unpairDevice(call.argument("address"));
                 } catch(Exception e) {
                     Log.d(TAG, e.getMessage());
                 }
@@ -252,6 +248,16 @@ public class BluetoothPlugin implements MethodCallHandler {
         return pairedDevices;
     }
 
+    /**
+     * Method allowing to unpair a previously paired bluetooth device.
+     *
+     * @param macAddress    String representing the MAC address of a device.
+     * @throws InvocationTargetException signals that a method does not exist.
+     * @throws IllegalAccessException    signals that an application tries to reflectively create
+     *                                   an instance which has no access to the definition of
+     *                                   the specified class
+     * @throws NoSuchMethodException     signals that a method does not exist.
+     */
     private void unpairDevice(String macAddress) 
         throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         if (verbose) Log.d(TAG, "unpairDevice()");
