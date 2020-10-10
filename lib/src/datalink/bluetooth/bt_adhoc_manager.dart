@@ -62,7 +62,8 @@ class BluetoothAdHocManager {
   }
 
   Future<HashMap<String, BluetoothAdHocDevice>> getPairedDevices() async {
-    HashMap<String, BluetoothAdHocDevice> _pairedDevices = HashMap<String, BluetoothAdHocDevice>();
+    HashMap<String, BluetoothAdHocDevice> _pairedDevices = 
+      HashMap<String, BluetoothAdHocDevice>();
     List<dynamic> devices = await _invokeMethod('getPairedDevices');
 
     devices.forEach((element) { 
@@ -72,4 +73,9 @@ class BluetoothAdHocManager {
 
     return _pairedDevices;
   }
+
+  void unpairDevice(String macAddress)
+    => _invokeMethod('unpairDevice', <String, dynamic> { 
+      'address': macAddress,
+    });
 }

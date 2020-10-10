@@ -14,6 +14,8 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,6 +92,15 @@ public class BluetoothPlugin implements MethodCallHandler {
 
             case "getPairedDevices":
                 result.success(getPairedDevices());
+                break;
+            case "unpairDevice":
+                final String macAddress = call.argument("address");
+
+                try { 
+                    unpairDevice(macAddress);
+                } catch(Exception e) {
+                    Log.d(TAG, e.getMessage());
+                }
                 break;
 
             default:
@@ -239,5 +250,14 @@ public class BluetoothPlugin implements MethodCallHandler {
         }
 
         return pairedDevices;
+    }
+
+    private void unpairDevice(String macAddress) 
+        throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        if (verbose) Log.d(TAG, "unpairDevice()");
+
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+        Method method = device.getClass().getMethod("removeBond", (Class[]) null);
+        method.invoke(device, (Object[]) null);
     }
 }

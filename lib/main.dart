@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_device.dart';
 import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_manager.dart';
 
 import 'package:flutter/material.dart';
@@ -32,6 +35,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothAdHocManager bt = BluetoothAdHocManager();
 
+  HashMap<String, BluetoothAdHocDevice> devices;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +65,16 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             RaisedButton(
               child: Text('PairedDevices'),
-              onPressed: bt.getPairedDevices,
+              onPressed: () => bt.getPairedDevices().then((value) => devices = value),
+            ),
+            RaisedButton(
+              child: Text('UnpairDevice'),
+              onPressed: () => {
+                devices.forEach((key, value) {
+                  if (value.getDeviceName() == 'Device A')
+                    bt.unpairDevice(key);
+                })
+              }
             ),
           ],
         ),
