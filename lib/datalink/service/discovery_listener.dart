@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
+import 'package:AdHocLibrary/datalink/service/adhoc_device.dart';
 
 abstract class DiscoveryListener {
   void onDeviceDiscovered(AdHocDevice device);

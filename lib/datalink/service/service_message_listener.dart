@@ -1,4 +1,4 @@
-import 'package:AdHocLibrary/src/datalink/utils/message_adhoc.dart';
+import 'package:AdHocLibrary/datalink/utils/message_adhoc.dart';
 
 abstract class ServiceMessageListener {
   void onMessageReceived(MessageAdHoc message);

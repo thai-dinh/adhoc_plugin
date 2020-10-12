@@ -1,7 +1,8 @@
 import 'dart:collection';
 
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_device.dart';
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_manager.dart';
+import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_device.dart';
+import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_manager.dart';
+import 'package:AdHocLibrary/datalink/wifi/wifi_adhoc_manager.dart';
 
 import 'package:flutter/material.dart';
 
@@ -34,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothAdHocManager bt = BluetoothAdHocManager();
+  WifiAdHocManager wifi = WifiAdHocManager();
 
   HashMap<String, BluetoothAdHocDevice> devices;
 
@@ -48,11 +50,19 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             RaisedButton(
-              child: Text('Enable'),
+              child: Text('Enable WiFi'),
+              onPressed: wifi.enable,
+            ),
+            RaisedButton(
+              child: Text('Disable WiFi'),
+              onPressed: wifi.disable,
+            ),
+            RaisedButton(
+              child: Text('Enable BT'),
               onPressed: bt.enable,
             ),
             RaisedButton(
-              child: Text('Disable'),
+              child: Text('Disable BT'),
               onPressed: bt.disable,
             ),
             RaisedButton(

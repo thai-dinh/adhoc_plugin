@@ -1,4 +1,4 @@
-import 'package:AdHocLibrary/src/datalink/utils/header.dart';
+import 'package:AdHocLibrary/datalink/utils/header.dart';
 
 class MessageAdHoc {
   Header _header;

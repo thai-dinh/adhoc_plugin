@@ -1,4 +1,4 @@
-import 'package:AdHocLibrary/src/datalink/service/service.dart';
+import 'package:AdHocLibrary/datalink/service/service.dart';
 
 class AdHocDevice {
   bool _connected;

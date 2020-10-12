@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:AdHocLibrary/src/datalink/bluetooth/bt_adhoc_device.dart';
-import 'package:AdHocLibrary/src/datalink/exceptions/bt_bad_duration.dart';
+import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_device.dart';
+import 'package:AdHocLibrary/datalink/exceptions/bt_bad_duration.dart';
 
 import 'package:flutter/services.dart';
 

@@ -1,5 +1,5 @@
-import 'package:AdHocLibrary/src/datalink/service/adhoc_device.dart';
-import 'package:AdHocLibrary/src/datalink/service/service.dart';
+import 'package:AdHocLibrary/datalink/service/adhoc_device.dart';
+import 'package:AdHocLibrary/datalink/service/service.dart';
 
 class BluetoothAdHocDevice extends AdHocDevice {
   String _uuidString;

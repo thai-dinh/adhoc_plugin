@@ -1,4 +1,4 @@
-import 'package:AdHocLibrary/src/datalink/service/service_message_listener.dart';
+import 'package:AdHocLibrary/datalink/service/service_message_listener.dart';
 
 abstract class Service {
   // Constant for type

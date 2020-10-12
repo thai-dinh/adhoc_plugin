@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:AdHocLibrary/src/datalink/service/service.dart';
-import 'package:AdHocLibrary/src/datalink/service/service_message_listener.dart';
+import 'package:AdHocLibrary/datalink/service/service.dart';
+import 'package:AdHocLibrary/datalink/service/service_message_listener.dart';
 
 abstract class ServiceClient extends Service {
   static const int _LOW = 1500;
