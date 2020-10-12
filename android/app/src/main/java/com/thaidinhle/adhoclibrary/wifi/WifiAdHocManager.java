@@ -1,3 +1,5 @@
+package com.thaidinhle.adhoclibrary;
+
 import android.content.Context;
 import android.net.wifi.WifiManager;
 

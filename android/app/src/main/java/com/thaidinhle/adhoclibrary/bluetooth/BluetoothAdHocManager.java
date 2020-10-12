@@ -1,4 +1,4 @@
-package com.example.AdHocLibrary;
+package com.thaidinhle.adhoclibrary;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
