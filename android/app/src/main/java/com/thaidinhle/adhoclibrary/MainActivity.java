@@ -14,7 +14,7 @@ public class MainActivity extends FlutterActivity {
     private static final String WIFI = "ad.hoc.library.dev/wifi";
 
     private final BluetoothAdHocManager bluetooth = new BluetoothAdHocManager(true, getContext());
-    private final WifiAdHocManager wifiManager = new WifiAdHocManager(getContext());
+    private final WifiAdHocManager wifiManager = new WifiAdHocManager(true, getContext());
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {

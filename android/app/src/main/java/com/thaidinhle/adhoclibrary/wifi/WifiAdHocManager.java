@@ -1,7 +1,7 @@
 package com.thaidinhle.adhoclibrary;
 
 import android.content.Context;
-import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pManager;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -10,9 +10,11 @@ import io.flutter.plugin.common.MethodChannel.Result;
 public class WifiAdHocManager implements MethodCallHandler {
     private static final String TAG = "[AdHoc][WifiManager]";
 
+    private final boolean verbose;
     private Context context;
 
-    WifiAdHocManager(Context context) {
+    WifiAdHocManager(Boolean verbose, Context context) {
+        this.verbose = verbose;
         this.context = context;
     }
 
@@ -23,7 +25,7 @@ public class WifiAdHocManager implements MethodCallHandler {
                 wifiAdapterState(true);
                 break;
             case "disable":
-                disable();
+                wifiAdapterState(false);
                 break;
             default:
                 break;
@@ -35,9 +37,5 @@ public class WifiAdHocManager implements MethodCallHandler {
         if (wifi != null) {
             wifi.setWifiEnabled(state);
         }
-    }
-
-    private void disable() {
-        wifiAdapterState(false);
     }
 }

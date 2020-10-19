@@ -134,7 +134,7 @@ public class BluetoothAdHocManager implements MethodCallHandler {
      */
     private void enableDiscovery(int duration) {
         if (bluetoothAdapter != null) {
-            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            final Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
@@ -154,7 +154,7 @@ public class BluetoothAdHocManager implements MethodCallHandler {
             bluetoothAdapter.cancelDiscovery();
         }
 
-        IntentFilter filter = new IntentFilter();
+        final IntentFilter filter = new IntentFilter();
 
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
