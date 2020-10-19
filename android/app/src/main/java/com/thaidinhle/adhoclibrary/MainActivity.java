@@ -12,6 +12,7 @@ public class MainActivity extends FlutterActivity {
     private static final String STREAM = "ad.hoc.library.dev/bluetooth.stream";
     private static final String THREAD = "ad.hoc.library.dev/thread";
     private static final String WIFI = "ad.hoc.library.dev/wifi";
+    private static final String BTSOCKET = "ad.hoc.lib.dev/bt.socket";
 
     private final BluetoothAdHocManager bluetooth = new BluetoothAdHocManager(true, getContext());
     private final WifiAdHocManager wifiManager = new WifiAdHocManager(true, getContext());
@@ -31,27 +32,26 @@ public class MainActivity extends FlutterActivity {
                 }
             );
 
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BTSOCKET)
+            .setMethodCallHandler(
+                (call, result) -> {
+                    switch (call.method) {
+                        case "close":
+                            
+                            
+                            break;
+                    
+                        default:
+                            break;
+                    }
+                }
+            );
+
         MethodChannel wifiChannel = new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), WIFI);
         wifiChannel.setMethodCallHandler(
             (call, result) -> {
                 wifiManager.onMethodCall(call, result);
             }
         );
-
-        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), THREAD)
-            .setMethodCallHandler(
-                (call, result) -> {
-                    switch (call.method) {
-                        case "server":
-                            ThreadServer t1 = new ThreadServer("One");
-                            t1.start();
-                            ThreadServer t2 = new ThreadServer("Two");
-                            t2.start();
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            );
     }
 }

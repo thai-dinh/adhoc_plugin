@@ -25,7 +25,6 @@ class WifiAdHocDevice extends AdHocDevice {
   String get ipAddress => _ipAddress;
 
   int get port => _port;
-
   String toString() {
     return 'WifiAdHocDevice{' +
             'ipAddress=' + _ipAddress + '\'' +

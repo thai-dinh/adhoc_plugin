@@ -1,12 +1,19 @@
+import 'package:AdHocLibrary/datalink/sockets/bt_socket.dart';
 import 'package:AdHocLibrary/datalink/sockets/isocket.dart';
 import 'package:AdHocLibrary/datalink/utils/message_adhoc.dart';
 
 class AdHocBluetoothSocket implements ISocket {
-  AdHocBluetoothSocket();
+  final String _address;
 
-  String remoteAddress() => null;
+  BluetoothSocket _socket;
 
-  void close() { }
+  AdHocBluetoothSocket(this._address) {
+    this._socket = new BluetoothSocket(_address);
+  }
+
+  String remoteAddress() => _address;
+
+  void close() => _socket.close();
 
   void listen(Function onData) { }
 
