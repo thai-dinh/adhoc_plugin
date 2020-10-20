@@ -1,7 +1,7 @@
 import 'package:AdHocLibrary/datalink/utils/message_adhoc.dart';
 
 abstract class ISocket {
-  String remoteAddress();
+  String get remoteAddress;
 
   void close();
 

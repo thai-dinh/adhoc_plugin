@@ -9,7 +9,7 @@ class SocketManager {
 
   SocketManager(this._isocket) {
     _isocket.listen(_onMessage);
-    _remoteSocketAddress = _isocket.remoteAddress();
+    _remoteSocketAddress = _isocket.remoteAddress;
     _messages = List();
   }
 

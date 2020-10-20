@@ -7,7 +7,7 @@ class AdHocWifiSocket implements ISocket {
 
   AdHocWifiSocket(this._socket);
 
-  String remoteAddress() => _socket.remoteAddress.address;
+  String get remoteAddress => _socket.remoteAddress.address;
 
   void close() => _socket.close();
 

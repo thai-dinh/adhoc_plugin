@@ -8,9 +8,4 @@ class MessageAdHoc {
   set header(Header header) => this._header = header;
 
   Header get header => _header;
-
-  String toString() => "MessageAdHoc{" +
-                        "header=" + _header.toString() +
-                        // ", pdu=" + pdu +
-                        '}';
 }

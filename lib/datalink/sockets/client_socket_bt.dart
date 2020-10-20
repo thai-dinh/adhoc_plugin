@@ -1,21 +1,37 @@
-import 'package:AdHocLibrary/datalink/sockets/bt_socket.dart';
 import 'package:AdHocLibrary/datalink/sockets/isocket.dart';
 import 'package:AdHocLibrary/datalink/utils/message_adhoc.dart';
+import 'package:AdHocLibrary/datalink/utils/utils.dart';
+
+import 'package:flutter/services.dart';
 
 class AdHocBluetoothSocket implements ISocket {
+  static const String _channelName = 'ad.hoc.lib.dev/bt.socket';
+  static const MethodChannel _channel = const MethodChannel(_channelName);
+
+  final bool _secure;
   final String _address;
 
-  BluetoothSocket _socket;
-
-  AdHocBluetoothSocket(this._address) {
-    this._socket = new BluetoothSocket(_address);
+  AdHocBluetoothSocket(this._address, this._secure) {
+    Utils.invokeMethod(_channel, 'createSocket', <String, dynamic> { 
+      'address' : this._address,
+      'secure' : this._secure,
+    });
   }
 
-  String remoteAddress() => _address;
+  String get remoteAddress => _address;
 
-  void close() => _socket.close();
+  void close() {
+    Utils.invokeMethod(_channel, 'close', <String, dynamic> { 
+      'address' : this._address,
+    });
+  }
 
   void listen(Function onData) { }
 
-  void write(MessageAdHoc msg) { }
+  void write(MessageAdHoc msg) {
+    Utils.invokeMethod(_channel, 'outputstream', <String, dynamic> { 
+      'address' : this._address,
+      'message' : msg,
+    });
+  }
 }

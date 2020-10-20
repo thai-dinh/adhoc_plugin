@@ -13,20 +13,11 @@ class BluetoothAdHocDevice extends AdHocDevice {
   BluetoothAdHocDevice.rssi(String deviceName, String macAddress, this._rssi) 
     : super.init(deviceName, macAddress.toUpperCase(), Service.BLUETOOTH);
 
-  factory BluetoothAdHocDevice.map(Map map) 
-    => BluetoothAdHocDevice(map['deviceName'], map['macAddress']);
+  factory BluetoothAdHocDevice.map(Map map) {
+    return BluetoothAdHocDevice(map['deviceName'], map['macAddress']);
+  }
 
   String get uuid => _uuidString;
 
   int get rssi => _rssi;
-
-  String toString() => "BluetoothAdHocDevice{" +
-                        "uuidString='" + _uuidString + '\'' +
-                        // ", uuid=" + uuid +
-                        ", rssi=" + _rssi.toString() +
-                        ", label='" + label + '\'' +
-                        ", deviceName='" + deviceName + '\'' +
-                        ", macAddress='" + macAddress + '\'' +
-                        ", type=" + type.toString() +
-                        '}';
 }
