@@ -5,7 +5,6 @@ import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_manager.dart';
 import 'package:AdHocLibrary/datalink/wifi/wifi_adhoc_manager.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(MyApp());
@@ -35,20 +34,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const channel = 
-    const MethodChannel('ad.hoc.library.dev/thread');
   BluetoothAdHocManager bt = BluetoothAdHocManager();
   WifiAdHocManager wifi = WifiAdHocManager();
 
   HashMap<String, BluetoothAdHocDevice> devices;
-
-  void test() async {
-    try {
-      await channel.invokeMethod("server");
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +85,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     bt.unpairDevice(key);
                 })
               }
-            ),
-            RaisedButton(
-              child: Text('Threading'),
-              onPressed: test,
             ),
           ],
         ),

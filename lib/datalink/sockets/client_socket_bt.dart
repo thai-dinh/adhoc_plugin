@@ -31,7 +31,7 @@ class AdHocBluetoothSocket implements ISocket {
   void write(MessageAdHoc msg) {
     Utils.invokeMethod(_channel, 'outputstream', <String, dynamic> { 
       'address' : this._address,
-      'message' : msg,
+      'message' : msg.toJson(),
     });
   }
 }

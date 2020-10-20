@@ -1,7 +1,7 @@
 package com.thaidinhle.adhoclibrary;
 
 import android.content.Context;
-import android.net.wifi.p2p.WifiP2pManager;
+import android.net.wifi.WifiManager;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
