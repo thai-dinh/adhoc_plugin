@@ -12,7 +12,7 @@ class AdHocBluetoothSocket implements ISocket {
   final String _address;
 
   AdHocBluetoothSocket(this._address, this._secure) {
-    Utils.invokeMethod(_channel, 'createSocket', <String, dynamic> { 
+    Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
       'address' : this._address,
       'secure' : this._secure,
     });
@@ -26,12 +26,18 @@ class AdHocBluetoothSocket implements ISocket {
     });
   }
 
-  void listen(Function onData) { }
+  void listen(Function onData) async {
+    final int value = await Utils.invokeMethod(_channel, 'listen', <String, dynamic> { 
+      'address' : this._address,
+    });
+
+    onData(value);
+  }
 
   void write(MessageAdHoc msg) {
-    Utils.invokeMethod(_channel, 'outputstream', <String, dynamic> { 
+    Utils.invokeMethod(_channel, 'write', <String, dynamic> { 
       'address' : this._address,
-      'message' : msg.toJson(),
+      'message' : null,
     });
   }
 }

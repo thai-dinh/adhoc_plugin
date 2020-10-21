@@ -3,6 +3,7 @@ package com.thaidinhle.adhoclibrary;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,10 +11,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothSocketManager {
-    public static final String BLUETOOTH_UUID = "e0917680-d427-11e4-8830-";
+    private static final String BLUETOOTH_UUID = "e0917680-d427-11e4-8830-";
+    private static final String TAG = "[AdHoc][Blue.Socket.Manager]";
 
     private final BluetoothAdapter bluetoothAdapter;
 
@@ -25,6 +29,7 @@ public class BluetoothSocketManager {
     }
 
     public void connect(String macAddress, boolean secure) throws NoConnectionException {
+        Log.d(TAG, "connection");
         BluetoothDevice remoteDevice = 
             bluetoothAdapter.getRemoteDevice(macAddress);
         BluetoothSocket socket;
@@ -36,7 +41,10 @@ public class BluetoothSocketManager {
                 socket = remoteDevice.createRfcommSocketToServiceRecord(uuid);
             } else {
                 socket = remoteDevice.createInsecureRfcommSocketToServiceRecord(uuid);
-            }   
+            }
+
+            timeout(socket);
+            socket.connect();
         } catch (IOException e) {
             throw new NoConnectionException("Unable to connect to " + uuidString);
         }
@@ -62,5 +70,20 @@ public class BluetoothSocketManager {
         DataInputStream dis = new DataInputStream(is);
 
         return dis.readInt();
+    }
+
+    private void timeout(BluetoothSocket socket) {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (!socket.isConnected()) {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }, 10000); // 10 seconds
     }
 }
