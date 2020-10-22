@@ -28,8 +28,9 @@ public class BluetoothSocketManager {
         this.bluetoothSockets = new HashMap<>();
     }
 
-    public void connect(String macAddress, boolean secure) throws NoConnectionException {
-        Log.d(TAG, "connection");
+    public void createBluetoothSocket(String macAddress, boolean secure) 
+        throws NoConnectionException {
+
         BluetoothDevice remoteDevice = 
             bluetoothAdapter.getRemoteDevice(macAddress);
         BluetoothSocket socket;
@@ -42,14 +43,23 @@ public class BluetoothSocketManager {
             } else {
                 socket = remoteDevice.createInsecureRfcommSocketToServiceRecord(uuid);
             }
-
-            timeout(socket);
-            socket.connect();
         } catch (IOException e) {
             throw new NoConnectionException("Unable to connect to " + uuidString);
         }
 
         bluetoothSockets.put(macAddress, socket);
+    }
+
+    public void connect(String macAddress) throws NoConnectionException {
+        String uuidString = BLUETOOTH_UUID + macAddress.replace(":", "").toLowerCase();
+        BluetoothSocket socket = bluetoothSockets.get(macAddress);
+
+        try {
+            timeout(socket);
+            socket.connect();
+        } catch (IOException e) {
+            throw new NoConnectionException("Unable to connect to " + uuidString);
+        }
     }
 
     public void close(String macAddress) throws IOException{
@@ -59,6 +69,11 @@ public class BluetoothSocketManager {
     }
 
     public void sendMessage(String macAddress, MessageAdHoc message) throws IOException {
+        BluetoothSocket socket = bluetoothSockets.get(macAddress);
+        if (socket == null) {
+            Log.d(TAG, "Null");
+            return;
+        }
         OutputStream os = bluetoothSockets.get(macAddress).getOutputStream();
         DataOutputStream dos = new DataOutputStream(os);
 

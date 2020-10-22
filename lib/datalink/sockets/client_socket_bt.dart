@@ -8,17 +8,18 @@ class AdHocBluetoothSocket implements ISocket {
   static const String _channelName = 'ad.hoc.lib.dev/bt.socket';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
-  final bool _secure;
   final String _address;
 
-  AdHocBluetoothSocket(this._address, this._secure) {
-    Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
-      'address' : this._address,
-      'secure' : this._secure,
-    });
-  }
+  AdHocBluetoothSocket(this._address);
 
   String get remoteAddress => _address;
+
+  void connect(bool secure) {
+    Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
+      'address' : this._address,
+      'secure' : secure,
+    });
+  }
 
   void close() {
     Utils.invokeMethod(_channel, 'close', <String, dynamic> { 
@@ -34,10 +35,10 @@ class AdHocBluetoothSocket implements ISocket {
     onData(value);
   }
 
-  void write(MessageAdHoc msg) {
+  void write(MessageAdHoc messageAdHoc) {
     Utils.invokeMethod(_channel, 'write', <String, dynamic> { 
       'address' : this._address,
-      'message' : null,
+      'message' : messageAdHoc,
     });
   }
 }

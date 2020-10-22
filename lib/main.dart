@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_device.dart';
 import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_manager.dart';
-import 'package:AdHocLibrary/datalink/sockets/client_socket_bt.dart';
 import 'package:AdHocLibrary/datalink/wifi/wifi_adhoc_manager.dart';
 
 import 'package:flutter/material.dart';
@@ -39,24 +38,9 @@ class _MyHomePageState extends State<MyHomePage> {
   WifiAdHocManager wifi = WifiAdHocManager();
 
   HashMap<String, BluetoothAdHocDevice> devices;
-  int value = 0;
 
   // AdHocBluetoothSocket socket = AdHocBluetoothSocket("C4:93:D9:61:07:5E", false); // Galaxy
-  AdHocBluetoothSocket socket = AdHocBluetoothSocket("9C:D3:5B:B4:29:C8", false); // Device A
-
-  void _write() {
-    socket.write(null);
-  }
-
-  void _receive() {
-    socket.listen(_onData);
-  }
-
-  void _onData(int value) {
-    setState(() {
-      this.value = value;
-    });
-  }
+  // AdHocBluetoothSocket socket = AdHocBluetoothSocket("9C:D3:5B:B4:29:C8", false); // Device A
 
   @override
   Widget build(BuildContext context) {
@@ -105,15 +89,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 })
               }
             ),
-            RaisedButton(
-              child: Text('Write'),
-              onPressed: _write,
-            ),
-            RaisedButton(
-              child: Text('Receive'),
-              onPressed: _receive,
-            ),
-            Text("$value"),
           ],
         ),
       ),

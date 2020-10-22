@@ -17,7 +17,6 @@ public class MainActivity extends FlutterActivity {
 
     private final BluetoothAdHocManager bluetooth = new BluetoothAdHocManager(true, getContext());
     private final WifiAdHocManager wifiManager = new WifiAdHocManager(true, getContext());
-    private final BluetoothSocketManager socketManager = new BluetoothSocketManager();
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -31,37 +30,6 @@ public class MainActivity extends FlutterActivity {
             .setMethodCallHandler(
                 (call, result) -> {
                     bluetooth.onMethodCall(call, result);
-                }
-            );
-
-        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BTSOCKET)
-            .setMethodCallHandler(
-                (call, result) -> {
-                    final String address = "address";
-                    try {
-                        switch (call.method) {
-                            case "connect":
-                                socketManager.connect(call.argument(address), false);
-                                break;
-                            case "close":
-                                socketManager.close(call.argument(address));
-                                break;
-                            case "listen":
-                                final int value = socketManager.receiveMessage(call.argument(address));
-                                result.success(value);
-                                break;
-                            case "write":
-                                socketManager.sendMessage(call.argument(address), null);
-                                break;
-    
-                            default:
-                                break;
-                        }   
-                    } catch (IOException e) {
-                        //TODO: handle exception
-                    } catch (NoConnectionException e) {
-
-                    }
                 }
             );
 
