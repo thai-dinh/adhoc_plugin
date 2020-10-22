@@ -1,104 +1,99 @@
 package com.thaidinhle.adhoclibrary;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.util.Log;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.Result;
 
 public class BluetoothSocketManager {
-    private static final String BLUETOOTH_UUID = "e0917680-d427-11e4-8830-";
-    private static final String TAG = "[AdHoc][Blue.Socket.Manager]";
+    private static final String CLIENTS = "ad.hoc.lib.dev/bt.clients.socket";
+    private static final String SERVERS = "ad.hoc.lib.dev/bt.servers.socket";
 
-    private final BluetoothAdapter bluetoothAdapter;
+    private final MethodChannel clientSockets;
+    private final MethodChannel serverSockets;
+    
+    private BluetoothClientSocketManager clientSocketManager;
+    private BluetoothServerSocketManager serverSocketManager;
 
-    private HashMap<String, BluetoothSocket> bluetoothSockets;
+    public BluetoothSocketManager(FlutterEngine flutterEngine) {
+        this.clientSocketManager = new BluetoothClientSocketManager();
+        this.serverSocketManager = new BluetoothServerSocketManager();
 
-    public BluetoothSocketManager() {
-        this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        this.bluetoothSockets = new HashMap<>();
+        BinaryMessenger binaryMessenger = flutterEngine.getDartExecutor().getBinaryMessenger();
+        this.clientSockets = new MethodChannel(binaryMessenger, CLIENTS);
+        this.clientSockets.setMethodCallHandler(
+            (call, result) -> {
+                setClientsMethodCall(call, result);
+            }
+        );
+
+        this.serverSockets = new MethodChannel(binaryMessenger, SERVERS);
+        this.serverSockets.setMethodCallHandler(
+            (call, result) -> {
+                setServersMethodCall(call, result);
+            }
+        );
     }
 
-    public void createBluetoothSocket(String macAddress, boolean secure) 
-        throws NoConnectionException {
-
-        BluetoothDevice remoteDevice = 
-            bluetoothAdapter.getRemoteDevice(macAddress);
-        BluetoothSocket socket;
-        String uuidString = BLUETOOTH_UUID + macAddress.replace(":", "").toLowerCase();
-        UUID uuid = UUID.fromString(uuidString);
+    private void setClientsMethodCall(MethodCall call, Result result) {
+        final String macAddress = call.argument("address");
 
         try {
-            if (secure) {
-                socket = remoteDevice.createRfcommSocketToServiceRecord(uuid);
-            } else {
-                socket = remoteDevice.createInsecureRfcommSocketToServiceRecord(uuid);
+            switch (call.method) {
+                case "create":
+                    final boolean secure = call.argument("secure");
+                    clientSocketManager.createSocket(macAddress, secure);
+                    break;
+                case "connect":
+                    clientSocketManager.connect(macAddress);
+                    break;
+                case "close":
+                    clientSocketManager.close(macAddress);
+                    break;
+                case "listen": // %TODO: adjust message format
+                    Object message = clientSocketManager.receiveMessage(macAddress);
+                    result.success(message);
+                    break;
+                case "write":
+                    // Object msg = call.argument("message"); // %TODO: adjust message format
+                    clientSocketManager.sendMessage(macAddress, null);
+                    break;
+    
+                default:
+                    break;
             }
         } catch (IOException e) {
-            throw new NoConnectionException("Unable to connect to " + uuidString);
+            //TODO: handle exception
+        } catch (NoConnectionException e) {
+            //TODO: handle exception
         }
-
-        bluetoothSockets.put(macAddress, socket);
     }
 
-    public void connect(String macAddress) throws NoConnectionException {
-        String uuidString = BLUETOOTH_UUID + macAddress.replace(":", "").toLowerCase();
-        BluetoothSocket socket = bluetoothSockets.get(macAddress);
-
+    private void setServersMethodCall(MethodCall call, Result result) {
+        final String name = call.argument("name");
+        
         try {
-            timeout(socket);
-            socket.connect();
-        } catch (IOException e) {
-            throw new NoConnectionException("Unable to connect to " + uuidString);
-        }
-    }
+            switch (call.method) {
+                case "create":
+                    final boolean secure = call.argument("secure");
+                    final String uuidString = call.argument("uuidString");
+                    serverSocketManager.createServerSocket(name, uuidString, secure);
+                    break;
+                case "accept":
+                    clientSocketManager.addSocket(serverSocketManager.accept(name));
+                    break;
+                case "close":
+                    serverSocketManager.close(name);
+                    break;
 
-    public void close(String macAddress) throws IOException{
-        bluetoothSockets.get(macAddress).getInputStream().close();
-        bluetoothSockets.get(macAddress).getOutputStream().close();
-        bluetoothSockets.get(macAddress).close();
-    }
-
-    public void sendMessage(String macAddress, MessageAdHoc message) throws IOException {
-        BluetoothSocket socket = bluetoothSockets.get(macAddress);
-        if (socket == null) {
-            Log.d(TAG, "Null");
-            return;
-        }
-        OutputStream os = bluetoothSockets.get(macAddress).getOutputStream();
-        DataOutputStream dos = new DataOutputStream(os);
-
-        dos.write(42);
-    }
-
-    public int receiveMessage(String macAddress) throws IOException {
-        InputStream is = bluetoothSockets.get(macAddress).getInputStream();
-        DataInputStream dis = new DataInputStream(is);
-
-        return dis.readInt();
-    }
-
-    private void timeout(BluetoothSocket socket) {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (!socket.isConnected()) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                default:
+                    break;
             }
-        }, 10000); // 10 seconds
+        } catch (IOException e) {
+            //TODO: handle exception
+        }
     }
 }

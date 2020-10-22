@@ -20,8 +20,8 @@ public class BluetoothServerSocketManager {
         this.bluetoothServerSockets = new HashMap<>();
     }
 
-    public void createBluetoothServerSocket(String name, String uuidString, 
-                                            boolean secure) throws IOException {
+    public void createServerSocket(String name, String uuidString, boolean secure) 
+        throws IOException {
 
         UUID uuid = UUID.fromString(uuidString);
         BluetoothServerSocket serverSocket;
