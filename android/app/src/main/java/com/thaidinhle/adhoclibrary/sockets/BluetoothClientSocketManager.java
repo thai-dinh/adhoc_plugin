@@ -16,7 +16,6 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothClientSocketManager {
-    private static final String BLUETOOTH_UUID = "e0917680-d427-11e4-8830-";
     private static final String TAG = "[AdHoc][Blue.Socket.Manager]";
 
     private final BluetoothAdapter bluetoothAdapter;
@@ -33,34 +32,30 @@ public class BluetoothClientSocketManager {
         bluetoothSockets.put(macAddress, socket);
     }
 
-    public void createSocket(String macAddress, boolean secure)
-        throws IOException {
+    public boolean connect(String macAddress, boolean secure, String uuidString)
+        throws NoConnectionException {
 
         BluetoothDevice remoteDevice = 
             bluetoothAdapter.getRemoteDevice(macAddress);
         BluetoothSocket socket;
-        String uuidString = BLUETOOTH_UUID + macAddress.replace(":", "").toLowerCase();
         UUID uuid = UUID.fromString(uuidString);
 
-        if (secure) {
-            socket = remoteDevice.createRfcommSocketToServiceRecord(uuid);
-        } else {
-            socket = remoteDevice.createInsecureRfcommSocketToServiceRecord(uuid);
-        }
-
-        bluetoothSockets.put(macAddress, socket);
-    }
-
-    public void connect(String macAddress) throws NoConnectionException {
-        String uuidString = BLUETOOTH_UUID + macAddress.replace(":", "").toLowerCase();
-        BluetoothSocket socket = bluetoothSockets.get(macAddress);
-
         try {
+            if (secure) {
+                socket = remoteDevice.createRfcommSocketToServiceRecord(uuid);
+            } else {
+                socket = remoteDevice.createInsecureRfcommSocketToServiceRecord(uuid);
+            }
+
             timeout(socket);
             socket.connect();
         } catch (IOException e) {
             throw new NoConnectionException("Unable to connect to " + uuidString);
         }
+
+        bluetoothSockets.put(macAddress, socket);
+
+        return true;
     }
 
     public void close(String macAddress) throws IOException{

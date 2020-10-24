@@ -9,5 +9,5 @@ class AdHocWifiServerSocket implements IServerSocket {
 
   void close() => _serverSocket.close();
 
-  void accept() => _serverSocket.listen((event) { });
+  void accept(Function onEvent) => _serverSocket.listen(onEvent);
 }

@@ -5,7 +5,7 @@ import 'package:AdHocLibrary/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
 class AdHocBluetoothSocket implements ISocket {
-  static const String _channelName = 'ad.hoc.lib.dev/bt.socket';
+  static const String _channelName = 'ad.hoc.lib.dev/bt.clients.socket';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   final String _address;
@@ -14,10 +14,17 @@ class AdHocBluetoothSocket implements ISocket {
 
   String get remoteAddress => _address;
 
-  void connect(bool secure) {
-    Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
+  Future<bool> connect(bool secure, String uuidString) async {
+    return Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
       'address' : this._address,
       'secure' : secure,
+      'uuidString' : uuidString,
+    });
+  }
+
+  Future<bool> isConnected() async {
+    return Utils.invokeMethod(_channel, 'isConnected', <String, dynamic> { 
+      'address' : this._address,
     });
   }
 
@@ -28,11 +35,9 @@ class AdHocBluetoothSocket implements ISocket {
   }
 
   void listen(Function onData) async {
-    final int value = await Utils.invokeMethod(_channel, 'listen', <String, dynamic> { 
+    Utils.invokeMethod(_channel, 'listen', <String, dynamic> { 
       'address' : this._address,
-    });
-
-    onData(value);
+    }).then((result) => onData(result));
   }
 
   void write(MessageAdHoc messageAdHoc) {

@@ -15,6 +15,8 @@ public class MainActivity extends FlutterActivity {
     private final BluetoothAdHocManager bluetooth = new BluetoothAdHocManager(true, getContext());
     private final WifiAdHocManager wifiManager = new WifiAdHocManager(true, getContext());
 
+    private BluetoothSocketManager socketManager;
+
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
@@ -36,5 +38,7 @@ public class MainActivity extends FlutterActivity {
                 wifiManager.onMethodCall(call, result);
             }
         );
+
+        socketManager = new BluetoothSocketManager(flutterEngine);
     }
 }

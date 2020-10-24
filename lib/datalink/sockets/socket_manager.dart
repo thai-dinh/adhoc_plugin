@@ -21,6 +21,6 @@ class SocketManager {
 
   void sendMessage(MessageAdHoc msg) => _isocket.write(msg);
 
-  MessageAdHoc receiveMessage() 
+  MessageAdHoc receiveMessage()
     => _messages.isNotEmpty ? _messages.removeAt(0) : null;
 }

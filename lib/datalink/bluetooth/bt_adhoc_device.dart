@@ -1,3 +1,4 @@
+import 'package:AdHocLibrary/datalink/bluetooth/bt_util.dart';
 import 'package:AdHocLibrary/datalink/service/adhoc_device.dart';
 import 'package:AdHocLibrary/datalink/service/service.dart';
 
@@ -7,6 +8,9 @@ class BluetoothAdHocDevice extends AdHocDevice {
 
   BluetoothAdHocDevice(String deviceName, String macAddress) 
     : super.init(deviceName, macAddress.toUpperCase(), Service.BLUETOOTH) {
+    
+    this._uuidString = 
+      BluetoothUtil.UUID + macAddress.replaceAll(':', '').toLowerCase();
     this._rssi = -1;
   }
 

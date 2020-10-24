@@ -1,5 +1,7 @@
 package com.thaidinhle.adhoclibrary;
 
+import android.bluetooth.BluetoothSocket;
+
 import java.io.IOException;
 
 import io.flutter.embedding.engine.FlutterEngine;
@@ -43,19 +45,18 @@ public class BluetoothSocketManager {
 
         try {
             switch (call.method) {
-                case "create":
-                    final boolean secure = call.argument("secure");
-                    clientSocketManager.createSocket(macAddress, secure);
-                    break;
                 case "connect":
-                    clientSocketManager.connect(macAddress);
+                    final boolean secure = call.argument("secure");
+                    final String uuidString = call.argument("uuidString");
+                    final boolean value = clientSocketManager.connect(macAddress, secure, uuidString);
+                    result.success(value);
                     break;
                 case "close":
                     clientSocketManager.close(macAddress);
                     break;
                 case "listen": // %TODO: adjust message format
-                    Object message = clientSocketManager.receiveMessage(macAddress);
-                    result.success(message);
+                    Object msg = clientSocketManager.receiveMessage(macAddress);
+                    result.success(msg);
                     break;
                 case "write":
                     // Object msg = call.argument("message"); // %TODO: adjust message format
@@ -73,20 +74,20 @@ public class BluetoothSocketManager {
     }
 
     private void setServersMethodCall(MethodCall call, Result result) {
-        final String name = call.argument("name");
-        
         try {
             switch (call.method) {
                 case "create":
-                    final boolean secure = call.argument("secure");
                     final String uuidString = call.argument("uuidString");
-                    serverSocketManager.createServerSocket(name, uuidString, secure);
+                    final boolean secure = call.argument("secure");
+                    serverSocketManager.createServerSocket(uuidString, secure);
                     break;
                 case "accept":
-                    clientSocketManager.addSocket(serverSocketManager.accept(name));
+                    BluetoothSocket socket = serverSocketManager.accept();
+                    clientSocketManager.addSocket(socket);
+                    result.success(socket.getRemoteDevice().getAddress());
                     break;
                 case "close":
-                    serverSocketManager.close(name);
+                    serverSocketManager.close();
                     break;
 
                 default:

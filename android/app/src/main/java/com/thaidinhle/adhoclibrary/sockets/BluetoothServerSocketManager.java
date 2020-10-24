@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.UUID;
 
 public class BluetoothServerSocketManager {
@@ -13,34 +12,29 @@ public class BluetoothServerSocketManager {
 
     private final BluetoothAdapter bluetoothAdapter;
     
-    private HashMap<String, BluetoothServerSocket> bluetoothServerSockets;
+    private BluetoothServerSocket serverSocket;
 
     public BluetoothServerSocketManager() {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        this.bluetoothServerSockets = new HashMap<>();
     }
 
-    public void createServerSocket(String name, String uuidString, boolean secure) 
+    public void createServerSocket(String uuidString, boolean secure) 
         throws IOException {
 
         UUID uuid = UUID.fromString(uuidString);
-        BluetoothServerSocket serverSocket;
 
         if (secure) {
             serverSocket =  bluetoothAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
         } else {
             serverSocket =  bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(name, uuid);
         }
-
-        bluetoothServerSockets.put(name, serverSocket);
     }
 
-    public BluetoothSocket accept(String name) throws IOException {
-        return bluetoothServerSockets.get(name).accept();
+    public BluetoothSocket accept() throws IOException {
+        return serverSocket.accept();
     }
 
-    public void close(String name) throws IOException {
-        bluetoothServerSockets.get(name).close();
-        bluetoothServerSockets.remove(name);
+    public void close() throws IOException {
+        serverSocket.close();
     }
 }

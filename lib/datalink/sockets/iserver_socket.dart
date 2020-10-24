@@ -1,5 +1,5 @@
 abstract class IServerSocket {
   void close();
 
-  void accept();
+  void accept(Function onEvent);
 }
