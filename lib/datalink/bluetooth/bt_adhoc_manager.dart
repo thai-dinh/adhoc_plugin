@@ -24,13 +24,16 @@ class BluetoothAdHocManager {
 
   void disable() => Utils.invokeMethod(channel, 'disable');
 
-  Future<String> getAdapterName() async 
-    => await Utils.invokeMethod(channel, 'getName');
+  Future<String> getAdapterName() async {
+    return await Utils.invokeMethod(channel, 'getName');
+  }
 
-  Future<bool> updateDeviceName(String name) async 
-    => await Utils.invokeMethod(channel, 'updateDeviceName', <String, dynamic> {
-      'name': name
-    });
+  Future<bool> updateDeviceName(String name) async {
+    return await Utils.invokeMethod(channel, 'updateDeviceName', 
+      <String, dynamic> {
+        'name': name
+      });
+  }
 
   void resetDeviceName() {
     if (_initialName != null)
@@ -73,8 +76,9 @@ class BluetoothAdHocManager {
     return _pairedDevices;
   }
 
-  void unpairDevice(String macAddress)
-    => Utils.invokeMethod(channel, 'unpairDevice', <String, dynamic> { 
+  void unpairDevice(String macAddress) {
+    Utils.invokeMethod(channel, 'unpairDevice', <String, dynamic> { 
       'address': macAddress,
     });
+  }
 }

@@ -9,6 +9,7 @@ import 'package:AdHocLibrary/datalink/sockets/client_socket_bt.dart';
 
 class BluetoothClient extends ServiceClient {
   final bool _secure;
+
   AdHocBluetoothSocket _socket;
   BluetoothAdHocDevice _device;
 
@@ -26,14 +27,17 @@ class BluetoothClient extends ServiceClient {
 
       state = result ? Service.STATE_CONNECTED : Service.STATE_NONE;
 
-      throw new NoConnectionException();
+      if (!result) {
+        String error = 'Connection to ${_device.deviceName} (${_device.uuid})';
+        throw new NoConnectionException(error);
+      }
     }
   }
 
   void _connect(int attempts, Duration delay) async {
     try {
       _connectionAttempt();
-    } on Exception {
+    } on NoConnectionException {
       if (attempts > 0) {
         await Future.delayed(delay);
         return _connect(attempts - 1, delay * 2);
