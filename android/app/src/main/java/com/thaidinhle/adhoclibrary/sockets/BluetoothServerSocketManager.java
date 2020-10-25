@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 public class BluetoothServerSocketManager {
-    private static final String TAG = "[AdHoc][Blue.ServerSocket.Manager]";
-
     private final BluetoothAdapter bluetoothAdapter;
     
     private BluetoothServerSocket serverSocket;
@@ -18,9 +16,7 @@ public class BluetoothServerSocketManager {
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public void createServerSocket(String uuidString, boolean secure) 
-        throws IOException {
-
+    public void createServerSocket(String name, String uuidString, boolean secure) throws IOException {
         UUID uuid = UUID.fromString(uuidString);
 
         if (secure) {

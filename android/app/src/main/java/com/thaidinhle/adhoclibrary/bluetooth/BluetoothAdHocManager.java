@@ -8,9 +8,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
@@ -27,9 +31,13 @@ import java.util.Set;
  * retrieving paired devices, and many more. It also defines the StreamHandler
  * of the EventChannel.
  */
-public class BluetoothAdHocManager implements MethodCallHandler {
+public class BluetoothAdHocManager {
     private static final String TAG = "[AdHoc][Blue.Manager]";
+    private static final String CHANNEL = "ad.hoc.lib.dev/bt.channel";
+    private static final String STREAM = "ad.hoc.lib.dev/bt.stream";
 
+    private final MethodChannel bluetoothChannel;
+    private final EventChannel bluetoothStream;
     private final boolean verbose;
     private final BluetoothAdapter bluetoothAdapter;
     private final List<Map<String, Object>> discoveredDevices;
@@ -47,7 +55,7 @@ public class BluetoothAdHocManager implements MethodCallHandler {
      * @param context   Context object which gives global information about an 
      *                  application environment.
      */
-    BluetoothAdHocManager(Boolean verbose, Context context) {
+    BluetoothAdHocManager(Boolean verbose, Context context, FlutterEngine flutterEngine) {
         this.verbose = verbose;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.initialName = bluetoothAdapter.getName();
@@ -55,75 +63,79 @@ public class BluetoothAdHocManager implements MethodCallHandler {
         this.discoveredDevices = new ArrayList<>();
         this.devicesFound = new ArrayList<>();
         this.registeredDiscovery = false;
+
+        BinaryMessenger messenger = flutterEngine.getDartExecutor().getBinaryMessenger();
+        this.bluetoothChannel = new MethodChannel(messenger, CHANNEL);
+        this.bluetoothChannel.setMethodCallHandler(methodCallHandler());
+
+        this.bluetoothStream = new EventChannel(messenger, STREAM);
+        this.bluetoothStream.setStreamHandler(streamHandler());
     }
 
-    @Override
-    public void onMethodCall(MethodCall call, Result result) {
-        switch (call.method) {
-            case "enable":
-                bluetoothAdapter.enable();
-                break;
-            case "disable":
-                bluetoothAdapter.disable();
-                break;
-            case "isEnabled":
-                result.success(bluetoothAdapter.isEnabled());
-                break;
+    private MethodCallHandler methodCallHandler() {
+        return new MethodCallHandler() {
+            @Override
+            public void onMethodCall(MethodCall call, Result result) {
+                switch (call.method) {
+                    case "enable":
+                        bluetoothAdapter.enable();
+                        break;
+                    case "disable":
+                        bluetoothAdapter.disable();
+                        break;
+                    case "isEnabled":
+                        result.success(bluetoothAdapter.isEnabled());
+                        break;
 
-            case "getName":
-                result.success(bluetoothAdapter.getName());
-                break;
-            case "updateDeviceName":
-                result.success(bluetoothAdapter.setName(call.argument("name")));
-                break;
-            case "resetDeviceName":
-                if (initialName != null)
-                    bluetoothAdapter.setName(initialName);
-                break;
+                    case "getName":
+                        result.success(bluetoothAdapter.getName());
+                        break;
+                    case "updateDeviceName":
+                        result.success(bluetoothAdapter.setName(call.argument("name")));
+                        break;
+                    case "resetDeviceName":
+                        if (initialName != null)
+                            bluetoothAdapter.setName(initialName);
+                        break;
 
-            case "enableDiscovery":
-                enableDiscovery(call.argument("duration"));
-                break;
-            case "startDiscovery":
-                discovery();
-                break;
+                    case "enableDiscovery":
+                        enableDiscovery(call.argument("duration"));
+                        break;
+                    case "startDiscovery":
+                        discovery();
+                        break;
 
-            case "getPairedDevices":
-                result.success(getPairedDevices());
-                break;
-            case "unpairDevice":
-                try { 
-                    unpairDevice(call.argument("address"));
-                } catch(Exception e) {
-                    Log.d(TAG, e.getMessage());
-                }
-                break;
+                    case "getPairedDevices":
+                        result.success(getPairedDevices());
+                        break;
+                    case "unpairDevice":
+                        try { 
+                            unpairDevice(call.argument("address"));
+                        } catch(Exception e) {
+                            Log.d(TAG, e.getMessage());
+                        }
+                        break;
 
-            default:
-                result.notImplemented();
-        }
-    }
-
-    /**
-     * Method allowing to set the StreamHandler of an EventChannel.
-     * 
-     * @param eventChannel  Named channel for communicating with the Flutter 
-     *                      application using asynchronous event streams.
-     */
-    public void setStreamHandler(EventChannel eventChannel) {
-        eventChannel.setStreamHandler(
-            new EventChannel.StreamHandler() {
-                @Override
-                public void onListen(Object arguments, EventSink events) {
-                    eventSink = events;
-                }
-
-                @Override
-                public void onCancel(Object arguments) {
-                    unregisterReceiver();
+                    default:
+                        result.notImplemented();
+                        break;
                 }
             }
-        );
+        };
+    }
+
+    private StreamHandler streamHandler() {
+        return new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+                eventSink = events;
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+                unregisterReceiver();
+            }
+        };
     }
 
     /**

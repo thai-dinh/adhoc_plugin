@@ -24,15 +24,15 @@ public class BluetoothSocketManager {
         this.clientSocketManager = new BluetoothClientSocketManager();
         this.serverSocketManager = new BluetoothServerSocketManager();
 
-        BinaryMessenger binaryMessenger = flutterEngine.getDartExecutor().getBinaryMessenger();
-        this.clientSockets = new MethodChannel(binaryMessenger, CLIENTS);
+        BinaryMessenger messenger = flutterEngine.getDartExecutor().getBinaryMessenger();
+        this.clientSockets = new MethodChannel(messenger, CLIENTS);
         this.clientSockets.setMethodCallHandler(
             (call, result) -> {
                 setClientsMethodCall(call, result);
             }
         );
 
-        this.serverSockets = new MethodChannel(binaryMessenger, SERVERS);
+        this.serverSockets = new MethodChannel(messenger, SERVERS);
         this.serverSockets.setMethodCallHandler(
             (call, result) -> {
                 setServersMethodCall(call, result);
@@ -43,33 +43,33 @@ public class BluetoothSocketManager {
     private void setClientsMethodCall(MethodCall call, Result result) {
         final String macAddress = call.argument("address");
 
+        int message;
+
         try {
             switch (call.method) {
                 case "connect":
                     final boolean secure = call.argument("secure");
                     final String uuidString = call.argument("uuidString");
-                    final boolean value = clientSocketManager.connect(macAddress, secure, uuidString);
-                    result.success(value);
+                    clientSocketManager.connect(macAddress, secure, uuidString);
                     break;
                 case "close":
                     clientSocketManager.close(macAddress);
                     break;
-                case "listen": // %TODO: adjust message format
-                    Object msg = clientSocketManager.receiveMessage(macAddress);
-                    result.success(msg);
+                case "listen":
+                    message = clientSocketManager.receiveMessage(macAddress);
+                    result.success(message);
                     break;
                 case "write":
-                    // Object msg = call.argument("message"); // %TODO: adjust message format
-                    clientSocketManager.sendMessage(macAddress, null);
+                    message = call.argument("message");
+                    clientSocketManager.sendMessage(macAddress, message);
                     break;
     
                 default:
+                    result.notImplemented();
                     break;
             }
-        } catch (IOException e) {
-            //TODO: handle exception
-        } catch (NoConnectionException e) {
-            //TODO: handle exception
+        } catch (IOException | NoConnectionException error) {
+            result.success(error.toString());
         }
     }
 
@@ -77,9 +77,10 @@ public class BluetoothSocketManager {
         try {
             switch (call.method) {
                 case "create":
+                    final String name = call.argument("name");
                     final String uuidString = call.argument("uuidString");
                     final boolean secure = call.argument("secure");
-                    serverSocketManager.createServerSocket(uuidString, secure);
+                    serverSocketManager.createServerSocket(name, uuidString, secure);
                     break;
                 case "accept":
                     BluetoothSocket socket = serverSocketManager.accept();
@@ -94,7 +95,7 @@ public class BluetoothSocketManager {
                     break;
             }
         } catch (IOException e) {
-            //TODO: handle exception
+            result.success(e.toString());
         }
     }
 }

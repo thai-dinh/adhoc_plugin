@@ -8,10 +8,8 @@ import 'package:AdHocLibrary/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
-  static const channel = 
-    const MethodChannel('ad.hoc.library.dev/bluetooth.channel');
-  static const stream = 
-    const EventChannel('ad.hoc.library.dev/bluetooth.stream');
+  static const channel = const MethodChannel('ad.hoc.lib.dev/bt.channel');
+  static const stream = const EventChannel('ad.hoc.lib.dev/bt.stream');
 
   String _initialName;
 
