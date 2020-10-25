@@ -32,11 +32,8 @@ public class BluetoothClientSocketManager {
         bluetoothSockets.put(macAddress, socket);
     }
 
-    public boolean connect(String macAddress, boolean secure, String uuidString)
-        throws NoConnectionException {
-
-        BluetoothDevice remoteDevice = 
-            bluetoothAdapter.getRemoteDevice(macAddress);
+    public boolean connect(String macAddress, boolean secure, String uuidString) {
+        BluetoothDevice remoteDevice = bluetoothAdapter.getRemoteDevice(macAddress);
         BluetoothSocket socket;
         UUID uuid = UUID.fromString(uuidString);
 
@@ -50,7 +47,7 @@ public class BluetoothClientSocketManager {
             timeout(socket);
             socket.connect();
         } catch (IOException e) {
-            throw new NoConnectionException("Unable to connect to " + uuidString);
+            return false;
         }
 
         bluetoothSockets.put(macAddress, socket);
@@ -58,7 +55,7 @@ public class BluetoothClientSocketManager {
         return true;
     }
 
-    public void close(String macAddress) throws IOException{
+    public void close(String macAddress) throws IOException {
         bluetoothSockets.get(macAddress).getInputStream().close();
         bluetoothSockets.get(macAddress).getOutputStream().close();
         bluetoothSockets.get(macAddress).close();

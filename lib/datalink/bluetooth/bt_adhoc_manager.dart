@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:AdHocLibrary/datalink/bluetooth/bt_adhoc_device.dart';
-import 'package:AdHocLibrary/datalink/exceptions/bt_bad_duration.dart';
+import 'package:AdHocLibrary/datalink/exceptions/bad_duration_exception.dart';
 import 'package:AdHocLibrary/datalink/utils/utils.dart';
 
 import 'package:flutter/services.dart';
@@ -44,7 +44,7 @@ class BluetoothAdHocManager {
 
     if (duration < 0 || duration > 3600) {
       String msg = 'Duration must be between [0; 3600] second(s).';
-      throw new BluetoothBadDuration(msg);
+      throw new BadDurationException(msg);
     }
 
     if (_isEnabled)
