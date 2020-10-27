@@ -39,9 +39,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   HashMap<String, BluetoothAdHocDevice> devices;
 
-  // AdHocBluetoothSocket socket = AdHocBluetoothSocket("C4:93:D9:61:07:5E", false); // Galaxy
-  // AdHocBluetoothSocket socket = AdHocBluetoothSocket("9C:D3:5B:B4:29:C8", false); // Device A
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
