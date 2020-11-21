@@ -15,7 +15,7 @@ class AdHocBluetoothSocket implements ISocket {
   String get remoteAddress => _address;
 
   Future<bool> connect(bool secure, String uuidString) async {
-    return Utils.invokeMethod(_channel, 'connect', <String, dynamic> { 
+    return invokeMethod(_channel, 'connect', <String, dynamic> { 
       'address' : this._address,
       'secure' : secure,
       'uuidString' : uuidString,
@@ -23,25 +23,25 @@ class AdHocBluetoothSocket implements ISocket {
   }
 
   Future<bool> isConnected() async {
-    return Utils.invokeMethod(_channel, 'isConnected', <String, dynamic> { 
+    return invokeMethod(_channel, 'isConnected', <String, dynamic> { 
       'address' : this._address,
     });
   }
 
   void close() {
-    Utils.invokeMethod(_channel, 'close', <String, dynamic> { 
+    invokeMethod(_channel, 'close', <String, dynamic> { 
       'address' : this._address,
     });
   }
 
   void listen(Function onData) async {
-    Utils.invokeMethod(_channel, 'listen', <String, dynamic> { 
+    invokeMethod(_channel, 'listen', <String, dynamic> { 
       'address' : this._address,
     }).then((result) => onData(result));
   }
 
   void write(MessageAdHoc messageAdHoc) {
-    Utils.invokeMethod(_channel, 'write', <String, dynamic> { 
+    invokeMethod(_channel, 'write', <String, dynamic> { 
       'address' : this._address,
       'message' : messageAdHoc,
     });

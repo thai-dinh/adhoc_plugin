@@ -2,17 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-class Utils {
-  static Future<dynamic> invokeMethod(MethodChannel channel, String method, 
-                                     [dynamic arguments]) async {
-    dynamic _value;
+const String UUID = 'e0917680-d427-11e4-8830-';
 
-    try {
-      _value = await channel.invokeMethod(method, arguments);
-    } on PlatformException catch (error) {
-      print(error.message);
-    }
+Future<dynamic> invokeMethod(MethodChannel channel, String method, 
+                             [dynamic arguments]) async
+{
+  dynamic _value;
 
-    return _value;
+  try {
+    _value = await channel.invokeMethod(method, arguments);
+  } on PlatformException catch (error) {
+    print(error.message);
   }
+
+  return _value;
 }

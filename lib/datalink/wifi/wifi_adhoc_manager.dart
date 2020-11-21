@@ -10,7 +10,7 @@ class WifiAdHocManager {
 
   String get adapterName => _adapterName;
 
-  void enable() => Utils.invokeMethod(channel, 'enable');
+  void enable() => invokeMethod(channel, 'enable');
 
-  void disable() => Utils.invokeMethod(channel, 'disable');
+  void disable() => invokeMethod(channel, 'disable');
 }
