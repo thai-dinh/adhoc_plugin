@@ -1,3 +1,6 @@
+group 'com.montefiore.thaidinhle.adhoclibrary'
+version '1.0'
+
 buildscript {
     repositories {
         google()
@@ -5,25 +8,26 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'com.android.tools.build:gradle:3.5.0'
     }
 }
 
-allprojects {
+rootProject.allprojects {
     repositories {
         google()
         jcenter()
     }
 }
 
-rootProject.buildDir = '../build'
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
-}
+apply plugin: 'com.android.library'
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+        minSdkVersion 16
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
 }

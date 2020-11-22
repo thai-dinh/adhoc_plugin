@@ -1,0 +1,1 @@
+# AdHocLibrary (Android library)
