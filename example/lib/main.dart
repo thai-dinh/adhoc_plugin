@@ -12,7 +12,7 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  // BluetoothAdHocManager _manager = BluetoothAdHocManager();
+  BluetoothAdHocManager _blueManager = BluetoothAdHocManager();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,15 @@ class _AppState extends State<ExampleApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Under construction\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              RaisedButton(
+                child: Text('Enable bluetooth'),
+                onPressed: _blueManager.enable,
+              ),
+            ],
+          ),
         ),
       ),
     );

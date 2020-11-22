@@ -8,12 +8,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,8 +28,6 @@ import java.util.Set;
 public class BluetoothAdHocManager {
     private static final String TAG = "[AdHoc][Blue.Manager]";
 
-    private final MethodChannel bluetoothChannel;
-    private final EventChannel bluetoothStream;
     private final boolean verbose;
     private final BluetoothAdapter bluetoothAdapter;
     private final List<Map<String, Object>> discoveredDevices;
@@ -51,9 +45,7 @@ public class BluetoothAdHocManager {
      * @param context   Context object which gives global information about an 
      *                  application environment.
      */
-    public BluetoothAdHocManager(Boolean verbose, Context context, MethodChannel mChannel,
-                                 EventChannel eChannel)
-    {
+    public BluetoothAdHocManager(Boolean verbose, Context context) {
         this.verbose = verbose;
         this.context = context;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -61,82 +53,65 @@ public class BluetoothAdHocManager {
         this.discoveredDevices = new ArrayList<>();
         this.devicesFound = new ArrayList<>();
         this.registeredDiscovery = false;
-
-        this.bluetoothChannel = mChannel;
-        this.bluetoothStream = eChannel;
-
-        this.bluetoothChannel.setMethodCallHandler(methodCallHandler());
-        this.bluetoothStream.setStreamHandler(streamHandler());
     }
 
-    private MethodCallHandler methodCallHandler() {
-        return new MethodCallHandler() {
-            @Override
-            public void onMethodCall(MethodCall call, Result result) {
-                switch (call.method) {
-                    case "enable":
-                        bluetoothAdapter.enable();
-                        break;
-                    case "disable":
-                        bluetoothAdapter.disable();
-                        break;
-                    case "isEnabled":
-                        result.success(bluetoothAdapter.isEnabled());
-                        break;
+    public void onMethodCall(MethodCall call, Result result) {
+        switch (call.method) {
+            case "enable":
+                bluetoothAdapter.enable();
+                break;
+            case "disable":
+                bluetoothAdapter.disable();
+                break;
+            case "isEnabled":
+                result.success(bluetoothAdapter.isEnabled());
+                break;
 
-                    case "getName":
-                        result.success(bluetoothAdapter.getName());
-                        break;
-                    case "updateDeviceName":
-                        String name = call.argument("name");
-                        result.success(bluetoothAdapter.setName(name));
-                        break;
-                    case "resetDeviceName":
-                        if (initialName != null)
-                            bluetoothAdapter.setName(initialName);
-                        break;
+            case "getName":
+                result.success(bluetoothAdapter.getName());
+                break;
+            case "updateDeviceName":
+                String name = call.argument("name");
+                result.success(bluetoothAdapter.setName(name));
+                break;
+            case "resetDeviceName":
+                if (initialName != null)
+                    bluetoothAdapter.setName(initialName);
+                break;
 
-                    case "enableDiscovery":
-                        int duration = call.argument("duration");
-                        enableDiscovery(duration);
-                        break;
-                    case "startDiscovery":
-                        discovery();
-                        break;
+            case "enableDiscovery":
+                int duration = call.argument("duration");
+                enableDiscovery(duration);
+                break;
+            case "startDiscovery":
+                discovery();
+                break;
 
-                    case "getPairedDevices":
-                        result.success(getPairedDevices());
-                        break;
-                    case "unpairDevice":
-                        String address = call.argument("address");
+            case "getPairedDevices":
+                result.success(getPairedDevices());
+                break;
+            case "unpairDevice":
+                String address = call.argument("address");
 
-                        try { // %TODO: Report error
-                            unpairDevice(address);
-                        } catch(Exception e) {
-                            Log.d(TAG, e.getMessage());
-                        }
-                        break;
-
-                    default:
-                        result.notImplemented();
-                        break;
+                try { // %TODO: Report error
+                    unpairDevice(address);
+                } catch(Exception e) {
+                    Log.d(TAG, e.getMessage());
                 }
-            }
-        };
+                break;
+
+            default:
+                result.notImplemented();
+                break;
+        }
     }
 
-    private StreamHandler streamHandler() {
-        return new StreamHandler() {
-            @Override
-            public void onListen(Object arguments, EventSink events) {
-                eventSink = events;
-            }
+    public void onListen(EventSink events) {
+        eventSink = events;
+    }
 
-            @Override
-            public void onCancel(Object arguments) {
-                unregisterReceiver();
-            }
-        };
+    public void onCancel() {
+        unregisterReceiver();
     }
 
     /**
@@ -278,10 +253,5 @@ public class BluetoothAdHocManager {
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
         Method method = device.getClass().getMethod("removeBond", (Class[]) null);
         method.invoke(device, (Object[]) null);
-    }
-
-    public void setMethodCallHandlerToNull() {
-        this.bluetoothChannel.setMethodCallHandler(null);
-        this.bluetoothStream.setStreamHandler(null);
     }
 }

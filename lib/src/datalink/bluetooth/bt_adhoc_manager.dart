@@ -8,26 +8,27 @@ import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothAdHocManager {
-  static const channel = const MethodChannel('ad.hoc.lib/blue.manager.channel');
-  static const stream = const EventChannel('ad.hoc.lib/blue.manager.stream');
+  static const _channel = const MethodChannel('ad.hoc.lib/blue.manager.channel');
+  static const _stream = const EventChannel('ad.hoc.lib/blue.manager.stream');
 
   String _initialName;
 
   /// Constructor
   BluetoothAdHocManager() {
-    getAdapterName().then((value) => _initialName = value);
+    // getAdapterName().then((value) => _initialName = value);
+    print("Herer");
   }
 
-  void enable() => invokeMethod(channel, 'enable');
+  void enable() => invokeMethod(_channel, 'enable');
 
-  void disable() => invokeMethod(channel, 'disable');
+  void disable() => invokeMethod(_channel, 'disable');
 
   Future<String> getAdapterName() async {
-    return await invokeMethod(channel, 'getName');
+    return await invokeMethod(_channel, 'getName');
   }
 
   Future<bool> updateDeviceName(String name) async {
-    return await invokeMethod(channel, 'updateDeviceName', 
+    return await invokeMethod(_channel, 'updateDeviceName', 
       <String, dynamic> {
         'name': name
       });
@@ -35,14 +36,14 @@ class BluetoothAdHocManager {
 
   void resetDeviceName() {
     if (_initialName != null) {
-      invokeMethod(channel, 'resetDeviceName', <String, dynamic> {
+      invokeMethod(_channel, 'resetDeviceName', <String, dynamic> {
         'name': _initialName
       });
     }
   }
 
   Future<void> enableDiscovery(int duration) async {
-    bool _isEnabled = await invokeMethod(channel, 'isEnabled');
+    bool _isEnabled = await invokeMethod(_channel, 'isEnabled');
 
     if (duration < 0 || duration > 3600) {
       String msg = 'Duration must be between [0; 3600] second(s).';
@@ -50,22 +51,22 @@ class BluetoothAdHocManager {
     }
 
     if (_isEnabled) {
-      invokeMethod(channel, 'enableDiscovery', <String, dynamic> {
+      invokeMethod(_channel, 'enableDiscovery', <String, dynamic> {
         'duration': duration
       });
     }
   }
 
   void discovery() {
-    stream.receiveBroadcastStream().listen((event) { print(event); });
+    _stream.receiveBroadcastStream().listen((event) { print(event); });
 
-    invokeMethod(channel, 'startDiscovery');
+    invokeMethod(_channel, 'startDiscovery');
   }
 
   Future<HashMap<String, BluetoothAdHocDevice>> getPairedDevices() async {
     HashMap<String, BluetoothAdHocDevice> _pairedDevices = 
       HashMap<String, BluetoothAdHocDevice>();
-    List<dynamic> devices = await invokeMethod(channel, 'getPairedDevices');
+    List<dynamic> devices = await invokeMethod(_channel, 'getPairedDevices');
 
     devices.forEach((element) { 
       BluetoothAdHocDevice device = BluetoothAdHocDevice.map(element);
@@ -76,7 +77,7 @@ class BluetoothAdHocManager {
   }
 
   void unpairDevice(String macAddress) {
-    invokeMethod(channel, 'unpairDevice', <String, dynamic> { 
+    invokeMethod(_channel, 'unpairDevice', <String, dynamic> { 
       'address': macAddress,
     });
   }
