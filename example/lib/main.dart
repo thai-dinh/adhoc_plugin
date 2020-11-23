@@ -1,5 +1,3 @@
-import 'package:adhoclibrary/adhoclibrary.dart';
-
 import 'package:flutter/material.dart';
 
 void main() {
@@ -12,8 +10,6 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  BluetoothAdHocManager _blueManager = BluetoothAdHocManager();
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,10 +21,7 @@ class _AppState extends State<ExampleApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              RaisedButton(
-                child: Text('Enable bluetooth'),
-                onPressed: _blueManager.enable,
-              ),
+              Text('Under construction'),
             ],
           ),
         ),

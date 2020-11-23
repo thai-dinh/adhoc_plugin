@@ -21,4 +21,4 @@ flutter:
     platforms:
       android:
         package: com.montefiore.thaidinhle.adhoclibrary
-        pluginClass: AdhoclibraryPlugin
+        pluginClass: AdhocPlugin
