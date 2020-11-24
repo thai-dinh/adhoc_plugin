@@ -11,6 +11,7 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
+  Central _central = Central();
   Peripheral _peripheral = Peripheral();
 
   @override
@@ -31,6 +32,22 @@ class _AppState extends State<ExampleApp> {
               RaisedButton(
                 child: Text('Stop advertising'),
                 onPressed: _peripheral.stopAdvertise,
+              ),
+              RaisedButton(
+                child: Text('Start scan'),
+                onPressed: _central.startScan,
+              ),
+              RaisedButton(
+                child: Text('Stop scan'),
+                onPressed: _central.stopScan,
+              ),
+              RaisedButton(
+                child: Text('Connect'),
+                onPressed: _central.connect,
+              ),
+              RaisedButton(
+                child: Text('Discover services'),
+                onPressed: _central.discoverServices,
               ),
             ],
           ),

@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_reactive_ble: ^2.7.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
