@@ -1,3 +1,4 @@
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,6 +11,8 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
+  Peripheral _peripheral = Peripheral();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,7 +24,14 @@ class _AppState extends State<ExampleApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text('Under construction'),
+              RaisedButton(
+                child: Text('Start advertising'),
+                onPressed: _peripheral.startAdvertise,
+              ),
+              RaisedButton(
+                child: Text('Stop advertising'),
+                onPressed: _peripheral.stopAdvertise,
+              ),
             ],
           ),
         ),

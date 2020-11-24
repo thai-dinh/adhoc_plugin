@@ -22,7 +22,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
     Log.d(TAG, "onAttachedToEngine");
 
-    bleManager = new BluetoothLowEnergyManager();
+    bleManager = new BluetoothLowEnergyManager(binding.getApplicationContext());
 
     mChannel = new MethodChannel(binding.getBinaryMessenger(), CHANNEL);
     mChannel.setMethodCallHandler(this);
