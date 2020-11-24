@@ -26,35 +26,41 @@ public class BluetoothLowEnergyManager {
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
         this.context = context;
         this.gattServer = new GattServer(bluetoothManager, context);
+        this.gattServer.openGattServer();
     }
 
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure (int errorCode) {
-            super.onStartFailure(errorCode);
             Log.d(TAG, "onStartFailure(): " + Integer.toString(errorCode));
+            super.onStartFailure(errorCode);
         }
 
         @Override
         public void onStartSuccess (AdvertiseSettings settingsInEffect) {
-            super.onStartSuccess(settingsInEffect);
             Log.d(TAG, "onStartSuccess()");
+            super.onStartSuccess(settingsInEffect);
         }
     };
 
     public void startAdvertise() {
-        AdvertiseData.Builder data = new AdvertiseData.Builder();
-        data.setIncludeDeviceName(true);
+        Log.d(TAG, "startAdvertise()");
 
-        AdvertiseSettings.Builder settings = new AdvertiseSettings.Builder();
-        settings.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER);
-        settings.setConnectable(true); // Allow remote connections to the device
-        settings.setTimeout(0); // 0 = not time limit
+        AdvertiseData data = new AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .build();
 
-        bluetoothLeAdvertiser.startAdvertising(settings.build(), data.build(), advertiseCallback);
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+            .setConnectable(true)
+            .setTimeout(0) // 0 = no time limit
+            .build();
+
+        bluetoothLeAdvertiser.startAdvertising(settings, data, advertiseCallback);
     }
 
     public void stopAdvertise() {
+        Log.d(TAG, "stopAdvertise()");
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
     }
 }

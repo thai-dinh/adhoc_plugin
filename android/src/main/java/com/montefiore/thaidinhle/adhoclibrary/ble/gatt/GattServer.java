@@ -12,9 +12,9 @@ import android.content.Context;
 import java.util.UUID;
 
 public class GattServer {
-    private static final String SERVICE_UUID = "00000000-0000-0000-0000-000000000001";
-    private static final String CHARACTERISTIC_UUID = "00000000-0000-0000-0000-000000000002";
-    private static final String DESCRIPTOR_UUID = "00000000-0000-0000-0000-000000000003";
+    private static final String SERVICE_UUID = "0000AD00-0000-0000-0000-000000000000";
+    private static final String CHARACTERISTIC_UUID = "0000AD01-0000-0000-0000-000000000002";
+    private static final String DESCRIPTOR_UUID = "0000D301-0000-0000-0000-000000000003";
 
     private final BluetoothGattServer gattServer;
 
@@ -64,15 +64,14 @@ public class GattServer {
     };
 
     public void openGattServer() {
-        UUID serviceUuid = UUID.fromString(SERVICE_UUID);
-        UUID characteristicUuid = UUID.fromString(CHARACTERISTIC_UUID);
-        UUID descriptorUuid = UUID.fromString(DESCRIPTOR_UUID);
-
+        byte[] value = {1, 2, 3, 4, 5};
         BluetoothGattDescriptor descriptor =
-            new BluetoothGattDescriptor(descriptorUuid, BluetoothGattCharacteristic.PERMISSION_WRITE);
+            new BluetoothGattDescriptor(UUID.fromString(DESCRIPTOR_UUID),
+                                        BluetoothGattCharacteristic.PERMISSION_WRITE);
+        descriptor.setValue(value);
 
         BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(characteristicUuid,
+            new BluetoothGattCharacteristic(UUID.fromString(CHARACTERISTIC_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
                                             BluetoothGattCharacteristic.PROPERTY_WRITE |
                                             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
@@ -81,7 +80,8 @@ public class GattServer {
         characteristic.addDescriptor(descriptor);
         
         BluetoothGattService service =
-            new BluetoothGattService(serviceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+            new BluetoothGattService(UUID.fromString(SERVICE_UUID),
+                                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
         service.addCharacteristic(characteristic);
 
         gattServer.addService(service);
