@@ -46,6 +46,7 @@ public class GattServer {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+            characteristic.setValue(value);
         }
 
         @Override

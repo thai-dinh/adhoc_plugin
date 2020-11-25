@@ -93,12 +93,15 @@ class Central {
         if (myService != null && myCharacteristic != null) {
           print('WRITE');
           final characteristic = QualifiedCharacteristic(serviceId: myService, characteristicId: myCharacteristic, deviceId: id);
-          _client.writeCharacteristicWithoutResponse(characteristic, value: [0x04]);
+          _client.writeCharacteristicWithResponse(characteristic, value: [42, 24, 22, 44]);
+
+          Future.delayed(Duration(seconds: 5));
+
           print('READ');
           final characteristicr = QualifiedCharacteristic(serviceId: myService, characteristicId: myCharacteristic, deviceId: id);
           final response = await _client.readCharacteristic(characteristicr);
           response.forEach((element) { print(element); });
-          print(response.length);
+          print('Lenght' + response.length.toString());
         }
       });
     });
