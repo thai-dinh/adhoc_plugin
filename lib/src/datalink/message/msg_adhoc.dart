@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/message/msg_header.dart';
+import 'package:adhoclibrary/src/datalink/message/msg_header.dart';
 
 class MessageAdHoc {
   Header _header;
@@ -13,4 +13,12 @@ class MessageAdHoc {
   Header get header => _header;
 
   Object get pdu => _pdu;
+
+  @override
+  String toString() {
+    return 'MessageAdHoc{' + 
+              'header=' + _header.toString() +
+              ', pdu=' + _pdu.toString() + 
+            '}';
+  }
 }

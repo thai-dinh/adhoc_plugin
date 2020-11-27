@@ -18,4 +18,14 @@ class Header {
   String get name => _name;
 
   String get address => _address;
+
+  @override
+  String toString() {
+    return 'Header{' +
+              '_messageType=' + _messageType.toString() +
+              ', label=' + _label +
+              ', name=' + _name +
+              ', address=' + _address +
+            '}';
+  }
 }

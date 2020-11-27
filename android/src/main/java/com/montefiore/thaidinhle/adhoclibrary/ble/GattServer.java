@@ -18,7 +18,6 @@ public class GattServer {
 
     public static final String SERVICE_UUID = "00000001-0000-1000-8000-00805f9b34fb";
     public static final String CHARACTERISTIC_UUID = "00000002-0000-1000-8000-00805f9b34fb";
-    public static final String DESCRIPTOR_UUID = "00000003-0000-1000-8000-00805f9b34fb";
 
     private final BluetoothGattServer gattServer;
 
@@ -78,10 +77,6 @@ public class GattServer {
     };
 
     public void openGattServer() {
-        BluetoothGattDescriptor descriptor =
-            new BluetoothGattDescriptor(UUID.fromString(DESCRIPTOR_UUID),
-                                        BluetoothGattDescriptor.PERMISSION_WRITE);
-
         BluetoothGattCharacteristic characteristic =
             new BluetoothGattCharacteristic(UUID.fromString(CHARACTERISTIC_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
@@ -89,7 +84,6 @@ public class GattServer {
                                             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                                             BluetoothGattCharacteristic.PERMISSION_READ |
                                             BluetoothGattCharacteristic.PERMISSION_WRITE);
-        characteristic.addDescriptor(descriptor);
 
         BluetoothGattService service =
             new BluetoothGattService(UUID.fromString(SERVICE_UUID),

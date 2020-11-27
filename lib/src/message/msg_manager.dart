@@ -1,3 +1,0 @@
-class MessageManager {
-  MessageManager();
-}
