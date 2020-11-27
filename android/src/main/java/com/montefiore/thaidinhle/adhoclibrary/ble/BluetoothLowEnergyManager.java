@@ -10,9 +10,9 @@ import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-import java.util.UUID;
+import com.montefiore.thaidinhle.adhoclibrary.ble.GattServer;
 
-import com.montefiore.thaidinhle.adhoclibrary.ble.gatt.GattServer;
+import java.util.UUID;
 
 public class BluetoothLowEnergyManager {
     private static final String TAG = "[AdHoc.Plugin][BLE.Manager]";

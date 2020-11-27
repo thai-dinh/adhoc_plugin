@@ -11,8 +11,8 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String TAG = "[Adhoc.Plugin][Plugin]";
+public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
+  private static final String TAG = "[AdHoc.Plugin][Plugin]";
   private static final String CHANNEL = "ad.hoc.lib/blue.manager.channel";
 
   private BluetoothLowEnergyManager bleManager;

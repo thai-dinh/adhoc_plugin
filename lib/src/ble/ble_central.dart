@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/utils.dart';
+import 'package:adhoclibrary/src/util/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class Central {
@@ -93,7 +93,7 @@ class Central {
         if (myService != null && myCharacteristic != null) {
           print('WRITE');
           final characteristic = QualifiedCharacteristic(serviceId: myService, characteristicId: myCharacteristic, deviceId: id);
-          _client.writeCharacteristicWithResponse(characteristic, value: [42, 24, 22, 44]);
+          _client.writeCharacteristicWithResponse(characteristic, value: [1, 24, 22, 44, 1, 24, 22, 44, 1, 24, 22, 44, 1, 24, 22, 44, 1, 24, 22, 44, 45]);
 
           Future.delayed(Duration(seconds: 5));
 

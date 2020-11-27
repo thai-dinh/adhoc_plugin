@@ -1,4 +1,4 @@
-package com.montefiore.thaidinhle.adhoclibrary.ble.gatt;
+package com.montefiore.thaidinhle.adhoclibrary.ble;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -14,7 +14,7 @@ import android.util.Log;
 import java.util.UUID;
 
 public class GattServer {
-    private static final String TAG = "[Adhoc.Plugin][Gatt.Server]";
+    private static final String TAG = "[AdHoc.Plugin][Gatt.Server]";
 
     public static final String SERVICE_UUID = "00000001-0000-1000-8000-00805f9b34fb";
     public static final String CHARACTERISTIC_UUID = "00000002-0000-1000-8000-00805f9b34fb";
