@@ -2,14 +2,13 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
 
 import 'package:flutter/services.dart';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
-class BluetoothLowEnergyDevice extends AdHocDevice {
+class BleManager {
   static const String _channelName = 'ad.hoc.lib/blue.manager.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
@@ -18,14 +17,18 @@ class BluetoothLowEnergyDevice extends AdHocDevice {
   StreamSubscription<DiscoveredDevice> _subscription;
   Uuid _serviceUuid;
   Uuid _characteristicUuid;
+  int mtu;
 
-  BluetoothLowEnergyDevice() {
+  BleManager() {
     _client = FlutterReactiveBle();
     _discovered = HashMap();
-    _serviceUuid = Uuid.parse(BluetoothLowEnergyUtil.SERVICE_UUID);
-    _characteristicUuid = 
-      Uuid.parse(BluetoothLowEnergyUtil.CHARACTERISTIC_UUID);
+    _serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
+    _characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
+
+    mtu = ADHOC_DEFAULT_MTU;
   }
+
+  Future<String> get deviceName async => await _channel.invokeMethod('getName');
 
   HashMap<String, DiscoveredDevice> get discoveredDevices => _discovered;
 
@@ -54,12 +57,10 @@ class BluetoothLowEnergyDevice extends AdHocDevice {
       _subscription.cancel();
   }
 
-  /// Currently attempt to connect to closest BLE device
   void connect() {
     String id;
     int rssi = -999;
 
-    // Search for closest device
     _discovered.forEach((key, value) {
       if (value.rssi > rssi) {
         id = value.id;
@@ -67,7 +68,6 @@ class BluetoothLowEnergyDevice extends AdHocDevice {
       }
     });
 
-    // Attempt connection
     _client.connectToDevice(
       id: id,
       servicesWithCharacteristicsToDiscover: {},

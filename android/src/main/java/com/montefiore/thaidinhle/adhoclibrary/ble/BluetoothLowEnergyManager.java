@@ -27,7 +27,11 @@ public class BluetoothLowEnergyManager {
         this.bluetoothAdapter = bluetoothManager.getAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
         this.gattServer = new GattServer(bluetoothManager, context);
-        this.gattServer.openGattServer();
+        this.gattServer.setupGattServer();
+    }
+
+    public String getAdapterName() {
+        return bluetoothAdapter.getName();
     }
 
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {

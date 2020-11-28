@@ -14,7 +14,15 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  BluetoothLowEnergyDevice _device = BluetoothLowEnergyDevice();
+  BleManager _bleManager = BleManager();
+
+  void _sendMessage() {
+    BleMessageManager _msgManager = BleMessageManager(_bleManager);
+    Header header = Header(0, 'hello', 'myPhone', 'myAddress');
+    MessageAdHoc msg = MessageAdHoc(header, 'A message');
+
+    _msgManager.sendMessage(msg);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,31 +37,35 @@ class _AppState extends State<ExampleApp> {
             children: <Widget>[
               RaisedButton(
                 child: Text('Start advertising'),
-                onPressed: _device.startAdvertise,
+                onPressed: _bleManager.startAdvertise,
               ),
               RaisedButton(
                 child: Text('Stop advertising'),
-                onPressed: _device.stopAdvertise,
+                onPressed: _bleManager.stopAdvertise,
               ),
               RaisedButton(
                 child: Text('Start scan'),
-                onPressed: _device.startScan,
+                onPressed: _bleManager.startScan,
               ),
               RaisedButton(
                 child: Text('Stop scan'),
-                onPressed: _device.stopScan,
+                onPressed: _bleManager.stopScan,
               ),
               RaisedButton(
                 child: Text('Connect'),
-                onPressed: _device.connect,
+                onPressed: _bleManager.connect,
               ),
               RaisedButton(
                 child: Text('Send data'),
-                onPressed: () => _device.writeValue(Uint8List.fromList([1, 2, 3])),
+                onPressed: () => _bleManager.writeValue(Uint8List.fromList([1, 2, 3])),
               ),
               RaisedButton(
                 child: Text('Read data'),
-                onPressed: _device.readValue,
+                onPressed: _bleManager.readValue,
+              ),
+              RaisedButton(
+                child: Text('Send message'),
+                onPressed: _sendMessage,
               ),
             ],
           ),

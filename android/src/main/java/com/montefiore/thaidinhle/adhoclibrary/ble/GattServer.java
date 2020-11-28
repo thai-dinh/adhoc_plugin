@@ -53,30 +53,9 @@ public class GattServer {
             Log.d(TAG, "onConnectionStateChange()");
             super.onConnectionStateChange(device, status, newState);
         }
-
-        @Override
-        public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
-                                            BluetoothGattDescriptor descriptor)
-        {
-            Log.d(TAG, "onDescriptorReadRequest()");
-            super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, descriptor.getValue());
-        }
-
-        @Override
-        public void onDescriptorWriteRequest(BluetoothDevice device, int requestId, 
-                                             BluetoothGattDescriptor descriptor, 
-                                             boolean preparedWrite, boolean responseNeeded, 
-                                             int offset, byte[] value)
-        {
-            Log.d(TAG, "onDescriptorWriteRequest()");
-            super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, 
-                                           responseNeeded, offset, value);
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
-        }
     };
 
-    public void openGattServer() {
+    public void setupGattServer() {
         BluetoothGattCharacteristic characteristic =
             new BluetoothGattCharacteristic(UUID.fromString(CHARACTERISTIC_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
