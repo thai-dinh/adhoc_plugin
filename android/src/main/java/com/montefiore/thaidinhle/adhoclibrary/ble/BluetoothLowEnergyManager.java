@@ -10,24 +10,19 @@ import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-import com.montefiore.thaidinhle.adhoclibrary.ble.GattServer;
+import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
 
 import java.util.UUID;
 
 public class BluetoothLowEnergyManager {
-    private static final String TAG = "[AdHoc.Plugin][BLE.Manager]";
+    private static final String TAG = "[AdHoc.Ble.Plugin][Ble.Manager]";
 
     private final BluetoothAdapter bluetoothAdapter;
     private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
-    private final BluetoothManager bluetoothManager;
-    private final GattServer gattServer;
 
-    public BluetoothLowEnergyManager(Context context) {
-        this.bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+    public BluetoothLowEnergyManager(BluetoothManager bluetoothManager, Context context) {
         this.bluetoothAdapter = bluetoothManager.getAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
-        this.gattServer = new GattServer(bluetoothManager, context);
-        this.gattServer.setupGattServer();
     }
 
     public String getAdapterName() {
@@ -52,7 +47,7 @@ public class BluetoothLowEnergyManager {
         Log.d(TAG, "startAdvertise()");
 
         AdvertiseData data = new AdvertiseData.Builder()
-            .addServiceUuid(new ParcelUuid(UUID.fromString(gattServer.SERVICE_UUID)))
+            .addServiceUuid(new ParcelUuid(UUID.fromString(BluetoothUtils.SERVICE_UUID)))
             .setIncludeDeviceName(true)
             .build();
 

@@ -11,18 +11,23 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
 
+import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 
-public class GattServer {
-    private static final String TAG = "[AdHoc.Plugin][Gatt.Server]";
-
-    public static final String SERVICE_UUID = "00000001-0000-1000-8000-00805f9b34fb";
-    public static final String CHARACTERISTIC_UUID = "00000002-0000-1000-8000-00805f9b34fb";
+public class GattServerManager {
+    private static final String TAG = "[AdHoc.Ble.Plugin][Gatt.Server.Manager]";
 
     private final BluetoothGattServer gattServer;
 
-    public GattServer(BluetoothManager bluetoothManager, Context context) {
+    private HashMap<String, byte[]> characteristicValues;
+
+    public GattServerManager(BluetoothManager bluetoothManager, Context context) {
         gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
+        characteristicValues = new HashMap<String, byte[]>();
     }
 
     private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
@@ -45,7 +50,19 @@ public class GattServer {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
-            characteristic.setValue(value);
+            // characteristic.setValue(value);
+
+            String address = device.getAddress();
+            Log.d(TAG, "onCharacteristicWriteRequest(): address=" + address);
+            if (!characteristicValues.containsKey(address)) {
+                characteristicValues.put(address, value);
+            } else {
+                try {
+                    characteristicValues.replace(address, addValues(address, value));
+                } catch (IOException error) {
+                    Log.d(TAG, "onCharacteristicWriteRequest(): IOException thrown");
+                }
+            }
         }
 
         @Override
@@ -55,9 +72,16 @@ public class GattServer {
         }
     };
 
+    private byte[] addValues(String address, byte[] value) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(characteristicValues.get(address));
+        outputStream.write(value);
+        return outputStream.toByteArray();
+    }
+
     public void setupGattServer() {
         BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(UUID.fromString(CHARACTERISTIC_UUID),
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
                                             BluetoothGattCharacteristic.PROPERTY_WRITE |
                                             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
@@ -65,10 +89,14 @@ public class GattServer {
                                             BluetoothGattCharacteristic.PERMISSION_WRITE);
 
         BluetoothGattService service =
-            new BluetoothGattService(UUID.fromString(SERVICE_UUID),
+            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
                                      BluetoothGattService.SERVICE_TYPE_PRIMARY);
         service.addCharacteristic(characteristic);
 
         gattServer.addService(service);
+    }
+
+    public Byte[] getValue() {
+        return null;
     }
 }
