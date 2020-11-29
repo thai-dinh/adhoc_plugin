@@ -16,8 +16,8 @@ import io.flutter.plugin.common.MethodChannel.Result;
 
 import java.util.HashMap;
 
-public class AdHocBlePlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String TAG = "[AdHoc.Ble][Plugin]";
+public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
+  private static final String TAG = "[AdHocPlugin][Plugin]";
   private static final String CHANNEL = "ad.hoc.lib/ble.plugin.channel";
 
   private BluetoothLowEnergyManager bleManager;

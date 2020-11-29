@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class GattServerManager {
-    private static final String TAG = "[AdHoc.Ble][Gatt]";
+    private static final String TAG = "[AdHocPlugin][GattServer]";
 
     private final BluetoothGattServer gattServer;
 
