@@ -14,23 +14,24 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import java.util.HashMap;
+
 public class AdHocBlePlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String TAG = "[AdHoc.Ble.Plugin][Plugin]";
-  private static final String CHANNEL = "ad.hoc.lib/blue.manager.channel";
+  private static final String TAG = "[AdHoc.Ble][Plugin]";
+  private static final String CHANNEL = "ad.hoc.lib/ble.plugin.channel";
 
   private BluetoothLowEnergyManager bleManager;
-  private GattServerManager gattServeManager;
+  private GattServerManager gattServerManager;
   private MethodChannel mChannel;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-    Log.d(TAG, "onAttachedToEngine()");
-
     Context context = binding.getApplicationContext();
     BluetoothManager bluetoothManager =
       (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
     bleManager = new BluetoothLowEnergyManager(bluetoothManager, context);
-    gattServeManager = new GattServerManager(bluetoothManager, context);
+    gattServerManager = new GattServerManager(bluetoothManager, context);
+    gattServerManager.setupGattServer();
 
     mChannel = new MethodChannel(binding.getBinaryMessenger(), CHANNEL);
     mChannel.setMethodCallHandler(this);
@@ -52,9 +53,9 @@ public class AdHocBlePlugin implements FlutterPlugin, MethodCallHandler {
         bleManager.stopAdvertise();
         break;
 
-      case "getValue":
-        final Byte[] value = gattServeManager.getValue();
-        result.success(value);
+      case "getValues":
+        final HashMap<String, byte[]> values = gattServerManager.getValues();
+        result.success(values);
         break;
 
       default:
@@ -65,7 +66,6 @@ public class AdHocBlePlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    Log.d(TAG, "onDetachedFromEngine()");
     mChannel.setMethodCallHandler(null);
   }
 }

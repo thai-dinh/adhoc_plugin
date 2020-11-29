@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class GattServerManager {
-    private static final String TAG = "[AdHoc.Ble.Plugin][Gatt.Server.Manager]";
+    private static final String TAG = "[AdHoc.Ble][Gatt]";
 
     private final BluetoothGattServer gattServer;
 
@@ -50,7 +50,6 @@ public class GattServerManager {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
-            // characteristic.setValue(value);
 
             String address = device.getAddress();
             Log.d(TAG, "onCharacteristicWriteRequest(): address=" + address);
@@ -96,7 +95,7 @@ public class GattServerManager {
         gattServer.addService(service);
     }
 
-    public Byte[] getValue() {
-        return null;
+    public HashMap<String, byte[]> getValues() {
+        return characteristicValues;
     }
 }

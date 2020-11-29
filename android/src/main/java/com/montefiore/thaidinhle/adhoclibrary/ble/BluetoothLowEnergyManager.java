@@ -15,7 +15,7 @@ import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
 import java.util.UUID;
 
 public class BluetoothLowEnergyManager {
-    private static final String TAG = "[AdHoc.Ble.Plugin][Ble.Manager]";
+    private static final String TAG = "[AdHoc.Ble][Ble]";
 
     private final BluetoothAdapter bluetoothAdapter;
     private final BluetoothLeAdvertiser bluetoothLeAdvertiser;

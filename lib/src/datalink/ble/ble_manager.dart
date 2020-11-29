@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleManager {
-  static const String _channelName = 'ad.hoc.lib/blue.manager.channel';
+  static const String _channelName = 'ad.hoc.lib/ble.plugin.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   FlutterReactiveBle _client;
@@ -119,5 +119,9 @@ class BleManager {
     });
 
     return Uint8List.fromList(response);
+  }
+
+  Future<Map<String, Uint8List>> getValues() async {
+    return await _channel.invokeMethod('getValues');
   }
 }
