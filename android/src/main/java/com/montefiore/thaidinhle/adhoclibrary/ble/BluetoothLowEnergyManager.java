@@ -10,8 +10,6 @@ import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
-
 import java.util.UUID;
 
 public class BluetoothLowEnergyManager {

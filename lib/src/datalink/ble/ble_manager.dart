@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleManager {
-  static const String _channelName = 'ad.hoc.lib/ble.plugin.channel';
+  static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   FlutterReactiveBle _client;

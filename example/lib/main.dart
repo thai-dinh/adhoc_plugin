@@ -15,6 +15,7 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   BleManager _bleManager = BleManager();
+  WifiManager _wifiManager = WifiManager();
 
   void _sendMessage() {
     BleMessageManager _msgManager = BleMessageManager(_bleManager);
