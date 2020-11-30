@@ -68,6 +68,10 @@ class _AppState extends State<ExampleApp> {
                 child: Text('Send message'),
                 onPressed: _sendMessage,
               ),
+              RaisedButton(
+                child: Text('Discovery'),
+                onPressed: _wifiManager.discovery,
+              ),
             ],
           ),
         ),

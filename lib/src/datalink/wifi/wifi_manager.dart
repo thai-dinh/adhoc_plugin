@@ -5,4 +5,6 @@ class WifiManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   WifiManager();
+
+  void discovery() => _channel.invokeMethod('discovery');
 }

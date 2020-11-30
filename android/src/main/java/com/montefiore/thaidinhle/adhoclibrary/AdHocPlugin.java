@@ -49,15 +49,12 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         final String name = bleManager.getAdapterName();
         result.success(name);
         break;
-
       case "startAdvertise":
         bleManager.startAdvertise();
         break;
-
       case "stopAdvertise":
         bleManager.stopAdvertise();
         break;
-
       case "getValues":
         final HashMap<String, byte[]> values = gattServerManager.getValues();
         result.success(values);
