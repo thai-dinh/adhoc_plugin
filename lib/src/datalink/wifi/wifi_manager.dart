@@ -6,5 +6,11 @@ class WifiManager {
 
   WifiManager();
 
-  void discovery() => _channel.invokeMethod('discovery');
+  void startDiscovery() => _channel.invokeMethod('startDiscovery');
+
+  void stopDiscovery() => _channel.invokeMethod('stopDiscovery');
+
+  void connect() => _channel.invokeMethod('connect', <String, dynamic> {
+    'address': 'mac'
+  });
 }

@@ -61,16 +61,20 @@ class _AppState extends State<ExampleApp> {
                 onPressed: () => _bleManager.writeValue(Uint8List.fromList([1, 2, 3])),
               ),
               RaisedButton(
-                child: Text('Read data'),
-                onPressed: _bleManager.readValue,
-              ),
-              RaisedButton(
                 child: Text('Send message'),
                 onPressed: _sendMessage,
               ),
               RaisedButton(
-                child: Text('Discovery'),
-                onPressed: _wifiManager.discovery,
+                child: Text('Start discovery'),
+                onPressed: _wifiManager.startDiscovery,
+              ),
+              RaisedButton(
+                child: Text('Stop discovery'),
+                onPressed: _wifiManager.stopDiscovery,
+              ),
+              RaisedButton(
+                child: Text('Connect'),
+                onPressed: _wifiManager.connect,
               ),
             ],
           ),
