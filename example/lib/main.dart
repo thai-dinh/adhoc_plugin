@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 
@@ -18,11 +18,36 @@ class _AppState extends State<ExampleApp> {
   WifiManager _wifiManager = WifiManager();
 
   void _sendMessage() {
-    BleMessageManager _msgManager = BleMessageManager(_bleManager);
+    HashMap<String, BleAdHocDevice> map = _bleManager.discoveredDevices;
+    BleAdHocDevice device;
+
+    map.forEach((key, value) { device = value; });
+
+    BleMessageManager _msgManager = BleMessageManager(_bleManager, device);
     Header header = Header(0, 'hello', 'myPhone', 'myAddress');
     MessageAdHoc msg = MessageAdHoc(header, 'A message');
 
     _msgManager.sendMessage(msg);
+  }
+
+  void _requestMtu() {
+    HashMap<String, BleAdHocDevice> map = _bleManager.discoveredDevices;
+    BleAdHocDevice device;
+
+    map.forEach((key, value) { device = value; });
+
+    print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
+    _bleManager.requestMtu(device, 50);
+    print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
+  }
+
+  void _connect() {
+    HashMap<String, BleAdHocDevice> map = _bleManager.discoveredDevices;
+    String macAddress;
+
+    map.forEach((key, value) { macAddress = key; });
+
+    _bleManager.connect(macAddress);
   }
 
   @override
@@ -53,16 +78,12 @@ class _AppState extends State<ExampleApp> {
                 onPressed: _bleManager.stopScan,
               ),
               RaisedButton(
-                child: Text('Connect'),
-                onPressed: _bleManager.connect,
+                child: Text('BLE Connect'),
+                onPressed: _connect,
               ),
               RaisedButton(
-                child: Text('Send data'),
-                onPressed: () => _bleManager.writeValue(Uint8List.fromList([1, 2, 3])),
-              ),
-              RaisedButton(
-                child: Text('Send message'),
-                onPressed: _sendMessage,
+                child: Text('Request MTU'),
+                onPressed: _requestMtu,
               ),
               RaisedButton(
                 child: Text('Start discovery'),

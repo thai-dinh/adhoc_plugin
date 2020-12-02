@@ -1,3 +1,4 @@
+export 'ble/ble_adhoc_device.dart';
 export 'ble/ble_manager.dart';
 export 'ble/ble_msg_manager.dart';
 export 'ble/ble_util.dart';

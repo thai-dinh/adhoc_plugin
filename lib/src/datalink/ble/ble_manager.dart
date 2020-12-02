@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
 
 import 'package:flutter/services.dart';
@@ -13,7 +14,7 @@ class BleManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   FlutterReactiveBle _client;
-  HashMap<String, DiscoveredDevice> _discovered;
+  HashMap<String, BleAdHocDevice> _discovered;
   StreamSubscription<DiscoveredDevice> _subscription;
   Uuid _serviceUuid;
   Uuid _characteristicUuid;
@@ -30,7 +31,7 @@ class BleManager {
 
   Future<String> get deviceName async => await _channel.invokeMethod('getName');
 
-  HashMap<String, DiscoveredDevice> get discoveredDevices => _discovered;
+  HashMap<String, BleAdHocDevice> get discoveredDevices => _discovered;
 
   void startAdvertise() => _channel.invokeMethod('startAdvertise');
 
@@ -46,7 +47,7 @@ class BleManager {
       if (!_discovered.containsKey(device.id))
         print('Found ${device.name} (${device.id})');
 
-        _discovered.putIfAbsent(device.id, () => device);
+        _discovered.putIfAbsent(device.id, () => BleAdHocDevice(device));
     }, onError: (error) {
       print(error.toString());
     });
@@ -57,19 +58,9 @@ class BleManager {
       _subscription.cancel();
   }
 
-  void connect() {
-    String id;
-    int rssi = -999;
-
-    _discovered.forEach((key, value) {
-      if (value.rssi > rssi) {
-        id = value.id;
-        rssi = value.rssi;
-      }
-    });
-
+  void connect(String remoteAddress) {
     _client.connectToDevice(
-      id: id,
+      id: remoteAddress,
       servicesWithCharacteristicsToDiscover: {},
       connectionTimeout: const Duration(seconds: 5),
     ).listen((state) {
@@ -79,49 +70,31 @@ class BleManager {
     });
   }
 
-  void writeValue(Uint8List values) {
-    String id;
-    int rssi = -99;
-
-    _discovered.forEach((key, value) { 
-      if (value.rssi > rssi) {
-        id = value.id;
-        rssi = value.rssi;
-      }
-    });
-
+  void writeValue(String remoteAddress, Uint8List values) {
     final characteristic = 
       QualifiedCharacteristic(serviceId: _serviceUuid,
                               characteristicId: _characteristicUuid,
-                              deviceId: id);
+                              deviceId: remoteAddress);
     _client.writeCharacteristicWithResponse(characteristic,
                                             value: values.toList());
   }
 
-  Future<Uint8List> readValue() async {
-    String id;
-    int rssi = -99;
-
-    _discovered.forEach((key, value) { 
-      if (value.rssi > rssi) {
-        id = value.id;
-        rssi = value.rssi;
-      }
-    });
-
+  Future<Uint8List> readValue(String remoteAddress) async {
     final characteristic = 
       QualifiedCharacteristic(serviceId: _serviceUuid,
                               characteristicId: _characteristicUuid,
-                              deviceId: id);    
+                              deviceId: remoteAddress);    
     final response = await _client.readCharacteristic(characteristic);
-    response.forEach((element) {
-      print(element);
-    });
 
     return Uint8List.fromList(response);
   }
 
   Future<Map<String, Uint8List>> getValues() async {
     return await _channel.invokeMethod('getValues');
+  }
+
+  Future<void> requestMtu(BleAdHocDevice device, int mtu) async {
+    mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
+    device.mtu = mtu;
   }
 }

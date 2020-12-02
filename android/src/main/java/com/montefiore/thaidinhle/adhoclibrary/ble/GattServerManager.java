@@ -98,4 +98,8 @@ public class GattServerManager {
     public HashMap<String, byte[]> getValues() {
         return characteristicValues;
     }
+
+    public void closeGattServer() {
+        gattServer.close();
+    }
 }
