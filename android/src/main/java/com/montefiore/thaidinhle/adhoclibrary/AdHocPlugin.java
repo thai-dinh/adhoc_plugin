@@ -39,7 +39,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
     bChannel.setMethodCallHandler(this);
 
     wChannel = new MethodChannel(binding.getBinaryMessenger(), WIFICHANNEL);
-    wChannel.setMethodCallHandler(new WifiAdHocManager(context));
+    wChannel.setMethodCallHandler(new WifiAdHocManager(binding.getBinaryMessenger(), context));
   }
 
   @Override

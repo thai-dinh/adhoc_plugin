@@ -13,4 +13,6 @@ class WifiManager {
   void connect() => _channel.invokeMethod('connect', <String, dynamic> {
     'address': 'mac'
   });
+
+  void cancelConnection() => _channel.invokeMethod('cancelConnection');
 }

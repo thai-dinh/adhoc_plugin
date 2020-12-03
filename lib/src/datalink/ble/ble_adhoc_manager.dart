@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
-class BleManager {
+class BleAdHocManager {
   static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
@@ -20,7 +20,7 @@ class BleManager {
   Uuid _characteristicUuid;
   int mtu;
 
-  BleManager() {
+  BleAdHocManager() {
     _client = FlutterReactiveBle();
     _discovered = HashMap();
     _serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
@@ -94,7 +94,19 @@ class BleManager {
   }
 
   Future<void> requestMtu(BleAdHocDevice device, int mtu) async {
-    mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
-    device.mtu = mtu;
+    String id;
+    int rssi = -999;
+
+    _discovered.forEach((key, value) {
+      if (value.rssi > rssi) {
+        id = key;
+        rssi = value.rssi;
+      }
+    });
+  
+    mtu = await _client.requestMtu(deviceId: id, mtu: 513);
+    print(mtu);
+    // mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
+    // device.mtu = mtu;
   }
 }

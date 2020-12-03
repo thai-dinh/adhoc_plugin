@@ -13,6 +13,10 @@ import androidx.annotation.NonNull;
 
 import com.montefiore.thaidinhle.adhoclibrary.exceptions.DeviceException;
 
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
+import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -28,11 +32,15 @@ import static android.os.Looper.getMainLooper;
 
 public class WifiAdHocManager implements MethodCallHandler {
     private static final String TAG = "[AdHocPlugin][WifiManager]";
+    private static final String STREAM = "ad.hoc.lib/plugin.wifi.stream";
 
     public static final int DISCOVERY_TIME = 10000;
 
+    private final EventChannel bleEventStream;
+
     private Context context;
     private Channel channel;
+    private EventSink eventSink;
     private WifiP2pManager wifiP2pManager;
     private HashMap<String, WifiP2pDevice> mapMacDevices;
     private WifiDirectBroadcastDiscovery wifiDirectBroadcastDiscovery;
@@ -40,11 +48,13 @@ public class WifiAdHocManager implements MethodCallHandler {
     private boolean discoveryRegistered = false;
     private int valueGroupOwner = -1;
 
-    public WifiAdHocManager(Context context) {
+    public WifiAdHocManager(BinaryMessenger messenger, Context context) {
         this.context = context;
         this.wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         this.channel = wifiP2pManager.initialize(context, getMainLooper(), null);
         this.mapMacDevices = new HashMap<>();
+        this.bleEventStream = new EventChannel(messenger, STREAM);
+        this.bleEventStream.setStreamHandler(initStreamHandler());
     }
 
     @Override
@@ -65,11 +75,28 @@ public class WifiAdHocManager implements MethodCallHandler {
                     result.error("exception", "connection failed", null);
                 }
                 break;
+            case "cancelConnection":
+                cancelConnection();
+                break;
 
             default:
                 result.notImplemented();
                 break;
         }
+    }
+
+    private StreamHandler initStreamHandler() {
+        return new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+                eventSink = events;
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+                unregisterDiscovery();
+            }
+        };
     }
 
     private String errorCode(int reasonCode) {
@@ -167,13 +194,29 @@ public class WifiAdHocManager implements MethodCallHandler {
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Log.d(TAG, "Start connecting Wifi Direct (onSuccess)");
+                Log.d(TAG, "connect(): Success");
             }
 
             @Override
             public void onFailure(int reasonCode) {
-                Log.e(TAG, "Error during connecting Wifi Direct (onFailure): " + errorCode(reasonCode));
+                Log.e(TAG, "connect(): Failure: " + errorCode(reasonCode));
             }
         });
+    }
+
+    private void cancelConnection() {
+        if (wifiP2pManager != null) {
+            wifiP2pManager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "cancelConnection(): Success");
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.e(TAG, "cancelConnection(): Failure: " + errorCode(reason));
+                }
+            });
+        }
     }
 }

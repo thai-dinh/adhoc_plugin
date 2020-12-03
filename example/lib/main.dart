@@ -14,7 +14,7 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  BleManager _bleManager = BleManager();
+  BleAdHocManager _bleManager = BleAdHocManager();
   WifiManager _wifiManager = WifiManager();
 
   void _sendMessage() {
@@ -31,14 +31,14 @@ class _AppState extends State<ExampleApp> {
   }
 
   void _requestMtu() {
-    HashMap<String, BleAdHocDevice> map = _bleManager.discoveredDevices;
+    // HashMap<String, BleAdHocDevice> map = _bleManager.discoveredDevices;
     BleAdHocDevice device;
 
-    map.forEach((key, value) { device = value; });
+    // map.forEach((key, value) { device = value; });
 
-    print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
+    // print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
     _bleManager.requestMtu(device, 50);
-    print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
+    // print('[MTU]: ' + device.mtu.toString() + ' [Device]: ' + device.macAddress);
   }
 
   void _connect() {
@@ -96,6 +96,10 @@ class _AppState extends State<ExampleApp> {
               RaisedButton(
                 child: Text('Connect'),
                 onPressed: _wifiManager.connect,
+              ),
+              RaisedButton(
+                child: Text('Connect'),
+                onPressed: _wifiManager.cancelConnection,
               ),
             ],
           ),

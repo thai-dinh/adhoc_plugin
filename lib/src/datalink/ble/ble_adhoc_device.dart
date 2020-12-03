@@ -12,8 +12,8 @@ class BleAdHocDevice extends AdHocDevice {
   BleAdHocDevice(DiscoveredDevice device) 
     : super(device.name, device.id, Service.BLUETOOTH) {
 
-    _rssi = device.rssi;
-    mtu = ADHOC_DEFAULT_MTU;
+    this._rssi = device.rssi;
+    this.mtu = ADHOC_DEFAULT_MTU;
   }
 
   int get rssi => _rssi;
