@@ -1,18 +1,39 @@
+import 'dart:collection';
+
+import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
+
 import 'package:flutter/services.dart';
 
 class WifiManager {
-  static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
-  static const MethodChannel _channel = const MethodChannel(_channelName);
+  static const String _mChannelName = 'ad.hoc.lib/plugin.wifi.channel';
+  static const String _eChannelName = 'ad.hoc.lib/plugin.wifi.stream';
+  static const MethodChannel _mChanel = const MethodChannel(_mChannelName);
+  static const EventChannel _stream = const EventChannel(_eChannelName);
 
-  WifiManager();
+  HashMap _mapDevices; 
 
-  void startDiscovery() => _channel.invokeMethod('startDiscovery');
+  WifiManager() {
+    _mapDevices = HashMap<String, WifiAdHocDevice>();
+  }
 
-  void stopDiscovery() => _channel.invokeMethod('stopDiscovery');
+  void startDiscovery() {
+    _mapDevices.clear();
 
-  void connect() => _channel.invokeMethod('connect', <String, dynamic> {
+    _mChanel.invokeMethod('startDiscovery');
+
+    _stream.receiveBroadcastStream().listen((event) {
+      _mapDevices.putIfAbsent(
+        event['deviceAddress'], 
+        () => WifiAdHocDevice.map(event)
+      );
+    });
+  }
+
+  void stopDiscovery() => _mChanel.invokeMethod('stopDiscovery');
+
+  void connect() => _mChanel.invokeMethod('connect', <String, dynamic> {
     'address': 'mac'
   });
 
-  void cancelConnection() => _channel.invokeMethod('cancelConnection');
+  void cancelConnection() => _mChanel.invokeMethod('cancelConnection');
 }

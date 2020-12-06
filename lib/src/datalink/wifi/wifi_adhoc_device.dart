@@ -12,6 +12,10 @@ class WifiAdHocDevice extends AdHocDevice {
     this.port = 0;
   }
 
+  factory WifiAdHocDevice.map(Map map) {
+    return WifiAdHocDevice(map['deviceName'], map['deviceAddress']);
+  }
+
   @override
   String toString() {
     return 'WifiAdHocDevice' +

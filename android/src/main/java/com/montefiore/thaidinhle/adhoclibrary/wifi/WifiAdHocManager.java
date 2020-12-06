@@ -24,6 +24,7 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.net.wifi.p2p.WifiP2pManager.BUSY;
 import static android.net.wifi.p2p.WifiP2pManager.ERROR;
@@ -139,9 +140,19 @@ public class WifiAdHocManager implements MethodCallHandler {
                 List<WifiP2pDevice> refreshedPeers = new ArrayList<>(peerList.getDeviceList());
 
                 for (WifiP2pDevice wifiP2pDevice : refreshedPeers) {
-                    if (!mapMacDevices.containsKey(wifiP2pDevice.deviceAddress)) {
-                        mapMacDevices.put(wifiP2pDevice.deviceAddress, wifiP2pDevice);
-                        Log.d(TAG, "Device added: " + wifiP2pDevice.deviceName);
+                    String deviceName = wifiP2pDevice.deviceName;
+                    String deviceAddress = wifiP2pDevice.deviceAddress;
+
+                    if (!mapMacDevices.containsKey(deviceAddress)) {
+                        Log.d(TAG, "Device added: " + deviceName);
+
+                        mapMacDevices.put(deviceAddress, wifiP2pDevice);
+
+                        Map<String, Object> device = new HashMap<>();
+                        device.put("deviceName", deviceName);
+                        device.put("deviceAddress", deviceAddress);
+    
+                        eventSink.success(device);
                     }
                 }
             }
