@@ -76,6 +76,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_p2p:
+    dependency: transitive
+    description:
+      name: flutter_p2p
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.1"
   flutter_reactive_ble:
     dependency: transitive
     description:

@@ -4,6 +4,8 @@ import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
 
 import 'package:flutter/services.dart';
 
+import 'package:flutter_p2p/flutter_p2p.dart';
+
 class WifiManager {
   static const String _mChannelName = 'ad.hoc.lib/plugin.wifi.channel';
   static const String _eChannelName = 'ad.hoc.lib/plugin.wifi.stream';
@@ -36,4 +38,12 @@ class WifiManager {
   });
 
   void cancelConnection() => _mChanel.invokeMethod('cancelConnection');
+
+  Future<bool> _checkPermission() async {
+    if (!await FlutterP2p.isLocationPermissionGranted()) {
+      await FlutterP2p.requestLocationPermission();
+      return false;
+    }
+    return true;
+  }
 }
