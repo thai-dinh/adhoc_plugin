@@ -65,10 +65,12 @@ packages:
   flutter_p2p:
     dependency: "direct main"
     description:
-      name: flutter_p2p
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.1.1"
+      path: "."
+      ref: HEAD
+      resolved-ref: "7c32c60948fe20db991fea44272a81149fdd4378"
+      url: "https://github.com/thai-dinh/flutter_p2p"
+    source: git
+    version: "1.0.0"
   flutter_reactive_ble:
     dependency: "direct main"
     description:

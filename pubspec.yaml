@@ -12,12 +12,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  #flutter_p2p:
-    #git:
-      #url: https://github.com/thai-dinh/flutter_p2p
-
-  flutter_p2p: ^0.1.1
   flutter_reactive_ble: ^2.7.1
+  flutter_p2p:
+    git:
+      url: https://github.com/thai-dinh/flutter_p2p
 
 dev_dependencies:
   flutter_test:

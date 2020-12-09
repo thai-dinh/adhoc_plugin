@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 
 import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothLowEnergyManager;
 import com.montefiore.thaidinhle.adhoclibrary.ble.GattServerManager;
-import com.montefiore.thaidinhle.adhoclibrary.wifi.WifiAdHocManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
@@ -18,12 +17,10 @@ import java.util.HashMap;
 
 public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   private static final String BLECHANNEL = "ad.hoc.lib/plugin.ble.channel";
-  private static final String WIFICHANNEL = "ad.hoc.lib/plugin.wifi.channel";
 
   private BluetoothLowEnergyManager bleManager;
   private GattServerManager gattServerManager;
-  private MethodChannel bChannel;
-  private MethodChannel wChannel;
+  private MethodChannel channel;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
@@ -35,11 +32,8 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
     gattServerManager = new GattServerManager(bluetoothManager, context);
     gattServerManager.setupGattServer();
 
-    bChannel = new MethodChannel(binding.getBinaryMessenger(), BLECHANNEL);
-    bChannel.setMethodCallHandler(this);
-
-    wChannel = new MethodChannel(binding.getBinaryMessenger(), WIFICHANNEL);
-    wChannel.setMethodCallHandler(new WifiAdHocManager(binding.getBinaryMessenger(), context));
+    channel = new MethodChannel(binding.getBinaryMessenger(), BLECHANNEL);
+    channel.setMethodCallHandler(this);
   }
 
   @Override
@@ -68,7 +62,6 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    bChannel.setMethodCallHandler(null);
-    wChannel.setMethodCallHandler(null);
+    channel.setMethodCallHandler(null);
   }
 }

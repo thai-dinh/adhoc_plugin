@@ -1,43 +1,20 @@
+import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
-
-import 'package:flutter/services.dart';
-
 import 'package:flutter_p2p/flutter_p2p.dart';
+import 'package:flutter_p2p/gen/protos/protos.pb.dart';
 
 class WifiManager {
-  static const String _mChannelName = 'ad.hoc.lib/plugin.wifi.channel';
-  static const String _eChannelName = 'ad.hoc.lib/plugin.wifi.stream';
-  static const MethodChannel _mChanel = const MethodChannel(_mChannelName);
-  static const EventChannel _stream = const EventChannel(_eChannelName);
+  HashMap _peers;
+  List<StreamSubscription> _subscriptions = [];
 
-  HashMap _mapDevices; 
+  bool _isConnected = false;
+  bool _isHost = false;
+  String _leaderAddress = '';
 
   WifiManager() {
-    _mapDevices = HashMap<String, WifiAdHocDevice>();
+    _peers = HashMap<String, WifiP2pDevice>();
   }
-
-  void startDiscovery() {
-    _mapDevices.clear();
-
-    _mChanel.invokeMethod('startDiscovery');
-
-    _stream.receiveBroadcastStream().listen((event) {
-      _mapDevices.putIfAbsent(
-        event['deviceAddress'], 
-        () => WifiAdHocDevice.map(event)
-      );
-    });
-  }
-
-  void stopDiscovery() => _mChanel.invokeMethod('stopDiscovery');
-
-  void connect() => _mChanel.invokeMethod('connect', <String, dynamic> {
-    'address': 'mac'
-  });
-
-  void cancelConnection() => _mChanel.invokeMethod('cancelConnection');
 
   Future<bool> _checkPermission() async {
     if (!await FlutterP2p.isLocationPermissionGranted()) {
@@ -45,5 +22,62 @@ class WifiManager {
       return false;
     }
     return true;
+  }
+
+  Future<void> register() async {
+    if (!await _checkPermission())
+      return;
+
+    _subscriptions.add(FlutterP2p.wifiEvents.stateChange.listen((change) {
+      // Handle wifi state change
+    }));
+
+    _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
+      // Handle changes of the connection
+      _isConnected = change.networkInfo.isConnected;
+      _isHost = change.wifiP2pInfo.isGroupOwner;
+      _leaderAddress = change.wifiP2pInfo.groupOwnerAddress;
+    }));
+
+    _subscriptions.add(FlutterP2p.wifiEvents.thisDeviceChange.listen((change) {
+      // Handle changes of this device
+    }));
+
+    _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((change) {
+      // Handle discovered peers
+
+      change.devices.forEach((element) {
+        print(element.deviceName);
+        _peers.putIfAbsent(element.deviceName, () => element);
+      });
+    }));
+
+    _subscriptions.add(FlutterP2p.wifiEvents.discoveryChange.listen((change) {
+      // Handle discovery state changes
+    }));
+
+    // Register to the native events which are send to the streams above
+    FlutterP2p.register();
+  }
+
+  void unregister() {
+    _subscriptions.forEach((subscription) => subscription.cancel()); // Cancel subscriptions
+    FlutterP2p.unregister(); // Unregister from native events
+  }
+
+  void discover() {
+    FlutterP2p.discoverDevices();
+  }
+
+  Future<bool> connect() async {
+    WifiP2pDevice device;
+
+    _peers.forEach((key, value) {
+      device = value;
+    });
+
+    print(device.deviceAddress);
+
+    return await FlutterP2p.connect(device);
   }
 }
