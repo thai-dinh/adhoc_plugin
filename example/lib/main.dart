@@ -13,6 +13,7 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   WifiManager _wifiManager = WifiManager();
+  BleAdHocManager _bleManager = BleAdHocManager();
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,18 @@ class _AppState extends State<ExampleApp> {
               RaisedButton(
                 child: Text('Connect'),
                 onPressed: _wifiManager.connect,
+              ),
+              RaisedButton(
+                child: Text('Start advertise'),
+                onPressed: _bleManager.startAdvertise,
+              ),
+              RaisedButton(
+                child: Text('Stop advertise'),
+                onPressed: _bleManager.stopAdvertise,
+              ),
+              RaisedButton(
+                child: Text('Start scan'),
+                onPressed: _bleManager.startScan,
               ),
             ],
           ),

@@ -89,24 +89,8 @@ class BleAdHocManager {
     return Uint8List.fromList(response);
   }
 
-  Future<Map<String, Uint8List>> getValues() async {
-    return await _channel.invokeMethod('getValues');
-  }
-
-  Future<void> requestMtu(BleAdHocDevice device, int mtu) async {
-    String id;
-    int rssi = -999;
-
-    _discovered.forEach((key, value) {
-      if (value.rssi > rssi) {
-        id = key;
-        rssi = value.rssi;
-      }
-    });
-  
-    mtu = await _client.requestMtu(deviceId: id, mtu: 513);
-    print(mtu);
-    // mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
-    // device.mtu = mtu;
+  Future<void> requestMtu(BleAdHocDevice device, int mtu) async {  
+    mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
+    device.mtu = mtu;
   }
 }

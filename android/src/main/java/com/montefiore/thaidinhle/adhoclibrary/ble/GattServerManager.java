@@ -13,21 +13,49 @@ import android.util.Log;
 
 import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
 
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
+import io.flutter.plugin.common.EventChannel.EventSink;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
+    private static final String STREAM = "ad.hoc.lib/plugin.ble.stream";
 
     private final BluetoothGattServer gattServer;
+    private final EventChannel eventStream;
 
-    private HashMap<String, byte[]> characteristicValues;
+    private EventSink eventSink;
+    private HashMap<String, ArrayList<byte[]>> data;
 
-    public GattServerManager(BluetoothManager bluetoothManager, Context context) {
-        gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
-        characteristicValues = new HashMap<String, byte[]>();
+    public GattServerManager(BluetoothManager bluetoothManager, Context context, BinaryMessenger messenger) {
+        this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
+        this.data = new HashMap<String, ArrayList<byte[]>>();
+        this.bleEventStream = new EventChannel(messenger, STREAM);
+        this.bleEventStream.setStreamHandler(initStreamHandler());
+    }
+
+    private StreamHandler initStreamHandler() {
+        return new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+                Log.d(TAG, "onListen()");
+                eventSink = events;
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+                Log.d(TAG, "onCancel()");
+                closeGattServer();
+            }
+        };
     }
 
     private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
@@ -53,14 +81,14 @@ public class GattServerManager {
 
             String address = device.getAddress();
             Log.d(TAG, "onCharacteristicWriteRequest(): address=" + address);
-            if (!characteristicValues.containsKey(address)) {
-                characteristicValues.put(address, value);
+            if (!data.containsKey(address)) {
+                ArrayList<byte[]> received = data.get(address);
+                received.add(value);
+                data.replace(address, received);
             } else {
-                try {
-                    characteristicValues.replace(address, addValues(address, value));
-                } catch (IOException error) {
-                    Log.d(TAG, "onCharacteristicWriteRequest(): IOException thrown");
-                }
+                ArrayList<byte[]> received = new ArrayList<byte[]>();
+                received.add(value);
+                data.put(address, received);
             }
         }
 
@@ -70,13 +98,6 @@ public class GattServerManager {
             super.onConnectionStateChange(device, status, newState);
         }
     };
-
-    private byte[] addValues(String address, byte[] value) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(characteristicValues.get(address));
-        outputStream.write(value);
-        return outputStream.toByteArray();
-    }
 
     public void setupGattServer() {
         BluetoothGattCharacteristic characteristic =
@@ -95,11 +116,11 @@ public class GattServerManager {
         gattServer.addService(service);
     }
 
-    public HashMap<String, byte[]> getValues() {
-        return characteristicValues;
-    }
-
     public void closeGattServer() {
         gattServer.close();
+    }
+
+    private void processData(BluetoothDevice device, byte[] value) {
+        
     }
 }

@@ -16,7 +16,7 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import java.util.HashMap;
 
 public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String BLECHANNEL = "ad.hoc.lib/plugin.ble.channel";
+  private static final String CHANNEL = "ad.hoc.lib/plugin.ble.channel";
 
   private BluetoothLowEnergyManager bleManager;
   private GattServerManager gattServerManager;
@@ -24,15 +24,17 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+    BinaryMessenger messenger = binding.getBinaryMessenger();
     Context context = binding.getApplicationContext();
     BluetoothManager bluetoothManager =
       (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+
     bleManager = new BluetoothLowEnergyManager(bluetoothManager, context);
 
-    gattServerManager = new GattServerManager(bluetoothManager, context);
+    gattServerManager = new GattServerManager(bluetoothManager, context, messenger);
     gattServerManager.setupGattServer();
 
-    channel = new MethodChannel(binding.getBinaryMessenger(), BLECHANNEL);
+    channel = new MethodChannel(messenger, CHANNEL);
     channel.setMethodCallHandler(this);
   }
 
@@ -48,10 +50,6 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "stopAdvertise":
         bleManager.stopAdvertise();
-        break;
-      case "getValues":
-        final HashMap<String, byte[]> values = gattServerManager.getValues();
-        result.success(values);
         break;
 
       default:

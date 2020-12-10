@@ -33,7 +33,6 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
-      // Handle changes of the connection
       _isConnected = change.networkInfo.isConnected;
       _isHost = change.wifiP2pInfo.isGroupOwner;
       _leaderAddress = change.wifiP2pInfo.groupOwnerAddress;
@@ -61,23 +60,23 @@ class WifiManager {
   }
 
   void unregister() {
-    _subscriptions.forEach((subscription) => subscription.cancel()); // Cancel subscriptions
-    FlutterP2p.unregister(); // Unregister from native events
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    FlutterP2p.unregister();
   }
 
-  void discover() {
-    FlutterP2p.discoverDevices();
-  }
+  Future<bool> startDiscovery() async => await FlutterP2p.discoverDevices();
 
-  Future<bool> connect() async {
-    WifiP2pDevice device;
+  Future<bool> stopDiscovery() async => await FlutterP2p.stopDiscoverDevices();
 
-    _peers.forEach((key, value) {
-      device = value;
-    });
-
-    print(device.deviceAddress);
-
+  Future<bool> connect(final WifiP2pDevice device) async {
     return await FlutterP2p.connect(device);
+  }
+
+  Future<bool> cancelConnection(final WifiP2pDevice device) async {
+    return await FlutterP2p.cancelConnect(device);
+  }
+
+  Future<bool> removeGroup() async {
+    return await FlutterP2p.removeGroup();
   }
 }
