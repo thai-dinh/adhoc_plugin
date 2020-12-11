@@ -10,8 +10,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleAdHocManager {
-  static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
-  static const MethodChannel _channel = const MethodChannel(_channelName);
+  static const String _mChannelName = 'ad.hoc.lib/plugin.ble.channel';
+  static const MethodChannel _mChannel = const MethodChannel(_mChannelName);
+  static const String _eChannelName = 'ad.hoc.lib/plugin.ble.stream';
+  static const EventChannel _eChannel = const EventChannel(_eChannelName);
 
   FlutterReactiveBle _client;
   HashMap<String, BleAdHocDevice> _discovered;
@@ -29,13 +31,13 @@ class BleAdHocManager {
     mtu = ADHOC_DEFAULT_MTU;
   }
 
-  Future<String> get deviceName async => await _channel.invokeMethod('getName');
+  Future<String> get deviceName async => await _mChannel.invokeMethod('getName');
 
   HashMap<String, BleAdHocDevice> get discoveredDevices => _discovered;
 
-  void startAdvertise() => _channel.invokeMethod('startAdvertise');
+  void startAdvertise() => _mChannel.invokeMethod('startAdvertise');
 
-  void stopAdvertise() => _channel.invokeMethod('stopAdvertise');
+  void stopAdvertise() => _mChannel.invokeMethod('stopAdvertise');
 
   void startScan() {
     _discovered.clear();
@@ -93,4 +95,6 @@ class BleAdHocManager {
     mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
     device.mtu = mtu;
   }
+
+  
 }

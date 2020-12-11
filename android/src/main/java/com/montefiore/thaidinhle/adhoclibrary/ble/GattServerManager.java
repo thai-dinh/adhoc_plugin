@@ -3,7 +3,6 @@ package com.montefiore.thaidinhle.adhoclibrary.ble;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
@@ -11,16 +10,11 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
 
-import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothUtils;
-
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.EventChannel.EventSink;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
@@ -34,10 +28,11 @@ public class GattServerManager {
 
     private EventSink eventSink;
     private HashMap<String, ArrayList<byte[]>> data;
+    private HashMap<String, Integer> mtus;
 
     public GattServerManager(BluetoothManager bluetoothManager, Context context, BinaryMessenger messenger) {
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
-        this.data = new HashMap<String, ArrayList<byte[]>>();
+        this.data = new HashMap<>();
         this.bleEventStream = new EventChannel(messenger, STREAM);
         this.bleEventStream.setStreamHandler(initStreamHandler());
     }
@@ -74,28 +69,25 @@ public class GattServerManager {
                                                  boolean preparedWrite, boolean responseNeeded,
                                                  int offset, byte[] value)
         {
+            Log.d(TAG, Integer.toString(value.length));
             Log.d(TAG, "onCharacteristicWriteRequest()");
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
-
-            String address = device.getAddress();
-            Log.d(TAG, "onCharacteristicWriteRequest(): address=" + address);
-            if (!data.containsKey(address)) {
-                ArrayList<byte[]> received = data.get(address);
-                received.add(value);
-                data.replace(address, received);
-            } else {
-                ArrayList<byte[]> received = new ArrayList<byte[]>();
-                received.add(value);
-                data.put(address, received);
-            }
+            processData(device, value);
         }
 
         @Override
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             Log.d(TAG, "onConnectionStateChange()");
             super.onConnectionStateChange(device, status, newState);
+        }
+
+        @Override
+        public void onMtuChanged(BluetoothDevice device, int mtu) {
+            Log.d(TAG, "onMtuChanged()");
+            super.onMtuChanged(device, mtu);
+            mtus.put(address, mtu);
         }
     };
 
@@ -118,9 +110,25 @@ public class GattServerManager {
 
     public void closeGattServer() {
         gattServer.close();
+        eventStream.setStreamHandler(null);
     }
 
     private void processData(BluetoothDevice device, byte[] value) {
-        
+        ArrayList<byte[]> received;
+        String address = device.getAddress();
+        if (data.containsKey(address)) {
+            received = data.get(address);
+        } else {
+            received = new ArrayList<>();
+            mtus.put(address, BluetoothUtils.DEFAULT_MTU);
+        }
+
+        received.add(value);
+        data.put(address, received);
+
+        if (value[0] == BluetoothUtils.END_MESSAGE) {
+            eventSink.success(data.get(address));
+            data.put(address, new ArrayList<>());
+        }
     }
 }
