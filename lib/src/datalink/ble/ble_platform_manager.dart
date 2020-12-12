@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/services.dart';
 
 class BlePlatformManager {
@@ -6,5 +8,14 @@ class BlePlatformManager {
 
   BlePlatformManager();
 
-  Stream<dynamic> listen() => _channel.receiveBroadcastStream();
+  Stream<Uint8List> messageStream(String remoteAddress) async* {
+    List<Uint8List> values = List.empty(growable: true);
+
+    _channel.receiveBroadcastStream().listen((event) {
+      if (event['macAddress'] == remoteAddress)
+        values.add(event['values']);
+    });
+
+    yield values.removeAt(0);
+  }
 }

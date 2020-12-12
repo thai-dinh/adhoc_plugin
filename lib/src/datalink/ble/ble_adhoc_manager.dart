@@ -18,18 +18,17 @@ class BleAdHocManager {
   FlutterReactiveBle _client;
   HashMap<String, BleAdHocDevice> _discovered;
   StreamSubscription<DiscoveredDevice> _subscription;
-  Uuid _serviceUuid;
-  Uuid _characteristicUuid;
-  int mtu;
+  Uuid serviceUuid;
+  Uuid characteristicUuid;
 
   BleAdHocManager() {
-    _client = FlutterReactiveBle();
-    _discovered = HashMap();
-    _serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
-    _characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
-
-    mtu = ADHOC_DEFAULT_MTU;
+    this._client = FlutterReactiveBle();
+    this._discovered = HashMap();
+    this.serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
+    this.characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
   }
+
+  FlutterReactiveBle get client => _client;
 
   Future<String> get deviceName async => await _mChannel.invokeMethod('getName');
 
@@ -43,7 +42,7 @@ class BleAdHocManager {
     _discovered.clear();
 
     _subscription = _client.scanForDevices(
-      withServices: [_serviceUuid],
+      withServices: [serviceUuid],
       scanMode: ScanMode.lowLatency,
     ).listen((device) { 
       if (!_discovered.containsKey(device.id))
@@ -60,31 +59,10 @@ class BleAdHocManager {
       _subscription.cancel();
   }
 
-  void connect(String remoteAddress) {
-    _client.connectToDevice(
-      id: remoteAddress,
-      servicesWithCharacteristicsToDiscover: {},
-      connectionTimeout: const Duration(seconds: 5),
-    ).listen((state) {
-      print('Connection state: ${state.connectionState}');
-    }, onError: (error) {
-      print(error.toString());
-    });
-  }
-
-  void writeValue(String remoteAddress, Uint8List values) {
-    final characteristic = 
-      QualifiedCharacteristic(serviceId: _serviceUuid,
-                              characteristicId: _characteristicUuid,
-                              deviceId: remoteAddress);
-    _client.writeCharacteristicWithResponse(characteristic,
-                                            value: values.toList());
-  }
-
   Future<Uint8List> readValue(String remoteAddress) async {
     final characteristic = 
-      QualifiedCharacteristic(serviceId: _serviceUuid,
-                              characteristicId: _characteristicUuid,
+      QualifiedCharacteristic(serviceId: serviceUuid,
+                              characteristicId: characteristicUuid,
                               deviceId: remoteAddress);    
     final response = await _client.readCharacteristic(characteristic);
 
@@ -95,6 +73,4 @@ class BleAdHocManager {
     mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
     device.mtu = mtu;
   }
-
-  
 }

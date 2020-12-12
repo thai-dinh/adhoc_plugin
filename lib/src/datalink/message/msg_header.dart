@@ -19,6 +19,16 @@ class Header {
 
   String get address => _address;
 
+  String toJson() {
+    return '{' +
+              '"_deviceType" : "$_deviceType"' +
+              '"_messageType" : "$_messageType"' +
+              '"_address" : "$_address"' +
+              '"_label" : "$_label"' +
+              '"_name" : "$_name"' +
+            '}';
+  }
+
   @override
   String toString() {
     return 'Header{' +

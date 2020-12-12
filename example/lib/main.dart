@@ -35,14 +35,6 @@ class _AppState extends State<ExampleApp> {
                 onPressed: _wifiManager.unregister,
               ),
               RaisedButton(
-                child: Text('Start discovery'),
-                onPressed: _wifiManager.discover,
-              ),
-              RaisedButton(
-                child: Text('Connect'),
-                onPressed: _wifiManager.connect,
-              ),
-              RaisedButton(
                 child: Text('Start advertise'),
                 onPressed: _bleManager.startAdvertise,
               ),
