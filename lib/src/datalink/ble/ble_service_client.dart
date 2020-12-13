@@ -37,12 +37,12 @@ class BleServiceClient extends ServiceClient {
     _platformManager.messageStream(_device.macAddress).listen((event) {
       _rawData.add(event);
       if (event[0] == MESSAGE_END) {
-        _reassemble();
+        _processMessage();
       }
     });
   }
 
-  void _reassemble() {
+  void _processMessage() {
     Utf8Decoder decoder = Utf8Decoder();
     Uint8List rawMessage = _rawData.removeAt(0), buffer;
 
@@ -102,7 +102,9 @@ class BleServiceClient extends ServiceClient {
       _connectionLink.cancel();
   }
 
-  void sendMessage(MessageAdHoc message) {
+  void sendMessage(MessageAdHoc message) async {
+    print("[AdHocPlugin] " + _device.macAddress);
+
     List<Uint8List> data = List.empty(growable: true);
     Utf8Encoder encoder = Utf8Encoder();
     Uint8List msg = encoder.convert(message.toString()), tmp;
@@ -126,15 +128,15 @@ class BleServiceClient extends ServiceClient {
     data.add(tmp);
 
     while (data.length > 0)
-      _writeValue(data.removeAt(0));
+      await _writeValue(data.removeAt(0));
   }
 
-  void _writeValue(Uint8List values) {
+  Future<void> _writeValue(Uint8List values) async {
     final characteristic = 
       QualifiedCharacteristic(serviceId: serviceUuid,
                               characteristicId: characteristicUuid,
                               deviceId: _device.macAddress);
-    _client.writeCharacteristicWithResponse(characteristic,
+    await _client.writeCharacteristicWithResponse(characteristic,
                                             value: values.toList());
   }
 

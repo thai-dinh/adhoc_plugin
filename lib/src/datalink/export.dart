@@ -1,6 +1,5 @@
 export 'ble/ble_adhoc_device.dart';
 export 'ble/ble_adhoc_manager.dart';
-export 'ble/ble_msg_manager.dart';
 export 'ble/ble_util.dart';
 export 'message/msg_adhoc.dart';
 export 'message/msg_header.dart';

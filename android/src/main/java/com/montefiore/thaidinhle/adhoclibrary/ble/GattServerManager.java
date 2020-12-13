@@ -24,7 +24,7 @@ public class GattServerManager {
     private static final String STREAM = "ad.hoc.lib/plugin.ble.stream";
 
     private final BluetoothGattServer gattServer;
-    private final EventChannel eventStream;
+    private final EventChannel bleEventStream;
 
     private EventSink eventSink;
     private HashMap<String, ArrayList<byte[]>> data;
@@ -69,8 +69,8 @@ public class GattServerManager {
                                                  boolean preparedWrite, boolean responseNeeded,
                                                  int offset, byte[] value)
         {
-            Log.d(TAG, Integer.toString(value.length));
-            Log.d(TAG, "onCharacteristicWriteRequest()");
+            Log.d(TAG, "onCharacteristicWriteRequest(): " + Integer.toString(value.length));
+            Log.d(TAG, "onCharacteristicWriteRequest(): " + device.getAddress());
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
@@ -87,7 +87,7 @@ public class GattServerManager {
         public void onMtuChanged(BluetoothDevice device, int mtu) {
             Log.d(TAG, "onMtuChanged()");
             super.onMtuChanged(device, mtu);
-            mtus.put(address, mtu);
+            mtus.put(device.getAddress(), mtu);
         }
     };
 
@@ -110,7 +110,7 @@ public class GattServerManager {
 
     public void closeGattServer() {
         gattServer.close();
-        eventStream.setStreamHandler(null);
+        bleEventStream.setStreamHandler(null);
     }
 
     private void processData(BluetoothDevice device, byte[] value) {
@@ -127,8 +127,14 @@ public class GattServerManager {
         data.put(address, received);
 
         if (value[0] == BluetoothUtils.END_MESSAGE) {
-            eventSink.success(data.get(address));
-            data.put(address, new ArrayList<>());
+            HashMap<String, Object> mapDeviceData = new HashMap<>();
+            mapDeviceData.put("macAddress", address);
+            mapDeviceData.put("values", data.get(address));
+
+            eventSink.success(mapDeviceData);
+
+            received = new ArrayList<>();
+            data.put(address, received);
         }
     }
 }

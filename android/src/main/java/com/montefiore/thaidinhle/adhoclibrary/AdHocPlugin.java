@@ -8,15 +8,14 @@ import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothLowEnergyManager;
 import com.montefiore.thaidinhle.adhoclibrary.ble.GattServerManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-import java.util.HashMap;
-
 public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String CHANNEL = "ad.hoc.lib/plugin.ble.channel";
+  private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.ble.channel";
 
   private BluetoothLowEnergyManager bleManager;
   private GattServerManager gattServerManager;
@@ -34,7 +33,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
     gattServerManager = new GattServerManager(bluetoothManager, context, messenger);
     gattServerManager.setupGattServer();
 
-    channel = new MethodChannel(messenger, CHANNEL);
+    channel = new MethodChannel(messenger, CHANNEL_NAME);
     channel.setMethodCallHandler(this);
   }
 
@@ -60,6 +59,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    gattServerManager.closeGattServer();
     channel.setMethodCallHandler(null);
   }
 }
