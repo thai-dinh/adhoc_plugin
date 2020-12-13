@@ -9,11 +9,8 @@ class BleClientExample {
 
   BleClientExample() {
     _bleAdHocManager = BleAdHocManager();
+    _bleAdHocManager.startAdvertise();
   }
-
-  void startAdvertiseExample() => _bleAdHocManager.startAdvertise();
-
-  void stopAdvertiseExample() => _bleAdHocManager.stopAdvertise();
 
   void startScanExample() => _bleAdHocManager.startScan();
 
