@@ -103,29 +103,28 @@ class BleServiceClient extends ServiceClient {
   }
 
   void sendMessage(MessageAdHoc message) async {
-    print("[AdHocPlugin] " + _device.macAddress);
-
     List<Uint8List> data = List.empty(growable: true);
+    List<int> fragmentInt;
     Utf8Encoder encoder = Utf8Encoder();
-    Uint8List msg = encoder.convert(message.toString()), tmp;
+    Uint8List msg = encoder.convert(message.toString()), fragmentByte;
     int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
     int index = MESSAGE_BEGIN;
 
     while (length > mtu) {
-      tmp = msg.sublist(start, end);
-      tmp.insert(0, index % UINT8_SIZE);
+      fragmentInt = [index % UINT8_SIZE] + msg.sublist(start, end).toList();
+      fragmentByte = Uint8List.fromList(fragmentInt);
       index++;
 
-      data.add(tmp);
+      data.add(fragmentByte);
 
       start += mtu;
       end += mtu;
       length -= mtu;
     }
 
-    tmp = msg.sublist(start, start += length);
-    tmp.insert(0, MESSAGE_END);
-    data.add(tmp);
+    fragmentInt = [MESSAGE_END] + msg.sublist(start, start += length).toList();
+    fragmentByte = Uint8List.fromList(fragmentInt);
+    data.add(fragmentByte);
 
     while (data.length > 0)
       await _writeValue(data.removeAt(0));

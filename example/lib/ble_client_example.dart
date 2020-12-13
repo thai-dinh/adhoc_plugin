@@ -22,7 +22,7 @@ class BleClientExample {
 
     _devices = _bleAdHocManager.discoveredDevices;
 
-    _devices.forEach((key, value) { 
+    _devices.forEach((key, value) {
       _bleClient = BleServiceClient(_bleAdHocManager.client, value, 3, 5);
     });
   }

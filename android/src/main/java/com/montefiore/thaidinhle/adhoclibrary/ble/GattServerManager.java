@@ -116,11 +116,12 @@ public class GattServerManager {
     private void processData(BluetoothDevice device, byte[] value) {
         ArrayList<byte[]> received;
         String address = device.getAddress();
+        Log.d(TAG, "onMtuChanged()=" + address);
         if (data.containsKey(address)) {
             received = data.get(address);
         } else {
             received = new ArrayList<>();
-            mtus.put(address, BluetoothUtils.DEFAULT_MTU);
+            mtus.put(address, Integer(BluetoothUtils.DEFAULT_MTU));
         }
 
         received.add(value);

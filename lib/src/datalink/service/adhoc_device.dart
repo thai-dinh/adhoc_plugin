@@ -5,7 +5,7 @@ abstract class AdHocDevice {
   String _macAddress;
   int _deviceType;
 
-  AdHocDevice([String deviceName, String macAddress, int deviceType]);
+  AdHocDevice([this._deviceName, this._macAddress, this._deviceType]);
 
   String get deviceName => _deviceName;
 
