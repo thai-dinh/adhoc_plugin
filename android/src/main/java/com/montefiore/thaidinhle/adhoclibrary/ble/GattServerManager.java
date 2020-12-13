@@ -10,8 +10,8 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
 
-import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.EventChannel.EventSink;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +33,6 @@ public class GattServerManager {
     }
 
     public StreamHandler initStreamHandler() {
-        Log.d(TAG, "initStreamHandler()");
         return new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {

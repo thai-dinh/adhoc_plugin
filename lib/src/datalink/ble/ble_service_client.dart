@@ -3,20 +3,23 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_platform_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/message/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 
+import 'package:flutter/services.dart';
+
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleServiceClient extends ServiceClient {
+  static const String _channelName = 'ad.hoc.lib/plugin.ble.stream';
+  static const EventChannel _channel = const EventChannel(_channelName);
+
   StreamSubscription<ConnectionStateUpdate> _connectionLink;
   FlutterReactiveBle _client;
   BleAdHocDevice _device;
-  BlePlatformManager _platformManager;
   List<Uint8List> _rawData;
   List<MessageAdHoc> _messages;
 
@@ -26,7 +29,6 @@ class BleServiceClient extends ServiceClient {
   BleServiceClient(this._client, this._device, int attempts, int timeOut) 
     : super(Service.STATE_NONE, attempts, timeOut) {
 
-    this._platformManager = BlePlatformManager();
     this._rawData = List.empty(growable: true);
     this._messages = List.empty(growable: true);
     this.serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
@@ -34,10 +36,12 @@ class BleServiceClient extends ServiceClient {
   }
 
   void listen() {
-    _platformManager.messageStream(_device.macAddress).listen((event) {
-      _rawData.add(event);
-      if (event[0] == MESSAGE_END) {
-        _processMessage();
+    _channel.receiveBroadcastStream().listen((event) {
+      if (event['macAddress'] == _device.macAddress) {
+        _rawData.add(event['values']);
+        if (event[0] == MESSAGE_END) {
+          _processMessage();
+        }
       }
     });
   }
