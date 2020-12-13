@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/adhoclibrary.dart';
+import 'package:adhoclibrary_example/ble_client_example.dart';
 
 import 'package:flutter/material.dart';
 
@@ -12,7 +12,7 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  BleAdHocManager _bleManager = BleAdHocManager();
+  BleClientExample example = BleClientExample();
 
   @override
   Widget build(BuildContext context) {
@@ -27,15 +27,31 @@ class _AppState extends State<ExampleApp> {
             children: <Widget>[
               RaisedButton(
                 child: Text('Start advertise'),
-                onPressed: _bleManager.startAdvertise,
+                onPressed: example.startAdvertiseExample,
               ),
               RaisedButton(
                 child: Text('Stop advertise'),
-                onPressed: _bleManager.stopAdvertise,
+                onPressed: example.stopAdvertiseExample,
               ),
               RaisedButton(
                 child: Text('Start scan'),
-                onPressed: _bleManager.startScan,
+                onPressed: example.startScanExample,
+              ),
+              RaisedButton(
+                child: Text('Stop scan'),
+                onPressed: example.stopScanExample,
+              ),
+              RaisedButton(
+                child: Text('Connect'),
+                onPressed: example.connectExample,
+              ),
+              RaisedButton(
+                child: Text('Send message'),
+                onPressed: example.sendMessageExample,
+              ),
+              RaisedButton(
+                child: Text('Read message'),
+                onPressed: example.receiveMessageExample,
               ),
             ],
           ),
