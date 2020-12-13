@@ -33,6 +33,7 @@ public class GattServerManager {
     public GattServerManager(BluetoothManager bluetoothManager, Context context, BinaryMessenger messenger) {
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
         this.data = new HashMap<>();
+        this.mtus = new HashMap<>();
         this.bleEventStream = new EventChannel(messenger, STREAM);
         this.bleEventStream.setStreamHandler(initStreamHandler());
     }
@@ -116,12 +117,11 @@ public class GattServerManager {
     private void processData(BluetoothDevice device, byte[] value) {
         ArrayList<byte[]> received;
         String address = device.getAddress();
-        Log.d(TAG, "onMtuChanged()=" + address);
         if (data.containsKey(address)) {
             received = data.get(address);
         } else {
             received = new ArrayList<>();
-            mtus.put(address, Integer(BluetoothUtils.DEFAULT_MTU));
+            mtus.put(address, BluetoothUtils.DEFAULT_MTU);
         }
 
         received.add(value);
