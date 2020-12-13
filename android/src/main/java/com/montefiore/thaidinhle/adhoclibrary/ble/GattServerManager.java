@@ -10,8 +10,6 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
 
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.EventChannel.EventSink;
 
@@ -21,24 +19,21 @@ import java.util.UUID;
 
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
-    private static final String STREAM = "ad.hoc.lib/plugin.ble.stream";
 
     private final BluetoothGattServer gattServer;
-    private final EventChannel bleEventStream;
 
     private EventSink eventSink;
     private HashMap<String, ArrayList<byte[]>> data;
     private HashMap<String, Integer> mtus;
 
-    public GattServerManager(BluetoothManager bluetoothManager, Context context, BinaryMessenger messenger) {
+    public GattServerManager(BluetoothManager bluetoothManager, Context context) {
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
         this.data = new HashMap<>();
         this.mtus = new HashMap<>();
-        this.bleEventStream = new EventChannel(messenger, STREAM);
-        this.bleEventStream.setStreamHandler(initStreamHandler());
     }
 
-    private StreamHandler initStreamHandler() {
+    public StreamHandler initStreamHandler() {
+        Log.d(TAG, "initStreamHandler()");
         return new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
@@ -92,28 +87,6 @@ public class GattServerManager {
         }
     };
 
-    public void setupGattServer() {
-        BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
-                                            BluetoothGattCharacteristic.PROPERTY_READ |
-                                            BluetoothGattCharacteristic.PROPERTY_WRITE |
-                                            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-                                            BluetoothGattCharacteristic.PERMISSION_READ |
-                                            BluetoothGattCharacteristic.PERMISSION_WRITE);
-
-        BluetoothGattService service =
-            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
-                                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        service.addCharacteristic(characteristic);
-
-        gattServer.addService(service);
-    }
-
-    public void closeGattServer() {
-        gattServer.close();
-        bleEventStream.setStreamHandler(null);
-    }
-
     private void processData(BluetoothDevice device, byte[] value) {
         ArrayList<byte[]> received;
         String address = device.getAddress();
@@ -137,5 +110,26 @@ public class GattServerManager {
             received = new ArrayList<>();
             data.put(address, received);
         }
+    }
+
+    public void setupGattServer() {
+        BluetoothGattCharacteristic characteristic =
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
+                                            BluetoothGattCharacteristic.PROPERTY_READ |
+                                            BluetoothGattCharacteristic.PROPERTY_WRITE |
+                                            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                                            BluetoothGattCharacteristic.PERMISSION_READ |
+                                            BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+        BluetoothGattService service =
+            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
+                                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        service.addCharacteristic(characteristic);
+
+        gattServer.addService(service);
+    }
+
+    public void closeGattServer() {
+        gattServer.close();
     }
 }

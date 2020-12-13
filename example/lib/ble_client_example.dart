@@ -24,6 +24,7 @@ class BleClientExample {
 
     _devices.forEach((key, value) {
       _bleClient = BleServiceClient(_bleAdHocManager.client, value, 3, 5);
+      _bleClient.listen();
     });
   }
 
