@@ -12,7 +12,6 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  WifiManager _wifiManager = WifiManager();
   BleAdHocManager _bleManager = BleAdHocManager();
 
   @override
@@ -26,14 +25,6 @@ class _AppState extends State<ExampleApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              RaisedButton(
-                child: Text('Register'),
-                onPressed: _wifiManager.register,
-              ),
-              RaisedButton(
-                child: Text('Unregister'),
-                onPressed: _wifiManager.unregister,
-              ),
               RaisedButton(
                 child: Text('Start advertise'),
                 onPressed: _bleManager.startAdvertise,

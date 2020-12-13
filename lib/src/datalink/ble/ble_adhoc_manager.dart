@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
@@ -12,8 +11,6 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleAdHocManager {
   static const String _mChannelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _mChannel = const MethodChannel(_mChannelName);
-  static const String _eChannelName = 'ad.hoc.lib/plugin.ble.stream';
-  static const EventChannel _eChannel = const EventChannel(_eChannelName);
 
   FlutterReactiveBle _client;
   HashMap<String, BleAdHocDevice> _discovered;
@@ -57,16 +54,6 @@ class BleAdHocManager {
   void stopScan() {
     if (_subscription != null)
       _subscription.cancel();
-  }
-
-  Future<Uint8List> readValue(String remoteAddress) async {
-    final characteristic = 
-      QualifiedCharacteristic(serviceId: serviceUuid,
-                              characteristicId: characteristicUuid,
-                              deviceId: remoteAddress);    
-    final response = await _client.readCharacteristic(characteristic);
-
-    return Uint8List.fromList(response);
   }
 
   Future<void> requestMtu(BleAdHocDevice device, int mtu) async {  
