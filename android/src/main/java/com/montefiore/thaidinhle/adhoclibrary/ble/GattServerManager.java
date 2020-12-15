@@ -10,6 +10,8 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
 
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
@@ -19,21 +21,39 @@ import java.util.UUID;
 
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
+    private static final String STREAM_NAME = "ad.hoc.lib/plugin.ble.stream";
 
-    private final BluetoothGattServer gattServer;
-
+    private BluetoothGattServer gattServer;
+    private EventChannel eventChannel;
     private EventSink eventSink;
     private HashMap<String, ArrayList<byte[]>> data;
     private HashMap<String, Integer> mtus;
-
-    public GattServerManager(BluetoothManager bluetoothManager, Context context) {
-        this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
+    
+    public GattServerManager() {
         this.data = new HashMap<>();
         this.mtus = new HashMap<>();
     }
 
-    public StreamHandler initStreamHandler() {
-        return new StreamHandler() {
+    public void setupGattServer() {
+        BluetoothGattCharacteristic characteristic =
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
+                                            BluetoothGattCharacteristic.PROPERTY_READ |
+                                            BluetoothGattCharacteristic.PROPERTY_WRITE |
+                                            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                                            BluetoothGattCharacteristic.PERMISSION_READ |
+                                            BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+        BluetoothGattService service =
+            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
+                                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        service.addCharacteristic(characteristic);
+
+        gattServer.addService(service);
+    }
+
+    public void initEventChannel(BinaryMessenger messenger) {
+        eventChannel = new EventChannel(messenger, STREAM_NAME);
+        eventChannel.setStreamHandler(new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
                 Log.d(TAG, "onListen()");
@@ -45,7 +65,11 @@ public class GattServerManager {
                 Log.d(TAG, "onCancel()");
                 closeGattServer();
             }
-        };
+        });
+    }
+
+    public void openGattServer(BluetoothManager bluetoothManager, Context context) {
+        gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
     }
 
     private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
@@ -111,24 +135,8 @@ public class GattServerManager {
         }
     }
 
-    public void setupGattServer() {
-        BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
-                                            BluetoothGattCharacteristic.PROPERTY_READ |
-                                            BluetoothGattCharacteristic.PROPERTY_WRITE |
-                                            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-                                            BluetoothGattCharacteristic.PERMISSION_READ |
-                                            BluetoothGattCharacteristic.PERMISSION_WRITE);
-
-        BluetoothGattService service =
-            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
-                                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        service.addCharacteristic(characteristic);
-
-        gattServer.addService(service);
-    }
-
     public void closeGattServer() {
         gattServer.close();
+        eventChannel.setStreamHandler(null);
     }
 }

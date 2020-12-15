@@ -11,6 +11,8 @@ class BleClientExample {
     _bleAdHocManager = BleAdHocManager();
   }
 
+  void openGattServer() => _bleAdHocManager.openGattServer();
+
   void startAdvertiseExample() => _bleAdHocManager.startAdvertise();
 
   void stopAdvertiseExample() => _bleAdHocManager.stopAdvertise();

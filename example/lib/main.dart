@@ -26,6 +26,10 @@ class _AppState extends State<ExampleApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               RaisedButton(
+                child: Text('Open'),
+                onPressed: example.openGattServer,
+              ),
+              RaisedButton(
                 child: Text('Start advertise'),
                 onPressed: example.startAdvertiseExample,
               ),
@@ -52,6 +56,10 @@ class _AppState extends State<ExampleApp> {
               RaisedButton(
                 child: Text('Read message'),
                 onPressed: example.receiveMessageExample,
+              ),
+              RaisedButton(
+                child: Text('Open Gatt Server'),
+                onPressed: example.openGattServer,
               ),
             ],
           ),

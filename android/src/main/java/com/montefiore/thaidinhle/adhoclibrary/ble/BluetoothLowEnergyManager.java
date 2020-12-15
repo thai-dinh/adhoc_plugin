@@ -1,12 +1,10 @@
 package com.montefiore.thaidinhle.adhoclibrary.ble;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -18,8 +16,8 @@ public class BluetoothLowEnergyManager {
     private final BluetoothAdapter bluetoothAdapter;
     private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
-    public BluetoothLowEnergyManager(BluetoothManager bluetoothManager, Context context) {
-        this.bluetoothAdapter = bluetoothManager.getAdapter();
+    public BluetoothLowEnergyManager() {
+        this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
     }
 
