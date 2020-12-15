@@ -7,3 +7,6 @@ const MESSAGE_END = 0;
 const MESSAGE_BEGIN = 1;
 
 const UINT8_SIZE = 256;
+
+const STATE_DISCONNECTED = 0;
+const STATE_CONNECTED = 1;

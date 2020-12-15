@@ -6,4 +6,7 @@ public class BluetoothUtils {
 
     public static final int DEFAULT_MTU = 20;
     public static final int END_MESSAGE = 0;
+
+    public static final int STATE_DISCONNECTED = 0;
+    public static final int STATE_CONNECTED = 1;
 }

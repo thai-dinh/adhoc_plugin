@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleServiceClient extends ServiceClient {
-  static const String _channelName = 'ad.hoc.lib/plugin.ble.stream';
+  static const String _channelName = 'ad.hoc.lib/ble.message';
   static const EventChannel _channel = const EventChannel(_channelName);
 
   StreamSubscription<ConnectionStateUpdate> _connectionLink;
@@ -35,27 +35,21 @@ class BleServiceClient extends ServiceClient {
     this.characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
   }
 
-  void listen() {
+  void listenMessageEvent() {
     _channel.receiveBroadcastStream().listen((event) {
       if (event['macAddress'] == _device.macAddress) {
-        _rawData.add(event['values']);
-        if (event[0] == MESSAGE_END) {
-          _processMessage();
-        }
+        _rawData = List<Uint8List>.from(event['values'].whereType<Uint8List>());
+        _processMessage();
       }
     });
   }
 
   void _processMessage() {
     Utf8Decoder decoder = Utf8Decoder();
-    Uint8List rawMessage = _rawData.removeAt(0), buffer;
-
-    do {
-      buffer = _rawData.removeAt(0);
-      rawMessage += buffer;
-    } while (buffer[0] != MESSAGE_END);
-
+    Uint8List rawMessage = 
+      Uint8List.fromList(_rawData.expand((x) => x).toList());
     String stringMessage = decoder.convert(rawMessage);
+    print(stringMessage);
     Map mapMessage = jsonDecode(stringMessage);
     MessageAdHoc message = MessageAdHoc.fromMap(mapMessage);
     _messages.add(message);

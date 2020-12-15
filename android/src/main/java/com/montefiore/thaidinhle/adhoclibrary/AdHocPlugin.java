@@ -19,21 +19,21 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   private BluetoothLowEnergyManager bleManager;
   private GattServerManager gattServerManager;
   private MethodChannel methodChannel;
-  private BluetoothManager bluetoothManager;
-  private Context context;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
     methodChannel = new MethodChannel(binding.getBinaryMessenger(), CHANNEL_NAME);
     methodChannel.setMethodCallHandler(this);
     
-    context = binding.getApplicationContext();
-    bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+    Context context = binding.getApplicationContext();
+    BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
     bleManager = new BluetoothLowEnergyManager();
 
     gattServerManager = new GattServerManager();
-    gattServerManager.initEventChannel(binding.getBinaryMessenger());
+    gattServerManager.openGattServer(bluetoothManager, context);
+    gattServerManager.initEventConnectionChannel(binding.getBinaryMessenger());
+    gattServerManager.initEventMessageChannel(binding.getBinaryMessenger());
   }
 
   @Override
@@ -48,11 +48,6 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "stopAdvertise":
         bleManager.stopAdvertise();
-        break;
-
-      case "openGattServer":
-        gattServerManager.openGattServer(bluetoothManager, context);
-        gattServerManager.setupGattServer();
         break;
 
       default:
