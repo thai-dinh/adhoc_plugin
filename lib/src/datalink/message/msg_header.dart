@@ -1,3 +1,8 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'msg_header.g.dart';
+
+@JsonSerializable()
 class Header {
   int _deviceType;
   int _messageType;
@@ -5,7 +10,14 @@ class Header {
   String _label;
   String _name;
 
-  Header(this._messageType, this._label, this._name, [this._address]);
+  Header(int messageType, String label, String name, String address) {
+    this._messageType = messageType;
+    this._label = label;
+    this._name = name;
+    this._address = address;
+  }
+
+  factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
 
   set messageType(int messageType) => this._messageType = messageType;
 
@@ -19,15 +31,7 @@ class Header {
 
   String get address => _address;
 
-  String toJson() {
-    return '{' +
-              '"_deviceType" : "$_deviceType"' +
-              '"_messageType" : "$_messageType"' +
-              '"_address" : "$_address"' +
-              '"_label" : "$_label"' +
-              '"_name" : "$_name"' +
-            '}';
-  }
+  Map<String, dynamic> toJson() => _$HeaderToJson(this);
 
   @override
   String toString() {
