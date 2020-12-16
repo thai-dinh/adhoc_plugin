@@ -5,15 +5,17 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 import 'package:flutter_p2p/gen/protos/protos.pb.dart';
 
 class WifiManager {
-  HashMap _peers;
   List<StreamSubscription> _subscriptions = [];
-
-  bool _isConnected = false;
-  bool _isHost = false;
-  String _leaderAddress = '';
+  HashMap _peers;
+  bool _isConnected;
+  bool _isHost;
+  String _leaderAddress;
 
   WifiManager() {
     _peers = HashMap<String, WifiP2pDevice>();
+    _isConnected = false;
+    _isHost = false;
+    _leaderAddress = '';
   }
 
   Future<bool> _checkPermission() async {
@@ -21,6 +23,7 @@ class WifiManager {
       await FlutterP2p.requestLocationPermission();
       return false;
     }
+
     return true;
   }
 
