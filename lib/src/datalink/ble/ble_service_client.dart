@@ -52,9 +52,7 @@ class BleServiceClient extends ServiceClient {
     }).toList());
 
     String stringMessage = Utf8Decoder().convert(rawMessage);
-    print(stringMessage);
-    Map mapMessage = jsonDecode(stringMessage);
-    MessageAdHoc message = MessageAdHoc.fromMap(mapMessage);
+    MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMessage));
     _messages.add(message);
   }
 
@@ -106,7 +104,7 @@ class BleServiceClient extends ServiceClient {
   void sendMessage(MessageAdHoc message) async {
     List<int> fragmentInt;
     List<Uint8List> data = List.empty(growable: true);
-    Uint8List msg = Utf8Encoder().convert(message.toJson().toString());
+    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
     Uint8List fragmentByte;
     int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
     int index = MESSAGE_BEGIN;
