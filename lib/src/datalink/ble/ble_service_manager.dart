@@ -42,16 +42,19 @@ class BleServiceManager {
   set discovered(HashMap<String, BleAdHocDevice> discovered)
     => _discovered = discovered;
 
-  void connect() => _discovered.forEach((key, value) {
+  void connect() { _discovered.forEach((key, value) {
     BleServiceClient serviceClient = BleServiceClient(_bleClient, value, 3, 5);
-    serviceClient.connect();
-    _clients.putIfAbsent(key, () => serviceClient);
-  });
+      serviceClient.connect();
+      _clients.putIfAbsent(key, () => serviceClient);
+    });
+
+    _discovered.clear();
+  }
 
   void sendMessage(MessageAdHoc msg) =>
     _clients.forEach((key, value) { value.sendMessage(msg); });
   
-  void receiveMessage() => 
+  void receiveMessage() =>
     _clients.forEach((key, value) { 
       print(value.receiveMessage().toString());
     });
