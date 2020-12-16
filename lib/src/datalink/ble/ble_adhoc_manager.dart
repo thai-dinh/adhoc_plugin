@@ -31,9 +31,9 @@ class BleAdHocManager {
 
   HashMap<String, BleAdHocDevice> get discoveredDevices => _discovered;
 
-  void startAdvertise() => _mChannel.invokeMethod('startAdvertise');
+  void startAdvertise() async => await _mChannel.invokeMethod('startAdvertise');
 
-  void stopAdvertise() => _mChannel.invokeMethod('stopAdvertise');
+  void stopAdvertise() async => await _mChannel.invokeMethod('stopAdvertise');
 
   void startScan() {
     _discovered.clear();

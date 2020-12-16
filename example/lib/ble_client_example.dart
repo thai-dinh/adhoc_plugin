@@ -17,6 +17,7 @@ class BleClientExample {
 
   void stopScanExample() {
     _bleAdHocManager.stopScan();
+    _bleServiceManager.discovered = _bleAdHocManager.discoveredDevices;
   }
 
   void connectExample() => _bleServiceManager.connect();

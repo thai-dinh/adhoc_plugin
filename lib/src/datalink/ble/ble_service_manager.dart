@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_service_client.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
@@ -16,6 +15,7 @@ class BleServiceManager {
 
   FlutterReactiveBle _bleClient;
   HashMap<String, BleServiceClient> _clients;
+  HashMap<String, BleAdHocDevice> _discovered;
 
   BleServiceManager(this._bleClient) {
     this._clients = HashMap();
@@ -39,11 +39,20 @@ class BleServiceManager {
     });
   }
 
-  void connect() => _clients.forEach((key, value) { value.connect(); });
+  set discovered(HashMap<String, BleAdHocDevice> discovered)
+    => _discovered = discovered;
+
+  void connect() => _discovered.forEach((key, value) {
+    BleServiceClient serviceClient = BleServiceClient(_bleClient, value, 3, 5);
+    serviceClient.connect();
+    _clients.putIfAbsent(key, () => serviceClient);
+  });
 
   void sendMessage(MessageAdHoc msg) =>
     _clients.forEach((key, value) { value.sendMessage(msg); });
   
   void receiveMessage() => 
-    _clients.forEach((key, value) { print(value.receiveMessage().toString()) ;});
+    _clients.forEach((key, value) { 
+      print(value.receiveMessage().toString());
+    });
 }

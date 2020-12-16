@@ -45,13 +45,13 @@ public class GattServerManager {
         eventConnectionChannel.setStreamHandler(new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
-                Log.d(TAG, "onListen()");
+                Log.d(TAG, "Connection: onListen()");
                 eventConnectionSink = new MainThreadEventSink(events);
             }
 
             @Override
             public void onCancel(Object arguments) {
-                Log.d(TAG, "onCancel()");
+                Log.d(TAG, "Connection: onCancel()");
                 closeGattServer();
             }
         });
@@ -62,13 +62,13 @@ public class GattServerManager {
         eventMessageChannel.setStreamHandler(new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
-                Log.d(TAG, "onListen()");
+                Log.d(TAG, "Message: onListen()");
                 eventMessageSink = new MainThreadEventSink(events);
             }
 
             @Override
             public void onCancel(Object arguments) {
-                Log.d(TAG, "onCancel()");
+                Log.d(TAG, "Message: onCancel()");
                 closeGattServer();
             }
         });
@@ -109,8 +109,7 @@ public class GattServerManager {
                                                  boolean preparedWrite, boolean responseNeeded,
                                                  int offset, byte[] value)
         {
-            Log.d(TAG, "onCharacteristicWriteRequest(): " + Integer.toString(value.length));
-            Log.d(TAG, "onCharacteristicWriteRequest(): " + device.getAddress());
+            Log.d(TAG, "onCharacteristicWriteRequest(): " + Byte.toString(value[0]));
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
