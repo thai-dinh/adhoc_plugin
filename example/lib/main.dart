@@ -28,6 +28,10 @@ class _AppState extends State<ExampleApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               RaisedButton(
+                child: Text('Register'),
+                onPressed: wifiExample.registerExample,
+              ),
+              RaisedButton(
                 child: Text('Start discovery'),
                 onPressed: wifiExample.startDiscoveryExample,
               ),
