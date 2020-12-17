@@ -11,3 +11,4 @@ export 'service/service_client.dart';
 export 'service/service.dart';
 export 'wifi/wifi_adhoc_device.dart';
 export 'wifi/wifi_manager.dart';
+export 'wifi/wifi_service_client.dart';
