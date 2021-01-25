@@ -1,4 +1,4 @@
-package com.montefiore.thaidinhle.adhoclibrary.ble;
+package com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -26,67 +26,94 @@ public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
+    private static final String STREAM_MTU = "ad.hoc.lib/ble.mtu";
 
+    private boolean verbose;
     private BluetoothGattServer gattServer;
     private EventChannel eventConnectionChannel;
     private EventChannel eventMessageChannel;
+    private EventChannel eventMtuChannel;
     private HashMap<String, ArrayList<byte[]>> data;
-    private HashMap<String, Integer> mtus;
     private MainThreadEventSink eventConnectionSink;
     private MainThreadEventSink eventMessageSink;
-    
+    private MainThreadEventSink eventMtuSink;
+
     public GattServerManager() {
+        this.verbose = false;
         this.data = new HashMap<>();
-        this.mtus = new HashMap<>();
     }
 
     public void initEventConnectionChannel(BinaryMessenger messenger) {
+        if (verbose) Log.d(TAG, "initEventConnectionChannel()");
         eventConnectionChannel = new EventChannel(messenger, STREAM_CONNECTION);
         eventConnectionChannel.setStreamHandler(new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
-                Log.d(TAG, "Connection: onListen()");
+                if (verbose) Log.d(TAG, "Connection: onListen()");
                 eventConnectionSink = new MainThreadEventSink(events);
             }
 
             @Override
             public void onCancel(Object arguments) {
-                Log.d(TAG, "Connection: onCancel()");
-                closeGattServer();
+                if (verbose) Log.d(TAG, "Connection: onCancel()");
+                eventConnectionSink = null;
+                eventConnectionChannel.setStreamHandler(null);
             }
         });
     }
 
     public void initEventMessageChannel(BinaryMessenger messenger) {
+        if (verbose) Log.d(TAG, "initEventMessageChannel()");
         eventMessageChannel = new EventChannel(messenger, STREAM_MESSAGE);
         eventMessageChannel.setStreamHandler(new StreamHandler() {
             @Override
             public void onListen(Object arguments, EventSink events) {
-                Log.d(TAG, "Message: onListen()");
+                if (verbose) Log.d(TAG, "Message: onListen()");
                 eventMessageSink = new MainThreadEventSink(events);
             }
 
             @Override
             public void onCancel(Object arguments) {
-                Log.d(TAG, "Message: onCancel()");
-                closeGattServer();
+                if (verbose) Log.d(TAG, "Message: onCancel()");
+                eventMessageSink = null;
+                eventMessageChannel.setStreamHandler(null);
+            }
+        });
+    }
+
+    public void initEventMtuChannel(BinaryMessenger messenger) {
+        if (verbose) Log.d(TAG, "initEventMtuChannel()");
+        eventMtuChannel = new EventChannel(messenger, STREAM_MTU);
+        eventMtuChannel.setStreamHandler(new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+                if (verbose) Log.d(TAG, "Mtu: onListen()");
+                eventMtuSink = new MainThreadEventSink(events);
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+                if (verbose) Log.d(TAG, "Mtu: onCancel()");
+                eventMtuChannel = null;
+                eventMtuChannel.setStreamHandler(null);
             }
         });
     }
 
     public void openGattServer(BluetoothManager bluetoothManager, Context context) {
+        if (verbose) Log.d(TAG, "openGattServer()");
+
         gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
         BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(UUID.fromString(BluetoothUtils.CHARACTERISTIC_UUID),
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothLowEnergyUtils.CHARACTERISTIC_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
-                                            BluetoothGattCharacteristic.PROPERTY_WRITE |
-                                            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                                            BluetoothGattCharacteristic.PROPERTY_WRITE,
                                             BluetoothGattCharacteristic.PERMISSION_READ |
                                             BluetoothGattCharacteristic.PERMISSION_WRITE);
 
         BluetoothGattService service =
-            new BluetoothGattService(UUID.fromString(BluetoothUtils.SERVICE_UUID),
+            new BluetoothGattService(UUID.fromString(BluetoothLowEnergyUtils.SERVICE_UUID),
                                      BluetoothGattService.SERVICE_TYPE_PRIMARY);
         service.addCharacteristic(characteristic);
 
@@ -98,7 +125,7 @@ public class GattServerManager {
         public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
                                                 BluetoothGattCharacteristic characteristic)
         {
-            Log.d(TAG, "onCharacteristicReadRequest()");
+            if (verbose) Log.d(TAG, "onCharacteristicReadRequest()");
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
@@ -109,7 +136,7 @@ public class GattServerManager {
                                                  boolean preparedWrite, boolean responseNeeded,
                                                  int offset, byte[] value)
         {
-            Log.d(TAG, "onCharacteristicWriteRequest(): " + Byte.toString(value[0]));
+            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest(): " + Byte.toString(value[0]));
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
@@ -120,13 +147,12 @@ public class GattServerManager {
                 received = data.get(address);
             } else {
                 received = new ArrayList<>();
-                mtus.put(address, BluetoothUtils.DEFAULT_MTU);
             }
     
             received.add(value);
             data.put(address, received);
     
-            if (value[0] == BluetoothUtils.END_MESSAGE) {
+            if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
                 HashMap<String, Object> mapDeviceData = new HashMap<>();
                 mapDeviceData.put("macAddress", address);
                 mapDeviceData.put("values", data.get(address));
@@ -140,36 +166,55 @@ public class GattServerManager {
 
         @Override
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-            Log.d(TAG, "onConnectionStateChange()");
+            if (verbose) Log.d(TAG, "onConnectionStateChange(): " + device.getAddress());
             super.onConnectionStateChange(device, status, newState);
 
+            int state;
+            String address = device.getAddress();
             HashMap<String, Object> mapDeviceInfo = new HashMap<>();
             mapDeviceInfo.put("deviceName", device.getName());
-            mapDeviceInfo.put("macAddress", device.getAddress());
+            mapDeviceInfo.put("macAddress", address);
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                mapDeviceInfo.put("state", BluetoothUtils.STATE_CONNECTED);
+                state = BluetoothLowEnergyUtils.STATE_CONNECTED;
             } else {
-                mapDeviceInfo.put("state", BluetoothUtils.STATE_DISCONNECTED);
+                state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;
             }
+
+            mapDeviceInfo.put("state", state);
 
             eventConnectionSink.success(mapDeviceInfo);
         }
 
         @Override
         public void onMtuChanged(BluetoothDevice device, int mtu) {
-            Log.d(TAG, "onMtuChanged()");
+            if (verbose) Log.d(TAG, "onMtuChanged()");
             super.onMtuChanged(device, mtu);
-            mtus.put(device.getAddress(), mtu);
+
+            String address = device.getAddress();
+            HashMap<String, Object> mapDeviceInfo = new HashMap<>();
+            mapDeviceInfo.put("deviceName", device.getName());
+            mapDeviceInfo.put("macAddress", address);
+            mapDeviceInfo.put("mtu", mtu);
+
+            eventMtuSink.success(mapDeviceInfo);
         }
     };
 
     public void closeGattServer() {
+        if (verbose) Log.d(TAG, "closeGattServer()");
         gattServer.close();
         eventConnectionSink = null;
         eventMessageSink = null;
+        eventMtuSink = null;
         eventConnectionChannel.setStreamHandler(null);
         eventMessageChannel.setStreamHandler(null);
+        eventMtuChannel.setStreamHandler(null);
+    }
+
+    public void updateVerboseState(boolean verbose) {
+        if (verbose) Log.d(TAG, "GattServer: updateVerboseState()");
+        this.verbose = verbose;
     }
 
     // Methods marked with @UiThread must be executed on the main thread

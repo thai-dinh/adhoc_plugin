@@ -14,7 +14,6 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   BleClientExample example = BleClientExample();
-  WifiClientExample wifiExample = WifiClientExample();
 
   @override
   Widget build(BuildContext context) {
@@ -28,36 +27,32 @@ class _AppState extends State<ExampleApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               RaisedButton(
-                child: Text('Register'),
-                onPressed: wifiExample.registerExample,
+                child: Text('Start advertise'),
+                onPressed: example.startAdvertiseExample,
               ),
               RaisedButton(
-                child: Text('Start discovery'),
-                onPressed: wifiExample.startDiscoveryExample,
+                child: Text('Stop advertise'),
+                onPressed: example.stopAdvertiseExample,
               ),
               RaisedButton(
-                child: Text('Stop discovery'),
-                onPressed: wifiExample.stopDiscoveryExample,
+                child: Text('Start scan'),
+                onPressed: example.startScanExample,
+              ),
+              RaisedButton(
+                child: Text('Stop scan'),
+                onPressed: example.stopScanExample,
               ),
               RaisedButton(
                 child: Text('Connect'),
-                onPressed: wifiExample.connectExample,
+                onPressed: example.connectExample,
               ),
               RaisedButton(
-                child: Text('Host'),
-                onPressed: wifiExample.hostExample,
+                child: Text('Send'),
+                onPressed: example.sendMessageExample,
               ),
               RaisedButton(
-                child: Text('Client'),
-                onPressed: wifiExample.clientExample,
-              ),
-              RaisedButton(
-                child: Text('Send message'),
-                onPressed: wifiExample.sendMessageExample,
-              ),
-              RaisedButton(
-                child: Text('Read message'),
-                onPressed: wifiExample.receiveMessageExample,
+                child: Text('Receive'),
+                onPressed: example.receiveMessageExample,
               ),
             ],
           ),

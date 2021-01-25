@@ -4,8 +4,8 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import androidx.annotation.NonNull;
 
-import com.montefiore.thaidinhle.adhoclibrary.ble.BluetoothLowEnergyManager;
-import com.montefiore.thaidinhle.adhoclibrary.ble.GattServerManager;
+import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.BluetoothLowEnergyManager;
+import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.GattServerManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
@@ -34,11 +34,18 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
     gattServerManager.openGattServer(bluetoothManager, context);
     gattServerManager.initEventConnectionChannel(binding.getBinaryMessenger());
     gattServerManager.initEventMessageChannel(binding.getBinaryMessenger());
+    gattServerManager.initEventMtuChannel(binding.getBinaryMessenger());
   }
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     switch (call.method) {
+      case "verbose":
+        final boolean verbose = call.arguments();
+        bleManager.updateVerboseState(verbose);
+        gattServerManager.updateVerboseState(verbose);
+        break;
+
       case "getName":
         final String name = bleManager.getAdapterName();
         result.success(name);
@@ -58,6 +65,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    bleManager.stopAdvertise();
     gattServerManager.closeGattServer();
     methodChannel.setMethodCallHandler(null);
   }

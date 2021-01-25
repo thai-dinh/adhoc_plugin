@@ -13,13 +13,13 @@ class BleAdHocDevice extends AdHocDevice {
     : super(device.name, device.id, Service.BLUETOOTH) {
 
     this._rssi = device.rssi;
-    this.mtu = ADHOC_DEFAULT_MTU;
+    this.mtu = MIN_MTU;
   }
 
-    BleAdHocDevice.fromMap(Map map) 
+  BleAdHocDevice.fromMap(Map map) 
     : super(map['deviceName'], map['macAddress'], Service.BLUETOOTH) {
 
-    this.mtu = ADHOC_DEFAULT_MTU;
+    this.mtu = MIN_MTU;
   }
 
   int get rssi => _rssi;

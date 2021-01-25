@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/message/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/service/service.dart';
 
 abstract class ServiceClient extends Service {
   static const int _LOW = 1500;
@@ -23,9 +23,11 @@ abstract class ServiceClient extends Service {
 
   void connect();
 
-  void cancelConnection();
+  void disconnect();
 
-  void sendMessage(MessageAdHoc msg);
+  void send(MessageAdHoc msg);
 
-  MessageAdHoc receiveMessage();
+  void listen();
+
+  void stopListening();
 }

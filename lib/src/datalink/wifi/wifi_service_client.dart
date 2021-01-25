@@ -93,12 +93,24 @@ class WifiServiceClient extends ServiceClient {
     }
   }
 
-  void cancelConnection() async {
+  void disconnect() async {
     if (state == Service.STATE_CONNECTED)
       await FlutterP2p.cancelConnect(_device.wifiP2pDevice);
   }
 
   void sendMessage(MessageAdHoc msg) => writeToClient(msg);
+
+  void send(MessageAdHoc msg) {
+
+  }
+
+  void listen() {
+
+  }
+
+  void stopListening() {
+    
+  }
 
   MessageAdHoc receiveMessage() {
     if (_messages.length > 0) {

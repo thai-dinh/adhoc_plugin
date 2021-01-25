@@ -12,20 +12,19 @@ class BleAdHocManager {
   static const String _mChannelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _mChannel = const MethodChannel(_mChannelName);
 
-  FlutterReactiveBle _client;
+  FlutterReactiveBle _bleClient;
   HashMap<String, BleAdHocDevice> _discovered;
   StreamSubscription<DiscoveredDevice> _subscription;
   Uuid serviceUuid;
   Uuid characteristicUuid;
 
-  BleAdHocManager() {
-    this._client = FlutterReactiveBle();
-    this._discovered = HashMap();
+  BleAdHocManager(bool verbose) {
+    this._bleClient = FlutterReactiveBle();
+    this._discovered = HashMap<String, BleAdHocDevice>();
     this.serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
     this.characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
+    _updateVerbose(verbose);
   }
-
-  FlutterReactiveBle get client => _client;
 
   Future<String> get deviceName async => await _mChannel.invokeMethod('getName');
 
@@ -38,14 +37,14 @@ class BleAdHocManager {
   void startScan() {
     _discovered.clear();
 
-    _subscription = _client.scanForDevices(
+    _subscription = _bleClient.scanForDevices(
       withServices: [serviceUuid],
       scanMode: ScanMode.lowLatency,
     ).listen((device) { 
       if (!_discovered.containsKey(device.id))
         print('Found ${device.name} (${device.id})');
 
-        _discovered.putIfAbsent(device.id, () => BleAdHocDevice(device));
+      _discovered.putIfAbsent(device.id, () => BleAdHocDevice(device));
     }, onError: (error) {
       print(error.toString());
     });
@@ -56,8 +55,5 @@ class BleAdHocManager {
       _subscription.cancel();
   }
 
-  Future<void> requestMtu(BleAdHocDevice device, int mtu) async {  
-    mtu = await _client.requestMtu(deviceId: device.macAddress, mtu: mtu);
-    device.mtu = mtu;
-  }
+  void _updateVerbose(bool verbose) => _mChannel.invokeMethod('verbose', verbose);
 }

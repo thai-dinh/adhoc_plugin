@@ -1,4 +1,4 @@
-package com.montefiore.thaidinhle.adhoclibrary.ble;
+package com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
@@ -16,7 +16,10 @@ public class BluetoothLowEnergyManager {
     private final BluetoothAdapter bluetoothAdapter;
     private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
+    private boolean verbose;
+
     public BluetoothLowEnergyManager() {
+        this.verbose = false;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
     }
@@ -28,22 +31,22 @@ public class BluetoothLowEnergyManager {
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure (int errorCode) {
-            Log.d(TAG, "startAdvertise() -> onStartFailure(): " + Integer.toString(errorCode));
+            if (verbose) Log.d(TAG, "onStartFailure(): " + Integer.toString(errorCode));
             super.onStartFailure(errorCode);
         }
 
         @Override
         public void onStartSuccess (AdvertiseSettings settingsInEffect) {
-            Log.d(TAG, "startAdvertise() -> onStartSuccess()");
+            if (verbose) Log.d(TAG, "onStartSuccess()");
             super.onStartSuccess(settingsInEffect);
         }
     };
 
     public void startAdvertise() {
-        Log.d(TAG, "startAdvertise()");
+        if (verbose) Log.d(TAG, "startAdvertise()");
 
         AdvertiseData data = new AdvertiseData.Builder()
-            .addServiceUuid(new ParcelUuid(UUID.fromString(BluetoothUtils.SERVICE_UUID)))
+            .addServiceUuid(new ParcelUuid(UUID.fromString(BluetoothLowEnergyUtils.SERVICE_UUID)))
             .setIncludeDeviceName(true)
             .build();
 
@@ -57,7 +60,11 @@ public class BluetoothLowEnergyManager {
     }
 
     public void stopAdvertise() {
-        Log.d(TAG, "stopAdvertise()");
+        if (verbose) Log.d(TAG, "stopAdvertise()");
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
+    }
+
+    public void updateVerboseState(boolean verbose) {
+        this.verbose = verbose;
     }
 }

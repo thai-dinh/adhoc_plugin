@@ -21,7 +21,8 @@ class WifiClientExample {
     _peers = _wifiManager.peers;
   }
 
-  void connectExample() => _peers.forEach((key, value) { 
+  void connectExample() => _peers.forEach((key, value) {
+    print(value.deviceName);
     if (value.deviceName == '[Phone] Galaxy S5') {
       _client = WifiServiceClient(value, 4444, 3, 5)
         ..connect();

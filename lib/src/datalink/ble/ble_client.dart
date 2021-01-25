@@ -13,54 +13,33 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
-class BleServiceClient extends ServiceClient {
+class BleClient extends ServiceClient {
   static const String _channelName = 'ad.hoc.lib/ble.message';
   static const EventChannel _channel = const EventChannel(_channelName);
 
-  StreamSubscription<ConnectionStateUpdate> _connectionLink;
-  FlutterReactiveBle _client;
+  StreamSubscription<ConnectionStateUpdate> _connectionStreamSub;
+  StreamSubscription<dynamic> _messageStreamSub;
+  FlutterReactiveBle _bleClient;
   BleAdHocDevice _device;
-  List<Uint8List> _rawData;
   List<MessageAdHoc> _messages;
 
   Uuid serviceUuid;
   Uuid characteristicUuid;
 
-  BleServiceClient(this._client, this._device, int attempts, int timeOut) 
+  BleClient(this._device, int attempts, int timeOut) 
     : super(Service.STATE_NONE, attempts, timeOut) {
 
-    this._rawData = List.empty(growable: true);
+    this._bleClient = FlutterReactiveBle();
     this._messages = List.empty(growable: true);
     this.serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
     this.characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
   }
 
-  void listenMessageEvent() {
-    _channel.receiveBroadcastStream().listen((event) {
-      if (event['macAddress'] == _device.macAddress) {
-        _rawData = List<Uint8List>.from(event['values'].whereType<Uint8List>());
-        _processMessage();
-      }
-    });
-  }
-
-  void _processMessage() {
-    Uint8List rawMessage = Uint8List.fromList(_rawData.expand((x) {
-      List<int> tmp = new List<int>.from(x); 
-      tmp.removeAt(0);
-      return tmp;
-    }).toList());
-
-    String stringMessage = Utf8Decoder().convert(rawMessage);
-    MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMessage));
-    _messages.add(message);
-  }
-
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
-  void _connect(int attempts, Duration delay) async {
+  Future<void> _connect(int attempts, Duration delay) async {
     try {
-      _connectionAttempt();
+      await _connectionAttempt();
     } on NoConnectionException {
       if (attempts > 0) {
         await Future.delayed(delay);
@@ -71,9 +50,9 @@ class BleServiceClient extends ServiceClient {
     }
   }
 
-  void _connectionAttempt() async {
+  Future<void> _connectionAttempt() async {
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
-      _connectionLink = _client.connectToDevice(
+      _connectionStreamSub = _bleClient.connectToDevice(
         id: _device.macAddress,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
@@ -101,37 +80,34 @@ class BleServiceClient extends ServiceClient {
     }
   }
 
-  void cancelConnection() {
-    if (_connectionLink != null)
-      _connectionLink.cancel();
+  void disconnect() {
+    if (_connectionStreamSub != null)
+      _connectionStreamSub.cancel();
   }
 
-  void sendMessage(MessageAdHoc message) async {
-    List<int> fragmentInt;
-    List<Uint8List> data = List.empty(growable: true);
+  void send(MessageAdHoc message) async {
+    List<int> msgAsListInteger;
+    List<Uint8List> msgAsListBytes = List.empty(growable: true);
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    Uint8List fragmentByte;
     int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
     int index = MESSAGE_BEGIN;
 
     while (length > mtu) {
-      fragmentInt = [index % UINT8_SIZE] + msg.sublist(start, end).toList();
-      fragmentByte = Uint8List.fromList(fragmentInt);
+      msgAsListInteger = [index % UINT8_SIZE] + msg.sublist(start, end).toList();
+      msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
+
       index++;
-
-      data.add(fragmentByte);
-
       start += mtu;
       end += mtu;
       length -= mtu;
     }
 
-    fragmentInt = [MESSAGE_END] + msg.sublist(start, start += length).toList();
-    fragmentByte = Uint8List.fromList(fragmentInt);
-    data.add(fragmentByte);
+    msgAsListInteger = 
+      [MESSAGE_END] + msg.sublist(start, start + length).toList();
+    msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
 
-    while (data.length > 0)
-      await _writeValue(data.removeAt(0));
+    while (msgAsListBytes.length > 0)
+      await _writeValue(msgAsListBytes.removeAt(0));
   }
 
   Future<void> _writeValue(Uint8List values) async {
@@ -139,15 +115,48 @@ class BleServiceClient extends ServiceClient {
       QualifiedCharacteristic(serviceId: serviceUuid,
                               characteristicId: characteristicUuid,
                               deviceId: _device.macAddress);
-    await _client.writeCharacteristicWithResponse(characteristic,
+    await _bleClient.writeCharacteristicWithResponse(characteristic,
                                             value: values.toList());
   }
 
-  MessageAdHoc receiveMessage() {
-    if (_messages.length > 0) {
-      return _messages.removeAt(0);
-    }
+  void listen() {
+    Stream<dynamic> stream = 
+      _channel.receiveBroadcastStream().asBroadcastStream();
 
-    return null;
+    _messageStreamSub = stream.listen((event) {
+      print('Client: ' + event.toString());
+      print('Client Address: ' + _device.macAddress);
+      if (event['macAddress'] == _device.macAddress) {
+        List<Uint8List> _rawMessage = 
+          List<Uint8List>.from(event['values'].whereType<Uint8List>());
+        _processMessage(_rawMessage);
+      }
+    });
+  }
+
+  void _processMessage(final List<Uint8List> rawMessage) {
+    Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage.expand((x) {
+      List<int> tmp = new List<int>.from(x); 
+      tmp.removeAt(0);
+      return tmp;
+    }).toList());
+
+    String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
+    MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMessage));
+    _messages.add(message);
+  }
+
+  void stopListening() {
+    if (_messageStreamSub != null)
+      _messageStreamSub.cancel();
+  }
+
+  void requestMtu(int mtu) async {  
+    mtu = await _bleClient.requestMtu(deviceId: _device.macAddress, mtu: mtu);
+    _device.mtu = mtu;
+  }
+
+  MessageAdHoc getMessage() {
+    return _messages.length > 0 ? _messages.removeAt(0) : null;
   }
 }

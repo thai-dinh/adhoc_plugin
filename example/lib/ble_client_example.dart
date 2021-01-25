@@ -1,12 +1,19 @@
+import 'dart:collection';
+
 import 'package:adhoclibrary/adhoclibrary.dart';
 
 class BleClientExample {
   BleAdHocManager _bleAdHocManager;
-  BleServiceManager _bleServiceManager;
+  HashMap<String, BleAdHocDevice> _discovered;
+  HashMap<String, BleClient> _bleClients;
+  BleServer _bleServer;
 
   BleClientExample() {
-    _bleAdHocManager = BleAdHocManager();
-    _bleServiceManager = BleServiceManager(_bleAdHocManager.client);
+    this._bleAdHocManager = BleAdHocManager(true);
+    this._discovered = HashMap<String, BleAdHocDevice>();
+    this._bleClients = HashMap<String, BleClient>();
+    this._bleServer = BleServer()
+      ..listen();
   }
 
   void startAdvertiseExample() => _bleAdHocManager.startAdvertise();
@@ -17,17 +24,34 @@ class BleClientExample {
 
   void stopScanExample() {
     _bleAdHocManager.stopScan();
-    _bleServiceManager.discovered = _bleAdHocManager.discoveredDevices;
+    _discovered = _bleAdHocManager.discoveredDevices;
   }
 
-  void connectExample() => _bleServiceManager.connect();
+  void connectExample() {
+    _discovered.forEach((key, value) {
+      _bleClients.putIfAbsent(key, () {
+        BleClient bleClient = BleClient(value, 3, 5);
+        bleClient.connect();
+        bleClient.listen();
+        return bleClient;
+      });
+    });
+  }
 
   void sendMessageExample() {
     Header header = Header(0, 'Label', 'Example', 'Address');
     MessageAdHoc message = MessageAdHoc(header, 'Test');
 
-    _bleServiceManager.sendMessage(message);
+    _bleClients.forEach((key, value) {
+      value.send(message);
+    });
   }
 
-  void receiveMessageExample() => _bleServiceManager.receiveMessage();
+  void receiveMessageExample() {
+    _bleClients.forEach((key, value) {
+      print(value.getMessage().toString());
+    });
+
+    print(_bleServer.getMessage().toString());
+  }
 }
