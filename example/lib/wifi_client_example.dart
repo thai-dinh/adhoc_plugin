@@ -14,20 +14,25 @@ class WifiClientExample {
 
   void registerExample() => _wifiManager.register();
 
-  void startDiscoveryExample() => _wifiManager.startDiscovery();
+  void unregisterExample() => _wifiManager.unregister();
 
-  void stopDiscoveryExample() {
-    _wifiManager.stopDiscovery();
+  void discoveryExample() => _wifiManager.discovery();
+
+  void connectExample() {
     _peers = _wifiManager.peers;
+    _peers.forEach((key, value) async {
+      print(value.deviceName);
+      await _wifiManager.connect(value.deviceName);
+    });
   }
 
-  void connectExample() => _peers.forEach((key, value) {
-    print(value.deviceName);
-    if (value.deviceName == '[Phone] Galaxy S5') {
-      _client = WifiServiceClient(value, 4444, 3, 5)
-        ..connect();
-    }
-  });
+  void cancelConnectionExample() {
+    _peers.forEach((key, value) async {
+      print(value.deviceName);
+      _wifiManager.cancelConnection(value);
+    });
+  }
+
 
   void hostExample() {
     _host = WifiServiceClient.host(4444, 3, 5)

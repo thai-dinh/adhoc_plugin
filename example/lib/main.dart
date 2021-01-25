@@ -13,7 +13,8 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  BleClientExample example = BleClientExample();
+  BleClientExample bleExample = BleClientExample();
+  WifiClientExample wifiExample = WifiClientExample();
 
   @override
   Widget build(BuildContext context) {
@@ -23,36 +24,67 @@ class _AppState extends State<ExampleApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              RaisedButton(
-                child: Text('Start advertise'),
-                onPressed: example.startAdvertiseExample,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text('Start advertise'),
+                    onPressed: bleExample.startAdvertiseExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Stop advertise'),
+                    onPressed: bleExample.stopAdvertiseExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Start scan'),
+                    onPressed: bleExample.startScanExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Stop scan'),
+                    onPressed: bleExample.stopScanExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Connect'),
+                    onPressed: bleExample.connectExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Send'),
+                    onPressed: bleExample.sendMessageExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Receive'),
+                    onPressed: bleExample.receiveMessageExample,
+                  ),
+                ],
               ),
-              RaisedButton(
-                child: Text('Stop advertise'),
-                onPressed: example.stopAdvertiseExample,
-              ),
-              RaisedButton(
-                child: Text('Start scan'),
-                onPressed: example.startScanExample,
-              ),
-              RaisedButton(
-                child: Text('Stop scan'),
-                onPressed: example.stopScanExample,
-              ),
-              RaisedButton(
-                child: Text('Connect'),
-                onPressed: example.connectExample,
-              ),
-              RaisedButton(
-                child: Text('Send'),
-                onPressed: example.sendMessageExample,
-              ),
-              RaisedButton(
-                child: Text('Receive'),
-                onPressed: example.receiveMessageExample,
+
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text('Register'),
+                    onPressed: wifiExample.registerExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Unregister'),
+                    onPressed: wifiExample.unregisterExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Discovery'),
+                    onPressed: wifiExample.discoveryExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Connect'),
+                    onPressed: wifiExample.connectExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Cancel connection'),
+                    onPressed: wifiExample.cancelConnectionExample,
+                  ),
+                ],
               ),
             ],
           ),
