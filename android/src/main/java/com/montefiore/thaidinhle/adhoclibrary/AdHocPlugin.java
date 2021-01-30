@@ -46,15 +46,23 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         gattServerManager.updateVerboseState(verbose);
         break;
 
-      case "getName":
-        final String name = bleManager.getAdapterName();
-        result.success(name);
-        break;
       case "startAdvertise":
         bleManager.startAdvertise();
         break;
       case "stopAdvertise":
         bleManager.stopAdvertise();
+        break;
+
+      case "getName":
+        final String name = bleManager.getAdapterName();
+        result.success(name);
+        break;
+
+      case "getCurrentName":
+        result.success(BluetoothLowEnergyUtils.getCurrentName());
+        break;
+      case "isEnabled":
+        result.success(BluetoothLowEnergyUtils.isEnable());
         break;
 
       default:

@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoclibrary/src/datalink/message/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 
@@ -31,8 +31,8 @@ class BleClient extends ServiceClient {
 
     this._bleClient = FlutterReactiveBle();
     this._messages = List.empty(growable: true);
-    this.serviceUuid = Uuid.parse(ADHOC_SERVICE_UUID);
-    this.characteristicUuid = Uuid.parse(ADHOC_CHARACTERISTIC_UUID);
+    this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
+    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
   }
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
@@ -90,10 +90,11 @@ class BleClient extends ServiceClient {
     List<Uint8List> msgAsListBytes = List.empty(growable: true);
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
     int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
-    int index = MESSAGE_BEGIN;
+    int index = BleUtils.MESSAGE_BEGIN;
 
     while (length > mtu) {
-      msgAsListInteger = [index % UINT8_SIZE] + msg.sublist(start, end).toList();
+      msgAsListInteger = 
+        [index % BleUtils.UINT8_SIZE] + msg.sublist(start, end).toList();
       msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
 
       index++;
@@ -103,7 +104,7 @@ class BleClient extends ServiceClient {
     }
 
     msgAsListInteger = 
-      [MESSAGE_END] + msg.sublist(start, start + length).toList();
+      [BleUtils.MESSAGE_END] + msg.sublist(start, start + length).toList();
     msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
 
     while (msgAsListBytes.length > 0)

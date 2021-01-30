@@ -15,8 +15,8 @@ abstract class AdHocDevice {
 
   String deviceTypeStr() {
     switch (_deviceType) {
-      case Service.BLUETOOTH:
-        return "Bluetooth";
+      case Service.BLUETOOTHLE:
+        return "BluetoothLE";
       case Service.WIFI:
         return "Wifi";
       default:

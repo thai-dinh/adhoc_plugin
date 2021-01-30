@@ -1,6 +1,6 @@
 abstract class Service {
   static const int WIFI = 0;
-  static const int BLUETOOTH = 1;
+  static const int BLUETOOTHLE = 1;
 
   static const int STATE_NONE = 0;
   static const int STATE_LISTENING = 1;

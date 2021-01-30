@@ -81,7 +81,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "79728ac9cf13d85c12dce03001c6d57502841f4e"
+      resolved-ref: ab41cce78f5280534ac5679c33d7b037f8daffc9
       url: "https://github.com/thai-dinh/flutter_p2p"
     source: git
     version: "1.0.0"
@@ -91,7 +91,7 @@ packages:
       name: flutter_reactive_ble
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.7.1"
+    version: "2.7.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter

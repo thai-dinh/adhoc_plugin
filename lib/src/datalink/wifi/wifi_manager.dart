@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
 
 import 'package:flutter_p2p/flutter_p2p.dart';
 
 class WifiManager {
-  static const DISCOVERY_TIME = 10000;
-
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _peers;
   bool _isConnected;
@@ -56,9 +55,7 @@ class WifiManager {
         print(element.deviceName);
         _peers.putIfAbsent(element.deviceName, () {
           return WifiAdHocDevice(
-            element,
-            element.deviceName,
-            element.deviceAddress
+            element, element.deviceName, element.deviceAddress
           );
         });
       });
@@ -79,25 +76,20 @@ class WifiManager {
 
   void discovery() {
     FlutterP2p.discoverDevices();
-    Timer(Duration(milliseconds: DISCOVERY_TIME), _handleTimeout);
+    Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _handleTimeout);
   }
 
-  void _handleTimeout() => FlutterP2p.stopDiscoverDevices();
+  // void _handleTimeout() => FlutterP2p.stopDiscoverDevices();
+  void _handleTimeout() {
+
+  }
 
   Future<bool> connect(final String remoteAddress) async {
-    // WifiAdHocDevice device = _peers[remoteAddress];
-    // if (device == null)
-    //   throw DeviceNotFoundException('Discovery is required before connecting');
+    WifiAdHocDevice device = _peers[remoteAddress];
+    if (device == null)
+      throw DeviceNotFoundException('Discovery is required before connecting');
   
-    // return await FlutterP2p.connect(device.wifiP2pDevice);
-
-    _peers.forEach((key, value) async {
-      print(value.deviceName);
-      var result = await FlutterP2p.connect(value.wifiP2pDevice);
-      print(result);
-    });
-
-    return true;
+    return await FlutterP2p.connect(device.wifiP2pDevice);
   }
 
   void cancelConnection(final WifiAdHocDevice device) {

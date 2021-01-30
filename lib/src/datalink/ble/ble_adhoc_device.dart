@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/datalink/ble/ble_util.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 
@@ -10,16 +10,16 @@ class BleAdHocDevice extends AdHocDevice {
   int mtu;
 
   BleAdHocDevice(DiscoveredDevice device) 
-    : super(device.name, device.id, Service.BLUETOOTH) {
+    : super(device.name, device.id, Service.BLUETOOTHLE) {
 
     this._rssi = device.rssi;
-    this.mtu = MIN_MTU;
+    this.mtu = BleUtils.MIN_MTU;
   }
 
   BleAdHocDevice.fromMap(Map map) 
-    : super(map['deviceName'], map['macAddress'], Service.BLUETOOTH) {
+    : super(map['deviceName'], map['macAddress'], Service.BLUETOOTHLE) {
 
-    this.mtu = MIN_MTU;
+    this.mtu = BleUtils.MIN_MTU;
   }
 
   int get rssi => _rssi;
