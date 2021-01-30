@@ -26,12 +26,14 @@ class BleAdHocManager {
     this.hashMapBluetoothDevice = HashMap<String, BleAdHocDevice>();
     this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
     this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
-    _updateVerbose(verbose);
+    this._setVerbose(verbose);
   }
 
-  Future<String> get deviceName async => await _channel.invokeMethod('getName');
+  Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
 
   HashMap<String, BleAdHocDevice> get discoveredDevices => hashMapBluetoothDevice;
+
+  void _setVerbose(bool verbose) => _channel.invokeMethod('verbose', verbose);
 
   void startAdvertise() async => await _channel.invokeMethod('startAdvertise');
 
@@ -53,7 +55,7 @@ class BleAdHocManager {
       BleAdHocDevice btDevice = BleAdHocDevice(device);
 
       if (!hashMapBluetoothDevice.containsKey(device.id)) {
-        print('Found ${device.name} (${device.id})');
+        print('Found ${device.name} (${device.id})'); // TODO: Log ?
         discoveryListener.onDeviceDiscovered(btDevice);
       }
 
@@ -69,10 +71,12 @@ class BleAdHocManager {
     if (_subscription != null) {
       _subscription.cancel();
       _subscription = null;
-
       _discoveryListener.onDiscoveryCompleted(hashMapBluetoothDevice);
     }
   }
 
-  void _updateVerbose(bool verbose) => _channel.invokeMethod('verbose', verbose);
+  Future<bool> resetDeviceName() => _channel.invokeMethod('resetDeviceName');
+
+  Future<bool> updateDeviceName(String name)
+    => _channel.invokeMethod('updateDeviceName', name);
 }

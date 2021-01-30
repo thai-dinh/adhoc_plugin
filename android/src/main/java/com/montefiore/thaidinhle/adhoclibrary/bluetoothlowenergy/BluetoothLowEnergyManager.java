@@ -17,15 +17,13 @@ public class BluetoothLowEnergyManager {
     private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
     private boolean verbose;
+    private String initialName;
 
     public BluetoothLowEnergyManager() {
         this.verbose = false;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
-    }
-
-    public String getAdapterName() {
-        return bluetoothAdapter.getName();
+        this.initialName = bluetoothAdapter.getName();
     }
 
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
@@ -66,5 +64,19 @@ public class BluetoothLowEnergyManager {
 
     public void updateVerboseState(boolean verbose) {
         this.verbose = verbose;
+    }
+
+    public boolean resetDeviceName() {
+        if (initialName != null)
+            return bluetoothAdapter.setName(initialName);
+        return false;
+    }
+
+    public boolean updateDeviceName(String name) {
+        return bluetoothAdapter.setName(name);
+    }
+
+    public String getAdapterName() {
+        return bluetoothAdapter.getName();
     }
 }

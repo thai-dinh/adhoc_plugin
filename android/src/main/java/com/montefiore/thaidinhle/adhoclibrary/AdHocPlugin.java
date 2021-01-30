@@ -52,10 +52,15 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
       case "stopAdvertise":
         bleManager.stopAdvertise();
         break;
-
-      case "getName":
-        final String name = bleManager.getAdapterName();
-        result.success(name);
+      case "resetDeviceName":
+        result.success(bleManager.resetDeviceName());
+        break;
+      case "updateDeviceName":
+        final String name = call.arguments();
+        result.success(bleManager.updateDeviceName(name));
+        break;
+      case "getAdapterName":
+        result.success(bleManager.getAdapterName());
         break;
 
       case "getCurrentName":

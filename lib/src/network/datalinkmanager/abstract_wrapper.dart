@@ -28,4 +28,14 @@ abstract class AbstractWrapper {
   void stopListening();
 
   void discovery(DiscoveryListener discoveryListener);
+
+  Future<HashMap<String, AdHocDevice>> getPaired();
+
+  void unregisterConnection();
+
+  Future<bool> resetDeviceName();
+
+  Future<bool> updateDeviceName(String name);
+
+  Future<String> getAdapterName();
 }
