@@ -7,6 +7,7 @@ export 'exceptions/no_connection.dart';
 export 'utils/msg_adhoc.dart';
 export 'utils/msg_header.dart';
 export 'service/adhoc_device.dart';
+export 'service/discovery_listener.dart';
 export 'service/service_client.dart';
 export 'service/service.dart';
 export 'wifi/wifi_adhoc_device.dart';

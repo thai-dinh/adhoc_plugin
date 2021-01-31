@@ -79,4 +79,12 @@ public class BluetoothLowEnergyManager {
     public String getAdapterName() {
         return bluetoothAdapter.getName();
     }
+
+    public void enable() {
+        bluetoothAdapter.enable();
+    }
+
+    public void disable() {
+        bluetoothAdapter.disable();
+    }
 }

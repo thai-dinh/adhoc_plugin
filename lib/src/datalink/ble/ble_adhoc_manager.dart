@@ -3,10 +3,12 @@ import 'dart:collection';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
+import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
 
 class BleAdHocManager {
   static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
@@ -35,13 +37,19 @@ class BleAdHocManager {
 
   void _setVerbose(bool verbose) => _channel.invokeMethod('verbose', verbose);
 
-  void startAdvertise() async => await _channel.invokeMethod('startAdvertise');
+  void enableDiscovery(int duration) {
+    if (duration < 0 || duration > 3600) 
+      throw BadDurationException('Duration must be between 0 and 3600 second(s)');
+    
+    _channel.invokeMethod('startAdvertise');
+    Timer(Duration(milliseconds: duration), _stopAdvertise);
+  }
 
-  void stopAdvertise() async => await _channel.invokeMethod('stopAdvertise');
+  void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
-  void startScan(DiscoveryListener discoveryListener) {
+  void discovery(DiscoveryListener discoveryListener) {
     if (_isDiscovering)
-      this.stopScan();
+      this._stopScan();
 
     this._discoveryListener = discoveryListener;
 
@@ -64,16 +72,33 @@ class BleAdHocManager {
       print(error.toString());
     });
 
-    Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), stopScan);
+    Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _stopScan);
   }
 
-  void stopScan() {
+  void _stopScan() {
     if (_subscription != null) {
       _subscription.cancel();
       _subscription = null;
       _discoveryListener.onDiscoveryCompleted(hashMapBluetoothDevice);
     }
   }
+
+  Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
+    HashMap<String, BleAdHocDevice> pairedDevices = HashMap();
+    List<Map> btDevices = await _channel.invokeMethod('resetDeviceName');
+
+    for (final device in btDevices) {
+      pairedDevices.putIfAbsent(
+        device['macAddress'], () => BleAdHocDevice.fromMap(device)
+      );
+    }
+
+    return pairedDevices;
+  }
+
+  void enable() => _channel.invokeMethod('enable');
+
+  void disable() => _channel.invokeMethod('disable');
 
   Future<bool> resetDeviceName() => _channel.invokeMethod('resetDeviceName');
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.BluetoothLowEnergyManager;
+import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.BluetoothLowEnergyUtils;
 import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.GattServerManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -46,6 +47,12 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         gattServerManager.updateVerboseState(verbose);
         break;
 
+      case "disable":
+        bleManager.disable();
+        break;
+      case "enable":
+        bleManager.enable();
+        break;
       case "startAdvertise":
         bleManager.startAdvertise();
         break;
@@ -62,12 +69,15 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
       case "getAdapterName":
         result.success(bleManager.getAdapterName());
         break;
+      case "getPairedDevices":
+        result.success(gattServerManager.getConnectedDevices());
+        break;
 
       case "getCurrentName":
         result.success(BluetoothLowEnergyUtils.getCurrentName());
         break;
       case "isEnabled":
-        result.success(BluetoothLowEnergyUtils.isEnable());
+        result.success(BluetoothLowEnergyUtils.isEnabled());
         break;
 
       default:

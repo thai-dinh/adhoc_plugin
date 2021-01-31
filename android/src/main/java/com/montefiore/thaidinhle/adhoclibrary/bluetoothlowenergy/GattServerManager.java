@@ -20,6 +20,7 @@ import io.flutter.plugin.common.EventChannel.StreamHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 public class GattServerManager {
@@ -30,6 +31,7 @@ public class GattServerManager {
 
     private boolean verbose;
     private BluetoothGattServer gattServer;
+    private BluetoothManager bluetoothManager;
     private EventChannel eventConnectionChannel;
     private EventChannel eventMessageChannel;
     private EventChannel eventMtuChannel;
@@ -103,6 +105,7 @@ public class GattServerManager {
     public void openGattServer(BluetoothManager bluetoothManager, Context context) {
         if (verbose) Log.d(TAG, "openGattServer()");
 
+        this.bluetoothManager = bluetoothManager;
         gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
         BluetoothGattCharacteristic characteristic =
@@ -200,6 +203,21 @@ public class GattServerManager {
             eventMtuSink.success(mapDeviceInfo);
         }
     };
+
+    public List<HashMap<String, Object>> getConnectedDevices() {
+        ArrayList<HashMap<String, Object>> btDevices = new ArrayList<>();
+        List<BluetoothDevice> listBtDevices;
+
+        listBtDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
+        for(BluetoothDevice device : listBtDevices) {
+            HashMap<String, Object> mapDeviceInfo = new HashMap<>();
+            mapDeviceInfo.put("deviceName", device.getName());
+            mapDeviceInfo.put("macAddress", device.getAddress());
+            btDevices.add(mapDeviceInfo);
+        }
+
+        return btDevices;
+    }
 
     public void closeGattServer() {
         if (verbose) Log.d(TAG, "closeGattServer()");
