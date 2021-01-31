@@ -7,8 +7,10 @@ import androidx.annotation.NonNull;
 import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.BluetoothLowEnergyManager;
 import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.BluetoothLowEnergyUtils;
 import com.montefiore.thaidinhle.adhoclibrary.bluetoothlowenergy.GattServerManager;
+import com.montefiore.thaidinhle.adhoclibrary.wifi.WifiAdHocManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -20,22 +22,27 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   private BluetoothLowEnergyManager bleManager;
   private GattServerManager gattServerManager;
   private MethodChannel methodChannel;
+  private WifiAdHocManager wifiAdHocManager;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-    methodChannel = new MethodChannel(binding.getBinaryMessenger(), CHANNEL_NAME);
+    BinaryMessenger messenger = binding.getBinaryMessenger();
+    methodChannel = new MethodChannel(messenger, CHANNEL_NAME);
     methodChannel.setMethodCallHandler(this);
     
     Context context = binding.getApplicationContext();
     BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
     bleManager = new BluetoothLowEnergyManager();
+    wifiAdHocManager = new WifiAdHocManager(context);
+
+    wifiAdHocManager.initMethodCallHandler(messenger);
 
     gattServerManager = new GattServerManager();
     gattServerManager.openGattServer(bluetoothManager, context);
-    gattServerManager.initEventConnectionChannel(binding.getBinaryMessenger());
-    gattServerManager.initEventMessageChannel(binding.getBinaryMessenger());
-    gattServerManager.initEventMtuChannel(binding.getBinaryMessenger());
+    gattServerManager.initEventConnectionChannel(messenger);
+    gattServerManager.initEventMessageChannel(messenger);
+    gattServerManager.initEventMtuChannel(messenger);
   }
 
   @Override
@@ -90,6 +97,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     bleManager.stopAdvertise();
     gattServerManager.closeGattServer();
+    wifiAdHocManager.setMethodCallHandler(null);
     methodChannel.setMethodCallHandler(null);
   }
 }

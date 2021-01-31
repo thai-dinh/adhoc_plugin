@@ -37,8 +37,6 @@ abstract class AbstractWrapper {
 
   Future<HashMap<String, AdHocDevice>> getPaired();
 
-  void unregisterConnection();
-
   void enable(int duration);
 
   void disable();

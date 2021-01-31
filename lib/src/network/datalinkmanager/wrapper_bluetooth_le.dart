@@ -33,14 +33,13 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     DiscoveryListener listener = DiscoveryListener(
       onDeviceDiscovered: (AdHocDevice device) {
         mapMacDevices.putIfAbsent(device.macAddress, () => device);
+        discoveryListener.onDeviceDiscovered(device);
       },
 
       onDiscoveryCompleted: (HashMap<String, AdHocDevice> mapNameDevice) {
         if (_bleAdHocManager == null) {
           String msg = 'Discovery process failed due to bluetooth connectivity';
-          discoveryListener.onDiscoveryFailed(
-            DeviceFailureException(msg)
-          );
+          discoveryListener.onDiscoveryFailed(DeviceFailureException(msg));
         } else {
           mapNameDevice.forEach((key, value) {
             mapMacDevices.putIfAbsent(key, () => value);
@@ -92,11 +91,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     });
 
     return mapMacDevices;
-  }
-
-  @override
-  void unregisterConnection() {
-    /// Not used in bluetooth low energy context
   }
 
   @override

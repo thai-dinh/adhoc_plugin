@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 
 abstract class WrapperConnOriented extends AbstractWrapper {
+  int attempts;
   ServiceServer serviceServer;
 
   WrapperConnOriented(
