@@ -137,7 +137,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _init(bool verbose, Config config) async {
     if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager();
+      this._wifiManager = WifiManager(verbose);
       this._isGroupOwner = false;
       this._serverPort = config.serverPort;
       this._listenServer();

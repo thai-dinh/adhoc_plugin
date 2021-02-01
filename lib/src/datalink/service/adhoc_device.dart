@@ -1,20 +1,22 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 
+
 abstract class AdHocDevice {
-  String _deviceName;
-  String _macAddress;
-  int _deviceType;
+  String label;
+  String deviceName;
+  String macAddress;
+  int type;
 
-  AdHocDevice([this._deviceName, this._macAddress, this._deviceType]);
+  AdHocDevice({String deviceName, this.label, this.macAddress, this.type}) {
+    this.deviceName = _checkName(deviceName);
+  }
 
-  String get deviceName => _deviceName;
+  String _checkName(String deviceName) {
+    return deviceName == null ? '' : deviceName;
+  }
 
-  String get macAddress => _macAddress;
-
-  int get deviceType => _deviceType;
-
-  String deviceTypeStr() {
-    switch (_deviceType) {
+  String typeAsString() {
+    switch (type) {
       case Service.BLUETOOTHLE:
         return "BluetoothLE";
       case Service.WIFI:
@@ -22,5 +24,15 @@ abstract class AdHocDevice {
       default:
         return "UNKNOWN";
     }
+  }
+
+  @override
+  String toString() {
+    return 'AdHocDevice{' +
+              'label=' + label +
+              ', deviceName' + deviceName +
+              ', macAddress' + macAddress.toString() +
+              ', type' + type.toString() +
+           '}';
   }
 }

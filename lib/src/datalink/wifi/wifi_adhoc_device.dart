@@ -8,9 +8,13 @@ class WifiAdHocDevice extends AdHocDevice {
   String ipAddress;
   int port;
 
-  WifiAdHocDevice(this._wifiP2pDevice, String deviceName, String macAddress)
-    : super(deviceName, macAddress, Service.WIFI) {
-
+  WifiAdHocDevice(
+    this._wifiP2pDevice, String deviceName, String macAddress
+  ) : super(
+    deviceName: deviceName,
+    macAddress: macAddress,
+    type: Service.WIFI
+  ) {
     this.ipAddress = "";
     this.port = 0;
   }
@@ -22,9 +26,10 @@ class WifiAdHocDevice extends AdHocDevice {
     return 'WifiAdHocDevice' +
               'ipAddress=' + ipAddress +
               ', port=' + port.toString() +
-              ', deviceName=' + deviceName +
-              ', macAddress=' + macAddress +
-              ', deviceType=' + deviceType.toString() +
+              ', label=' + label +
+              ', deviceName' + deviceName +
+              ', macAddress' + macAddress.toString() +
+              ', type' + type.toString() +
            '}';
   }
 }

@@ -45,8 +45,10 @@ public class GattServerManager {
         this.data = new HashMap<>();
     }
 
-    public void initEventConnectionChannel(BinaryMessenger messenger) {
-        if (verbose) Log.d(TAG, "initEventConnectionChannel()");
+    public void initEventChannels(BinaryMessenger messenger) {
+        if (verbose) Log.d(TAG, "initEventChannels()");
+
+        // eventConnectionChannel
         eventConnectionChannel = new EventChannel(messenger, STREAM_CONNECTION);
         eventConnectionChannel.setStreamHandler(new StreamHandler() {
             @Override
@@ -62,10 +64,8 @@ public class GattServerManager {
                 eventConnectionChannel.setStreamHandler(null);
             }
         });
-    }
 
-    public void initEventMessageChannel(BinaryMessenger messenger) {
-        if (verbose) Log.d(TAG, "initEventMessageChannel()");
+        // eventMessageChannel
         eventMessageChannel = new EventChannel(messenger, STREAM_MESSAGE);
         eventMessageChannel.setStreamHandler(new StreamHandler() {
             @Override
@@ -81,10 +81,8 @@ public class GattServerManager {
                 eventMessageChannel.setStreamHandler(null);
             }
         });
-    }
 
-    public void initEventMtuChannel(BinaryMessenger messenger) {
-        if (verbose) Log.d(TAG, "initEventMtuChannel()");
+        // eventMtuChannel
         eventMtuChannel = new EventChannel(messenger, STREAM_MTU);
         eventMtuChannel.setStreamHandler(new StreamHandler() {
             @Override
@@ -231,7 +229,7 @@ public class GattServerManager {
     }
 
     public void updateVerboseState(boolean verbose) {
-        if (verbose) Log.d(TAG, "GattServer: updateVerboseState()");
+        if (verbose) Log.d(TAG, "updateVerboseState()");
         this.verbose = verbose;
     }
 

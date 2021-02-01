@@ -18,15 +18,29 @@ import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.d
 class WrapperBluetoothLE extends WrapperConnOriented {
   BleAdHocManager _bleAdHocManager;
 
-  WrapperBluetoothLE(bool verbose, Config config,
-                     HashMap<String, AdHocDevice> mapAddressDevice)
-    : super(verbose, config, mapAddressDevice) {
+  WrapperBluetoothLE(
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
+  ) : super(verbose, config, mapAddressDevice) {
 
     this.type = Service.BLUETOOTHLE;
     this._init(verbose);
   }
 
 /*------------------------------Override methods------------------------------*/
+
+  @override
+  void enable(int duration) {
+    _bleAdHocManager = BleAdHocManager(verbose);
+    _bleAdHocManager.enableDiscovery(duration);
+    enabled = true;
+  }
+
+  @override
+  void disable() {
+    _bleAdHocManager.disable();
+    _bleAdHocManager = null;
+    enabled = false;
+  }
 
   @override
   void discovery(DiscoveryListener discoveryListener) {
@@ -94,22 +108,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  void enable(int duration) {
-    _bleAdHocManager = BleAdHocManager(verbose);
-    _bleAdHocManager.enableDiscovery(duration);
-    enabled = true;
-  }
-
-  @override
-  void disable() {
-    _bleAdHocManager.disable();
-    _bleAdHocManager = null;
-    enabled = false;
-  }
-
-  @override
-  Future<bool> resetDeviceName() async {
-    return await _bleAdHocManager.resetDeviceName();
+  Future<String> getAdapterName() async {
+    return await _bleAdHocManager.adapterName;
   }
 
   @override
@@ -118,8 +118,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  Future<String> getAdapterName() async {
-    return await _bleAdHocManager.adapterName;
+  Future<bool> resetDeviceName() async {
+    return await _bleAdHocManager.resetDeviceName();
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -133,7 +133,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = BleServer()
+    serviceServer = BleServer(verbose)
       ..listen();
   }
 

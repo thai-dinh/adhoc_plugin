@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+
 
 abstract class AbstractWrapper {
   static const CONNECT_SERVER = 10;
@@ -29,21 +31,33 @@ abstract class AbstractWrapper {
     this.timeOut = config.timeOut;
   }
 
-  void connect(int attempts, AdHocDevice adHocDevice);
-
-  void stopListening();
-
-  void discovery(DiscoveryListener discoveryListener);
-
-  Future<HashMap<String, AdHocDevice>> getPaired();
-
   void enable(int duration);
 
   void disable();
 
-  Future<bool> resetDeviceName();
+  void discovery(DiscoveryListener discoveryListener);
+
+  void connect(int attempts, AdHocDevice adHocDevice);
+
+  void stopListening();
+
+  Future<HashMap<String, AdHocDevice>> getPaired();
+
+  Future<String> getAdapterName();
 
   Future<bool> updateDeviceName(String name);
 
-  Future<String> getAdapterName();
+  Future<bool> resetDeviceName();
+
+  void sendMessage(MessageAdHoc message, String address);
+
+  bool broadcast(MessageAdHoc message);
+
+  bool broadcastExcept(MessageAdHoc message, String excludedAddress);
+
+  bool isDirectNeighbors(String address);
+
+  void disconnect(String remoteDest);
+
+  void disconnectAll();
 }

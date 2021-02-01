@@ -5,30 +5,32 @@ import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleAdHocDevice extends AdHocDevice {
-  int _rssi;
-
   int mtu;
 
-  BleAdHocDevice(DiscoveredDevice device) 
-    : super(device.name, device.id, Service.BLUETOOTHLE) {
-
-    this._rssi = device.rssi;
+  BleAdHocDevice(DiscoveredDevice device) : super(
+    deviceName: device.name,
+    macAddress: device.id,
+    type: Service.BLUETOOTHLE
+  ) {
     this.mtu = BleUtils.MIN_MTU;
   }
 
-  BleAdHocDevice.fromMap(Map map) 
-    : super(map['deviceName'], map['macAddress'], Service.BLUETOOTHLE) {
-
+  BleAdHocDevice.fromMap(Map map) : super(
+    deviceName: map['deviceName'],
+    macAddress: map['macAddress'], 
+    type: Service.BLUETOOTHLE
+  ) {
     this.mtu = BleUtils.MIN_MTU;
   }
-
-  int get rssi => _rssi;
 
   @override
   String toString() {
     return 'BleAdHocDevice{' +
               'mtu=' + mtu.toString() +
-              'rssi=' + _rssi.toString() +
+              'label=' + label +
+              ', deviceName' + deviceName +
+              ', macAddress' + macAddress.toString() +
+              ', type' + type.toString() +
            '}';
   }
 }

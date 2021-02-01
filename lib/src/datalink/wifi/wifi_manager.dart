@@ -9,9 +9,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
 class WifiManager {
+  static const String TAG = "[FlutterAdHoc][WifiManager]";
   static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
+  bool _verbose;
   DiscoveryListener _discoveryListener;
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
@@ -19,14 +21,24 @@ class WifiManager {
   bool _isHost;
   String _leaderAddress;
 
-  WifiManager() {
+  WifiManager(this._verbose) {
     _mapMacDevices = HashMap();
     _isConnected = false;
     _isHost = false;
     _leaderAddress = '';
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   HashMap<String, WifiAdHocDevice> get peers => _mapMacDevices;
+
+/*------------------------------Private methods-------------------------------*/
+
+  void _endDiscovery() {
+    _discoveryListener.onDiscoveryCompleted(_mapMacDevices);
+  }
+
+/*-------------------------------Public methods-------------------------------*/
 
   Future<bool> _checkPermission() async {
     if (!await FlutterP2p.isLocationPermissionGranted()) {
@@ -56,14 +68,23 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((event) {
-      event.devices.forEach((element) {
-        print(element.deviceName);
-        WifiAdHocDevice device = WifiAdHocDevice(
-          element, element.deviceName, element.deviceAddress
+      event.devices.forEach((device) {
+        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(
+          device, device.deviceName, device.deviceAddress
         );
 
-        _mapMacDevices.putIfAbsent(element.deviceName, () => device);
-        _discoveryListener.onDeviceDiscovered(device);
+        _mapMacDevices.putIfAbsent(device.deviceName, () {
+          if (_verbose) {
+            Utils.log(TAG, 
+              'Device found -> DeviceName: ${device.deviceName}' + 
+              ' - DeviceHardwareAddress: ${device.deviceAddress}'
+            );
+          }
+
+          return wifiAdHocDevice;
+        });
+
+        _discoveryListener.onDeviceDiscovered(wifiAdHocDevice);
       });
     }));
 
@@ -81,16 +102,16 @@ class WifiManager {
   }
 
   void discovery(DiscoveryListener discoveryListener) {
+    if (_verbose) Utils.log(TAG, 'discovery()');
+
     this._discoveryListener = discoveryListener;
     FlutterP2p.discoverDevices();
     Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _endDiscovery);
   }
 
-  void _endDiscovery() {
-    _discoveryListener.onDiscoveryCompleted(_mapMacDevices);
-  }
-
   Future<bool> connect(final String remoteAddress) async {
+    if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
+
     WifiAdHocDevice device = _mapMacDevices[remoteAddress];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
@@ -115,6 +136,8 @@ class WifiManager {
   Future<String> getAdapterName() async {
     return await _channel.invokeMethod('getAdapterName');
   }
+
+/*-------------------------------Static methods-------------------------------*/
 
   static Future<bool> isWifiEnabled() async {
     return await _channel.invokeMethod('isWifiEnabled');
