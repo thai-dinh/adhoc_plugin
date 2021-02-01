@@ -1,8 +1,8 @@
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
-
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
 
 class BleAdHocDevice extends AdHocDevice {
   int mtu;

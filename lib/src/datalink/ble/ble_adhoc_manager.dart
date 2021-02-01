@@ -41,18 +41,6 @@ class BleAdHocManager {
 
   HashMap<String, BleAdHocDevice> get hashMapBleDevice => _hashMapBleDevice;
 
-/*------------------------------Private methods-------------------------------*/
-
-  void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
-
-  void _stopScan() {
-    if (_subscription != null) {
-      _subscription.cancel();
-      _subscription = null;
-      _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
-    }
-  }
-
 /*-------------------------------Public methods-------------------------------*/
 
   void disable() => _channel.invokeMethod('disable');
@@ -127,6 +115,19 @@ class BleAdHocManager {
     => _channel.invokeMethod('updateDeviceName', name);
 
   Future<bool> resetDeviceName() => _channel.invokeMethod('resetDeviceName');
+
+/*------------------------------Private methods-------------------------------*/
+
+  void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
+
+  void _stopScan() {
+    if (_subscription != null) {
+      _subscription.cancel();
+      _subscription = null;
+      _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
+    }
+  }
+
 
 /*-------------------------------Static methods-------------------------------*/
 

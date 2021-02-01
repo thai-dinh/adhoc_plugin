@@ -1,7 +1,7 @@
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
-
 import 'package:flutter_p2p/gen/protos/protos.pb.dart';
+
 
 class WifiAdHocDevice extends AdHocDevice {
   WifiP2pDevice _wifiP2pDevice;

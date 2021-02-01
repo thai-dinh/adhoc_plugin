@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 
+
 abstract class ServiceClient extends Service {
+  static const String TAG = "[FlutterAdHoc][ServiceClient]";
   static const int _LOW = 1500;
   static const int _HIGH = 2500;
 
@@ -11,7 +13,9 @@ abstract class ServiceClient extends Service {
   int _backOffTime;
   int _timeOut;
 
-  ServiceClient(int state, this._attempts, this._timeOut) : super(state) {
+  ServiceClient(bool verbose, int state, this._attempts, this._timeOut) 
+    : super(verbose, state) {
+
     this._backOffTime = new Random().nextInt(_HIGH - _LOW) + _LOW;
   }
 

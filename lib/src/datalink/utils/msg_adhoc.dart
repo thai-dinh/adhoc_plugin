@@ -1,8 +1,8 @@
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
-
 import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_adhoc.g.dart';
+
 
 @JsonSerializable(explicitToJson: true)
 class MessageAdHoc {

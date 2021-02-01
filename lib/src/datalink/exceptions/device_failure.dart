@@ -1,5 +1,6 @@
 import 'dart:core';
 
+
 class DeviceFailureException implements Exception {
   String _message;
 

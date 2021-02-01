@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 
+
 abstract class _DiscoveryListener {
   void onDeviceDiscovered(AdHocDevice device);
 
@@ -11,6 +12,7 @@ abstract class _DiscoveryListener {
 
   void onDiscoveryFailed(Exception exception);
 }
+
 
 class DiscoveryListener implements _DiscoveryListener {
   void Function(AdHocDevice device) _onDeviceDiscovered;

@@ -8,6 +8,7 @@ import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
+
 class WifiManager {
   static const String TAG = "[FlutterAdHoc][WifiManager]";
   static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
@@ -31,12 +32,6 @@ class WifiManager {
 /*------------------------------Getters & Setters-----------------------------*/
 
   HashMap<String, WifiAdHocDevice> get peers => _mapMacDevices;
-
-/*------------------------------Private methods-------------------------------*/
-
-  void _endDiscovery() {
-    _discoveryListener.onDiscoveryCompleted(_mapMacDevices);
-  }
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -135,6 +130,12 @@ class WifiManager {
 
   Future<String> getAdapterName() async {
     return await _channel.invokeMethod('getAdapterName');
+  }
+
+/*------------------------------Private methods-------------------------------*/
+
+  void _endDiscovery() {
+    _discoveryListener.onDiscoveryCompleted(_mapMacDevices);
   }
 
 /*-------------------------------Static methods-------------------------------*/

@@ -30,7 +30,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   @override
   void enable(int duration) {
-    _bleAdHocManager = BleAdHocManager(verbose);
+    _bleAdHocManager = BleAdHocManager(v);
     _bleAdHocManager.enableDiscovery(duration);
     enabled = true;
   }
@@ -83,8 +83,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       if (bleAdHocDevice != null) { // TODO: verify that device is not already connected in the conditional
         _connect(attempts, bleAdHocDevice);
       } else {
-        throw DeviceFailureException(adHocDevice.deviceName
-                + "(" + adHocDevice.macAddress + ") is already connected");
+        throw DeviceFailureException(
+          adHocDevice.deviceName + "(" + adHocDevice.macAddress + 
+          ") is already connected"
+        );
       }
     }
   }
@@ -133,12 +135,12 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = BleServer(verbose)
+    serviceServer = BleServer(v)
       ..listen();
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
-    final BleClient bleClient = BleClient(bleAdHocDevice, attempts, timeOut);
+    final BleClient bleClient = BleClient(v, bleAdHocDevice, attempts, timeOut);
     bleClient.connect();
   }
 

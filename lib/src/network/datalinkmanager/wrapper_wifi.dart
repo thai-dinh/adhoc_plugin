@@ -89,7 +89,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   void enable(int duration) { // TODO: To verify bc enable wifi is deprecated
-    _wifiManager = WifiManager();
+    _wifiManager = WifiManager(v);
     enabled = true;
   }
 
@@ -147,7 +147,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(_serverPort)
+    serviceServer = WifiServer(v, _serverPort)
       ..listen();
   }
 

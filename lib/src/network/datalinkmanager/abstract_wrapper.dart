@@ -13,7 +13,7 @@ abstract class AbstractWrapper {
   static const DISCONNECT_BROADCAST = 13;
   static const BROADCAST = 14;
 
-  final bool verbose;
+  final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
 
   bool enabled;
@@ -24,7 +24,7 @@ abstract class AbstractWrapper {
   int timeOut;
   int type;
   
-  AbstractWrapper(this.verbose, Config config, this.mapMacDevices) {
+  AbstractWrapper(this.v, Config config, this.mapMacDevices) {
     this.enabled = true;
     this.discoveryCompleted = false;
     this.label = config.label;

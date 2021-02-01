@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 
+
 class BlePlugin {
   HashMap<String, AdHocDevice> _discoveredDevices;
   WrapperBluetoothLE _wrapper;

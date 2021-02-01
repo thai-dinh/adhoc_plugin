@@ -5,8 +5,8 @@ import 'dart:typed_data';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
-
 import 'package:flutter_p2p/flutter_p2p.dart';
+
 
 class WifiServer extends ServiceServer {
   P2pSocket _socket;
@@ -14,7 +14,7 @@ class WifiServer extends ServiceServer {
   StreamSubscription<dynamic> _messageStreamSub;
   int _port;
 
-  WifiServer(this._port) : super(Service.STATE_NONE) {
+  WifiServer(bool verbose, this._port) : super(verbose, Service.STATE_NONE) {
     this._messages = List.empty(growable: true);
   }
 

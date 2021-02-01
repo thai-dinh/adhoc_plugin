@@ -17,7 +17,8 @@ abstract class Service {
   static const int MESSAGE_EXCEPTION = 9;
   static const int NETWORK_UNREACHABLE = 10;
 
+  bool v;
   int state;
 
-  Service(this.state);
+  Service(this.v, this.state);
 }

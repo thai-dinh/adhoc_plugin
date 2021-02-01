@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_header.g.dart';
 
+
 @JsonSerializable()
 class Header {
   int _deviceType;

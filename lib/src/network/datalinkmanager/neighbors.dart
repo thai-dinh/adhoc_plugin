@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+
 class Neighbors {
   HashMap<String, Null>  _neighbors; // SocketManager
   HashMap<String, String> _mapLabelMac;
@@ -8,9 +9,13 @@ class Neighbors {
     this._mapLabelMac = HashMap<String, String>();
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   Map get neighbors => _neighbors;
 
   HashMap<String, String> get labelMac => _mapLabelMac;
+
+/*-------------------------------Public methods-------------------------------*/
 
   void addNeighbors(String label, String mac) { // TODO: modify instead of socketmanager
     _mapLabelMac.putIfAbsent(label, () => mac);

@@ -1,5 +1,6 @@
 import 'dart:core';
 
+
 class BadDurationException implements Exception {
   String _message;
 

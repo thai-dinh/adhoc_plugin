@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+
 class BleUtils {
   static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);

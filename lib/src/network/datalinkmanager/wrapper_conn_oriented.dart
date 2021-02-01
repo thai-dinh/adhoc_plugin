@@ -20,6 +20,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     this.neighbors = Neighbors();
   }
 
+/*-------------------------------Public methods-------------------------------*/
+
   void sendMessage(MessageAdHoc message, String address) {
 
   }
