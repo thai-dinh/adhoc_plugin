@@ -37,8 +37,8 @@ class BleServer extends ServiceServer {
 
     BleAdHocManager.openGattServer();
 
-    _connectionStreamSub= _chConnect.receiveBroadcastStream().listen((event) {
-      if (event['state'] == Service.STATE_CONNECTED) {
+    _connectionStreamSub = _chConnect.receiveBroadcastStream().listen((event) {
+      if (event['state'] == Utils.BLE_STATE_CONNECTED) {
         BleAdHocDevice device = BleAdHocDevice.fromMap(event);
         connected.putIfAbsent(event['macAddress'], () => device);
         serviceMessageListener.onConnection(event['macAddress']);

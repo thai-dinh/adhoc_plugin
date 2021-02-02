@@ -245,33 +245,33 @@ public class GattServerManager {
         this.verbose = verbose;
     }
 
-    private static class MainThreadEventSink implements EventSink {
+    private class MainThreadEventSink implements EventSink {
         private EventSink eventSink;
         private Handler handler;
 
         public MainThreadEventSink(EventSink eventSink) {
-          this.eventSink = eventSink;
-          handler = new Handler(Looper.getMainLooper());
+            this.eventSink = eventSink;
+            handler = new Handler(Looper.getMainLooper());
         }
 
         @Override
         public void success(final Object event) {
-          handler.post(new Runnable() {
-            @Override
-            public void run() {
-              eventSink.success(event);
-            }
-          });
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    eventSink.success(event);
+                }
+            });
         }
 
         @Override
         public void error(final String errorCode, final String errorMessage, final Object errorDetails) {
-          handler.post(new Runnable() {
-            @Override
-            public void run() {
-              eventSink.error(errorCode, errorMessage, errorDetails);
-            }
-          });
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    eventSink.error(errorCode, errorMessage, errorDetails);
+                }
+            });
         }
 
         @Override

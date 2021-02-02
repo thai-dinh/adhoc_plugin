@@ -1,6 +1,8 @@
 class Utils {
   static const DISCOVERY_TIME = 10000;
 
+  static const BLE_STATE_CONNECTED = 1;
+
   static void log(final String tag, final String message) {
     print(tag + ': ' + message);
   }

@@ -147,7 +147,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       onConnectionClosed: (String remoteAddress) { },
 
-      onConnection: (String remoteAddress) { },
+      onConnection: (String remoteAddress) {
+        if (v) Utils.log(TAG, 'onConnection: $remoteAddress');
+      },
   
       onConnectionFailed: (Exception exception) { },
 
