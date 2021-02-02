@@ -18,6 +18,7 @@ import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -106,17 +107,23 @@ public class GattServerManager {
         this.bluetoothManager = bluetoothManager;
         gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
-        BluetoothGattCharacteristic characteristic =
-            new BluetoothGattCharacteristic(UUID.fromString(BluetoothLowEnergyUtils.CHARACTERISTIC_UUID),
+        BluetoothGattCharacteristic characteristicMessage =
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothLowEnergyUtils.CHAR_MESSAGE_UUID),
                                             BluetoothGattCharacteristic.PROPERTY_READ |
                                             BluetoothGattCharacteristic.PROPERTY_WRITE,
                                             BluetoothGattCharacteristic.PERMISSION_READ |
                                             BluetoothGattCharacteristic.PERMISSION_WRITE);
 
+        BluetoothGattCharacteristic characteristicConnection =
+            new BluetoothGattCharacteristic(UUID.fromString(BluetoothLowEnergyUtils.CHAR_CONN_UUID),
+                                        BluetoothGattCharacteristic.PROPERTY_WRITE,
+                                        BluetoothGattCharacteristic.PERMISSION_WRITE);
+
         BluetoothGattService service =
             new BluetoothGattService(UUID.fromString(BluetoothLowEnergyUtils.SERVICE_UUID),
                                      BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        service.addCharacteristic(characteristic);
+        service.addCharacteristic(characteristicMessage);
+        service.addCharacteristic(characteristicConnection);
 
         gattServer.addService(service);
     }
@@ -137,29 +144,37 @@ public class GattServerManager {
                                                  boolean preparedWrite, boolean responseNeeded,
                                                  int offset, byte[] value)
         {
-            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest(): " + Byte.toString(value[0]));
+            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, 
                                                responseNeeded, offset, value);
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
 
             ArrayList<byte[]> received;
             String address = device.getAddress();
-            if (data.containsKey(address)) {
-                received = data.get(address);
+            UUID connUuid = UUID.fromString(BluetoothLowEnergyUtils.CHAR_CONN_UUID);
+            String uuid = null;
+
+            if (characteristic.getUuid() == connUuid) {
+                uuid = new String(value, StandardCharsets.UTF_8);
             } else {
-                received = new ArrayList<>();
+                if (data.containsKey(address)) {
+                    received = data.get(address);
+                } else {
+                    received = new ArrayList<>();
+                }
+
+                received.add(value);
+                data.put(address, received);
             }
-    
-            received.add(value);
-            data.put(address, received);
-    
-            if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
+
+            if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE && characteristic.getUuid() != connUuid) {
                 HashMap<String, Object> mapDeviceData = new HashMap<>();
+                mapDeviceData.put("deviceUuid", uuid);
                 mapDeviceData.put("macAddress", address);
                 mapDeviceData.put("values", data.get(address));
-    
+
                 eventMessageSink.success(mapDeviceData);
-    
+
                 received = new ArrayList<>();
                 data.put(address, received);
             }

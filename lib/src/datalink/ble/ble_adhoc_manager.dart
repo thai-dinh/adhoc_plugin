@@ -32,7 +32,7 @@ class BleAdHocManager {
     this._bleClient = FlutterReactiveBle();
     this._hashMapBleDevice = HashMap<String, BleAdHocDevice>();
     this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
-    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
+    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHAR_MESSAGE_UUID);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

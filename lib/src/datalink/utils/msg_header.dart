@@ -10,12 +10,15 @@ class Header {
   String _address;
   String _label;
   String _name;
+  String _uuid;
 
-  Header(int messageType, String label, String name, String address) {
+  Header(int messageType, String label, String name, String address, 
+         String uuid) {
     this._messageType = messageType;
     this._label = label;
     this._name = name;
     this._address = address;
+    this._uuid = uuid;
   }
 
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
@@ -32,6 +35,8 @@ class Header {
 
   String get address => _address;
 
+  String get uuid => _uuid;
+
   Map<String, dynamic> toJson() => _$HeaderToJson(this);
 
   @override
@@ -41,6 +46,7 @@ class Header {
               ', label=' + _label +
               ', name=' + _name +
               ', address=' + _address +
+              ', uuid= ' + _uuid +
             '}';
   }
 }

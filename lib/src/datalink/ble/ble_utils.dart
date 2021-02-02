@@ -6,7 +6,8 @@ class BleUtils {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   static const ADHOC_SERVICE_UUID = '00000001-0000-1000-8000-00805f9b34fb';
-  static const ADHOC_CHARACTERISTIC_UUID = '00000002-0000-1000-8000-00805f9b34fb';
+  static const ADHOC_CHAR_MESSAGE_UUID = '00000002-0000-1000-8000-00805f9b34fb';
+  static const ADHOC_CHAR_CONN_UUID = '00000004-0000-1000-8000-00805f9b34fb';
 
   static const MIN_MTU = 20;
   static const MAX_MTU = 512;

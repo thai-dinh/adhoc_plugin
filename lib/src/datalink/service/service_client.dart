@@ -31,7 +31,5 @@ abstract class ServiceClient extends Service {
 
   void send(MessageAdHoc msg);
 
-  void listen();
-
   void stopListening();
 }
