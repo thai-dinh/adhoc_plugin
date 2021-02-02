@@ -12,19 +12,17 @@ import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:uuid/uuid.dart' as DartUUID;
 
 
 class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate> _connectionStreamSub;
   StreamSubscription<dynamic> _messageStreamSub;
   FlutterReactiveBle _reactiveBle;
+  Function _connectListener;
   BleAdHocDevice _device;
-  String _clientUID;
 
   Uuid serviceUuid;
   Uuid charMessageUuid;
-  Uuid charConnUuid;
 
   BleClient(
     bool verbose, this._device, int attempts, int timeOut, 
@@ -33,11 +31,14 @@ class BleClient extends ServiceClient {
     verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
   ) {
     this._reactiveBle = FlutterReactiveBle();
-    this._clientUID = DartUUID.Uuid().v1();
-
     this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
-    this.charMessageUuid = Uuid.parse(BleUtils.ADHOC_CHAR_MESSAGE_UUID);
-    this.charConnUuid = Uuid.parse(BleUtils.ADHOC_CHAR_CONN_UUID);
+    this.charMessageUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
+  }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  set connectListener(Function connectListener) {
+    this._connectListener = connectListener;
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -123,9 +124,10 @@ class BleClient extends ServiceClient {
           case DeviceConnectionState.connected:
             if (v)
               Utils.log(ServiceClient.TAG, 'Connected to ${_device.macAddress}');
+            if (_connectListener != null)
+              _connectListener();
 
-            this._initListenProcess();
-            this._listen();
+            _listen();
             state = Service.STATE_CONNECTED;
             break;
           case DeviceConnectionState.connecting:
@@ -158,39 +160,21 @@ class BleClient extends ServiceClient {
     );
   }
 
-  void _initListenProcess() {
-    Utf8Encoder encoder = Utf8Encoder();
-
-    final characteristic = QualifiedCharacteristic(
-      serviceId: serviceUuid,
-      characteristicId: charConnUuid,
-      deviceId: _device.macAddress
-    );
-
-    _reactiveBle.writeCharacteristicWithoutResponse(
-      characteristic, value: encoder.convert(_clientUID).toList()
-    );
-  }
-
   void _listen() {
     if (v) Utils.log(ServiceClient.TAG, 'listen()');
 
     List<List<int>> rawData = List.empty(growable: true);
 
-    final QualifiedCharacteristic characteristic = 
-      QualifiedCharacteristic(serviceId: serviceUuid,
-                              characteristicId: charMessageUuid,
-                              deviceId: _device.macAddress);
+    final characteristic = QualifiedCharacteristic(
+      serviceId: serviceUuid,
+      characteristicId: charMessageUuid,
+      deviceId: _device.macAddress
+    );
 
     _reactiveBle.subscribeToCharacteristic(characteristic).listen((data) {
       rawData.add(data);
-      if (data[0] == BleUtils.MESSAGE_END) {
-        MessageAdHoc message = _processMessage(rawData);
-        if (message.header.uuid == _clientUID) {
-          rawData.clear();
-          serviceMessageListener.onMessageReceived(message);
-        } 
-      }
+      serviceMessageListener.onMessageReceived(_processMessage(rawData));
+      rawData.clear();
     }, onError: (dynamic error) {
       serviceMessageListener.onMsgException(
         MessageErrorException(error.toString())

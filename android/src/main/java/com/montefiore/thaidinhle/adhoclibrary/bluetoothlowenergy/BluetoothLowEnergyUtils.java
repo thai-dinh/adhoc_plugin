@@ -4,8 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 
 public class BluetoothLowEnergyUtils {
     public static final String SERVICE_UUID = "00000001-0000-1000-8000-00805f9b34fb";
-    public static final String CHAR_MESSAGE_UUID = "00000002-0000-1000-8000-00805f9b34fb";
-    public static final String CHAR_CONN_UUID = "00000003-0000-1000-8000-00805f9b34fb";
+    public static final String CHARACTERISTIC_UUID = "00000002-0000-1000-8000-00805f9b34fb";
 
     public static final int END_MESSAGE = 0;
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -18,24 +17,20 @@ class BleServer extends ServiceServer {
   static const String _chConnectName = 'ad.hoc.lib/ble.connection';
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
 
-  HashMap<String, BleAdHocDevice> _connected;
-  List<MessageAdHoc> _messages;
   StreamSubscription<dynamic> _connectionStreamSub;
   StreamSubscription<dynamic> _messageStreamSub;
 
   BleServer(
     bool verbose, ServiceMessageListener serviceMessageListener
   ) : super(verbose, Service.STATE_NONE, serviceMessageListener) {
-    this._connected = HashMap<String, BleAdHocDevice>();
-    this._messages = List.empty(growable: true);
     BleAdHocManager.updateVerbose(verbose);
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
-
-  HashMap<String, BleAdHocDevice> get activeConnections => _connected;
-
 /*-------------------------------Public methods-------------------------------*/
+
+  void send(MessageAdHoc message, String address) {
+    BleAdHocManager.serverSendMessage(message, address);
+  }
 
   void listen() {
     if (v) Utils.log(ServiceServer.TAG, 'Server: listening');
@@ -45,10 +40,13 @@ class BleServer extends ServiceServer {
     _connectionStreamSub= _chConnect.receiveBroadcastStream().listen((event) {
       if (event['state'] == Service.STATE_CONNECTED) {
         BleAdHocDevice device = BleAdHocDevice.fromMap(event);
-        _connected.putIfAbsent(event['macAddress'], () => device);
+        connected.putIfAbsent(event['macAddress'], () => device);
+        serviceMessageListener.onConnection(event['macAddress']);
       } else {
-        if (_connected.containsKey(event['macAddress']))
-          _connected.remove(event['macAddress']);
+        if (connected.containsKey(event['macAddress'])) {
+          connected.remove(event['macAddress']);
+          serviceMessageListener.onConnectionClosed(event['macAddress']);
+        }
       }
     });
 
@@ -63,7 +61,7 @@ class BleServer extends ServiceServer {
 
       String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMessage));
-      _messages.add(message);
+      serviceMessageListener.onMessageReceived(message);
     });
   }
 

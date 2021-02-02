@@ -25,6 +25,10 @@ class WifiServer extends ServiceServer {
 
 /*-------------------------------Public methods-------------------------------*/
 
+  void send(MessageAdHoc message, String address) {
+    
+  }
+
   void listen() async {
     _socket = await FlutterP2p.openHostPort(_port);
     if (_socket == null)

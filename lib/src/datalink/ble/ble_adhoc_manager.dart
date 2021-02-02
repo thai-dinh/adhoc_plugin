@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/discovery_failed.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -32,7 +33,7 @@ class BleAdHocManager {
     this._bleClient = FlutterReactiveBle();
     this._hashMapBleDevice = HashMap<String, BleAdHocDevice>();
     this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
-    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHAR_MESSAGE_UUID);
+    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -121,12 +122,11 @@ class BleAdHocManager {
   void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
   void _stopScan() {
-    if (_subscription != null) {
-      if (_verbose) Utils.log(TAG, 'Discovery process end');
-      _subscription.cancel();
-      _subscription = null;
-      _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
-    }
+    if (_verbose) Utils.log(TAG, 'Discovery process end');
+
+    _subscription.cancel();
+    _subscription = null;
+    _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
   }
 
 /*-------------------------------Static methods-------------------------------*/
@@ -137,4 +137,11 @@ class BleAdHocManager {
   static void openGattServer() => _channel.invokeMethod('openGattServer');
 
   static void closeGattServer() => _channel.invokeMethod('closeGattServer');
+
+  static void serverSendMessage(MessageAdHoc message, String address) {
+    _channel.invokeMethod('serverSendMessage', <String, String>{
+      'address': address,
+      'message': message.toString(),
+    });
+  }
 }

@@ -12,6 +12,7 @@ import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
@@ -22,7 +23,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   WrapperBluetoothLE(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
   ) : super(verbose, config, mapAddressDevice) {
-
     this.type = Service.BLUETOOTHLE;
     this._init(verbose);
   }
@@ -93,9 +93,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  void stopListening() {
-    serviceServer.stopListening();
-  }
+  void stopListening() => serviceServer.stopListening();
 
   @override
   Future<HashMap<String, AdHocDevice>> getPaired() async {
@@ -141,21 +139,13 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) {
+      onConnectionClosed: (String remoteAddress) { },
 
-      },
-
-      onConnection: (String remoteAddress) {
-
-      },
+      onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) {
+      onConnectionFailed: (Exception exception) { },
 
-      },
-
-      onMsgException: (Exception exception) {
-
-      }
+      onMsgException: (Exception exception) { }
     );
 
     serviceServer = BleServer(v, listener)
@@ -168,26 +158,24 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) {
+      onConnectionClosed: (String remoteAddress) { },
 
-      },
-
-      onConnection: (String remoteAddress) {
-
-      },
+      onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) {
+      onConnectionFailed: (Exception exception) { },
 
-      },
-
-      onMsgException: (Exception exception) {
-
-      }
+      onMsgException: (Exception exception) { }
     );
 
     final BleClient bleClient = BleClient(
       v, bleAdHocDevice, attempts, timeOut, listener
     );
+
+    bleClient.connectListener = () {
+      bleClient.send(MessageAdHoc(Header(
+        AbstractWrapper.CONNECT_SERVER, label, ownName, ownMac
+      )));
+    };
 
     bleClient.connect();
   }
@@ -195,6 +183,15 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _processMsgReceived(MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
+        final String address = message.header.address;
+        if (serviceServer.activeConnections.containsKey(address)) {
+          serviceServer.send(
+            MessageAdHoc(Header(
+              AbstractWrapper.CONNECT_CLIENT, label, ownName, ownMac
+            )),
+            address
+          );
+        }
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:

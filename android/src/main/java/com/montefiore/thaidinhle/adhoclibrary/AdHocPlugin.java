@@ -58,6 +58,11 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
       case "closeGattServer":
         gattServerManager.closeGattServer();
         break;
+      case "serverSendMessage":
+        final String message = call.argument("message");
+        final String address = call.argument("address");
+        gattServerManager.writeToCharacteristic(message, address);
+        break;
 
       case "disable":
         bleManager.disable();

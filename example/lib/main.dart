@@ -33,12 +33,20 @@ class _AppState extends State<ExampleApp> {
                     onPressed: blePlugin.enableExample,
                   ),
                   RaisedButton(
+                    child: Text('Disable'),
+                    onPressed: blePlugin.disableExample,
+                  ),
+                  RaisedButton(
                     child: Text('Discovery'),
                     onPressed: blePlugin.discoveryExample,
                   ),
                   RaisedButton(
                     child: Text('Connect'),
                     onPressed: blePlugin.connectExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Stop listening'),
+                    onPressed: blePlugin.stopListeningExample,
                   ),
                 ],
               ),
