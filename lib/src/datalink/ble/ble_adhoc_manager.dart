@@ -79,8 +79,8 @@ class BleAdHocManager {
 
       if (!_hashMapBleDevice.containsKey(device.id)) {
         if (_verbose) {
-          Utils.log(TAG, 'Device found ->' +
-            'DeviceName: ${device.name} - DeviceHardwareAddress: ${device.id}'
+          Utils.log(TAG, 'Device found: ' +
+            'Name: ${device.name} - Address: ${device.id}'
           );
         }
 

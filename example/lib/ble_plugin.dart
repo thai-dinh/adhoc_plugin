@@ -24,7 +24,7 @@ class BlePlugin {
       },
 
       onDiscoveryCompleted: (HashMap<String, AdHocDevice> map) {
-        print('Discovery finished');
+        print('Example: Discovery completed');
         _discoveredDevices = map;
       },
 

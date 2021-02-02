@@ -13,11 +13,14 @@ import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
 
 class WrapperBluetoothLE extends WrapperConnOriented {
+  static const String TAG = "[FlutterAdHoc][WrapperBle]";
+
   BleAdHocManager _bleAdHocManager;
 
   WrapperBluetoothLE(
@@ -56,11 +59,14 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           String msg = 'Discovery process failed due to bluetooth connectivity';
           discoveryListener.onDiscoveryFailed(DeviceFailureException(msg));
         } else {
+          print('Wrapper: Discovery completed');
           mapNameDevice.forEach((key, value) {
             mapMacDevices.putIfAbsent(key, () => value);
           });
 
           discoveryCompleted = true;
+
+          discoveryListener.onDiscoveryCompleted(mapNameDevice);
         }
       },
 
@@ -183,8 +189,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _processMsgReceived(MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
+        if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER');
+
         final String address = message.header.address;
         if (serviceServer.activeConnections.containsKey(address)) {
+          if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER: send()');
           serviceServer.send(
             MessageAdHoc(Header(
               AbstractWrapper.CONNECT_CLIENT, label, ownName, ownMac
@@ -195,6 +204,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
+        if (v) Utils.log(TAG, 'Service Client: CONNECT_CLIENT');
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
