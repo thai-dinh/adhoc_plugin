@@ -4,9 +4,12 @@ import 'package:adhoclibrary/src/appframework/config/config.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_manager.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_server.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
 
@@ -147,8 +150,51 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(v, _serverPort)
+    ServiceMessageListener listener = ServiceMessageListener(
+      onMessageReceived: (MessageAdHoc message) {
+        _processMsgReceived(message);
+      },
+
+      onConnectionClosed: (String remoteAddress) {
+
+      },
+
+      onConnection: (String remoteAddress) {
+
+      },
+  
+      onConnectionFailed: (Exception exception) {
+
+      },
+
+      onMsgException: (Exception exception) {
+
+      }
+    );
+
+    serviceServer = WifiServer(v, _serverPort, listener)
       ..listen();
+  }
+
+  void _processMsgReceived(MessageAdHoc message) {
+    switch (message.header.messageType) {
+      case AbstractWrapper.CONNECT_SERVER:
+        break;
+
+      case AbstractWrapper.CONNECT_CLIENT:
+        break;
+
+      case AbstractWrapper.CONNECT_BROADCAST:
+        break;
+
+      case AbstractWrapper.DISCONNECT_BROADCAST:
+        break;
+
+      case AbstractWrapper.BROADCAST:
+        break;
+      
+      default:
+    }
   }
 
   String _getIpByMac(String mac) {

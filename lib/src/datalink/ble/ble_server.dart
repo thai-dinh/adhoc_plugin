@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/stream/message_stream.dart';
@@ -22,10 +23,11 @@ class BleServer extends ServiceServer {
   StreamSubscription<dynamic> _connectionStreamSub;
   StreamSubscription<dynamic> _messageStreamSub;
 
-  BleServer(bool verbose) : super(verbose, Service.STATE_NONE) {
+  BleServer(
+    bool verbose, ServiceMessageListener serviceMessageListener
+  ) : super(verbose, Service.STATE_NONE, serviceMessageListener) {
     this._connected = HashMap<String, BleAdHocDevice>();
     this._messages = List.empty(growable: true);
-
     BleAdHocManager.updateVerbose(verbose);
   }
 

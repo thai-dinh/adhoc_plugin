@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
@@ -14,9 +15,15 @@ class WifiServer extends ServiceServer {
   StreamSubscription<dynamic> _messageStreamSub;
   int _port;
 
-  WifiServer(bool verbose, this._port) : super(verbose, Service.STATE_NONE) {
+  WifiServer(
+    bool verbose, this._port, ServiceMessageListener serviceMessageListener
+  ) : super(
+    verbose, Service.STATE_NONE, serviceMessageListener
+  ) {
     this._messages = List.empty(growable: true);
   }
+
+/*-------------------------------Public methods-------------------------------*/
 
   void listen() async {
     _socket = await FlutterP2p.openHostPort(_port);

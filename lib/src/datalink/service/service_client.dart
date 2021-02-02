@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 
 
 abstract class ServiceClient extends Service {
@@ -13,9 +14,10 @@ abstract class ServiceClient extends Service {
   int _backOffTime;
   int _timeOut;
 
-  ServiceClient(bool verbose, int state, this._attempts, this._timeOut) 
-    : super(verbose, state) {
-
+  ServiceClient(
+    bool verbose, int state, this._attempts, this._timeOut,
+    ServiceMessageListener serviceMessageListener
+  ) : super(verbose, state, serviceMessageListener) {
     this._backOffTime = new Random().nextInt(_HIGH - _LOW) + _LOW;
   }
 

@@ -3,18 +3,7 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 
 
-abstract class _DiscoveryListener {
-  void onDeviceDiscovered(AdHocDevice device);
-
-  void onDiscoveryCompleted(HashMap<String, AdHocDevice> mapNameDevice);
-
-  void onDiscoveryStarted();
-
-  void onDiscoveryFailed(Exception exception);
-}
-
-
-class DiscoveryListener implements _DiscoveryListener {
+class DiscoveryListener {
   void Function(AdHocDevice device) _onDeviceDiscovered;
   void Function(HashMap<String, AdHocDevice> mapNameDevice) _onDiscoveryCompleted;
   void Function() _onDiscoveryStarted;
@@ -32,16 +21,19 @@ class DiscoveryListener implements _DiscoveryListener {
     this._onDiscoveryFailed = onDiscoveryFailed;
   }
 
-  @override
-  void onDeviceDiscovered(AdHocDevice device) => _onDeviceDiscovered(device);
+  void onDeviceDiscovered(AdHocDevice device) {
+    _onDeviceDiscovered(device);
+  }
 
-  @override
-  void onDiscoveryCompleted(HashMap<String, AdHocDevice> mapNameDevice)
-    => _onDiscoveryCompleted(mapNameDevice);
+  void onDiscoveryCompleted(HashMap<String, AdHocDevice> mapNameDevice) {
+    _onDiscoveryCompleted(mapNameDevice);
+  }
 
-  @override
-  void onDiscoveryStarted() => _onDiscoveryStarted();
+  void onDiscoveryStarted() {
+    _onDiscoveryStarted();
+  }
 
-  @override
-  void onDiscoveryFailed(Exception exception) => _onDiscoveryFailed(exception);
+  void onDiscoveryFailed(Exception exception) {
+    _onDiscoveryFailed(exception);
+  }
 }

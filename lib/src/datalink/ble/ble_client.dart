@@ -4,10 +4,12 @@ import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
+import 'package:adhoclibrary/src/datalink/exceptions/message_error.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:uuid/uuid.dart' as DartUUID;
@@ -24,9 +26,12 @@ class BleClient extends ServiceClient {
   Uuid charMessageUuid;
   Uuid charConnUuid;
 
-  BleClient(bool verbose, this._device, int attempts, int timeOut) 
-    : super(verbose, Service.STATE_NONE, attempts, timeOut) {
-
+  BleClient(
+    bool verbose, this._device, int attempts, int timeOut, 
+    ServiceMessageListener serviceMessageListener
+  ) : super(
+    verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
+  ) {
     this._reactiveBle = FlutterReactiveBle();
     this._clientUID = DartUUID.Uuid().v1();
 
@@ -53,6 +58,9 @@ class BleClient extends ServiceClient {
 
   void send(MessageAdHoc message) async {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
+
+    if (state == Service.STATE_NONE)
+      throw NoConnectionException('No remote connection');
 
     List<int> msgAsListInteger;
     List<Uint8List> msgAsListBytes = List.empty(growable: true);
@@ -180,12 +188,13 @@ class BleClient extends ServiceClient {
         MessageAdHoc message = _processMessage(rawData);
         if (message.header.uuid == _clientUID) {
           rawData.clear();
-
-          // TODO: process message received
+          serviceMessageListener.onMessageReceived(message);
         } 
       }
     }, onError: (dynamic error) {
-      // TODO: handle error
+      serviceMessageListener.onMsgException(
+        MessageErrorException(error.toString())
+      );
     });
   }
 

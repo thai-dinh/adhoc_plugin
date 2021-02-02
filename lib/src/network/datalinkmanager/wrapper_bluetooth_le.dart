@@ -10,6 +10,7 @@ import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
@@ -67,8 +68,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         discoveryListener.onDiscoveryStarted();
       },
   
-      onDiscoveryFailed: (Exception e) {
-        discoveryListener.onDiscoveryFailed(e);
+      onDiscoveryFailed: (Exception exception) {
+        discoveryListener.onDiscoveryFailed(exception);
       }
     );
 
@@ -135,12 +136,59 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = BleServer(v)
+    ServiceMessageListener listener = ServiceMessageListener(
+      onMessageReceived: (MessageAdHoc message) {
+        _processMsgReceived(message);
+      },
+
+      onConnectionClosed: (String remoteAddress) {
+
+      },
+
+      onConnection: (String remoteAddress) {
+
+      },
+  
+      onConnectionFailed: (Exception exception) {
+
+      },
+
+      onMsgException: (Exception exception) {
+
+      }
+    );
+
+    serviceServer = BleServer(v, listener)
       ..listen();
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
-    final BleClient bleClient = BleClient(v, bleAdHocDevice, attempts, timeOut);
+    ServiceMessageListener listener = ServiceMessageListener(
+      onMessageReceived: (MessageAdHoc message) {
+        _processMsgReceived(message);
+      },
+
+      onConnectionClosed: (String remoteAddress) {
+
+      },
+
+      onConnection: (String remoteAddress) {
+
+      },
+  
+      onConnectionFailed: (Exception exception) {
+
+      },
+
+      onMsgException: (Exception exception) {
+
+      }
+    );
+
+    final BleClient bleClient = BleClient(
+      v, bleAdHocDevice, attempts, timeOut, listener
+    );
+
     bleClient.connect();
   }
 

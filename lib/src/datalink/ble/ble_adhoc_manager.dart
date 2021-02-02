@@ -56,7 +56,7 @@ class BleAdHocManager {
       );
 
     _channel.invokeMethod('startAdvertise');
-    Timer(Duration(milliseconds: duration), _stopAdvertise);
+    Timer(Duration(seconds: duration), _stopAdvertise);
   }
 
   void discovery(DiscoveryListener discoveryListener) {
@@ -122,12 +122,12 @@ class BleAdHocManager {
 
   void _stopScan() {
     if (_subscription != null) {
+      if (_verbose) Utils.log(TAG, 'Discovery process end');
       _subscription.cancel();
       _subscription = null;
       _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
     }
   }
-
 
 /*-------------------------------Static methods-------------------------------*/
 

@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
+import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
@@ -17,9 +18,12 @@ class WifiClient extends ServiceClient {
   List<MessageAdHoc> _messages;
   StreamSubscription<dynamic> _messageStreamSub;
 
-  WifiClient(bool verbose, this._port, this._remoteAddress, int attempts, int timeOut) 
-    : super(verbose, Service.STATE_NONE, attempts, timeOut) {
-
+  WifiClient(
+    bool verbose, this._port, this._remoteAddress, int attempts, int timeOut, 
+    ServiceMessageListener serviceMessageListener
+  ) : super(
+    verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
+  ) {
     this._messages = List.empty(growable: true);
   }
 
