@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
+import 'package:adhoclibrary/src/datalink/exceptions/discovery_failed.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
@@ -18,20 +19,22 @@ class WifiManager {
   DiscoveryListener _discoveryListener;
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
-  bool _connected;
+  bool _isConnected;
   bool _isHost;
-  String _leaderAddress;
+  String _groupOwnerAddress;
 
   WifiManager(this._verbose) {
     _mapMacDevices = HashMap();
-    _connected = false;
+    _isConnected = false;
     _isHost = false;
-    _leaderAddress = '';
+    _groupOwnerAddress = '';
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
   Future<void> register() async {
+    if (_verbose) Utils.log(TAG, 'register()');
+
     if (!await _checkPermission())
       return;
 
@@ -40,9 +43,11 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
-      _connected = change.networkInfo.isConnected;
+      _isConnected = change.networkInfo.isConnected;
       _isHost = change.wifiP2pInfo.isGroupOwner;
-      _leaderAddress = change.wifiP2pInfo.groupOwnerAddress;
+      _groupOwnerAddress = change.wifiP2pInfo.groupOwnerAddress;
+
+      if (_verbose) Utils.log(TAG, _isConnected.toString() + ' ' + _isHost.toString() + ' ' + _groupOwnerAddress);
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.thisDeviceChange.listen((change) {
@@ -70,23 +75,30 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.discoveryChange.listen((change) {
-      if (change.isDiscovering)
+      if (change.isDiscovering) {
+        if (_verbose) Utils.log(TAG, 'Discovery initiated');
         _discoveryListener.onDiscoveryStarted();
+      }
     }));
 
     FlutterP2p.register();
   }
 
   void unregister() {
+    if (_verbose) Utils.log(TAG, 'unregister()');
+
     _subscriptions.forEach((subscription) => subscription.cancel());
     FlutterP2p.unregister();
   }
 
-  void discovery(final DiscoveryListener discoveryListener) {
+  void discovery(final DiscoveryListener discoveryListener) async {
     if (_verbose) Utils.log(TAG, 'discovery()');
 
     this._discoveryListener = discoveryListener;
-    FlutterP2p.discoverDevices();
+    bool result = await FlutterP2p.discoverDevices();
+    if (!result)
+      discoveryListener.onDiscoveryFailed(DiscoveryFailedException());
+
     Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _endDiscovery);
   }
 

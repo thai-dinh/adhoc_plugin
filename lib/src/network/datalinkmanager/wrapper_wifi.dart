@@ -39,10 +39,12 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
       if (ip == null) {
           this.attempts = attempts;
           _wifiManager.connect(adHocDevice.macAddress);
+          _connect(_serverPort);
       } else {
           if (ip != null) { // TODO: change conditional
               this.attempts = attempts;
               _wifiManager.connect(adHocDevice.macAddress);
+              _connect(_serverPort);
           } else {
               throw DeviceFailureException(
                 adHocDevice.deviceName + '(' + adHocDevice.macAddress + ')'
@@ -147,8 +149,9 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 
   void _init(final bool verbose, final Config config) async {
     if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager(verbose);
+      this._wifiManager = WifiManager(verbose)..register();
       this._isGroupOwner = false;
+      this._mapAddrMac = HashMap();
       this._serverPort = config.serverPort;
       this._listenServer();
     } else {

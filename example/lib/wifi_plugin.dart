@@ -10,6 +10,7 @@ class WifiPlugin {
   WifiPlugin() {
     Config config = Config();
     config.label = 'WIFI';
+    config.serverPort = 4444;
     _wrapper = WrapperWifi(true, config, HashMap());
   }
 
