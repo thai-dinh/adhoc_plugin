@@ -18,31 +18,18 @@ class WifiManager {
   DiscoveryListener _discoveryListener;
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
-  bool _isConnected;
+  bool _connected;
   bool _isHost;
   String _leaderAddress;
 
   WifiManager(this._verbose) {
     _mapMacDevices = HashMap();
-    _isConnected = false;
+    _connected = false;
     _isHost = false;
     _leaderAddress = '';
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
-
-  HashMap<String, WifiAdHocDevice> get peers => _mapMacDevices;
-
 /*-------------------------------Public methods-------------------------------*/
-
-  Future<bool> _checkPermission() async {
-    if (!await FlutterP2p.isLocationPermissionGranted()) {
-      await FlutterP2p.requestLocationPermission();
-      return false;
-    }
-
-    return true;
-  }
 
   Future<void> register() async {
     if (!await _checkPermission())
@@ -53,7 +40,7 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
-      _isConnected = change.networkInfo.isConnected;
+      _connected = change.networkInfo.isConnected;
       _isHost = change.wifiP2pInfo.isGroupOwner;
       _leaderAddress = change.wifiP2pInfo.groupOwnerAddress;
     }));
@@ -68,11 +55,10 @@ class WifiManager {
           device, device.deviceName, device.deviceAddress
         );
 
-        _mapMacDevices.putIfAbsent(device.deviceName, () {
+        _mapMacDevices.putIfAbsent(device.deviceAddress, () {
           if (_verbose) {
-            Utils.log(TAG, 
-              'Device found -> DeviceName: ${device.deviceName}' + 
-              ' - DeviceHardwareAddress: ${device.deviceAddress}'
+            Utils.log(TAG, 'Device found: ' +
+              'Name: ${device.deviceName} - Address: ${device.deviceAddress}'
             );
           }
 
@@ -84,10 +70,10 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.discoveryChange.listen((change) {
-      // Handle discovery state changes
+      if (change.isDiscovering)
+        _discoveryListener.onDiscoveryStarted();
     }));
 
-    // Register to the native events which are send to the streams above
     FlutterP2p.register();
   }
 
@@ -96,7 +82,7 @@ class WifiManager {
     FlutterP2p.unregister();
   }
 
-  void discovery(DiscoveryListener discoveryListener) {
+  void discovery(final DiscoveryListener discoveryListener) {
     if (_verbose) Utils.log(TAG, 'discovery()');
 
     this._discoveryListener = discoveryListener;
@@ -104,14 +90,17 @@ class WifiManager {
     Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _endDiscovery);
   }
 
-  Future<bool> connect(final String remoteAddress) async {
+  void connect(final String remoteAddress) async {
     if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
 
     WifiAdHocDevice device = _mapMacDevices[remoteAddress];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
   
-    return await FlutterP2p.connect(device.wifiP2pDevice);
+    bool result = await FlutterP2p.connect(device.wifiP2pDevice);
+    if (!result) {
+      if (_verbose) Utils.log(TAG, 'Error during connecting Wifi Direct');
+    }
   }
 
   void cancelConnection(final WifiAdHocDevice device) {
@@ -124,7 +113,7 @@ class WifiManager {
     return await _channel.invokeMethod('resetDeviceName');
   }
 
-  Future<bool> updateDeviceName(String name) async {
+  Future<bool> updateDeviceName(final String name) async {
     return await _channel.invokeMethod('updateDeviceName');
   }
 
@@ -133,6 +122,15 @@ class WifiManager {
   }
 
 /*------------------------------Private methods-------------------------------*/
+
+  Future<bool> _checkPermission() async {
+    if (!await FlutterP2p.isLocationPermissionGranted()) {
+      await FlutterP2p.requestLocationPermission();
+      return false;
+    }
+
+    return true;
+  }
 
   void _endDiscovery() {
     _discoveryListener.onDiscoveryCompleted(_mapMacDevices);

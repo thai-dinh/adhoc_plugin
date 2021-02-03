@@ -25,7 +25,7 @@ abstract class ServiceServer extends Service {
 
   void send(MessageAdHoc message, String address);
 
-  void listen();
+  void listen([int serverPort]);
 
   void stopListening();
 }

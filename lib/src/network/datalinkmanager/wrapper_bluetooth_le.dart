@@ -73,7 +73,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       onDiscoveryStarted: () {
         discoveryListener.onDiscoveryStarted();
       },
-  
+
       onDiscoveryFailed: (Exception exception) {
         discoveryListener.onDiscoveryFailed(exception);
       }
@@ -135,6 +135,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     if (await BleUtils.isEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this.ownName = await BleUtils.getCurrentName();
+      this.ownMac = '';
       this._listenServer();
     }
   }
@@ -181,28 +182,32 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
     bleClient.connectListener = () {
       bleClient.send(MessageAdHoc(Header(
-        AbstractWrapper.CONNECT_SERVER, label, ownName, ownMac
+        messageType: AbstractWrapper.CONNECT_SERVER, 
+        label: label, 
+        name: ownName,
+        address: ownMac
       )));
     };
 
     bleClient.connect();
   }
 
-  void _processMsgReceived(MessageAdHoc message) {
+  void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
-        if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER');
-
         final String address = message.header.address;
-        if (serviceServer.activeConnections.containsKey(address)) {
-          if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER: send()');
+        if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER: $address');
+        // if (serviceServer.activeConnections.containsKey(address)) {
           serviceServer.send(
             MessageAdHoc(Header(
-              AbstractWrapper.CONNECT_CLIENT, label, ownName, ownMac
+              messageType: AbstractWrapper.CONNECT_SERVER, 
+              label: label, 
+              name: ownName,
+              address: ownMac
             )),
             address
           );
-        }
+        // }
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:

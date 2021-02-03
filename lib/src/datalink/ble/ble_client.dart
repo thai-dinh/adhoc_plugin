@@ -136,13 +136,10 @@ class BleClient extends ServiceClient {
 
           default:
             state = Service.STATE_NONE;
-            throw NoConnectionException(
-              'Failed to connect to ${_device.macAddress}'
-            );
         }
       }, onError: (error) {
         throw NoConnectionException(
-          error.toString() + ': Unable to connect to ${_device.macAddress}'
+          error.toString() + ': Failed to connect to ${_device.macAddress}'
         );
       });
     }
@@ -184,8 +181,7 @@ class BleClient extends ServiceClient {
 
   MessageAdHoc _processMessage(final List<List<int>> rawMessage) {
     Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage.expand((x) {
-      List<int> tmp = new List<int>.from(x); 
-      tmp.removeAt(0);
+      List<int> tmp = new List<int>.from(x);
       return tmp;
     }).toList());
 

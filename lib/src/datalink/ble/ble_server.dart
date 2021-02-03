@@ -32,7 +32,7 @@ class BleServer extends ServiceServer {
     BleAdHocManager.serverSendMessage(message, address);
   }
 
-  void listen() {
+  void listen([int unused]) {
     if (v) Utils.log(ServiceServer.TAG, 'Server: listening');
 
     BleAdHocManager.openGattServer();
@@ -54,7 +54,7 @@ class BleServer extends ServiceServer {
       List<Uint8List> rawMessage = 
           List<Uint8List>.from(event['values'].whereType<Uint8List>());
       Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage.expand((x) {
-        List<int> tmp = new List<int>.from(x); 
+        List<int> tmp = new List<int>.from(x);
         tmp.removeAt(0);
         return tmp;
       }).toList());

@@ -1,4 +1,5 @@
 import 'package:adhoclibrary_example/ble_plugin.dart';
+import 'package:adhoclibrary_example/wifi_plugin.dart';
 
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,7 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   BlePlugin blePlugin = BlePlugin();
+  WifiPlugin wifiPlugin = WifiPlugin();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,9 @@ class _AppState extends State<ExampleApp> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
+                  Text(
+                    'BluetoothLE'
+                  ),
                   RaisedButton(
                     child: Text('Enable discovery'),
                     onPressed: blePlugin.enableExample,
@@ -54,9 +59,28 @@ class _AppState extends State<ExampleApp> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
+                  Text(
+                    'Wifi P2P'
+                  ),
                   RaisedButton(
-                    child: Text('Button'),
-                    onPressed: null,
+                    child: Text('Enable discovery'),
+                    onPressed: wifiPlugin.enableExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Disable'),
+                    onPressed: wifiPlugin.disableExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Discovery'),
+                    onPressed: wifiPlugin.discoveryExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Connect'),
+                    onPressed: wifiPlugin.connectExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Stop listening'),
+                    onPressed: wifiPlugin.stopListeningExample,
                   ),
                 ],
               ),

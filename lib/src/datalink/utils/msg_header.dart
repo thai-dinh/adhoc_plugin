@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_header.g.dart';
@@ -11,13 +12,15 @@ class Header {
   String _label;
   String _name;
 
-  Header(
-    int messageType, String label, String name, String address
-  ) {
+  Header({
+    @required int messageType, @required String label, 
+    String name = '', String address = '', int deviceType
+  }) {
     this._messageType = messageType;
     this._label = label;
     this._name = name;
     this._address = address;
+    this._deviceType = deviceType;
   }
 
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
@@ -39,10 +42,11 @@ class Header {
   @override
   String toString() {
     return 'Header{' +
-              '_messageType=' + _messageType.toString() +
+              'messageType=' + _messageType.toString() +
               ', label=' + _label +
               ', name=' + _name +
               ', address=' + _address +
+              ', deviceType=' + _deviceType.toString() + 
             '}';
   }
 }

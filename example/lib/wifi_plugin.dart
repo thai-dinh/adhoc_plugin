@@ -3,14 +3,14 @@ import 'dart:collection';
 import 'package:adhoclibrary/adhoclibrary.dart';
 
 
-class BlePlugin {
+class WifiPlugin {
   HashMap<String, AdHocDevice> _discoveredDevices;
-  WrapperBluetoothLE _wrapper;
+  WrapperWifi _wrapper;
 
-  BlePlugin() {
+  WifiPlugin() {
     Config config = Config();
-    config.label = 'BLUETOOTHLE';
-    _wrapper = WrapperBluetoothLE(true, config, HashMap());
+    config.label = 'WIFI';
+    _wrapper = WrapperWifi(true, config, HashMap());
   }
 
   void enableExample() => _wrapper.enable(3600);

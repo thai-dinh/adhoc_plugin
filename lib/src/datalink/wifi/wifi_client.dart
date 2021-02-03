@@ -12,11 +12,12 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  int _port;
+  StreamSubscription<dynamic> _messageStreamSub;
+  List<MessageAdHoc> _messages;
+  Function(String) _connectListener;
   String _remoteAddress;
   P2pSocket _socket;
-  List<MessageAdHoc> _messages;
-  StreamSubscription<dynamic> _messageStreamSub;
+  int _port;
 
   WifiClient(
     bool verbose, this._port, this._remoteAddress, int attempts, int timeOut, 
@@ -27,23 +28,17 @@ class WifiClient extends ServiceClient {
     this._messages = List.empty(growable: true);
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
+  set connectListener(Function connectListener) {
+    this._connectListener = connectListener;
+  }
+
 /*-------------------------------Public methods-------------------------------*/
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
   void disconnect() => FlutterP2p.disconnectFromHost(_port);
-
-  void listen() {
-    if (v) Utils.log(ServiceClient.TAG, 'listen()');
-
-    _messageStreamSub = _socket.inputStream.listen((data) {
-      if (v) Utils.log(ServiceClient.TAG, 'Message received');
-
-      String stringMsg = Utf8Decoder().convert(Uint8List.fromList(data.data));
-      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMsg));
-      _messages.add(message);
-    });
-  }
 
   void stopListening() {
     if (v) Utils.log(ServiceClient.TAG, 'stopListening()');
@@ -77,9 +72,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (v) {
-      Utils.log(ServiceClient.TAG, 'Connect to $_remoteAddress');
-    }
+    if (v) Utils.log(ServiceClient.TAG, 'Connect to $_remoteAddress : $_port');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
@@ -90,12 +83,32 @@ class WifiClient extends ServiceClient {
         timeout: timeOut,
       );
 
-      if (_socket == null)
+      if (_socket == null) {
+        state = Service.STATE_NONE;
         throw NoConnectionException('Unable to connect to $_remoteAddress');
+      }
+
+      state = Service.STATE_CONNECTED;
+      _listen();
+
+      if (_connectListener != null)
+        _connectListener(_remoteAddress);
 
       if (v) Utils.log(ServiceClient.TAG, 'Connected to $_remoteAddress');
 
       state = Service.STATE_CONNECTED;
     }
+  }
+
+  void _listen() {
+    if (v) Utils.log(ServiceClient.TAG, 'listen()');
+
+    _messageStreamSub = _socket.inputStream.listen((data) {
+      if (v) Utils.log(ServiceClient.TAG, 'Message received');
+
+      String stringMsg = Utf8Decoder().convert(Uint8List.fromList(data.data));
+      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMsg));
+      _messages.add(message);
+    });
   }
 }
