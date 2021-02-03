@@ -34,28 +34,17 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 /*------------------------------Override methods------------------------------*/
 
   @override
-  void connect(final int attempts, final AdHocDevice adHocDevice) {
-      String ip = _getIpByMac(adHocDevice.macAddress);
-      if (ip == null) {
-          this.attempts = attempts;
-          _wifiManager.connect(adHocDevice.macAddress);
-          _connect(_serverPort);
-      } else {
-          if (ip != null) { // TODO: change conditional
-              this.attempts = attempts;
-              _wifiManager.connect(adHocDevice.macAddress);
-              _connect(_serverPort);
-          } else {
-              throw DeviceFailureException(
-                adHocDevice.deviceName + '(' + adHocDevice.macAddress + ')'
-                + 'is already connected'
-              );
-          }
-      }
+  void enable(final int duration) { // TODO: To verify bc enable wifi is deprecated
+    _wifiManager = WifiManager(v);
+    enabled = true;
   }
 
-  @override
-  void stopListening() => serviceServer.stopListening();
+  @override 
+  void disable() { // TODO: To verify bc disable wifi is deprecated
+    _mapAddrMac.clear();
+    _wifiManager = null;
+    enabled = false;
+  }
 
   @override
   void discovery(final DiscoveryListener discoveryListener) {
@@ -93,26 +82,35 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   }
 
   @override
-  Future<HashMap<String, AdHocDevice>> getPaired() {
-    return null; // Not used in wifi context
+  void connect(final int attempts, final AdHocDevice adHocDevice) async {
+    this.attempts = attempts;
+    if (!(await _wifiManager.connect(adHocDevice.macAddress))) {
+      throw DeviceFailureException(adHocDevice.deviceName + '(' + 
+        adHocDevice.macAddress + ')' + 'is already connected'
+      );
+    }
+
+    if (_isGroupOwner = _wifiManager.isGroupOwner) {
+      _groupOwnerAddr = _ownIpAddress = _wifiManager.groupOwnerAddress;
+      _listenServer();
+    } else {
+      _groupOwnerAddr = _wifiManager.groupOwnerAddress;
+      _connect(_serverPort);
+    }
   }
 
   @override
-  void enable(final int duration) { // TODO: To verify bc enable wifi is deprecated
-    _wifiManager = WifiManager(v);
-    enabled = true;
+  void stopListening() {
+    if (serviceServer != null)
+      serviceServer.stopListening();
   }
 
-  @override 
-  void disable() { // TODO: To verify bc disable wifi is deprecated
-    _mapAddrMac.clear();
-    _wifiManager = null;
-    enabled = false;
-  }
+  @override // Not used in wifi context
+  Future<HashMap<String, AdHocDevice>> getPaired() => null;
 
   @override
-  Future<bool> resetDeviceName() async {
-    return await _wifiManager.resetDeviceName();
+  Future<String> getAdapterName() async {
+    return await _wifiManager.getAdapterName();
   }
 
   @override
@@ -121,8 +119,8 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   }
 
   @override
-  Future<String> getAdapterName() async {
-    return await _wifiManager.getAdapterName();
+  Future<bool> resetDeviceName() async {
+    return await _wifiManager.resetDeviceName();
   }
 
 /*------------------------------WifiP2P methods-------------------------------*/
@@ -149,11 +147,10 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 
   void _init(final bool verbose, final Config config) async {
     if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager(verbose)..register();
+      this._wifiManager = WifiManager(verbose)..register(() => _listenServer());
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
       this._serverPort = config.serverPort;
-      this._listenServer();
     } else {
       this.enabled = false;
     }
@@ -165,25 +162,16 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) {
+      onConnectionClosed: (String remoteAddress) { },
 
-      },
-
-      onConnection: (String remoteAddress) {
-
-      },
+      onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) {
+      onConnectionFailed: (Exception exception) { },
 
-      },
-
-      onMsgException: (Exception exception) {
-
-      }
+      onMsgException: (Exception exception) { }
     );
 
-    serviceServer = WifiServer(v, listener)
-      ..listen(_serverPort);
+    serviceServer = WifiServer(v, listener)..listen(_serverPort);
   }
 
   void _connect(final int remotePort) {
@@ -248,14 +236,5 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
       
       default:
     }
-  }
-
-  String _getIpByMac(final String mac) {
-    _mapAddrMac.forEach((key, value) {
-      if (mac == value)
-        return key;
-    });
-
-    return null;
   }
 }

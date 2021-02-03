@@ -20,38 +20,28 @@ class WifiManager {
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
   bool _isConnected;
-  bool _isHost;
-  String _groupOwnerAddress;
+  bool isGroupOwner;
+  String groupOwnerAddress;
 
   WifiManager(this._verbose) {
     _mapMacDevices = HashMap();
     _isConnected = false;
-    _isHost = false;
-    _groupOwnerAddress = '';
+    isGroupOwner = false;
+    groupOwnerAddress = '0.0.0.0';
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> register() async {
+  Future<void> register(Function host) async {
     if (_verbose) Utils.log(TAG, 'register()');
 
     if (!await _checkPermission())
       return;
 
-    _subscriptions.add(FlutterP2p.wifiEvents.stateChange.listen((change) {
-      // Handle wifi state change
-    }));
-
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
       _isConnected = change.networkInfo.isConnected;
-      _isHost = change.wifiP2pInfo.isGroupOwner;
-      _groupOwnerAddress = change.wifiP2pInfo.groupOwnerAddress;
-
-      if (_verbose) Utils.log(TAG, _isConnected.toString() + ' ' + _isHost.toString() + ' ' + _groupOwnerAddress);
-    }));
-
-    _subscriptions.add(FlutterP2p.wifiEvents.thisDeviceChange.listen((change) {
-      // Handle changes of this device
+      groupOwnerAddress = change.wifiP2pInfo.groupOwnerAddress;
+      if (isGroupOwner = change.wifiP2pInfo.isGroupOwner) host();
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((event) {
@@ -94,6 +84,8 @@ class WifiManager {
   void discovery(final DiscoveryListener discoveryListener) async {
     if (_verbose) Utils.log(TAG, 'discovery()');
 
+    if (_isConnected) return;
+
     this._discoveryListener = discoveryListener;
     bool result = await FlutterP2p.discoverDevices();
     if (!result)
@@ -102,17 +94,14 @@ class WifiManager {
     Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _endDiscovery);
   }
 
-  void connect(final String remoteAddress) async {
+  Future<bool> connect(final String remoteAddress) async {
     if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
 
     WifiAdHocDevice device = _mapMacDevices[remoteAddress];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
-  
-    bool result = await FlutterP2p.connect(device.wifiP2pDevice);
-    if (!result) {
-      if (_verbose) Utils.log(TAG, 'Error during connecting Wifi Direct');
-    }
+
+    return await FlutterP2p.connect(device.wifiP2pDevice);
   }
 
   void cancelConnection(final WifiAdHocDevice device) {

@@ -84,8 +84,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   @override
   void connect(int attempts, AdHocDevice adHocDevice) {
-    BleAdHocDevice bleAdHocDevice = 
-      mapMacDevices[adHocDevice.macAddress] as BleAdHocDevice;
+    BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.macAddress];
     if (bleAdHocDevice != null) {
       if (bleAdHocDevice != null) { // TODO: verify that device is not already connected in the conditional
         _connect(attempts, bleAdHocDevice);
@@ -157,8 +156,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       onMsgException: (Exception exception) { }
     );
 
-    serviceServer = BleServer(v, listener)
-      ..listen();
+    serviceServer = BleServer(v, listener)..listen();
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {

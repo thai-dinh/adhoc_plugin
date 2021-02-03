@@ -34,7 +34,7 @@ class WifiServer extends ServiceServer {
       serviceMessageListener.onMessageReceived(message);
     });
 
-    await FlutterP2p.acceptPort(serverPort);
+    print(await FlutterP2p.acceptPort(serverPort));
   }
 
   void stopListening() {
