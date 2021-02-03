@@ -10,11 +10,13 @@ import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
 
@@ -210,15 +212,49 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       case AbstractWrapper.CONNECT_CLIENT:
         if (v) Utils.log(TAG, 'Service Client: CONNECT_CLIENT');
+
+        ServiceClient serviceClient = mapAddrClient[message.header.address];
+        if (serviceClient != null)
+          receivedPeerMessage(message.header, serviceClient);
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
+        if (checkFloodEvent((message.pdu as FloodMsg).id)) {
+          broadcastExcept(message, message.header.label);
+
+          HashSet<AdHocDevice> hashSet = (message.pdu as FloodMsg).adHocDevices;
+          for (AdHocDevice adHocDevice in hashSet) {
+            if (adHocDevice.label == label 
+              && !setRemoteDevices.contains(adHocDevice)
+              && !isDirectNeighbors(adHocDevice.label)
+            ) {
+              adHocDevice.directedConnected = false;
+              setRemoteDevices.add(adHocDevice);
+            }
+          }
+        }
         break;
 
       case AbstractWrapper.DISCONNECT_BROADCAST:
+        if (checkFloodEvent(message.pdu as String)) {
+          broadcastExcept(message, message.header.label);
+
+          Header header = message.header;
+
+          AdHocDevice adHocDevice = AdHocDevice(
+            deviceName: header.name,
+            label: header.label,
+            type: type, 
+            directedConnected: false
+          );
+
+          if (setRemoteDevices.contains(adHocDevice))
+              setRemoteDevices.remove(adHocDevice);
+        }
         break;
 
       case AbstractWrapper.BROADCAST:
+        Header header = message.header;
         break;
       
       default:

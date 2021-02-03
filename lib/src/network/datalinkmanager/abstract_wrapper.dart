@@ -17,18 +17,24 @@ abstract class AbstractWrapper {
   final HashMap<String, AdHocDevice> mapMacDevices;
 
   bool enabled;
+  bool connectionFlooding;
   bool discoveryCompleted;
+  int timeOut;
+  int type;
+  HashSet<AdHocDevice> setRemoteDevices;
+  Set<String> setFloodEvents;
   String label;
   String ownName;
   String ownMac;
-  int timeOut;
-  int type;
-  
+
   AbstractWrapper(this.v, Config config, this.mapMacDevices) {
     this.enabled = true;
+    this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
-    this.label = config.label;
     this.timeOut = config.timeOut;
+    this.setRemoteDevices = HashSet();
+    this.setFloodEvents = Set();
+    this.label = config.label;
   }
 
   void enable(int duration);
@@ -60,4 +66,13 @@ abstract class AbstractWrapper {
   void disconnect(String remoteDest);
 
   void disconnectAll();
+
+  bool checkFloodEvent(String id) {
+    if (!setFloodEvents.contains(id)) {
+      setFloodEvents.add(id);
+      return true;
+    }
+
+    return false;
+  }
 }

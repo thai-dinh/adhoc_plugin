@@ -1,19 +1,21 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 
 
-abstract class AdHocDevice {
+class AdHocDevice {
+  bool directedConnected;
   String label;
   String deviceName;
   String macAddress;
   int type;
 
-  AdHocDevice({String deviceName, this.label, this.macAddress, this.type}) {
+  AdHocDevice({
+    String deviceName, this.label, this.macAddress, this.type,
+    this.directedConnected
+  }) {
     this.deviceName = _checkName(deviceName);
   }
 
-  String _checkName(String deviceName) {
-    return deviceName == null ? '' : deviceName;
-  }
+  String _checkName(String deviceName) => deviceName == null ? '' : deviceName;
 
   String typeAsString() {
     switch (type) {
@@ -30,9 +32,10 @@ abstract class AdHocDevice {
   String toString() {
     return 'AdHocDevice{' +
               'label=' + label +
-              ', deviceName' + deviceName +
-              ', macAddress' + macAddress.toString() +
-              ', type' + type.toString() +
+              ', deviceName=' + deviceName +
+              ', macAddress=' + macAddress.toString() +
+              ', type=' + type.toString() +
+              ', directedConnected=' + directedConnected.toString() +
            '}';
   }
 }
