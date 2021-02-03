@@ -20,19 +20,15 @@ class WifiManager {
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
   bool _isConnected;
-  bool isGroupOwner;
-  String groupOwnerAddress;
 
   WifiManager(this._verbose) {
     _mapMacDevices = HashMap();
     _isConnected = false;
-    isGroupOwner = false;
-    groupOwnerAddress = '0.0.0.0';
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> register(Function host) async {
+  Future<void> register(void Function(bool, String) execute) async {
     if (_verbose) Utils.log(TAG, 'register()');
 
     if (!await _checkPermission())
@@ -40,8 +36,9 @@ class WifiManager {
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
       _isConnected = change.networkInfo.isConnected;
-      groupOwnerAddress = change.wifiP2pInfo.groupOwnerAddress;
-      if (isGroupOwner = change.wifiP2pInfo.isGroupOwner) host();
+      execute(
+        change.wifiP2pInfo.isGroupOwner, change.wifiP2pInfo.groupOwnerAddress
+      );
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((event) {

@@ -84,18 +84,11 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   @override
   void connect(final int attempts, final AdHocDevice adHocDevice) async {
     this.attempts = attempts;
+    
     if (!(await _wifiManager.connect(adHocDevice.macAddress))) {
       throw DeviceFailureException(adHocDevice.deviceName + '(' + 
         adHocDevice.macAddress + ')' + 'is already connected'
       );
-    }
-
-    if (_isGroupOwner = _wifiManager.isGroupOwner) {
-      _groupOwnerAddr = _ownIpAddress = _wifiManager.groupOwnerAddress;
-      _listenServer();
-    } else {
-      _groupOwnerAddr = _wifiManager.groupOwnerAddress;
-      _connect(_serverPort);
     }
   }
 
@@ -147,7 +140,16 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 
   void _init(final bool verbose, final Config config) async {
     if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager(verbose)..register(() => _listenServer());
+      this._wifiManager = WifiManager(verbose)
+      ..register((bool isGroupOwner, String groupOwnerAddress) {
+        if (_isGroupOwner = isGroupOwner) {
+          _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
+          _listenServer();
+        } else {
+          _groupOwnerAddr = groupOwnerAddress;
+          _connect(_serverPort);
+        }
+      });
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
       this._serverPort = config.serverPort;
