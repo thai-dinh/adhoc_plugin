@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
@@ -14,7 +15,6 @@ import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
@@ -30,20 +30,34 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     ListenerApp listenerApp
   ) : super(verbose, config, mapAddressDevice, listenerApp) {
     this.type = Service.BLUETOOTHLE;
-    this._init(verbose);
+    this.init(verbose);
   }
 
 /*------------------------------Override methods------------------------------*/
 
   @override
-  void enable(int duration) {
+  Future<void> init(bool verbose, [Config config]) async {
+    if (await BleAdHocManager.isEnabled()) {
+      this._bleAdHocManager = BleAdHocManager(verbose);
+      this.ownName = await BleAdHocManager.getCurrentName();
+      this.ownMac = '';
+      this._listenServer();
+    }
+  }
+
+  @override
+  void enable(int duration, ListenerAdapter listenerAdapter) {
     _bleAdHocManager = BleAdHocManager(v);
+    _bleAdHocManager.enable();
     _bleAdHocManager.enableDiscovery(duration);
+    _bleAdHocManager.onEnableBluetooth(listenerAdapter);
     enabled = true;
   }
 
   @override
   void disable() {
+    neighbors.neighbors.clear();
+
     _bleAdHocManager.disable();
     _bleAdHocManager = null;
     enabled = false;
@@ -89,7 +103,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void connect(int attempts, AdHocDevice adHocDevice) {
     BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.macAddress];
     if (bleAdHocDevice != null) {
-      if (bleAdHocDevice != null) { // TODO: verify that device is not already connected in the conditional
+      if (!serviceServer.activeConnections.contains(bleAdHocDevice.macAddress)) {
         _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
@@ -132,15 +146,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
 /*------------------------------Private methods-------------------------------*/
-
-  Future<void> _init(bool verbose) async {
-    if (await BleAdHocManager.isEnabled()) {
-      this._bleAdHocManager = BleAdHocManager(verbose);
-      this.ownName = await BleAdHocManager.getCurrentName();
-      this.ownMac = '';
-      this._listenServer();
-    }
-  }
 
   void _listenServer() {
     ServiceMessageListener listener = ServiceMessageListener(
@@ -207,8 +212,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         final String address = message.header.address;
-        if (v) Utils.log(TAG, 'Service Server: CONNECT_SERVER: $address');
-        // if (serviceServer.activeConnections.containsKey(address)) {
+        if (serviceServer.activeConnections.contains(address)) {
           serviceServer.send(
             MessageAdHoc(Header(
               messageType: AbstractWrapper.CONNECT_SERVER, 
@@ -218,12 +222,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
             )),
             address
           );
-        // }
+        }
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
-        if (v) Utils.log(TAG, 'Service Client: CONNECT_CLIENT');
-
         ServiceClient serviceClient = mapAddrClient[message.header.address];
         if (serviceClient != null)
           receivedPeerMessage(message.header, serviceClient);
@@ -254,7 +256,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           broadcastExcept(message, message.header.label);
 
           Header header = message.header;
-
           AdHocDevice adHocDevice = AdHocDevice(
             deviceName: header.name,
             label: header.label,

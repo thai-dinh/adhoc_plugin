@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
@@ -39,14 +38,14 @@ class BleServer extends ServiceServer {
     BleAdHocManager.openGattServer();
 
     _connectStreamSub = _chConnect.receiveBroadcastStream().listen((event) {
+      String macAddress = event['macAddress'];
       if (event['state'] == Utils.BLE_STATE_CONNECTED) {
-        BleAdHocDevice device = BleAdHocDevice.fromMap(event);
-        connected.putIfAbsent(event['macAddress'], () => device);
-        serviceMessageListener.onConnection(event['macAddress']);
+        connected.add(macAddress);
+        serviceMessageListener.onConnection(macAddress);
       } else {
-        if (connected.containsKey(event['macAddress'])) {
-          connected.remove(event['macAddress']);
-          serviceMessageListener.onConnectionClosed(event['macAddress']);
+        if (connected.contains(macAddress)) {
+          connected.remove(macAddress);
+          serviceMessageListener.onConnectionClosed(macAddress);
         }
       }
     });

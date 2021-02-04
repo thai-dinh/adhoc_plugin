@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
@@ -32,26 +33,50 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
     ListenerApp listenerApp
   ) : super(verbose, config, mapAddressDevice, listenerApp) {
     this.type = Service.WIFI;
-    this._init(verbose, config);
+    this.init(verbose, config);
   }
 
 /*------------------------------Override methods------------------------------*/
 
   @override
-  void enable(final int duration) { // TODO: To verify bc enable wifi is deprecated
+  void init(bool verbose, [Config config]) async {
+    if (await WifiManager.isWifiEnabled()) {
+      this._wifiManager = WifiManager(verbose)
+      ..register((bool isGroupOwner, String groupOwnerAddress) {
+        if (_isGroupOwner = isGroupOwner) {
+          _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
+          _listenServer();
+        } else {
+          _groupOwnerAddr = groupOwnerAddress;
+          _connect(_serverPort);
+        }
+      });
+      this._isGroupOwner = false;
+      this._mapAddrMac = HashMap();
+      this._serverPort = config.serverPort;
+    } else {
+      this.enabled = false;
+    }
+  }
+
+  @override
+  void enable(int duration, ListenerAdapter listenerAdapter) { // TODO: To verify bc enable wifi is deprecated
     _wifiManager = WifiManager(v);
+    _wifiManager.onEnableWifi(listenerAdapter);
     enabled = true;
   }
 
   @override 
   void disable() { // TODO: To verify bc disable wifi is deprecated
     _mapAddrMac.clear();
+    neighbors.clear();
+
     _wifiManager = null;
     enabled = false;
   }
 
   @override
-  void discovery(final DiscoveryListener discoveryListener) {
+  void discovery(DiscoveryListener discoveryListener) {
     DiscoveryListener listener = DiscoveryListener(
       onDeviceDiscovered: (AdHocDevice device) {
         mapMacDevices.putIfAbsent(device.macAddress, () => device);
@@ -86,7 +111,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   }
 
   @override
-  void connect(final int attempts, final AdHocDevice adHocDevice) async {
+  void connect(int attempts, AdHocDevice adHocDevice) async {
     this.attempts = attempts;
     
     if (!(await _wifiManager.connect(adHocDevice.macAddress))) {
@@ -107,7 +132,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 
   @override
   Future<String> getAdapterName() async {
-    return await _wifiManager.getAdapterName();
+    return await _wifiManager.adapterName;
   }
 
   @override
@@ -123,7 +148,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 /*------------------------------WifiP2P methods-------------------------------*/
 
   @override
-  void setGroupOwnerValue(final int valueGroupOwner) {
+  void setGroupOwnerValue(int valueGroupOwner) {
     if (valueGroupOwner < 0 || valueGroupOwner > 15) {
 
     }
@@ -141,26 +166,6 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   bool isWifiGroupOwner() => _isGroupOwner;
 
 /*------------------------------Private methods-------------------------------*/
-
-  void _init(final bool verbose, final Config config) async {
-    if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager(verbose)
-      ..register((bool isGroupOwner, String groupOwnerAddress) {
-        if (_isGroupOwner = isGroupOwner) {
-          _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
-          _listenServer();
-        } else {
-          _groupOwnerAddr = groupOwnerAddress;
-          _connect(_serverPort);
-        }
-      });
-      this._isGroupOwner = false;
-      this._mapAddrMac = HashMap();
-      this._serverPort = config.serverPort;
-    } else {
-      this.enabled = false;
-    }
-  }
 
   void _listenServer() {
     ServiceMessageListener listener = ServiceMessageListener(
@@ -187,7 +192,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
     serviceServer = WifiServer(v, listener)..listen(_serverPort);
   }
 
-  void _connect(final int remotePort) {
+  void _connect(int remotePort) {
     ServiceMessageListener listener = ServiceMessageListener(
       onMessageReceived: (MessageAdHoc message) {
         _processMsgReceived(message);
@@ -228,7 +233,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
     wifiClient.connect();
   }
 
-  void _processMsgReceived(final MessageAdHoc message) {
+  void _processMsgReceived(MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         serviceServer.send(
@@ -245,7 +250,9 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
       case AbstractWrapper.CONNECT_CLIENT:
         ServiceClient serviceClient = mapAddrClient[message.header.address];
         if (serviceClient != null) {
-          _mapAddrMac;
+          _mapAddrMac.putIfAbsent(
+            message.header.address, () => message.header.macAddress
+          );
 
           receivedPeerMessage(message.header, serviceClient);
         }

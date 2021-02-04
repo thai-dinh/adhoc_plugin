@@ -1,5 +1,5 @@
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_header.g.dart';

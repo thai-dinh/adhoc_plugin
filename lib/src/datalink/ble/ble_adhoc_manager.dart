@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
@@ -20,14 +21,13 @@ class BleAdHocManager {
   bool _verbose;
   bool _isDiscovering;
   DiscoveryListener _discoveryListener;
-  FlutterReactiveBle _bleClient;
+  FlutterReactiveBle _reactiveBle;
   HashMap<String, BleAdHocDevice> _hashMapBleDevice;
   StreamSubscription<DiscoveredDevice> _subscription;
 
-  BleAdHocManager(bool verbose) {
-    this._verbose = verbose;
+  BleAdHocManager(this._verbose) {
     this._isDiscovering = false;
-    this._bleClient = FlutterReactiveBle();
+    this._reactiveBle = FlutterReactiveBle();
     this._hashMapBleDevice = HashMap<String, BleAdHocDevice>();
   }
 
@@ -39,9 +39,9 @@ class BleAdHocManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void disable() => _channel.invokeMethod('disable');
-
   void enable() => _channel.invokeMethod('enable');
+
+  void disable() => _channel.invokeMethod('disable');
 
   void enableDiscovery(int duration) {
     if (_verbose) Utils.log(TAG, 'enableDiscovery()');
@@ -66,7 +66,7 @@ class BleAdHocManager {
     _hashMapBleDevice.clear();
     discoveryListener.onDiscoveryStarted();
 
-    _subscription = _bleClient.scanForDevices(
+    _subscription = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(BleUtils.ADHOC_SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
     ).listen((device) {
@@ -107,10 +107,21 @@ class BleAdHocManager {
     return pairedDevices;
   }
 
-  Future<bool> updateDeviceName(String name)
-    => _channel.invokeMethod('updateDeviceName', name);
+  Future<bool> updateDeviceName(String name) async
+    => await _channel.invokeMethod('updateDeviceName', name);
 
-  Future<bool> resetDeviceName() => _channel.invokeMethod('resetDeviceName');
+  Future<bool> resetDeviceName() async
+    => await _channel.invokeMethod('resetDeviceName');
+
+  void onEnableBluetooth(ListenerAdapter listenerAdapter) {
+    _reactiveBle.statusStream.listen((status) {
+      if (status == BleStatus.ready) {
+        listenerAdapter.onEnableBluetooth(true);
+      } else {
+        listenerAdapter.onEnableBluetooth(false);
+      } // TODO: other cases than ready ? -> unknown, unauthorized, locationServicesDisabled
+    });
+  }
 
 /*------------------------------Private methods-------------------------------*/
 

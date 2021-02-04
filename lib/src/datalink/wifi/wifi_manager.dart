@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/discovery_failed.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
@@ -17,6 +18,7 @@ class WifiManager {
 
   bool _verbose;
   DiscoveryListener _discoveryListener;
+  ListenerAdapter _listenerAdapter;
   List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
   bool _isConnected;
@@ -26,6 +28,10 @@ class WifiManager {
     _isConnected = false;
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
+  Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
+
 /*-------------------------------Public methods-------------------------------*/
 
   Future<void> register(void Function(bool, String) execute) async {
@@ -33,6 +39,11 @@ class WifiManager {
 
     if (!await _checkPermission())
       return;
+
+    _subscriptions.add(FlutterP2p.wifiEvents.stateChange.listen((change) {
+      if (_listenerAdapter != null && change.isEnabled)
+          _listenerAdapter.onEnableWifi(true);
+    }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
       _isConnected = change.networkInfo.isConnected;
@@ -115,8 +126,8 @@ class WifiManager {
     return await _channel.invokeMethod('updateDeviceName');
   }
 
-  Future<String> getAdapterName() async {
-    return await _channel.invokeMethod('getAdapterName');
+  void onEnableWifi(ListenerAdapter listenerAdapter) {
+    this._listenerAdapter = listenerAdapter;
   }
 
 /*------------------------------Private methods-------------------------------*/

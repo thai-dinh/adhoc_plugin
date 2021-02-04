@@ -19,18 +19,19 @@ class DataLinkManager {
   static const _POOLING_DISCOVERY = 1000;
   static const _NB_WRAPPERS = 2;
 
+  bool _verbose;
   Config _config;
   List<AbstractWrapper> _wrappers;
   HashMap<String, AdHocDevice> _mapAddrDevice;
 
-  DataLinkManager(bool verbose, this._config, ListenerApp listenerApp) {
+  DataLinkManager(this._verbose, this._config, ListenerApp listenerApp) {
     this._mapAddrDevice = HashMap();
     this._wrappers = List(_NB_WRAPPERS);
     this._wrappers[Service.WIFI] = WrapperWifi(
-      verbose, _config, _mapAddrDevice, listenerApp
+      _verbose, _config, _mapAddrDevice, listenerApp
     );
     this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(
-      verbose, _config, _mapAddrDevice, listenerApp
+      _verbose, _config, _mapAddrDevice, listenerApp
     );
 
     checkState();
@@ -48,13 +49,24 @@ class DataLinkManager {
   }
 
   void enable(
-    int duration, final int type, final ListenerAdapter listenerAdapter
+    int duration, int type, ListenerAdapter listenerAdapter
   ) {
-    if (!_wrappers[type].enabled)
-      _wrappers[type].enable(duration);
+    if (!_wrappers[type].enabled) {
+      ListenerAdapter listener = ListenerAdapter(
+        onEnableBluetooth: (bool success) {
+          _processListenerAdapter(type, success, listenerAdapter);
+        },
+
+        onEnableWifi: (bool success) {
+          _processListenerAdapter(type, success, listenerAdapter);
+        }
+      );
+
+      _wrappers[type].enable(duration, listener);
+    }
   }
 
-  void enableAll(final ListenerAdapter listenerAdapter) {
+  void enableAll(ListenerAdapter listenerAdapter) {
     for (AbstractWrapper wrapper in _wrappers) {
       enable(0, wrapper.type, listenerAdapter);
     }
@@ -73,7 +85,7 @@ class DataLinkManager {
         disable(wrapper.type);
   }
 
-  void discovery(final DiscoveryListener discovery) {
+  void discovery(DiscoveryListener discovery) {
     int enabled = checkState();
     if (enabled == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
@@ -244,7 +256,26 @@ class DataLinkManager {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _bothDiscovery(final DiscoveryListener discovery) {
+  void _processListenerAdapter(
+    int type, bool success, ListenerAdapter listenerAdapter
+  ) {
+    if (success) {
+      _wrappers[type].init(_verbose, _config);
+      if (type == Service.BLUETOOTHLE) {
+        listenerAdapter.onEnableBluetooth(true);
+      } else {
+        listenerAdapter.onEnableWifi(true);
+      }
+    } else {
+      if (type == Service.BLUETOOTHLE) {
+        listenerAdapter.onEnableBluetooth(false);
+      } else {
+        listenerAdapter.onEnableWifi(false);
+      }
+    }
+  }
+
+  void _bothDiscovery(DiscoveryListener discovery) {
     for (AbstractWrapper wrapper in _wrappers)
         wrapper.discovery(discovery);
 

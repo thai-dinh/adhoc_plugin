@@ -37,10 +37,8 @@ public class GattServerManager {
     private HashMap<String, BluetoothDevice> mapMacDevice;
     private EventChannel eventConnectionChannel;
     private EventChannel eventMessageChannel;
-    private EventChannel eventMtuChannel;
     private MainThreadEventSink eventConnectionSink;
     private MainThreadEventSink eventMessageSink;
-    private MainThreadEventSink eventMtuSink;
 
     public GattServerManager() {
         this.verbose = false;
@@ -174,20 +172,6 @@ public class GattServerManager {
             eventConnectionSink.success(mapDeviceInfo);
             mapMacDevice.put(address, device);
         }
-
-        @Override
-        public void onMtuChanged(BluetoothDevice device, int mtu) {
-            if (verbose) Log.d(TAG, "onMtuChanged()");
-            super.onMtuChanged(device, mtu);
-
-            String address = device.getAddress();
-            HashMap<String, Object> mapDeviceInfo = new HashMap<>();
-            mapDeviceInfo.put("deviceName", device.getName());
-            mapDeviceInfo.put("macAddress", address);
-            mapDeviceInfo.put("mtu", mtu);
-
-            eventMtuSink.success(mapDeviceInfo);
-        }
     };
 
     public void writeToCharacteristic(String message, String address) {
@@ -216,10 +200,8 @@ public class GattServerManager {
         gattServer.close();
         eventConnectionSink = null;
         eventMessageSink = null;
-        eventMtuSink = null;
         eventConnectionChannel.setStreamHandler(null);
         eventMessageChannel.setStreamHandler(null);
-        eventMtuChannel.setStreamHandler(null);
     }
 
     public void setVerbose(boolean verbose) {

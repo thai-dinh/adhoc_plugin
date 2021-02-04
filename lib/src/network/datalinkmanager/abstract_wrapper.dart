@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
@@ -44,7 +45,9 @@ abstract class AbstractWrapper {
 
   List<AdHocDevice> get directNeighbors;
 
-  void enable(int duration);
+  void init(bool verbose, [Config config]);
+
+  void enable(int duration, ListenerAdapter listenerAdapter);
 
   void disable();
 

@@ -15,7 +15,19 @@ class BlePlugin {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void enableExample() => _wrapper.enable(3600);
+  void enableExample() {
+    ListenerAdapter listenerAdapter = ListenerAdapter(
+      onEnableBluetooth: (bool success) {
+
+      },
+
+      onEnableWifi: (bool success) {
+        
+      },
+    );
+
+    _wrapper.enable(3600, listenerAdapter);
+  }
 
   void disableExample() => _wrapper.disable();
 
