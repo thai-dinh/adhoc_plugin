@@ -215,7 +215,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         final String address = message.header.address;
-        if (serviceServer.activeConnections.contains(address)) {
+        // if (serviceServer.activeConnections.contains(address)) {
           serviceServer.send(
             MessageAdHoc(Header(
               messageType: AbstractWrapper.CONNECT_SERVER, 
@@ -225,7 +225,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
             )),
             address
           );
-        }
+        // }
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:

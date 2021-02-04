@@ -88,15 +88,14 @@ class BleClient extends ServiceClient {
       await _writeValue(msgAsListBytes.removeAt(0));
   }
 
-  Future<void> requestMtu(int mtu) async {
-    if (mtu > BleUtils.MAX_MTU)
-      mtu = BleUtils.MAX_MTU;
-
-    mtu = await _reactiveBle.requestMtu(deviceId: _device.macAddress, mtu: mtu);
-    _device.mtu = mtu;
-  }
-
 /*------------------------------Private methods-------------------------------*/
+
+  Future<void> _requestMtu() async {
+    _device.mtu = await _reactiveBle.requestMtu(
+      deviceId: _device.macAddress, 
+      mtu: BleUtils.MAX_MTU
+    );
+  }
 
   Future<void> _connect(int attempts, Duration delay) async {
     try {
@@ -127,6 +126,7 @@ class BleClient extends ServiceClient {
           case DeviceConnectionState.connected:
             if (v)
               Utils.log(ServiceClient.TAG, 'Connected to ${_device.macAddress}');
+            _requestMtu();
             if (_connectListener != null)
               _connectListener();
 

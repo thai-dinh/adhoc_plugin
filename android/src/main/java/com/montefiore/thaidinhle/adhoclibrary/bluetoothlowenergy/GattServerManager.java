@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import java.util.Map;
+
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
@@ -175,9 +177,15 @@ public class GattServerManager {
     };
 
     public void writeToCharacteristic(String message, String address) {
-        final BluetoothDevice device = mapMacDevice.get(address);
+        BluetoothDevice device = mapMacDevice.get(address);
+        if (device == null) {
+            for (Map.Entry<String, BluetoothDevice> entry : mapMacDevice.entrySet())
+                device = entry.getValue();
+        }
+        Log.d(TAG, "Hello ?" + device.getAddress());
         characteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
-        gattServer.notifyCharacteristicChanged(device, characteristic, false);
+        boolean r = gattServer.notifyCharacteristicChanged(device, characteristic, false);
+        Log.d(TAG, "Hello ?" + r);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {

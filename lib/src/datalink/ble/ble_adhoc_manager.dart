@@ -151,7 +151,7 @@ class BleAdHocManager {
   static void serverSendMessage(MessageAdHoc message, String address) {
     _channel.invokeMethod('serverSendMessage', <String, String>{
       'address': address,
-      'message': message.toString(),
+      'message': message.toJson().toString(),
     });
   }
 
