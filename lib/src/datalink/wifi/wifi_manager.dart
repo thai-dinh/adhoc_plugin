@@ -12,7 +12,7 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 
 
 class WifiManager {
-  static const String TAG = "[FlutterAdHoc][WifiManager]";
+  static const String TAG = "[WifiManager]";
   static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 

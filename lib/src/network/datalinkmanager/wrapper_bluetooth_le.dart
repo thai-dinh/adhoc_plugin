@@ -21,7 +21,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.d
 
 
 class WrapperBluetoothLE extends WrapperConnOriented {
-  static const String TAG = "[FlutterAdHoc][WrapperBle]";
+  static const String TAG = "[WrapperBle]";
 
   BleAdHocManager _bleAdHocManager;
 
@@ -174,6 +174,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
     ServiceMessageListener listener = ServiceMessageListener(
       onMessageReceived: (MessageAdHoc message) {
+        print('onMessageReceived');
         _processMsgReceived(message);
       },
 
@@ -181,7 +182,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         connectionClosed(remoteAddress);
       },
 
-      onConnection: (String remoteAddress) { },
+      onConnection: (String remoteAddress) { 
+        print('onConnection: $remoteAddress');
+      },
   
       onConnectionFailed: (Exception exception) {
         listenerApp.onConnectionFailed(exception);

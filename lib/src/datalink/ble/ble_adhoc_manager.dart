@@ -14,7 +14,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 class BleAdHocManager {
-  static const String TAG = "[FlutterAdHoc][Ble.Manager]";
+  static const String TAG = "[Ble.Manager]";
   static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 

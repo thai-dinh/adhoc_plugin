@@ -6,7 +6,7 @@ import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 
 
 abstract class ServiceClient extends Service {
-  static const String TAG = "[FlutterAdHoc][ServiceClient]";
+  static const String TAG = "[ServiceClient]";
   static const int _LOW = 1500;
   static const int _HIGH = 2500;
 

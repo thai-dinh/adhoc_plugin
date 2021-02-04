@@ -40,11 +40,11 @@ class BleServer extends ServiceServer {
     _connectStreamSub = _chConnect.receiveBroadcastStream().listen((event) {
       String macAddress = event['macAddress'];
       if (event['state'] == Utils.BLE_STATE_CONNECTED) {
-        connected.add(macAddress);
+        addActiveConnection(macAddress);
         serviceMessageListener.onConnection(macAddress);
       } else {
-        if (connected.contains(macAddress)) {
-          connected.remove(macAddress);
+        if (activeConnections.contains(macAddress)) {
+          removeInactiveConnection(macAddress);
           serviceMessageListener.onConnectionClosed(macAddress);
         }
       }
