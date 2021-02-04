@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_reactive_ble: ^2.7.2
+  flutter_reactive_ble: 2.7.2
   json_annotation: ^3.1.1
 
   flutter_p2p:

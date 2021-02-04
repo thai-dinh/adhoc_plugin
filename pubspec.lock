@@ -203,7 +203,7 @@ packages:
       name: flutter_reactive_ble
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.7.3"
+    version: "2.7.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
