@@ -1,6 +1,7 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/config/config.dart';
+import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -16,18 +17,22 @@ abstract class AbstractWrapper {
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
 
+  void Function(HashMap<String, AdHocDevice>) listenerBothDiscovery;
+
   bool enabled;
   bool connectionFlooding;
   bool discoveryCompleted;
   int timeOut;
   int type;
-  HashSet<AdHocDevice> setRemoteDevices;
-  Set<String> setFloodEvents;
   String label;
   String ownName;
   String ownMac;
 
-  AbstractWrapper(this.v, Config config, this.mapMacDevices) {
+  ListenerApp listenerApp;
+  HashSet<AdHocDevice> setRemoteDevices;
+  Set<String> setFloodEvents;
+
+  AbstractWrapper(this.v, Config config, this.mapMacDevices, this.listenerApp) {
     this.enabled = true;
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
@@ -36,6 +41,8 @@ abstract class AbstractWrapper {
     this.setFloodEvents = Set();
     this.label = config.label;
   }
+
+  List<AdHocDevice> get directNeighbors;
 
   void enable(int duration);
 

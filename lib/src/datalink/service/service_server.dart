@@ -17,11 +17,7 @@ abstract class ServiceServer extends Service {
     connected = HashMap<String, AdHocDevice>();
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
-
   HashMap<String, AdHocDevice> get activeConnections => connected;
-
-/*-------------------------------Public methods-------------------------------*/
 
   void send(MessageAdHoc message, String address);
 

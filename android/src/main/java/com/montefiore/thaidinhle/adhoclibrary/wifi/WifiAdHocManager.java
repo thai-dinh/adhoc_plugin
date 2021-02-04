@@ -73,8 +73,8 @@ public class WifiAdHocManager implements MethodCallHandler {
         return wifiManager != null && wifiManager.isWifiEnabled();
     }
 
-    private boolean resetDeviceName() {
-        return (initialName != null) ? updateDeviceName(initialName) : false;
+    private String getAdapterName() {
+        return currentAdapterName;
     }
 
     private boolean updateDeviceName(String name) {
@@ -101,7 +101,7 @@ public class WifiAdHocManager implements MethodCallHandler {
         }
     }
 
-    private String getAdapterName() {
-        return currentAdapterName;
+    private boolean resetDeviceName() {
+        return (initialName != null) ? updateDeviceName(initialName) : false;
     }
 }

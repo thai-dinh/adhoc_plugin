@@ -1,4 +1,5 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 
 
 class AdHocDevice {
@@ -12,10 +13,8 @@ class AdHocDevice {
     String deviceName, this.label, this.macAddress, this.type,
     this.directedConnected
   }) {
-    this.deviceName = _checkName(deviceName);
+    this.deviceName = Utils.checkString(deviceName);
   }
-
-  String _checkName(String deviceName) => deviceName == null ? '' : deviceName;
 
   String typeAsString() {
     switch (type) {

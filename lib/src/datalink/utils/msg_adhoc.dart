@@ -9,6 +9,7 @@ class MessageAdHoc {
   Header _header;
   Object _pdu;
 
+  /// Constructor
   MessageAdHoc([this._header, this._pdu]);
 
   factory MessageAdHoc.fromMap(Map map) {
@@ -22,8 +23,10 @@ class MessageAdHoc {
 
   set pdu(Object pdu) => this._pdu = pdu;
 
+  /// The header object representing the information of the message.
   Header get header => _header;
 
+  /// Generic object representing the PDU of the message.
   Object get pdu => _pdu;
 
   Map<String, dynamic> toJson() => _$MessageAdHocToJson(this);

@@ -1,6 +1,7 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/config/config.dart';
+import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
@@ -21,8 +22,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   HashMap<String, AdHocDevice> _mapAddrDevices;
 
   WrapperConnOriented(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
-  ) : super(verbose, config, mapAddressDevice) {
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice,
+    ListenerApp listenerApp
+  ) : super(verbose, config, mapAddressDevice, listenerApp) {
     this.neighbors = Neighbors();
     this._mapAddrDevices = HashMap();
     this.mapAddrClient = HashMap();
@@ -83,6 +85,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       if (!neighbors.neighbors.containsKey(header.label)) {
         neighbors.addNeighbors(header.label, null, serviceClient);
 
+        listenerApp.onConnection(adHocDevice);
+
         setRemoteDevices.add(adHocDevice);
 
         if (connectionFlooding) {
@@ -124,6 +128,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
       if (mapAddrClient.containsKey(remoteAddress))
         mapAddrClient.remove(remoteAddress);
+
+      listenerApp.onConnectionClosed(adHocDevice);
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();

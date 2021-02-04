@@ -46,10 +46,13 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     switch (call.method) {
-      case "updateVerbose":
+      case "setVerbose":
         final boolean verbose = call.arguments();
-        bleManager.updateVerboseState(verbose);
-        gattServerManager.updateVerboseState(verbose);
+        bleManager.setVerbose(verbose);
+        gattServerManager.setVerbose(verbose);
+        break;
+      case "isEnabled":
+        result.success(BluetoothLowEnergyUtils.isEnabled());
         break;
       case "openGattServer":
         gattServerManager.openGattServer(bluetoothManager, context);
@@ -63,15 +66,15 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         final String address = call.argument("address");
         gattServerManager.writeToCharacteristic(message, address);
         break;
+      case "getCurrentName":
+        result.success(BluetoothLowEnergyUtils.getCurrentName());
+        break;
 
       case "disable":
         bleManager.disable();
         break;
       case "enable":
         bleManager.enable();
-        break;
-      case "isEnabled":
-        result.success(BluetoothLowEnergyUtils.isEnabled());
         break;
       case "startAdvertise":
         bleManager.startAdvertise();
@@ -88,9 +91,6 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "getAdapterName":
         result.success(bleManager.getAdapterName());
-        break;
-      case "getCurrentName":
-        result.success(BluetoothLowEnergyUtils.getCurrentName());
         break;
       case "getPairedDevices":
         result.success(gattServerManager.getConnectedDevices());

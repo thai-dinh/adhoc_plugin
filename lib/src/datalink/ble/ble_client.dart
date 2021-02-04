@@ -15,8 +15,8 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 class BleClient extends ServiceClient {
-  StreamSubscription<ConnectionStateUpdate> _connectionStreamSub;
-  StreamSubscription<dynamic> _messageStreamSub;
+  StreamSubscription<ConnectionStateUpdate> _connecStreamSub;
+  StreamSubscription<List<int>> _msgStreamSub;
   FlutterReactiveBle _reactiveBle;
   Function _connectListener;
   BleAdHocDevice _device;
@@ -46,18 +46,18 @@ class BleClient extends ServiceClient {
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
   void disconnect() {
-    if (_connectionStreamSub != null)
-      _connectionStreamSub.cancel();
+    if (_connecStreamSub != null)
+      _connecStreamSub.cancel();
   }
 
   void stopListening() {
     if (v) Utils.log(ServiceClient.TAG, 'stopListening()');
 
-    if (_messageStreamSub != null)
-      _messageStreamSub.cancel();
+    if (_msgStreamSub != null)
+      _msgStreamSub.cancel();
   }
 
-  void send(MessageAdHoc message) async {
+  Future<void> send(MessageAdHoc message) async {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
 
     if (state == Service.STATE_NONE)
@@ -88,7 +88,10 @@ class BleClient extends ServiceClient {
       await _writeValue(msgAsListBytes.removeAt(0));
   }
 
-  void requestMtu(int mtu) async {  
+  Future<void> requestMtu(int mtu) async {
+    if (mtu > BleUtils.MAX_MTU)
+      mtu = BleUtils.MAX_MTU;
+
     mtu = await _reactiveBle.requestMtu(deviceId: _device.macAddress, mtu: mtu);
     _device.mtu = mtu;
   }
@@ -115,7 +118,7 @@ class BleClient extends ServiceClient {
     if (v) Utils.log(ServiceClient.TAG, 'Connect to ${_device.macAddress}');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
-      _connectionStreamSub = _reactiveBle.connectToDevice(
+      _connecStreamSub = _reactiveBle.connectToDevice(
         id: _device.macAddress,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
@@ -168,7 +171,8 @@ class BleClient extends ServiceClient {
       deviceId: _device.macAddress
     );
 
-    _reactiveBle.subscribeToCharacteristic(characteristic).listen((data) {
+    _msgStreamSub =
+      _reactiveBle.subscribeToCharacteristic(characteristic).listen((data) {
       rawData.add(data);
       serviceMessageListener.onMessageReceived(_processMessage(rawData));
       rawData.clear();

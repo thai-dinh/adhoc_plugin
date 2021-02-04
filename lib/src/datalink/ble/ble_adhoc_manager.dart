@@ -24,16 +24,11 @@ class BleAdHocManager {
   HashMap<String, BleAdHocDevice> _hashMapBleDevice;
   StreamSubscription<DiscoveredDevice> _subscription;
 
-  Uuid serviceUuid;
-  Uuid characteristicUuid;
-
   BleAdHocManager(bool verbose) {
     this._verbose = verbose;
     this._isDiscovering = false;
     this._bleClient = FlutterReactiveBle();
     this._hashMapBleDevice = HashMap<String, BleAdHocDevice>();
-    this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
-    this.characteristicUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -72,7 +67,7 @@ class BleAdHocManager {
     discoveryListener.onDiscoveryStarted();
 
     _subscription = _bleClient.scanForDevices(
-      withServices: [serviceUuid],
+      withServices: [Uuid.parse(BleUtils.ADHOC_SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
     ).listen((device) {
       BleAdHocDevice btDevice = BleAdHocDevice(device);
@@ -122,7 +117,7 @@ class BleAdHocManager {
   void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
   void _stopScan() {
-    if (_verbose) Utils.log(TAG, 'Discovery process end');
+    if (_verbose) Utils.log(TAG, 'Discovery process completed');
 
     _subscription.cancel();
     _subscription = null;
@@ -131,8 +126,12 @@ class BleAdHocManager {
 
 /*-------------------------------Static methods-------------------------------*/
 
-  static void updateVerbose(bool verbose)
-    => _channel.invokeMethod('updateVerbose', verbose);
+  static void setVerbose(bool verbose)
+    => _channel.invokeMethod('setVerbose', verbose);
+
+  static Future<bool> isEnabled() async {
+    return await _channel.invokeMethod('isEnabled');
+  }
 
   static void openGattServer() => _channel.invokeMethod('openGattServer');
 
@@ -143,5 +142,9 @@ class BleAdHocManager {
       'address': address,
       'message': message.toString(),
     });
+  }
+
+  static Future<String> getCurrentName() async {
+    return await _channel.invokeMethod('getCurrentName');
   }
 }

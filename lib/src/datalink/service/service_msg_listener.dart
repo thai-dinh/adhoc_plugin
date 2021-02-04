@@ -2,18 +2,18 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
 
 class ServiceMessageListener {
-  void Function(MessageAdHoc message) _onMessageReceived;
-  void Function(String remoteAddress) _onConnectionClosed;
-  void Function(String remoteAddress) _onConnection;
-  void Function(Exception exception) _onConnectionFailed;
-  void Function(Exception exception) _onMsgException;
+  void Function(MessageAdHoc) _onMessageReceived;
+  void Function(String) _onConnectionClosed;
+  void Function(String) _onConnection;
+  void Function(Exception) _onConnectionFailed;
+  void Function(Exception) _onMsgException;
 
   ServiceMessageListener({
-    void Function(MessageAdHoc message) onMessageReceived,
-    void Function(String remoteAddress) onConnectionClosed,
-    void Function(String remoteAddress) onConnection,
-    void Function(Exception exception) onConnectionFailed,
-    void Function(Exception exception) onMsgException
+    void Function(MessageAdHoc) onMessageReceived,
+    void Function(String) onConnectionClosed,
+    void Function(String) onConnection,
+    void Function(Exception) onConnectionFailed,
+    void Function(Exception) onMsgException
   }) {
     this._onMessageReceived = onMessageReceived;
     this._onConnectionClosed = onConnectionClosed;

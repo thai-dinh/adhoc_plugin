@@ -1,3 +1,4 @@
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -8,18 +9,20 @@ part 'msg_header.g.dart';
 class Header {
   int _deviceType;
   int _messageType;
-  String _address;
   String _label;
   String _name;
+  String _address;
+  String _macAddress;
 
   Header({
-    @required int messageType, @required String label, 
-    String name = '', String address = '', int deviceType
+    @required int messageType, @required String label, @required String name,
+    String address = '', String macAddress = '', int deviceType
   }) {
     this._messageType = messageType;
-    this._label = label;
-    this._name = name;
-    this._address = address;
+    this._label = Utils.checkString(label);
+    this._name = Utils.checkString(name);
+    this._address = Utils.checkString(address);
+    this._macAddress = Utils.checkString(macAddress);
     this._deviceType = deviceType;
   }
 
@@ -27,15 +30,17 @@ class Header {
 
   set messageType(int messageType) => this._messageType = messageType;
 
-  int get deviceType => _deviceType;
-
   int get messageType => _messageType;
+
+  int get deviceType => _deviceType;
 
   String get label => _label;
 
   String get name => _name;
 
   String get address => _address;
+
+  String get macAddress => _macAddress;
 
   Map<String, dynamic> toJson() => _$HeaderToJson(this);
 
@@ -46,6 +51,7 @@ class Header {
               ', label=' + _label +
               ', name=' + _name +
               ', address=' + _address +
+              ', macAddress=' + _macAddress +
               ', deviceType=' + _deviceType.toString() + 
             '}';
   }

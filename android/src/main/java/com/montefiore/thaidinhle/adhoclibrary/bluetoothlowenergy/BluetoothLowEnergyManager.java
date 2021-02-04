@@ -62,7 +62,7 @@ public class BluetoothLowEnergyManager {
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
     }
 
-    public void updateVerboseState(boolean verbose) {
+    public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
 

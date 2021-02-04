@@ -10,8 +10,10 @@ class BlePlugin {
   BlePlugin() {
     Config config = Config();
     config.label = 'BLUETOOTHLE';
-    _wrapper = WrapperBluetoothLE(true, config, HashMap());
+    _wrapper = WrapperBluetoothLE(true, config, HashMap(), _initListenerApp());
   }
+
+/*-------------------------------Public methods-------------------------------*/
 
   void enableExample() => _wrapper.enable(3600);
 
@@ -47,4 +49,24 @@ class BlePlugin {
   }
 
   void stopListeningExample() => _wrapper.stopListening();
+
+/*------------------------------Private methods-------------------------------*/
+  
+  ListenerApp _initListenerApp() {
+    return ListenerApp(
+      onReceivedData: (AdHocDevice adHocDevice, Object pdu) { },
+
+      onForwardData: (AdHocDevice adHocDevice, Object pdu) { },
+
+      onConnection: (AdHocDevice adHocDevice) { },
+
+      onConnectionFailed: (Exception exception) { },
+
+      onConnectionClosed: (AdHocDevice adHocDevice) { },
+
+      onConnectionClosedFailed: (Exception exception) { },
+
+      processMsgException: (Exception exception) { }
+    );
+  }
 }

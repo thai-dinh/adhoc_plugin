@@ -4,16 +4,16 @@ import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 
 
 class DiscoveryListener {
-  void Function(AdHocDevice device) _onDeviceDiscovered;
-  void Function(HashMap<String, AdHocDevice> mapNameDevice) _onDiscoveryCompleted;
+  void Function(AdHocDevice) _onDeviceDiscovered;
+  void Function(HashMap<String, AdHocDevice>) _onDiscoveryCompleted;
   void Function() _onDiscoveryStarted;
-  void Function(Exception exception) _onDiscoveryFailed;
+  void Function(Exception) _onDiscoveryFailed;
 
   DiscoveryListener({
-    void Function(AdHocDevice device) onDeviceDiscovered,
-    void Function(HashMap<String, AdHocDevice> mapNameDevice) onDiscoveryCompleted,
+    void Function(AdHocDevice) onDeviceDiscovered,
+    void Function(HashMap<String, AdHocDevice>) onDiscoveryCompleted,
     void Function() onDiscoveryStarted,
-    void Function(Exception exception) onDiscoveryFailed
+    void Function(Exception) onDiscoveryFailed
   }) {
     this._onDeviceDiscovered = onDeviceDiscovered;
     this._onDiscoveryCompleted = onDiscoveryCompleted;

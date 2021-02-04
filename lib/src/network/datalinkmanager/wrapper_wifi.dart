@@ -1,9 +1,11 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/config/config.dart';
+import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -12,6 +14,7 @@ import 'package:adhoclibrary/src/datalink/wifi/wifi_client.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_manager.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_server.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/iwifi_p2p.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
@@ -25,8 +28,9 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   HashMap<String, String> _mapAddrMac;
 
   WrapperWifi(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
-  ) : super(verbose, config, mapAddressDevice) {
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice,
+    ListenerApp listenerApp
+  ) : super(verbose, config, mapAddressDevice, listenerApp) {
     this.type = Service.WIFI;
     this._init(verbose, config);
   }
@@ -164,13 +168,20 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) { },
+      onConnectionClosed: (String remoteAddress) {
+        connectionClosed(_mapAddrMac[remoteAddress]);
+        _mapAddrMac.remove(remoteAddress);
+      },
 
       onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) { },
+      onConnectionFailed: (Exception exception) {
+        listenerApp.onConnectionFailed(exception);
+      },
 
-      onMsgException: (Exception exception) { }
+      onMsgException: (Exception exception) {
+        listenerApp.processMsgException(exception);
+      }
     );
 
     serviceServer = WifiServer(v, listener)..listen(_serverPort);
@@ -182,13 +193,20 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) { },
+      onConnectionClosed: (String remoteAddress) {
+        connectionClosed(_mapAddrMac[remoteAddress]);
+        _mapAddrMac.remove(remoteAddress);
+      },
 
-      onConnection: (String remoteAddress) { }, // Ignored
+      onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) { },
+      onConnectionFailed: (Exception exception) {
+        listenerApp.onConnectionFailed(exception);
+      },
 
-      onMsgException: (Exception exception) { }
+      onMsgException: (Exception exception) {
+        listenerApp.processMsgException(exception);
+      }
     );
 
     final WifiClient wifiClient = WifiClient(
@@ -225,15 +243,62 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
+        ServiceClient serviceClient = mapAddrClient[message.header.address];
+        if (serviceClient != null) {
+          _mapAddrMac;
+
+          receivedPeerMessage(message.header, serviceClient);
+        }
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
+        if (checkFloodEvent((message.pdu as FloodMsg).id)) {
+          broadcastExcept(message, message.header.label);
+
+          HashSet<AdHocDevice> hashSet = (message.pdu as FloodMsg).adHocDevices;
+
+          for (AdHocDevice adHocDevice in hashSet) {
+            if (adHocDevice.label == label 
+              && !setRemoteDevices.contains(adHocDevice)
+              && !isDirectNeighbors(adHocDevice.label)
+            ) {
+              adHocDevice.directedConnected = false;
+
+              listenerApp.onConnection(adHocDevice);
+
+              setRemoteDevices.add(adHocDevice);
+            }
+          }
+        }
         break;
 
       case AbstractWrapper.DISCONNECT_BROADCAST:
+        if (checkFloodEvent(message.pdu as String)) {
+          broadcastExcept(message, message.header.label);
+          Header header = message.header;
+
+          listenerApp.onConnectionClosed(AdHocDevice(
+            deviceName: header.name,
+            label: header.label,
+            macAddress: header.macAddress,
+            type: type,
+            directedConnected: false
+          ));
+        }
         break;
 
       case AbstractWrapper.BROADCAST:
+        Header header = message.header;
+
+        listenerApp.onReceivedData(
+          AdHocDevice(
+            deviceName: header.name,
+            label: header.label,
+            macAddress: header.macAddress,
+            type: type,
+          ),
+          message.pdu
+        );
         break;
       
       default:

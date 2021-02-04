@@ -28,7 +28,6 @@ public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
-    private static final String STREAM_MTU = "ad.hoc.lib/ble.mtu";
 
     private boolean verbose;
     private BluetoothGattCharacteristic characteristic;
@@ -83,23 +82,6 @@ public class GattServerManager {
                 if (verbose) Log.d(TAG, "Message: onCancel()");
                 eventMessageSink = null;
                 eventMessageChannel.setStreamHandler(null);
-            }
-        });
-
-        // eventMtuChannel
-        eventMtuChannel = new EventChannel(messenger, STREAM_MTU);
-        eventMtuChannel.setStreamHandler(new StreamHandler() {
-            @Override
-            public void onListen(Object arguments, EventSink events) {
-                if (verbose) Log.d(TAG, "Mtu: onListen()");
-                eventMtuSink = new MainThreadEventSink(events);
-            }
-
-            @Override
-            public void onCancel(Object arguments) {
-                if (verbose) Log.d(TAG, "Mtu: onCancel()");
-                eventMtuChannel = null;
-                eventMtuChannel.setStreamHandler(null);
             }
         });
     }
@@ -240,8 +222,8 @@ public class GattServerManager {
         eventMtuChannel.setStreamHandler(null);
     }
 
-    public void updateVerboseState(boolean verbose) {
-        if (verbose) Log.d(TAG, "updateVerboseState()");
+    public void setVerbose(boolean verbose) {
+        if (verbose) Log.d(TAG, "setVerbose()");
         this.verbose = verbose;
     }
 

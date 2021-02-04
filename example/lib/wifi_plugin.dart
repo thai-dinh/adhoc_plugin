@@ -11,8 +11,10 @@ class WifiPlugin {
     Config config = Config();
     config.label = 'WIFI';
     config.serverPort = 4444;
-    _wrapper = WrapperWifi(true, config, HashMap());
+    _wrapper = WrapperWifi(true, config, HashMap(), _initListenerApp());
   }
+
+/*-------------------------------Public methods-------------------------------*/
 
   void enableExample() => _wrapper.enable(3600);
 
@@ -48,4 +50,24 @@ class WifiPlugin {
   }
 
   void stopListeningExample() => _wrapper.stopListening();
+
+/*------------------------------Private methods-------------------------------*/
+  
+  ListenerApp _initListenerApp() {
+    return ListenerApp(
+      onReceivedData: (AdHocDevice adHocDevice, Object pdu) { },
+
+      onForwardData: (AdHocDevice adHocDevice, Object pdu) { },
+
+      onConnection: (AdHocDevice adHocDevice) { },
+
+      onConnectionFailed: (Exception exception) { },
+
+      onConnectionClosed: (AdHocDevice adHocDevice) { },
+
+      onConnectionClosedFailed: (Exception exception) { },
+
+      processMsgException: (Exception exception) { }
+    );
+  }
 }

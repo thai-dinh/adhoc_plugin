@@ -1,11 +1,11 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/config/config.dart';
+import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_client.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
@@ -26,8 +26,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   BleAdHocManager _bleAdHocManager;
 
   WrapperBluetoothLE(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
-  ) : super(verbose, config, mapAddressDevice) {
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice,
+    ListenerApp listenerApp
+  ) : super(verbose, config, mapAddressDevice, listenerApp) {
     this.type = Service.BLUETOOTHLE;
     this._init(verbose);
   }
@@ -104,7 +105,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   @override
   Future<HashMap<String, AdHocDevice>> getPaired() async {
-    if (!(await BleUtils.isEnabled()))
+    if (!(await BleAdHocManager.isEnabled()))
       return null;
 
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
@@ -132,10 +133,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _init(bool verbose) async {
-    if (await BleUtils.isEnabled()) {
+  Future<void> _init(bool verbose) async {
+    if (await BleAdHocManager.isEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
-      this.ownName = await BleUtils.getCurrentName();
+      this.ownName = await BleAdHocManager.getCurrentName();
       this.ownMac = '';
       this._listenServer();
     }
@@ -147,15 +148,19 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) { },
-
-      onConnection: (String remoteAddress) {
-        if (v) Utils.log(TAG, 'onConnection: $remoteAddress');
+      onConnectionClosed: (String remoteAddress) {
+        connectionClosed(remoteAddress);
       },
-  
-      onConnectionFailed: (Exception exception) { },
 
-      onMsgException: (Exception exception) { }
+      onConnection: (String remoteAddress) { },
+  
+      onConnectionFailed: (Exception exception) {
+        listenerApp.onConnectionFailed(exception);
+      },
+
+      onMsgException: (Exception exception) {
+        listenerApp.processMsgException(exception);
+      }
     );
 
     serviceServer = BleServer(v, listener)..listen();
@@ -167,13 +172,19 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _processMsgReceived(message);
       },
 
-      onConnectionClosed: (String remoteAddress) { },
+      onConnectionClosed: (String remoteAddress) {
+        connectionClosed(remoteAddress);
+      },
 
       onConnection: (String remoteAddress) { },
   
-      onConnectionFailed: (Exception exception) { },
+      onConnectionFailed: (Exception exception) {
+        listenerApp.onConnectionFailed(exception);
+      },
 
-      onMsgException: (Exception exception) { }
+      onMsgException: (Exception exception) {
+        listenerApp.processMsgException(exception);
+      }
     );
 
     final BleClient bleClient = BleClient(
@@ -229,6 +240,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
               && !isDirectNeighbors(adHocDevice.label)
             ) {
               adHocDevice.directedConnected = false;
+
+              listenerApp.onConnection(adHocDevice);
+
               setRemoteDevices.add(adHocDevice);
             }
           }
@@ -248,6 +262,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
             directedConnected: false
           );
 
+          listenerApp.onConnectionClosed(adHocDevice);
+
           if (setRemoteDevices.contains(adHocDevice))
               setRemoteDevices.remove(adHocDevice);
         }
@@ -255,6 +271,16 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       case AbstractWrapper.BROADCAST:
         Header header = message.header;
+
+        listenerApp.onReceivedData(
+          AdHocDevice(
+            deviceName: header.name,
+            label: header.label,
+            macAddress: header.macAddress,
+            type: type
+          ),
+          message.pdu
+        );
         break;
       
       default:

@@ -12,9 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_reactive_ble: ^2.7.2
+  flutter_reactive_ble: ^2.7.3
   json_annotation: ^3.1.1
-  uuid: ^2.2.2
 
   flutter_p2p:
     git:
