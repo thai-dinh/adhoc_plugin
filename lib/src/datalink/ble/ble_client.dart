@@ -163,8 +163,6 @@ class BleClient extends ServiceClient {
   void _listen() {
     if (v) Utils.log(ServiceClient.TAG, 'listen()');
 
-    List<List<int>> rawData = List.empty(growable: true);
-
     final characteristic = QualifiedCharacteristic(
       serviceId: serviceUuid,
       characteristicId: charMessageUuid,
@@ -172,10 +170,8 @@ class BleClient extends ServiceClient {
     );
 
     _msgStreamSub =
-      _reactiveBle.subscribeToCharacteristic(characteristic).listen((data) {
-      rawData.add(data);
+      _reactiveBle.subscribeToCharacteristic(characteristic).listen((rawData) {
       serviceMessageListener.onMessageReceived(_processMessage(rawData));
-      rawData.clear();
     }, onError: (dynamic error) {
       serviceMessageListener.onMsgException(
         MessageErrorException(error.toString())
@@ -183,13 +179,9 @@ class BleClient extends ServiceClient {
     });
   }
 
-  MessageAdHoc _processMessage(final List<List<int>> rawMessage) {
-    Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage.expand((x) {
-      List<int> tmp = new List<int>.from(x);
-      return tmp;
-    }).toList());
-
-    String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
+  MessageAdHoc _processMessage(final List<int> rawMessage) {
+    Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage);
+    String stringMessage = Utf8Decoder().convert(_unprocessedMessage); print(stringMessage);
     return MessageAdHoc.fromJson(json.decode(stringMessage));
   }
 }

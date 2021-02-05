@@ -59,7 +59,7 @@ class BleServer extends ServiceServer {
         return tmp;
       }).toList());
 
-      String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
+      String stringMessage = Utf8Decoder().convert(_unprocessedMessage); print(stringMessage);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMessage));
       serviceMessageListener.onMessageReceived(message);
     });
