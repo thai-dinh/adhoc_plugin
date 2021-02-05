@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
@@ -151,7 +152,7 @@ class BleAdHocManager {
   static void serverSendMessage(MessageAdHoc message, String address) {
     _channel.invokeMethod('serverSendMessage', <String, String>{
       'address': address,
-      'message': message.toJson().toString(),
+      'message': json.encode(message.toJson()),
     });
   }
 
