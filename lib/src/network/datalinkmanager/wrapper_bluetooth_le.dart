@@ -76,7 +76,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           String msg = 'Discovery process failed due to bluetooth connectivity';
           discoveryListener.onDiscoveryFailed(DeviceFailureException(msg));
         } else {
-          print('Wrapper: Discovery completed');
           mapNameDevice.forEach((key, value) {
             mapMacDevices.putIfAbsent(key, () => value);
           });
@@ -174,7 +173,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
     ServiceMessageListener listener = ServiceMessageListener(
       onMessageReceived: (MessageAdHoc message) {
-        print('onMessageReceived');
         _processMsgReceived(message);
       },
 
@@ -182,9 +180,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         connectionClosed(remoteAddress);
       },
 
-      onConnection: (String remoteAddress) { 
-        print('onConnection: $remoteAddress');
-      },
+      onConnection: (String remoteAddress) { },
   
       onConnectionFailed: (Exception exception) {
         listenerApp.onConnectionFailed(exception);

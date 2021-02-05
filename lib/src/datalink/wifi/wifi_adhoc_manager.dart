@@ -11,10 +11,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
 
-class WifiManager {
-  static const String TAG = "[WifiManager]";
+class WifiAdHocManager {
+  static const String TAG = "[WifiAdHocManager]";
   static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
+
+  void Function(String) _onWifiReady;
 
   bool _verbose;
   DiscoveryListener _discoveryListener;
@@ -23,7 +25,7 @@ class WifiManager {
   HashMap<String, WifiAdHocDevice> _mapMacDevices;
   bool _isConnected;
 
-  WifiManager(this._verbose) {
+  WifiAdHocManager(this._verbose, this._onWifiReady) {
     _mapMacDevices = HashMap();
     _isConnected = false;
   }
@@ -42,10 +44,15 @@ class WifiManager {
 
     _subscriptions.add(FlutterP2p.wifiEvents.stateChange.listen((change) {
       if (_listenerAdapter != null && change.isEnabled) {
-        _listenerAdapter.onEnableWifi(true);
+          _listenerAdapter.onEnableWifi(true);
       } else if (_listenerAdapter != null && !change.isEnabled) {
         _listenerAdapter.onEnableWifi(false);
       }
+    }));
+
+    _subscriptions.add(FlutterP2p.wifiEvents.thisDeviceChange.listen((change) {
+      if (_verbose) Utils.log(TAG, 'GroupOwner: ${change.isGroupOwner}');
+      _getOwnIpAddress();
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
@@ -149,7 +156,17 @@ class WifiManager {
     _discoveryListener.onDiscoveryCompleted(_mapMacDevices);
   }
 
+  Future<void> _getOwnIpAddress() async {
+    String ipAddress = await _channel.invokeMethod('getOwnIpAddress');
+    if (ipAddress == null)
+      ipAddress = '';
+    _onWifiReady(ipAddress);
+  }
+
 /*-------------------------------Static methods-------------------------------*/
+
+  static void setVerbose(bool verbose)
+    => _channel.invokeMethod('setVerbose', verbose);
 
   static Future<bool> isWifiEnabled() async {
     return await _channel.invokeMethod('isWifiEnabled');

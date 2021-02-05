@@ -8,6 +8,7 @@ import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
+import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
 
@@ -15,8 +16,11 @@ class WifiServer extends ServiceServer {
   StreamSubscription<dynamic> _messageStreamSub;
   P2pSocket _socket;
 
-  WifiServer(bool verbose, ServiceMessageListener serviceMessageListener) 
-    : super(verbose, Service.STATE_NONE, serviceMessageListener);
+  WifiServer(
+    bool verbose, ServiceMessageListener serviceMessageListener
+  ) : super(verbose, Service.STATE_NONE, serviceMessageListener) {
+    WifiAdHocManager.setVerbose(verbose);
+  }
 
 /*-------------------------------Public methods-------------------------------*/
 

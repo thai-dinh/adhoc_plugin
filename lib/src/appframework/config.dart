@@ -1,4 +1,6 @@
 import 'package:adhoclibrary/src/appframework/exceptions/bad_server_port.dart';
+import 'package:uuid/uuid.dart';
+
 
 class Config {
   static const int _MIN_PORT = 1023;
@@ -10,17 +12,12 @@ class Config {
   bool connectionFlooding;
   int timeOut;
 
-  Config() {
-    this.connectionFlooding = false;
-    this.timeOut = 5000;
-    this.serverPort = 52000;
-  }
-
-  Config.init(this.connectionFlooding, int serverPort) {
+  Config({String label = '', bool connectionFlooding = false, int serverPort = 52000}) {
+    this.label = (label == '') ? Uuid().v4() : label;
+    this.connectionFlooding = connectionFlooding;
     this.serverPort = serverPort;
+    this.timeOut = 5000;
   }
-
-  int get serverPort => _serverPort;
 
   set serverPort(int serverPort) {
     if (serverPort <= _MIN_PORT || serverPort >= _MAX_PORT) {
@@ -32,4 +29,6 @@ class Config {
       this._serverPort = serverPort;
     }
   }
+
+  int get serverPort => _serverPort;
 }
