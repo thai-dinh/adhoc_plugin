@@ -13,7 +13,6 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 
 class WifiClient extends ServiceClient {
   StreamSubscription<dynamic> _messageStreamSub;
-  List<MessageAdHoc> _messages;
   Function(String) _connectListener;
   String _remoteAddress;
   P2pSocket _socket;
@@ -24,9 +23,7 @@ class WifiClient extends ServiceClient {
     ServiceMessageListener serviceMessageListener
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
-  ) {
-    this._messages = List.empty(growable: true);
-  }
+  );
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -108,7 +105,7 @@ class WifiClient extends ServiceClient {
 
       String stringMsg = Utf8Decoder().convert(Uint8List.fromList(data.data));
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMsg));
-      _messages.add(message);
+      serviceMessageListener.onMessageReceived(message);
     });
   }
 }

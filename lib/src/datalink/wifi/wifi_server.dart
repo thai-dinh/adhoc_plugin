@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
@@ -20,7 +21,9 @@ class WifiServer extends ServiceServer {
 /*-------------------------------Public methods-------------------------------*/
 
   void send(MessageAdHoc message, String address) {
-    // Write data to the client using the _socket.write(UInt8List) or `_socket.writeString("Hello")` method
+    if (v) Utils.log(ServiceClient.TAG, 'send()');
+
+    _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
   }
 
   void listen([int serverPort]) async {
@@ -34,7 +37,7 @@ class WifiServer extends ServiceServer {
       serviceMessageListener.onMessageReceived(message);
     });
 
-    print(await FlutterP2p.acceptPort(serverPort));
+    await FlutterP2p.acceptPort(serverPort);
   }
 
   void stopListening() {

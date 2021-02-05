@@ -178,15 +178,13 @@ public class GattServerManager {
 
     public void writeToCharacteristic(String message, String address) {
         BluetoothDevice device = mapMacDevice.get(address);
-        if (device == null) {
+        if (device == null) { // TODO: change to appropriate device
             for (Map.Entry<String, BluetoothDevice> entry : mapMacDevice.entrySet())
                 device = entry.getValue();
         }
 
-        byte[] msg = message.getBytes(StandardCharsets.UTF_8);
-        Log.d(TAG, "Length: " + msg.length);
         characteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
-        boolean r = gattServer.notifyCharacteristicChanged(device, characteristic, false);
+        gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {

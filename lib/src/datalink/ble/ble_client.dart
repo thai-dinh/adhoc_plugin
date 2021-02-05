@@ -181,7 +181,7 @@ class BleClient extends ServiceClient {
 
   MessageAdHoc _processMessage(final List<int> rawMessage) {
     Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage);
-    String stringMessage = Utf8Decoder().convert(_unprocessedMessage); print(stringMessage);
+    String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
     return MessageAdHoc.fromJson(json.decode(stringMessage));
   }
 }

@@ -34,7 +34,7 @@ class WifiManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> register(void Function(bool, String) execute) async {
+  Future<void> register(void Function(bool, String) onConnection) async {
     if (_verbose) Utils.log(TAG, 'register()');
 
     if (!await _checkPermission())
@@ -46,8 +46,9 @@ class WifiManager {
     }));
 
     _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
+      print('onConnectionChanged()');
       _isConnected = change.networkInfo.isConnected;
-      execute(
+      onConnection(
         change.wifiP2pInfo.isGroupOwner, change.wifiP2pInfo.groupOwnerAddress
       );
     }));
