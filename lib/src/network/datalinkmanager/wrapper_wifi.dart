@@ -41,16 +41,19 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   @override
   void init(bool verbose, [Config config]) async {
     if (await WifiManager.isWifiEnabled()) {
-      this._wifiManager = WifiManager(verbose)
-      ..register((bool isGroupOwner, String groupOwnerAddress) {
-        if (_isGroupOwner = isGroupOwner) {
-          _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
-          _listenServer();
-        } else {
-          _groupOwnerAddr = groupOwnerAddress;
-          _connect(_serverPort);
+      this._wifiManager = WifiManager(verbose)..register(
+        (bool isConnected, bool isGroupOwner, String groupOwnerAddress) {
+          _isGroupOwner = isGroupOwner;
+          if (isConnected && _isGroupOwner) {
+            _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
+            _listenServer();
+          } else if (isConnected && !_isGroupOwner) {
+            _groupOwnerAddr = groupOwnerAddress;
+            _connect(config.serverPort);
+          }
         }
-      });
+      );
+
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
       this._serverPort = config.serverPort;
@@ -168,6 +171,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
 /*------------------------------Private methods-------------------------------*/
 
   void _listenServer() {
+    print('Server');
     ServiceMessageListener listener = ServiceMessageListener(
       onMessageReceived: (MessageAdHoc message) {
         _processMsgReceived(message);
@@ -193,6 +197,7 @@ class WrapperWifi extends WrapperConnOriented implements IWifiP2P {
   }
 
   void _connect(int remotePort) {
+    print('Client');
     ServiceMessageListener listener = ServiceMessageListener(
       onMessageReceived: (MessageAdHoc message) {
         _processMsgReceived(message);
