@@ -70,9 +70,7 @@ class BleAdHocManager {
       scanMode: ScanMode.lowLatency,
     ).listen((device) {
       BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
-      _mapMacDevice.putIfAbsent(device.id, () => bleAdHocDevice);
-
-      if (!_mapMacDevice.containsKey(device.id)) {
+      _mapMacDevice.putIfAbsent(device.id, () {
         if (_verbose) {
           Utils.log(TAG, 'Device found: ' +
             'Name: ${device.name} - Address: ${device.id}'
@@ -80,9 +78,12 @@ class BleAdHocManager {
         }
 
         onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
-      }
+
+        return bleAdHocDevice;
+      });
     }, onError: onError);
 
+    _isDiscovering = true;
     onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
@@ -131,6 +132,8 @@ class BleAdHocManager {
 
     _subscription.cancel();
     _subscription = null;
+
+    _isDiscovering = false;
 
     onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }
