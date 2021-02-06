@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 
 
@@ -13,15 +13,20 @@ abstract class Service {
   static const STATE_CONNECTING = 2;
   static const STATE_CONNECTED = 3;
 
-  static const DEVICE_DISCOVERED = 4;
-  static const DISCOVERY_STARTED = 5;
-  static const DISCOVERY_END = 6;
+  static const MESSAGE_RECEIVED = 4;
+  static const DEVICE_DISCOVERED = 5;
+  static const DISCOVERY_STARTED = 6;
+  static const DISCOVERY_END = 7;
+  static const CONNECTION_PERFORMED = 8;
+  static const CONNECTION_CLOSED = 9;
 
   int _state;
 
+  void Function(DiscoveryEvent) onEvent;
+  void Function(dynamic) onError;
   bool v;
 
-  Service(this.v, this._state);
+  Service(this.v, this._state, this.onEvent, this.onError);
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -34,9 +39,7 @@ abstract class Service {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen(
-    void onMessage(MessageAdHoc message), void onError(dynamic error)
-  );
+  void listen();
 
   void stopListening();
 }

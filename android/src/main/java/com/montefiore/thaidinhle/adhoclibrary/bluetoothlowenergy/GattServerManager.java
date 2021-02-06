@@ -156,7 +156,6 @@ public class GattServerManager {
 
             int state;
             HashMap<String, Object> mapDeviceInfo = new HashMap<>();
-            mapDeviceInfo.put("deviceName", device.getName());
             mapDeviceInfo.put("macAddress", device.getAddress());
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {

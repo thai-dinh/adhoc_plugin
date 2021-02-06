@@ -145,17 +145,29 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _onWifiReady(String ipAddress) => _ownIpAddress = ipAddress;
 
+  void _onEvent(DiscoveryEvent event) {
+    switch (event.type) {
+      case Service.MESSAGE_RECEIVED:
+        _processMsgReceived(event.payload as MessageAdHoc);
+        break;
+
+      case Service.CONNECTION_CLOSED:
+        connectionClosed(event.payload as String);
+        break;
+    }
+  }
+
+  void _onError(dynamic error) => print(error.toString());
+
   void _listenServer() {
-    serviceServer = WifiServer(v)..listen(
-      _processMsgReceived,
-      (error) => print(error.toString()), 
+    serviceServer = WifiServer(v, _onEvent, _onError)..listen(
       serverPort: _serverPort
     );
   }
 
   void _connect(int remotePort) {
     final wifiClient = WifiClient(
-      v, remotePort, _groupOwnerAddr, attempts, timeOut
+      v, remotePort, _groupOwnerAddr, attempts, timeOut, _onEvent, _onError
     );
 
     wifiClient.connectListener = (String remoteAddress) {
@@ -170,11 +182,7 @@ class WrapperWifi extends WrapperConnOriented {
       ));
     };
 
-    wifiClient
-      ..connect()
-      ..listen(
-        _processMsgReceived, (error) => print(error.toString())
-      );
+    wifiClient..connect()..listen();
   }
 
   void _processMsgReceived(MessageAdHoc message) {

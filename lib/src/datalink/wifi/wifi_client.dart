@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
@@ -12,33 +13,34 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 
 class WifiClient extends ServiceClient {
   StreamSubscription<dynamic> _messageStreamSub;
-  Function(String) _connectListener;
+  void Function(String) _connectListener;
   String _remoteAddress;
   P2pSocket _socket;
   int _port;
 
   WifiClient(
-    bool verbose, this._port, this._remoteAddress, int attempts, int timeOut, 
+    bool verbose, this._port, this._remoteAddress, int attempts, int timeOut,
+    void Function(DiscoveryEvent) onEvent,
+    void Function(dynamic) onError
   ) : super(
-    verbose, Service.STATE_NONE, attempts, timeOut
+    verbose, Service.STATE_NONE, attempts, timeOut, onEvent, onError
   );
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  set connectListener(Function connectListener) {
+  set connectListener(void Function(String) connectListener) {
     this._connectListener = connectListener;
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen(
-    void onMessage(MessageAdHoc message), void onError(dynamic error)
-  ) {
+  void listen() {
     if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
-      onMessage(MessageAdHoc.fromJson(json.decode(strMessage)));
+      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
+      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
     });
   }
 
@@ -51,7 +53,11 @@ class WifiClient extends ServiceClient {
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
-  void disconnect() => FlutterP2p.disconnectFromHost(_port);
+  void disconnect() {
+    FlutterP2p.disconnectFromHost(_port);
+
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _port));
+  }
 
   void send(MessageAdHoc message) {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
@@ -84,9 +90,7 @@ class WifiClient extends ServiceClient {
       state = Service.STATE_CONNECTING;
 
       _socket = await FlutterP2p.connectToHost(
-        _remoteAddress,
-        _port,
-        timeout: timeOut,
+        _remoteAddress, _port, timeout: timeOut,
       );
 
       if (_socket == null) {
@@ -94,7 +98,7 @@ class WifiClient extends ServiceClient {
         throw NoConnectionException('Unable to connect to $_remoteAddress');
       }
 
-      state = Service.STATE_CONNECTED;
+      onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, _port));
 
       if (_connectListener != null)
         _connectListener(_remoteAddress);

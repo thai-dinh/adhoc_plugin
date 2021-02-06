@@ -71,6 +71,7 @@ class WifiAdHocManager {
         WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(
           device, device.deviceName, device.deviceAddress
         );
+
         _mapMacDevice.putIfAbsent(device.deviceAddress, () => wifiAdHocDevice);
 
         if (!_mapMacDevice.containsKey(device.deviceAddress)) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -15,23 +16,25 @@ class WifiServer extends ServiceServer {
   StreamSubscription<dynamic> _messageStreamSub;
   P2pSocket _socket;
 
-  WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
+  WifiServer(
+    bool verbose,
+    void Function(DiscoveryEvent) onEvent,
+    void Function(dynamic) onError
+  ) : super(verbose, Service.STATE_NONE, onEvent, onError) {
     WifiAdHocManager.setVerbose(verbose);
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen(
-    void onMessage(MessageAdHoc message), void onError(dynamic error),
-    {int serverPort}
-  ) async {
+  void listen({int serverPort}) async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: listen()');
 
     _socket = await FlutterP2p.openHostPort(serverPort);
 
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
-      onMessage(MessageAdHoc.fromJson(json.decode(strMessage)));
+      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
+      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
     }, onError: onError);
 
     state = Service.STATE_LISTENING;

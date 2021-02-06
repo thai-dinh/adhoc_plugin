@@ -109,8 +109,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       return null;
 
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
-    pairedDevices.forEach((key, value) {
-      mapMacDevices.putIfAbsent(key, () => value);
+    pairedDevices.forEach((macAddress, bleAdHocDevice) {
+      mapMacDevices.putIfAbsent(macAddress, () => bleAdHocDevice);
     });
 
     return mapMacDevices;
@@ -133,29 +133,39 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
 /*------------------------------Private methods-------------------------------*/
 
+  void _onEvent(DiscoveryEvent event) {
+    switch (event.type) {
+      case Service.MESSAGE_RECEIVED:
+        _processMsgReceived(event.payload as MessageAdHoc);
+        break;
+
+      case Service.CONNECTION_CLOSED:
+        connectionClosed(event.payload as String);
+        break;
+    }
+  }
+
+  void _onError(dynamic error) => print(error.toString());
+
   void _listenServer() {
-    serviceServer = BleServer(v)..listen(
-      _processMsgReceived, (error) { print(error.toString()); }
-    );
+    serviceServer = BleServer(v, _onEvent, _onError)..listen();
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
-    final bleClient = BleClient(v, bleAdHocDevice, attempts, timeOut);
+    final bleClient = BleClient(
+      v, bleAdHocDevice, attempts, timeOut, _onEvent, _onError
+    );
 
     bleClient.connectListener = () {
       bleClient.send(MessageAdHoc(Header(
         messageType: AbstractWrapper.CONNECT_SERVER, 
-        label: label, 
+        label: label,
         name: ownName,
         address: ownMac
       )));
     };
 
-    bleClient
-      ..connect()
-      ..listen(
-        _processMsgReceived, (error) => print(error.toString())
-      );
+    bleClient..connect()..listen();
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
