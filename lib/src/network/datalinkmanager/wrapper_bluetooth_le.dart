@@ -9,7 +9,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_client.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -63,38 +63,26 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  void discovery(DiscoveryListener discoveryListener) {
-    DiscoveryListener listener = DiscoveryListener(
-      onDeviceDiscovered: (AdHocDevice device) {
-        mapMacDevices.putIfAbsent(device.macAddress, () => device);
-        discoveryListener.onDeviceDiscovered(device);
-      },
+  void discovery(
+    void onEvent(DiscoveryEvent event), void onError(dynamic error),
+  ) {
+    _bleAdHocManager.discovery((DiscoveryEvent event) {
+      onEvent(event);
 
-      onDiscoveryCompleted: (HashMap<String, AdHocDevice> mapNameDevice) {
-        if (_bleAdHocManager == null) {
-          String msg = 'Discovery process failed due to bluetooth connectivity';
-          discoveryListener.onDiscoveryFailed(DeviceFailureException(msg));
-        } else {
-          mapNameDevice.forEach((key, value) {
-            mapMacDevices.putIfAbsent(key, () => value);
+      if (event.type == Service.DEVICE_DISCOVERED) {
+        BleAdHocDevice device = event.payload as BleAdHocDevice;
+        mapMacDevices.putIfAbsent(device.macAddress, () => device);
+      } else if (event.type == Service.DISCOVERY_END) {
+        HashMap<String, AdHocDevice> discoveredDevices = 
+          event.payload as HashMap<String, AdHocDevice>;
+
+          discoveredDevices.forEach((macAddress, device) {
+            mapMacDevices.putIfAbsent(macAddress, () => device);
           });
 
           discoveryCompleted = true;
-
-          discoveryListener.onDiscoveryCompleted(mapNameDevice);
-        }
-      },
-
-      onDiscoveryStarted: () {
-        discoveryListener.onDiscoveryStarted();
-      },
-
-      onDiscoveryFailed: (Exception exception) {
-        discoveryListener.onDiscoveryFailed(exception);
       }
-    );
-
-    _bleAdHocManager.discovery(listener);
+    }, onError);
   }
 
   @override

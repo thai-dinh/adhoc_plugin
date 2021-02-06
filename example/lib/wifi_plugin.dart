@@ -32,26 +32,19 @@ class WifiPlugin {
   void disableExample() => _wrapper.disable();
 
   void discoveryExample() {
-    DiscoveryListener listener = DiscoveryListener(
-      onDeviceDiscovered: (AdHocDevice device) {
+    _wrapper.discovery((event) {
+      if (event.type == Service.DEVICE_DISCOVERED) {
+        WifiAdHocDevice device = event.payload as WifiAdHocDevice;
         print('Device ${device.deviceName} found');
-      },
+      } else if (event.type == Service.DISCOVERY_END) {
+        HashMap<String, AdHocDevice> discoveredDevices = 
+          event.payload as HashMap<String, AdHocDevice>;
 
-      onDiscoveryCompleted: (HashMap<String, AdHocDevice> map) {
-        print('Example: Discovery completed');
-        _discoveredDevices = map;
-      },
-
-      onDiscoveryFailed: (Exception exception) {
-        throw exception;
-      },
-
-      onDiscoveryStarted: () {
+          _discoveredDevices = discoveredDevices;
+      } else {
         print('Example: Discovery started');
       }
-    );
-
-    _wrapper.discovery(listener);
+    }, (error) => print(error.toString()));
   }
 
   void connectExample() {

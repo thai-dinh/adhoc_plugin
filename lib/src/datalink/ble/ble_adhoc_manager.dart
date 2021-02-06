@@ -6,8 +6,8 @@ import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/discovery_failed.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
@@ -21,22 +21,21 @@ class BleAdHocManager {
 
   bool _verbose;
   bool _isDiscovering;
-  DiscoveryListener _discoveryListener;
   FlutterReactiveBle _reactiveBle;
-  HashMap<String, BleAdHocDevice> _hashMapBleDevice;
+  HashMap<String, BleAdHocDevice> _mapMacDevice;
   StreamSubscription<DiscoveredDevice> _subscription;
 
   BleAdHocManager(this._verbose) {
     this._isDiscovering = false;
     this._reactiveBle = FlutterReactiveBle();
-    this._hashMapBleDevice = HashMap<String, BleAdHocDevice>();
+    this._mapMacDevice = HashMap<String, BleAdHocDevice>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
 
-  HashMap<String, BleAdHocDevice> get hashMapBleDevice => _hashMapBleDevice;
+  HashMap<String, BleAdHocDevice> get hashMapBleDevice => _mapMacDevice;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -56,41 +55,40 @@ class BleAdHocManager {
     Timer(Duration(seconds: duration), _stopAdvertise);
   }
 
-  void discovery(DiscoveryListener discoveryListener) {
+  void discovery(
+    void onEvent(DiscoveryEvent event), void onError(dynamic error),
+  ) {
     if (_verbose) Utils.log(TAG, 'discovery()');
 
     if (_isDiscovering)
-      this._stopScan();
+      this._stopScan((event) { });
 
-    this._discoveryListener = discoveryListener;
-
-    _hashMapBleDevice.clear();
-    discoveryListener.onDiscoveryStarted();
+    _mapMacDevice.clear();
 
     _subscription = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(BleUtils.ADHOC_SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
     ).listen((device) {
-      BleAdHocDevice btDevice = BleAdHocDevice(device);
+      BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
+      _mapMacDevice.putIfAbsent(device.id, () => bleAdHocDevice);
 
-      if (!_hashMapBleDevice.containsKey(device.id)) {
+      if (!_mapMacDevice.containsKey(device.id)) {
         if (_verbose) {
           Utils.log(TAG, 'Device found: ' +
             'Name: ${device.name} - Address: ${device.id}'
           );
         }
 
-        discoveryListener.onDeviceDiscovered(btDevice);
+        onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
       }
+    }, onError: onError);
 
-      _hashMapBleDevice.putIfAbsent(device.id, () => btDevice);
-    }, onError: (error) {
-      _discoveryListener.onDiscoveryFailed(DiscoveryFailedException(
-        'Discovery process failed: ' + error.toString()
-      ));
-    });
+    onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
-    Timer(Duration(milliseconds: Utils.DISCOVERY_TIME), _stopScan);
+    Timer(
+      Duration(milliseconds: Utils.DISCOVERY_TIME),
+      () => _stopScan(onEvent)
+    );
   }
 
   Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
@@ -128,12 +126,13 @@ class BleAdHocManager {
 
   void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
-  void _stopScan() {
-    if (_verbose) Utils.log(TAG, 'Discovery process completed');
+  void _stopScan(void onEvent(DiscoveryEvent event)) {
+    if (_verbose) Utils.log(TAG, 'Discovery completed');
 
     _subscription.cancel();
     _subscription = null;
-    _discoveryListener.onDiscoveryCompleted(_hashMapBleDevice);
+
+    onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/

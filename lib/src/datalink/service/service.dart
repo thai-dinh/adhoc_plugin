@@ -13,6 +13,10 @@ abstract class Service {
   static const STATE_CONNECTING = 2;
   static const STATE_CONNECTED = 3;
 
+  static const DEVICE_DISCOVERED = 4;
+  static const DISCOVERY_STARTED = 5;
+  static const DISCOVERY_END = 6;
+
   int _state;
 
   bool v;

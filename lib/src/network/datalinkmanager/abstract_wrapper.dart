@@ -4,16 +4,16 @@ import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
 
 abstract class AbstractWrapper {
-  static const CONNECT_SERVER = 10;
-  static const CONNECT_CLIENT = 11;
-  static const CONNECT_BROADCAST = 12;
-  static const DISCONNECT_BROADCAST = 13;
-  static const BROADCAST = 14;
+  static const CONNECT_SERVER = 7;
+  static const CONNECT_CLIENT = 8;
+  static const CONNECT_BROADCAST = 9;
+  static const DISCONNECT_BROADCAST = 10;
+  static const BROADCAST = 11;
 
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
@@ -51,7 +51,9 @@ abstract class AbstractWrapper {
 
   void disable();
 
-  void discovery(DiscoveryListener discoveryListener);
+  void discovery(
+    void onEvent(DiscoveryEvent event), void onError(dynamic error),
+  );
 
   void connect(int attempts, AdHocDevice adHocDevice);
 

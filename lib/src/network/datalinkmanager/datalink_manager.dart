@@ -6,7 +6,7 @@ import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
@@ -85,21 +85,23 @@ class DataLinkManager {
         disable(wrapper.type);
   }
 
-  void discovery(DiscoveryListener discovery) {
+  void discovery(
+    void onEvent(DiscoveryEvent event), void onError(dynamic error),
+  ) {
     int enabled = checkState();
     if (enabled == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     if (enabled == _wrappers.length) {
-      _bothDiscovery(discovery);
+      _bothDiscovery(onEvent, onError);
     } else {
       for (AbstractWrapper wrapper in _wrappers) {
         if (wrapper.enabled) {
-          wrapper.listenerBothDiscovery = 
+          wrapper.listenerBothDiscovery =
             (HashMap<String, AdHocDevice> mapAddressDevice) {
-              discovery.onDiscoveryCompleted(mapAddressDevice);
+              onEvent(DiscoveryEvent(Service.DISCOVERY_END, mapAddressDevice));
             };
-          wrapper.discovery(discovery);
+          wrapper.discovery(onEvent, onError);
         }
       }
     }
@@ -275,9 +277,11 @@ class DataLinkManager {
     }
   }
 
-  void _bothDiscovery(DiscoveryListener discovery) {
+  void _bothDiscovery(
+    void onEvent(DiscoveryEvent event), void onError(dynamic error),
+  ) {
     for (AbstractWrapper wrapper in _wrappers)
-        wrapper.discovery(discovery);
+        wrapper.discovery(onEvent, onError);
 
     Timer.periodic(Duration(milliseconds: _POOLING_DISCOVERY), (Timer timer) {
       bool finished = true;
@@ -289,7 +293,7 @@ class DataLinkManager {
       }
 
       if (finished) {
-        discovery.onDiscoveryCompleted(_mapAddrDevice);
+        onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapAddrDevice));
         timer.cancel();
       }
     });
