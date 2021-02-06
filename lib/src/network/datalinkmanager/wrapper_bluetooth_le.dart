@@ -12,7 +12,6 @@ import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
-import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
@@ -147,53 +146,13 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 /*------------------------------Private methods-------------------------------*/
 
   void _listenServer() {
-    ServiceMessageListener listener = ServiceMessageListener(
-      onMessageReceived: (MessageAdHoc message) {
-        _processMsgReceived(message);
-      },
-
-      onConnectionClosed: (String remoteAddress) {
-        connectionClosed(remoteAddress);
-      },
-
-      onConnection: (String remoteAddress) { },
-  
-      onConnectionFailed: (Exception exception) {
-        listenerApp.onConnectionFailed(exception);
-      },
-
-      onMsgException: (Exception exception) {
-        listenerApp.processMsgException(exception);
-      }
+    serviceServer = BleServer(v)..listen(
+      _processMsgReceived, (error) { print(error.toString()); }
     );
-
-    serviceServer = BleServer(v, listener)..listen();
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
-    ServiceMessageListener listener = ServiceMessageListener(
-      onMessageReceived: (MessageAdHoc message) {
-        _processMsgReceived(message);
-      },
-
-      onConnectionClosed: (String remoteAddress) {
-        connectionClosed(remoteAddress);
-      },
-
-      onConnection: (String remoteAddress) { },
-  
-      onConnectionFailed: (Exception exception) {
-        listenerApp.onConnectionFailed(exception);
-      },
-
-      onMsgException: (Exception exception) {
-        listenerApp.processMsgException(exception);
-      }
-    );
-
-    final BleClient bleClient = BleClient(
-      v, bleAdHocDevice, attempts, timeOut, listener
-    );
+    final bleClient = BleClient(v, bleAdHocDevice, attempts, timeOut);
 
     bleClient.connectListener = () {
       bleClient.send(MessageAdHoc(Header(
@@ -204,7 +163,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       )));
     };
 
-    bleClient.connect();
+    bleClient
+      ..connect()
+      ..listen(
+        _processMsgReceived, (error) => print(error.toString())
+      );
   }
 
   void _processMsgReceived(final MessageAdHoc message) {

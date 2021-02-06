@@ -6,7 +6,6 @@ import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
-import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_p2p/flutter_p2p.dart';
 
@@ -20,9 +19,8 @@ class WifiClient extends ServiceClient {
 
   WifiClient(
     bool verbose, this._port, this._remoteAddress, int attempts, int timeOut, 
-    ServiceMessageListener serviceMessageListener
   ) : super(
-    verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
+    verbose, Service.STATE_NONE, attempts, timeOut
   );
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -33,16 +31,27 @@ class WifiClient extends ServiceClient {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+  void listen(
+    void onMessage(MessageAdHoc message), void onError(dynamic error)
+  ) {
+    if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
-  void disconnect() => FlutterP2p.disconnectFromHost(_port);
+    _messageStreamSub = _socket.inputStream.listen((data) {
+      String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
+      onMessage(MessageAdHoc.fromJson(json.decode(strMessage)));
+    });
+  }
 
   void stopListening() {
-    if (v) Utils.log(ServiceClient.TAG, 'stopListening()');
+    if (v) Utils.log(ServiceClient.TAG, 'Client: stopListening()');
 
     if (_messageStreamSub != null)
       _messageStreamSub.cancel();
   }
+
+  void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+
+  void disconnect() => FlutterP2p.disconnectFromHost(_port);
 
   void send(MessageAdHoc message) {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
@@ -86,7 +95,6 @@ class WifiClient extends ServiceClient {
       }
 
       state = Service.STATE_CONNECTED;
-      _listen();
 
       if (_connectListener != null)
         _connectListener(_remoteAddress);
@@ -95,17 +103,5 @@ class WifiClient extends ServiceClient {
 
       state = Service.STATE_CONNECTED;
     }
-  }
-
-  void _listen() {
-    if (v) Utils.log(ServiceClient.TAG, 'listen()');
-
-    _messageStreamSub = _socket.inputStream.listen((data) {
-      if (v) Utils.log(ServiceClient.TAG, 'Message received');
-
-      String stringMsg = Utf8Decoder().convert(Uint8List.fromList(data.data));
-      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(stringMsg));
-      serviceMessageListener.onMessageReceived(message);
-    });
   }
 }

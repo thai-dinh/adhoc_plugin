@@ -141,11 +141,7 @@ public class GattServerManager {
             data.put(address, received);
 
             if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
-                HashMap<String, Object> mapDeviceData = new HashMap<>();
-                mapDeviceData.put("macAddress", address);
-                mapDeviceData.put("values", data.get(address));
-
-                eventMessageSink.success(mapDeviceData);
+                eventMessageSink.success(data.get(address));
 
                 received = new ArrayList<>();
                 data.put(address, received);
@@ -156,12 +152,12 @@ public class GattServerManager {
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             if (verbose) Log.d(TAG, "onConnectionStateChange(): " + device.getAddress());
             super.onConnectionStateChange(device, status, newState);
+            mapMacDevice.put(device.getAddress(), device);
 
             int state;
-            String address = device.getAddress();
             HashMap<String, Object> mapDeviceInfo = new HashMap<>();
             mapDeviceInfo.put("deviceName", device.getName());
-            mapDeviceInfo.put("macAddress", address);
+            mapDeviceInfo.put("macAddress", device.getAddress());
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 state = BluetoothLowEnergyUtils.STATE_CONNECTED;
@@ -172,7 +168,6 @@ public class GattServerManager {
             mapDeviceInfo.put("state", state);
 
             eventConnectionSink.success(mapDeviceInfo);
-            mapMacDevice.put(address, device);
         }
     };
 

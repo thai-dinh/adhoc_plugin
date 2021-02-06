@@ -4,12 +4,10 @@ import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/message_error.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
-import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -25,10 +23,9 @@ class BleClient extends ServiceClient {
   Uuid charMessageUuid;
 
   BleClient(
-    bool verbose, this._device, int attempts, int timeOut, 
-    ServiceMessageListener serviceMessageListener
+    bool verbose, this._device, int attempts, int timeOut
   ) : super(
-    verbose, Service.STATE_NONE, attempts, timeOut, serviceMessageListener
+    verbose, Service.STATE_NONE, attempts, timeOut
   ) {
     this._reactiveBle = FlutterReactiveBle();
     this.serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
@@ -43,6 +40,35 @@ class BleClient extends ServiceClient {
 
 /*-------------------------------Public methods-------------------------------*/
 
+  void listen(
+    void onMessage(MessageAdHoc message), void onError(dynamic error)
+  ) {
+    if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
+
+    final characteristic = QualifiedCharacteristic(
+      serviceId: serviceUuid,
+      characteristicId: charMessageUuid,
+      deviceId: _device.macAddress
+    );
+
+    _msgStreamSub = _reactiveBle.subscribeToCharacteristic(characteristic)
+      .listen(
+        (rawData) {
+          Uint8List messageAsListByte = Uint8List.fromList(rawData);
+          String strMessage = Utf8Decoder().convert(messageAsListByte);
+          onMessage(MessageAdHoc.fromJson(json.decode(strMessage)));
+        },
+        onError: onError
+      );
+  }
+
+  void stopListening() {
+    if (v) Utils.log(ServiceClient.TAG, 'Client: stopListening()');
+
+    if (_msgStreamSub != null)
+      _msgStreamSub.cancel();
+  }
+
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
   void disconnect() {
@@ -50,15 +76,8 @@ class BleClient extends ServiceClient {
       _connecStreamSub.cancel();
   }
 
-  void stopListening() {
-    if (v) Utils.log(ServiceClient.TAG, 'stopListening()');
-
-    if (_msgStreamSub != null)
-      _msgStreamSub.cancel();
-  }
-
   Future<void> send(MessageAdHoc message) async {
-    if (v) Utils.log(ServiceClient.TAG, 'send()');
+    if (v) Utils.log(ServiceClient.TAG, 'Client: send()');
 
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');
@@ -130,7 +149,6 @@ class BleClient extends ServiceClient {
             if (_connectListener != null)
               _connectListener();
 
-            _listen();
             state = Service.STATE_CONNECTED;
             break;
           case DeviceConnectionState.connecting:
@@ -158,30 +176,5 @@ class BleClient extends ServiceClient {
     await _reactiveBle.writeCharacteristicWithResponse(
       characteristic, value: values.toList()
     );
-  }
-
-  void _listen() {
-    if (v) Utils.log(ServiceClient.TAG, 'listen()');
-
-    final characteristic = QualifiedCharacteristic(
-      serviceId: serviceUuid,
-      characteristicId: charMessageUuid,
-      deviceId: _device.macAddress
-    );
-
-    _msgStreamSub =
-      _reactiveBle.subscribeToCharacteristic(characteristic).listen((rawData) {
-      serviceMessageListener.onMessageReceived(_processMessage(rawData));
-    }, onError: (dynamic error) {
-      serviceMessageListener.onMsgException(
-        MessageErrorException(error.toString())
-      );
-    });
-  }
-
-  MessageAdHoc _processMessage(final List<int> rawMessage) {
-    Uint8List _unprocessedMessage = Uint8List.fromList(rawMessage);
-    String stringMessage = Utf8Decoder().convert(_unprocessedMessage);
-    return MessageAdHoc.fromJson(json.decode(stringMessage));
   }
 }

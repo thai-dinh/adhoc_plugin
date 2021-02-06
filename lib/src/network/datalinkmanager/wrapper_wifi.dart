@@ -7,7 +7,6 @@ import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
-import 'package:adhoclibrary/src/datalink/service/service_msg_listener.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
@@ -158,54 +157,16 @@ class WrapperWifi extends WrapperConnOriented {
   void _onWifiReady(String ipAddress) => _ownIpAddress = ipAddress;
 
   void _listenServer() {
-    ServiceMessageListener listener = ServiceMessageListener(
-      onMessageReceived: (MessageAdHoc message) {
-        _processMsgReceived(message);
-      },
-
-      onConnectionClosed: (String remoteAddress) {
-        connectionClosed(_mapAddrMac[remoteAddress]);
-        _mapAddrMac.remove(remoteAddress);
-      },
-
-      onConnection: (String remoteAddress) { },
-  
-      onConnectionFailed: (Exception exception) {
-        listenerApp.onConnectionFailed(exception);
-      },
-
-      onMsgException: (Exception exception) {
-        listenerApp.processMsgException(exception);
-      }
+    serviceServer = WifiServer(v)..listen(
+      _processMsgReceived,
+      (error) => print(error.toString()), 
+      serverPort: _serverPort
     );
-
-    serviceServer = WifiServer(v, listener)..listen(_serverPort);
   }
 
   void _connect(int remotePort) {
-    ServiceMessageListener listener = ServiceMessageListener(
-      onMessageReceived: (MessageAdHoc message) {
-        _processMsgReceived(message);
-      },
-
-      onConnectionClosed: (String remoteAddress) {
-        connectionClosed(_mapAddrMac[remoteAddress]);
-        _mapAddrMac.remove(remoteAddress);
-      },
-
-      onConnection: (String remoteAddress) { },
-  
-      onConnectionFailed: (Exception exception) {
-        listenerApp.onConnectionFailed(exception);
-      },
-
-      onMsgException: (Exception exception) {
-        listenerApp.processMsgException(exception);
-      }
-    );
-
-    final WifiClient wifiClient = WifiClient(
-      v, remotePort, _groupOwnerAddr, attempts, timeOut, listener
+    final wifiClient = WifiClient(
+      v, remotePort, _groupOwnerAddr, attempts, timeOut
     );
 
     wifiClient.connectListener = (String remoteAddress) {
@@ -220,7 +181,11 @@ class WrapperWifi extends WrapperConnOriented {
       ));
     };
 
-    wifiClient.connect();
+    wifiClient
+      ..connect()
+      ..listen(
+        _processMsgReceived, (error) => print(error.toString())
+      );
   }
 
   void _processMsgReceived(MessageAdHoc message) {
