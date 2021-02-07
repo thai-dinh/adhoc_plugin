@@ -35,7 +35,7 @@ class BlePlugin {
     _wrapper.discovery((event) {
       if (event.type == Service.DEVICE_DISCOVERED) {
         BleAdHocDevice device = event.payload as BleAdHocDevice;
-        print('Device ${device.deviceName} found');
+        print('Device ${device.name} found');
       } else if (event.type == Service.DISCOVERY_END) {
         HashMap<String, AdHocDevice> discoveredDevices = 
           event.payload as HashMap<String, AdHocDevice>;

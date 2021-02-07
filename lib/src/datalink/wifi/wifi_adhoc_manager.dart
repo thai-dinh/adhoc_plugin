@@ -68,10 +68,7 @@ class WifiAdHocManager {
 
     _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((event) {
       event.devices.forEach((device) {
-        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(
-          device, device.deviceName, device.deviceAddress
-        );
-
+        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
         _mapMacDevice.putIfAbsent(device.deviceAddress, () => wifiAdHocDevice);
 
         if (!_mapMacDevice.containsKey(device.deviceAddress)) {

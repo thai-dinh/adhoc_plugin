@@ -22,9 +22,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   HashMap<String, AdHocDevice> _mapAddrDevices;
 
   WrapperConnOriented(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice,
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
     ListenerApp listenerApp
-  ) : super(verbose, config, mapAddressDevice, listenerApp) {
+  ) : super(verbose, config, mapMacDevices, listenerApp) {
     this.neighbors = Neighbors();
     this._mapAddrDevices = HashMap();
     this.mapAddrClient = HashMap();
@@ -77,7 +77,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   void receivedPeerMessage(Header header, ServiceClient serviceClient) {
       AdHocDevice adHocDevice = AdHocDevice(
-        deviceName: header.name,
+        name: header.name,
         label: header.label,
         type: type
       );
@@ -138,7 +138,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
         Header header = Header(
           messageType: AbstractWrapper.DISCONNECT_BROADCAST,
           label: label,
-          name: adHocDevice.deviceName,
+          name: adHocDevice.name,
           deviceType: adHocDevice.type
         );
 

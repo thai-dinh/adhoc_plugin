@@ -12,17 +12,19 @@ class Header {
   String _label;
   String _name;
   String _address;
-  String _macAddress;
+  String _mac;
+  String _ulid;
 
   Header({
     @required int messageType, @required String label, @required String name,
-    String address = '', String macAddress = '', int deviceType
+    String address = '', String mac = '', String ulid = '', int deviceType
   }) {
     this._messageType = messageType;
     this._label = Utils.checkString(label);
     this._name = Utils.checkString(name);
     this._address = Utils.checkString(address);
-    this._macAddress = Utils.checkString(macAddress);
+    this._mac = Utils.checkString(mac);
+    this._ulid = Utils.checkString(ulid);
     this._deviceType = deviceType;
   }
 
@@ -30,9 +32,9 @@ class Header {
 
   set messageType(int messageType) => this._messageType = messageType;
 
-  int get messageType => _messageType;
-
   int get deviceType => _deviceType;
+
+  int get messageType => _messageType;
 
   String get label => _label;
 
@@ -40,7 +42,9 @@ class Header {
 
   String get address => _address;
 
-  String get macAddress => _macAddress;
+  String get mac => _mac;
+
+  String get ulid => _ulid;
 
   Map<String, dynamic> toJson() => _$HeaderToJson(this);
 
@@ -51,7 +55,8 @@ class Header {
               ', label=' + _label +
               ', name=' + _name +
               ', address=' + _address +
-              ', macAddress=' + _macAddress +
+              ', mac=' + mac +
+              ', ulid=' + _ulid +
               ', deviceType=' + _deviceType.toString() + 
             '}';
   }

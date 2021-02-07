@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -37,14 +39,21 @@ class BleServer extends ServiceServer {
 
     _conStreamSub = _chConnect.receiveBroadcastStream()
       .cast<Map<String, Object>>()
-      .listen((event) {
-        String macAddress = event['macAddress'] as String;
-        if (event['state'] == Utils.BLE_STATE_CONNECTED) {
-          addActiveConnection(macAddress);
-          onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, macAddress));
-        } else if (activeConnections.contains(macAddress)) {
-          removeInactiveConnection(macAddress);
-          onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, macAddress));
+      .listen((map) {
+        switch (map['type']) {
+          case BleUtils.ULID_IDENTIFIER:
+          Identifier id = Identifier(mac: map['macAddress'], ulid: map['ulid']);
+            addActiveConnection(id);
+            onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, id));
+            break;
+
+          case BleUtils.CONNECTION_STATUS:
+            Identifier id = Identifier(mac: map['macAddress']);
+            if (map['state'] == BleUtils.BLE_STATE_DISCONNECTED) {
+              removeInactiveConnection(id);
+              onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, id));
+            }
+            break;
         }
       },
       onError: onError
@@ -88,9 +97,9 @@ class BleServer extends ServiceServer {
     state = Service.STATE_NONE;
   }
 
-  void send(MessageAdHoc message, String address) {
+  void send(MessageAdHoc message, Identifier id) {
     if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
 
-    BleAdHocManager.serverSendMessage(message, address);
+    BleAdHocManager.serverSendMessage(message, id);
   }
 }

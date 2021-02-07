@@ -7,6 +7,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -66,7 +67,7 @@ class BleAdHocManager {
     _mapMacDevice.clear();
 
     _subscription = _reactiveBle.scanForDevices(
-      withServices: [Uuid.parse(BleUtils.ADHOC_SERVICE_UUID)],
+      withServices: [Uuid.parse(BleUtils.SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
     ).listen((device) {
       BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
@@ -151,9 +152,10 @@ class BleAdHocManager {
 
   static void closeGattServer() => _channel.invokeMethod('closeGattServer');
 
-  static void serverSendMessage(MessageAdHoc message, String address) {
+  static void serverSendMessage(MessageAdHoc message, Identifier id) {
     _channel.invokeMethod('serverSendMessage', <String, String>{
-      'address': address,
+      'mac': id.mac,
+      'ulid': id.ulid,
       'message': json.encode(message.toJson()),
     });
   }

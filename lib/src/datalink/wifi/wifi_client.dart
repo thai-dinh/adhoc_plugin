@@ -13,10 +13,11 @@ import 'package:flutter_p2p/flutter_p2p.dart';
 
 class WifiClient extends ServiceClient {
   StreamSubscription<dynamic> _messageStreamSub;
-  void Function(String) _connectListener;
   String _remoteAddress;
   P2pSocket _socket;
   int _port;
+
+  void Function(String) _connectListener;
 
   WifiClient(
     bool verbose, this._port, this._remoteAddress, int attempts, int timeOut,

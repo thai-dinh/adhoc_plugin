@@ -8,16 +8,16 @@ class BleAdHocDevice extends AdHocDevice {
   int mtu;
 
   BleAdHocDevice(DiscoveredDevice device) : super(
-    deviceName: device.name,
-    macAddress: device.id,
+    name: device.name,
+    mac: device.id,
     type: Service.BLUETOOTHLE,
   ) {
     this.mtu = BleUtils.MIN_MTU;
   }
 
   BleAdHocDevice.fromMap(Map map) : super(
-    deviceName: map['deviceName'],
-    macAddress: map['macAddress'], 
+    name: map['deviceName'],
+    mac: map['macAddress'], 
     type: Service.BLUETOOTHLE
   ) {
     this.mtu = BleUtils.MIN_MTU;
@@ -28,8 +28,8 @@ class BleAdHocDevice extends AdHocDevice {
     return 'BleAdHocDevice{' +
               'mtu=' + mtu.toString() +
               ', label=' + label +
-              ', deviceName' + deviceName +
-              ', macAddress' + macAddress.toString() +
+              ', name' + name +
+              ', mac' + mac.toString() +
               ', type' + type.toString() +
            '}';
   }

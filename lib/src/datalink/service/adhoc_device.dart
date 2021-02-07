@@ -1,19 +1,21 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
+import 'package:flutter/material.dart';
 
 
 class AdHocDevice {
   bool directedConnected;
   String label;
-  String deviceName;
-  String macAddress;
+  String name;
+  String ulid;
+  String mac;
   int type;
 
   AdHocDevice({
-    String deviceName, this.label, this.macAddress, this.type,
-    this.directedConnected
+    @required String name, @required this.type, this.mac,
+    this.label = '', this.ulid = '', this.directedConnected = false
   }) {
-    this.deviceName = Utils.checkString(deviceName);
+    this.name = Utils.checkString(name);
   }
 
   String typeAsString() {
@@ -31,8 +33,9 @@ class AdHocDevice {
   String toString() {
     return 'AdHocDevice{' +
               'label=' + label +
-              ', deviceName=' + deviceName +
-              ', macAddress=' + macAddress.toString() +
+              ', name=' + name +
+              ', ulid=' + ulid +
+              ', mac=' + mac +
               ', type=' + type.toString() +
               ', directedConnected=' + directedConnected.toString() +
            '}';

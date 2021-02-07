@@ -17,10 +17,12 @@ class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate> _connecStreamSub;
   StreamSubscription<List<int>> _msgStreamSub;
   FlutterReactiveBle _reactiveBle;
-  Function _connectListener;
   BleAdHocDevice _device;
   Uuid _serviceUuid;
   Uuid _charMessageUuid;
+  Uuid _identifierUuid;
+
+  void Function(String) _connectListener;
 
   BleClient(
     bool verbose, this._device, int attempts, int timeOut,
@@ -30,13 +32,14 @@ class BleClient extends ServiceClient {
     verbose, Service.STATE_NONE, attempts, timeOut, onEvent, onError
   ) {
     this._reactiveBle = FlutterReactiveBle();
-    this._serviceUuid = Uuid.parse(BleUtils.ADHOC_SERVICE_UUID);
-    this._charMessageUuid = Uuid.parse(BleUtils.ADHOC_CHARACTERISTIC_UUID);
+    this._serviceUuid = Uuid.parse(BleUtils.SERVICE_UUID);
+    this._charMessageUuid = Uuid.parse(BleUtils.CHARACTERISTIC_UUID);
+    this._identifierUuid = Uuid.parse(BleUtils.IDENTIFIER_UUID);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  set connectListener(Function connectListener) {
+  set connectListener(void Function(String) connectListener) {
     this._connectListener = connectListener;
   }
 
@@ -48,7 +51,7 @@ class BleClient extends ServiceClient {
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _charMessageUuid,
-      deviceId: _device.macAddress
+      deviceId: _device.mac
     );
 
     _msgStreamSub = _reactiveBle.subscribeToCharacteristic(characteristic)
@@ -75,25 +78,32 @@ class BleClient extends ServiceClient {
     if (_connecStreamSub != null)
       _connecStreamSub.cancel();
 
-    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.macAddress));
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.mac));
   }
 
-  Future<void> send(MessageAdHoc message) async {
+  Future<void> send(MessageAdHoc message, {bool type = true}) async {
     if (v) Utils.log(ServiceClient.TAG, 'Client: send()');
 
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');
 
-    List<int> msgAsListInteger;
-    List<Uint8List> msgAsListBytes = List.empty(growable: true);
+    final characteristic = QualifiedCharacteristic(
+      serviceId: _serviceUuid,
+      characteristicId: type ? _identifierUuid : _charMessageUuid,
+      deviceId: _device.mac
+    );
+
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
     int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
     int index = BleUtils.MESSAGE_BEGIN;
 
     while (length > mtu) {
-      msgAsListInteger = 
-        [index % BleUtils.UINT8_SIZE] + msg.sublist(start, end).toList();
-      msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
+      Uint8List chunk = msg.sublist(start, end)
+        ..insert(0, index % BleUtils.UINT8_SIZE);
+
+      await _reactiveBle.writeCharacteristicWithResponse(
+        characteristic, value: chunk.toList()
+      );
 
       index++;
       start += mtu;
@@ -101,19 +111,19 @@ class BleClient extends ServiceClient {
       length -= mtu;
     }
 
-    msgAsListInteger = 
-      [BleUtils.MESSAGE_END] + msg.sublist(start, start + length).toList();
-    msgAsListBytes.add(Uint8List.fromList(msgAsListInteger));
+    Uint8List chunk = msg.sublist(start, start + length)
+      ..insert(0, index % BleUtils.UINT8_SIZE);
 
-    while (msgAsListBytes.length > 0)
-      await _writeValue(msgAsListBytes.removeAt(0));
+    await _reactiveBle.writeCharacteristicWithResponse(
+      characteristic, value: chunk.toList()
+    );
   }
 
 /*------------------------------Private methods-------------------------------*/
 
   Future<void> _requestMtu() async {
     _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.macAddress, 
+      deviceId: _device.mac, 
       mtu: BleUtils.MAX_MTU
     );
   }
@@ -135,26 +145,26 @@ class BleClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (v) Utils.log(ServiceClient.TAG, 'Connect to ${_device.macAddress}');
+    if (v) Utils.log(ServiceClient.TAG, 'Connect to ${_device.mac}');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       _connecStreamSub = _reactiveBle.connectToDevice(
-        id: _device.macAddress,
+        id: _device.mac,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
       ).listen((event) {
         switch (event.connectionState) {
           case DeviceConnectionState.connected:
             if (v)
-              Utils.log(ServiceClient.TAG, 'Connected to ${_device.macAddress}');
+              Utils.log(ServiceClient.TAG, 'Connected to ${_device.mac}');
             _requestMtu();
 
             onEvent(DiscoveryEvent(
-              Service.CONNECTION_PERFORMED, _device.macAddress
+              Service.CONNECTION_PERFORMED, _device.mac
             ));
 
             if (_connectListener != null)
-              _connectListener();
+              _connectListener(_device.mac);
 
             state = Service.STATE_CONNECTED;
             break;
@@ -168,17 +178,5 @@ class BleClient extends ServiceClient {
         }
       }, onError: onError); 
     }
-  }
-
-  Future<void> _writeValue(Uint8List values) async {
-    final characteristic = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _charMessageUuid,
-      deviceId: _device.macAddress
-    );
-
-    await _reactiveBle.writeCharacteristicWithResponse(
-      characteristic, value: values.toList()
-    );
   }
 }

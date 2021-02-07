@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -51,7 +52,7 @@ class WifiServer extends ServiceServer {
     state = Service.STATE_NONE;
   }
 
-  void send(MessageAdHoc message, String address) {
+  void send(MessageAdHoc message, Identifier id) {
     if (v) Utils.log(ServiceClient.TAG, 'Server: send()');
 
     _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));

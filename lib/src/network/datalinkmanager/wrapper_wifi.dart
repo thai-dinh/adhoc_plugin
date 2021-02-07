@@ -86,13 +86,13 @@ class WrapperWifi extends WrapperConnOriented {
 
       if (event.type == Service.DEVICE_DISCOVERED) {
         WifiAdHocDevice device = event.payload as WifiAdHocDevice;
-        mapMacDevices.putIfAbsent(device.macAddress, () => device);
+        mapMacDevices.putIfAbsent(device.mac, () => device);
       } else if (event.type == Service.DISCOVERY_END) {
         HashMap<String, AdHocDevice> discoveredDevices = 
           event.payload as HashMap<String, AdHocDevice>;
 
-          discoveredDevices.forEach((macAddress, device) {
-            mapMacDevices.putIfAbsent(macAddress, () => device);
+          discoveredDevices.forEach((mac, device) {
+            mapMacDevices.putIfAbsent(mac, () => device);
           });
 
           discoveryCompleted = true;
@@ -104,9 +104,9 @@ class WrapperWifi extends WrapperConnOriented {
   void connect(int attempts, AdHocDevice adHocDevice) async {
     this.attempts = attempts;
     
-    if (!(await _wifiManager.connect(adHocDevice.macAddress))) {
-      throw DeviceFailureException(adHocDevice.deviceName + '(' + 
-        adHocDevice.macAddress + ')' + ': Connection failed'
+    if (!(await _wifiManager.connect(adHocDevice.mac))) {
+      throw DeviceFailureException(
+        adHocDevice.name + '(' + adHocDevice.mac + ')' + ': Connection failed'
       );
     }
   }
@@ -203,7 +203,7 @@ class WrapperWifi extends WrapperConnOriented {
         ServiceClient serviceClient = mapAddrClient[message.header.address];
         if (serviceClient != null) {
           _mapAddrMac.putIfAbsent(
-            message.header.address, () => message.header.macAddress
+            message.header.address, () => message.header.mac
           );
 
           receivedPeerMessage(message.header, serviceClient);
@@ -237,9 +237,9 @@ class WrapperWifi extends WrapperConnOriented {
           Header header = message.header;
 
           listenerApp.onConnectionClosed(AdHocDevice(
-            deviceName: header.name,
+            name: header.name,
             label: header.label,
-            macAddress: header.macAddress,
+            mac: header.mac,
             type: type,
             directedConnected: false
           ));
@@ -251,9 +251,9 @@ class WrapperWifi extends WrapperConnOriented {
 
         listenerApp.onReceivedData(
           AdHocDevice(
-            deviceName: header.name,
+            name: header.name,
             label: header.label,
-            macAddress: header.macAddress,
+            mac: header.mac,
             type: type,
           ),
           message.pdu
