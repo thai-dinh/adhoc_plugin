@@ -150,7 +150,6 @@ class WrapperWifi extends WrapperConnOriented {
       case Service.MAC_EXCHANGE_SERVER:
         MessageAdHoc message = event.payload as MessageAdHoc;
         ownMac = message.pdu as String;
-        serviceServer.sendMacAddress(message.header.mac);
         break;
 
       case Service.MAC_EXCHANGE_CLIENT:

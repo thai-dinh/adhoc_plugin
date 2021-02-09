@@ -37,19 +37,28 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   @override
   Future<void> init(bool verbose, [Config config]) async {
     if (await BleAdHocManager.isEnabled()) {
-      this._bleAdHocManager = BleAdHocManager(verbose);
-      this.ownName = await BleAdHocManager.getCurrentName();
-      this._listenServer();
+      _bleAdHocManager = BleAdHocManager(verbose);
+      ownName = await BleAdHocManager.getCurrentName();
+      _listenServer();
+
+      enabled = true;
     }
   }
 
   @override
-  void enable(int duration, ListenerAdapter listenerAdapter) {
-    _bleAdHocManager = BleAdHocManager(v);
-    _bleAdHocManager.enable();
+  void enable(int duration, ListenerAdapter listenerAdapter) async {
+    if (!enabled) {
+      _bleAdHocManager = BleAdHocManager(v);
+      _bleAdHocManager.enable();
+      _bleAdHocManager.onEnableBluetooth(listenerAdapter);
+
+      ownName = await BleAdHocManager.getCurrentName();
+      _listenServer();
+
+      enabled = true;
+    }
+
     _bleAdHocManager.enableDiscovery(duration);
-    _bleAdHocManager.onEnableBluetooth(listenerAdapter);
-    enabled = true;
   }
 
   @override
@@ -58,6 +67,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
     _bleAdHocManager.disable();
     _bleAdHocManager = null;
+
     enabled = false;
   }
 
@@ -133,16 +143,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   void _onEvent(DiscoveryEvent event) {
     switch (event.type) {
-      case Service.MAC_EXCHANGE_SERVER:
-        MessageAdHoc message = event.payload as MessageAdHoc;
-        ownMac = message.pdu as String;
-        serviceServer.sendMacAddress(message.header.mac);
-        break;
-
-      case Service.MAC_EXCHANGE_CLIENT:
-        ownMac = event.payload as String;
-        break;
-
       case Service.MESSAGE_RECEIVED:
         _processMsgReceived(event.payload as MessageAdHoc);
         break;
@@ -167,8 +167,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       v, bleAdHocDevice, attempts, timeOut, _onEvent, _onError
     );
 
-    bleClient.connectListener = (String remoteAddress) async{
-      await bleClient.sendMacAddress(remoteAddress);
+    bleClient.connectListener = (String remoteAddress) async {
       await bleClient.send(MessageAdHoc(
         Header(
           messageType: AbstractWrapper.CONNECT_SERVER, 
@@ -176,6 +175,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           name: ownName,
           mac: ownMac
         ),
+        remoteAddress
       ));
     };
 
@@ -185,6 +185,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
+        ownMac = message.pdu as String;
+        print(ownMac);
+
         serviceServer.send(
           MessageAdHoc(Header(
             messageType: AbstractWrapper.CONNECT_CLIENT, 
@@ -197,6 +200,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
+        ownMac = message.pdu as String;
+        print(ownMac);
+
         ServiceClient serviceClient = mapAddrClient[message.header.address];
         if (serviceClient != null)
           receivedPeerMessage(message.header, serviceClient);

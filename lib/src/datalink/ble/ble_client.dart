@@ -16,12 +16,10 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate> _connecStreamSub;
   StreamSubscription<List<int>> _msgStreamSub;
-  StreamSubscription<List<int>> _idStreamSub;
   FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
   Uuid _serviceUuid;
-  Uuid _charMessageUuid;
-  Uuid _identifierUuid;
+  Uuid _characteristicUuid;
 
   void Function(String) _connectListener;
 
@@ -34,8 +32,7 @@ class BleClient extends ServiceClient {
   ) {
     this._reactiveBle = FlutterReactiveBle();
     this._serviceUuid = Uuid.parse(BleUtils.SERVICE_UUID);
-    this._charMessageUuid = Uuid.parse(BleUtils.CHARACTERISTIC_UUID);
-    this._identifierUuid = Uuid.parse(BleUtils.IDENTIFIER_UUID);
+    this._characteristicUuid = Uuid.parse(BleUtils.CHARACTERISTIC_UUID);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -51,7 +48,7 @@ class BleClient extends ServiceClient {
 
     final msgCharacteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
-      characteristicId: _charMessageUuid,
+      characteristicId: _characteristicUuid,
       deviceId: _device.mac
     );
 
@@ -64,23 +61,6 @@ class BleClient extends ServiceClient {
       },
       onError: onError
     );
-
-    final idCharacteristic = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _identifierUuid,
-      deviceId: _device.mac
-    );
-
-    _idStreamSub = _reactiveBle.subscribeToCharacteristic(idCharacteristic)
-      .listen((List<int> rawData) {
-        String ownMac = Utf8Decoder().convert(Uint8List.fromList(rawData));
-        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_CLIENT, ownMac));
-
-        _idStreamSub.cancel();
-        _idStreamSub = null;
-      },
-      onError: onError
-    );
   }
 
   void stopListening() {
@@ -88,9 +68,6 @@ class BleClient extends ServiceClient {
 
     if (_msgStreamSub != null)
       _msgStreamSub.cancel();
-
-    if (_idStreamSub != null)
-      _idStreamSub.cancel();
   }
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
@@ -110,22 +87,29 @@ class BleClient extends ServiceClient {
 
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
-      characteristicId: _charMessageUuid,
+      characteristicId: _characteristicUuid,
       deviceId: _device.mac
     );
 
-    await _send(json.encode(message.toJson()), characteristic);
-  }
+    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
+    int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
+    int index = BleUtils.MESSAGE_BEGIN;
 
-  Future<void> sendMacAddress(String mac) async {
-    final characteristic = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _identifierUuid,
-      deviceId: _device.mac
-    );
+    while (length > mtu) {
+      chunk = msg.sublist(start, end);
+      await _reactiveBle.writeCharacteristicWithResponse(
+        characteristic, value: [index % BleUtils.UINT8_SIZE] + chunk.toList()
+      );
 
+      index++;
+      start += mtu;
+      end += mtu;
+      length -= mtu;
+    }
+
+    chunk = msg.sublist(start, start + length);
     await _reactiveBle.writeCharacteristicWithResponse(
-      characteristic, value: Utf8Encoder().convert(mac).toList()
+      characteristic, value: [BleUtils.MESSAGE_END] + chunk.toList()
     );
   }
 
@@ -188,28 +172,5 @@ class BleClient extends ServiceClient {
         }
       }, onError: onError); 
     }
-  }
-
-  Future<void> _send(String data, QualifiedCharacteristic qChar) async {
-    Uint8List msg = Utf8Encoder().convert(data), chunk;
-    int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
-    int index = BleUtils.MESSAGE_BEGIN;
-
-    while (length > mtu) {
-      chunk = msg.sublist(start, end);
-      await _reactiveBle.writeCharacteristicWithResponse(
-        qChar, value: [index % BleUtils.UINT8_SIZE] + chunk.toList()
-      );
-
-      index++;
-      start += mtu;
-      end += mtu;
-      length -= mtu;
-    }
-
-    chunk = msg.sublist(start, start + length);
-    await _reactiveBle.writeCharacteristicWithResponse(
-      qChar, value: [BleUtils.MESSAGE_END] + chunk.toList()
-    );
   }
 }

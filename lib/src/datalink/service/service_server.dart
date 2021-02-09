@@ -35,6 +35,4 @@ abstract class ServiceServer extends Service {
   }
 
   void send(MessageAdHoc message, String mac);
-
-  void sendMacAddress(String mac);
 }

@@ -57,22 +57,19 @@ class BleServer extends ServiceServer {
 
     _msgStreamSub = _chMessage.receiveBroadcastStream()
       .listen((map) {
-        switch (map['type']) {
-          case BleUtils.IDENTIFIER:
-            MessageAdHoc message = MessageAdHoc(
-              Header(mac: map['remoteAddress'] as String),
-              map['ownAddress'] as String
-            );
-
-            onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
-            break;
-
-          case BleUtils.MESSAGE:
-            onEvent(DiscoveryEvent(
-              Service.MESSAGE_RECEIVED, _processMessage(map['message'])
-            ));
-            break;
+        MessageAdHoc message = _processMessage(map['message']);
+        if (message.header.mac.compareTo('') == 0) {
+          message.header = Header(
+            messageType: message.header.messageType,
+            label: message.header.label,
+            name: message.header.name,
+            address: message.header.address,
+            mac: map['macAddress'],
+            deviceType: message.header.deviceType
+          );
         }
+
+        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
       },
       onError: onError
     );
@@ -101,12 +98,6 @@ class BleServer extends ServiceServer {
     if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
 
     BleAdHocManager.gattServerSendMessage(message, mac);
-  }
-
-  void sendMacAddress(String mac) {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: sendMacAddress()');
-
-    BleAdHocManager.gattServerSendMacAddress(mac);
   }
 
 /*------------------------------Private methods-------------------------------*/

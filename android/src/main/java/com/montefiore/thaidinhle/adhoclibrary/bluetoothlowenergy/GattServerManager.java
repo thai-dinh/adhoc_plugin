@@ -32,8 +32,7 @@ public class GattServerManager {
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
 
     private boolean verbose;
-    private BluetoothGattCharacteristic msgCharacteristic;
-    private BluetoothGattCharacteristic idCharacteristic;
+    private BluetoothGattCharacteristic characteristic;
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
     private HashMap<String, ArrayList<byte[]>> data;
@@ -93,15 +92,8 @@ public class GattServerManager {
         this.bluetoothManager = bluetoothManager;
         gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
-        msgCharacteristic = new BluetoothGattCharacteristic(
+        characteristic = new BluetoothGattCharacteristic(
             UUID.fromString(BluetoothLowEnergyUtils.CHARACTERISTIC_UUID),
-            BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | 
-            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE
-        );
-
-        idCharacteristic = new BluetoothGattCharacteristic(
-            UUID.fromString(BluetoothLowEnergyUtils.IDENTIFIER_UUID),
             BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | 
             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE
@@ -112,8 +104,7 @@ public class GattServerManager {
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         );
 
-        service.addCharacteristic(msgCharacteristic);
-        service.addCharacteristic(idCharacteristic);
+        service.addCharacteristic(characteristic);
 
         gattServer.addService(service);
     }
@@ -135,29 +126,18 @@ public class GattServerManager {
             if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
             gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
 
-            if (characteristic.getUuid().compareTo(UUID.fromString(BluetoothLowEnergyUtils.IDENTIFIER_UUID)) == 0) {
-                String mac = new String(value, StandardCharsets.UTF_8);
+            String address = device.getAddress();
+            ArrayList<byte[]> received = data.get(address);
+            received.add(value);
+            data.put(address, received);
 
+            if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
-                mapInfoValue.put("type", BluetoothLowEnergyUtils.IDENTIFIER);
-                mapInfoValue.put("remoteAddress", device.getAddress());
-                mapInfoValue.put("ownAddress", mac);
+                mapInfoValue.put("message", data.get(address));
+                mapInfoValue.put("macAddress", address);
 
                 eventMessageSink.success(mapInfoValue);
-            } else {
-                String address = device.getAddress();
-                ArrayList<byte[]> received = data.get(address);
-                received.add(value);
-                data.put(address, received);
-    
-                if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
-                    HashMap<String, Object> mapInfoValue = new HashMap<>();
-                    mapInfoValue.put("type", BluetoothLowEnergyUtils.MESSAGE);
-                    mapInfoValue.put("message", data.get(address));
-
-                    eventMessageSink.success(mapInfoValue);
-                    data.put(address, new ArrayList<byte[]>());
-                }
+                data.put(address, new ArrayList<byte[]>());
             }
         }
 
@@ -184,17 +164,12 @@ public class GattServerManager {
         }
     };
 
-    public void writeToCharacteristic(String message, String mac, boolean msg) {
+    public void writeToCharacteristic(String message, String mac) {
         if (verbose) Log.d(TAG, "writeToCharacteristic()");
 
         BluetoothDevice device = mapMacDevice.get(mac);
-        if (msg == true) {
-            msgCharacteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
-            gattServer.notifyCharacteristicChanged(device, msgCharacteristic, false);
-        } else {
-            idCharacteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
-            gattServer.notifyCharacteristicChanged(device, idCharacteristic, false);
-        }
+        characteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
+        gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {

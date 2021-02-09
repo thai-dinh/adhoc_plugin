@@ -158,10 +158,6 @@ class BleAdHocManager {
     });
   }
 
-  static void gattServerSendMacAddress(String mac) {
-    _channel.invokeMethod('sendMacAddress', mac);
-  }
-
   static Future<String> getCurrentName() async {
     return await _channel.invokeMethod('getCurrentName');
   }

@@ -34,7 +34,7 @@ abstract class AbstractWrapper {
   Set<String> setFloodEvents;
 
   AbstractWrapper(this.v, Config config, this.mapMacDevices, this.listenerApp) {
-    this.enabled = true;
+    this.enabled = false;
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
     this.timeOut = config.timeOut;
