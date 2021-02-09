@@ -6,6 +6,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleAdHocDevice extends AdHocDevice {
   int mtu;
+  String _uuid;
 
   BleAdHocDevice(DiscoveredDevice device) : super(
     name: device.name,
@@ -13,6 +14,8 @@ class BleAdHocDevice extends AdHocDevice {
     type: Service.BLUETOOTHLE,
   ) {
     this.mtu = BleUtils.MIN_MTU;
+    this._uuid = 
+      BleUtils.BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '');
   }
 
   BleAdHocDevice.fromMap(Map map) : super(
@@ -21,12 +24,17 @@ class BleAdHocDevice extends AdHocDevice {
     type: Service.BLUETOOTHLE
   ) {
     this.mtu = BleUtils.MIN_MTU;
+    this._uuid = BleUtils.BLUETOOTHLE_UUID + 
+      map['macAddress'].replaceAll(new RegExp(':'), '').toLowerCase();
   }
+
+  String get uuid => _uuid;
 
   @override
   String toString() {
     return 'BleAdHocDevice{' +
               'mtu=' + mtu.toString() +
+              ', uuid=' + uuid +
               ', label=' + label +
               ', name' + name +
               ', mac' + mac.toString() +

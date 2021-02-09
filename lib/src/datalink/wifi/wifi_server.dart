@@ -35,11 +35,7 @@ class WifiServer extends ServiceServer {
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      if (message.header.messageType == Service.MAC_EXCHANGE_SERVER) {
-        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
-      } else {
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-      }
+      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
     }, onError: onError);
 
     state = Service.STATE_LISTENING;
@@ -62,13 +58,7 @@ class WifiServer extends ServiceServer {
     await _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
   }
 
-  void sendMacAddress(String mac) {
-    if (v) Utils.log(ServiceClient.TAG, 'Server: sendMacAddress()');
-
-    MessageAdHoc message = MessageAdHoc(
-      Header(messageType: Service.MAC_EXCHANGE_CLIENT), mac
-    );
-
-    send(message, mac);
-  }
+  void cancelConnection(String mac) {
+    
+  } 
 }

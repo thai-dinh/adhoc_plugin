@@ -7,15 +7,16 @@ import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_client.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
 
 
@@ -23,6 +24,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   static const String TAG = "[WrapperBle]";
 
   BleAdHocManager _bleAdHocManager;
+  String _ownStringUUID;
 
   WrapperBluetoothLE(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
@@ -167,16 +169,24 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       v, bleAdHocDevice, attempts, timeOut, _onEvent, _onError
     );
 
-    bleClient.connectListener = (String remoteAddress) async {
+    bleClient.connectListener = (String remoteAddress, String uuid) async {
       await bleClient.send(MessageAdHoc(
         Header(
           messageType: AbstractWrapper.CONNECT_SERVER, 
           label: label,
           name: ownName,
-          mac: ownMac
+          mac: ownMac,
+          address: _ownStringUUID
         ),
         remoteAddress
       ));
+
+      mapAddrNetwork.putIfAbsent(
+        uuid,
+        () => NetworkManager(
+          remoteAddress, bleClient.send, bleClient.disconnect
+        )
+      );
     };
 
     bleClient..connect()..listen();
@@ -185,27 +195,42 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
+        String mac = message.header.mac;
         ownMac = message.pdu as String;
-        print(ownMac);
+        _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
+          ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
         serviceServer.send(
-          MessageAdHoc(Header(
-            messageType: AbstractWrapper.CONNECT_CLIENT, 
-            label: label, 
-            name: ownName,
-            mac: ownMac,
-          )),
-          message.header.mac
+          MessageAdHoc(
+            Header(
+              messageType: AbstractWrapper.CONNECT_CLIENT, 
+              label: label, 
+              name: ownName,
+              address: _ownStringUUID,
+              mac: ownMac,
+            ),
+            mac
+          ),
+          mac
+        );
+
+        receivedPeerMessage(
+          message.header, 
+          NetworkManager(
+            mac,
+            (MessageAdHoc msg) => serviceServer.send(msg, mac),
+            () => serviceServer.cancelConnection(mac)
+          )
         );
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
         ownMac = message.pdu as String;
-        print(ownMac);
+        _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
+          ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
-        ServiceClient serviceClient = mapAddrClient[message.header.address];
-        if (serviceClient != null)
-          receivedPeerMessage(message.header, serviceClient);
+        NetworkManager network = mapAddrNetwork[message.header.address];
+        receivedPeerMessage(message.header, network);
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
@@ -234,8 +259,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
           Header header = message.header;
           AdHocDevice adHocDevice = AdHocDevice(
-            name: header.name,
             label: header.label,
+            name: header.name,
+            mac: header.mac,
             type: type, 
             directedConnected: false
           );

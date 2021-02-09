@@ -13,8 +13,6 @@ abstract class Service {
   static const STATE_CONNECTING = 2;
   static const STATE_CONNECTED = 3;
 
-  static const MAC_EXCHANGE_SERVER = 4;
-  static const MAC_EXCHANGE_CLIENT = 5;
   static const MESSAGE_RECEIVED = 6;
   static const DEVICE_DISCOVERED = 7;
   static const DISCOVERY_STARTED = 8;

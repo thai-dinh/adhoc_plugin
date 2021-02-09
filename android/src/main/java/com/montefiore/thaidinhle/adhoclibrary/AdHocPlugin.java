@@ -66,6 +66,9 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         final String message = call.argument("message");
         gattServerManager.writeToCharacteristic(message, mac);
         break;
+      case "cancelConnection":
+        final String macAddress = call.arguments();
+        gattServerManager.cancelConnection(macAddress);
       case "getCurrentName":
         result.success(BluetoothLowEnergyUtils.getCurrentName());
         break;

@@ -21,7 +21,7 @@ class BleClient extends ServiceClient {
   Uuid _serviceUuid;
   Uuid _characteristicUuid;
 
-  void Function(String) _connectListener;
+  void Function(String, String) _connectListener;
 
   BleClient(
     bool verbose, this._device, int attempts, int timeOut,
@@ -37,7 +37,7 @@ class BleClient extends ServiceClient {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  set connectListener(void Function(String) connectListener) {
+  set connectListener(void Function(String, String) connectListener) {
     this._connectListener = connectListener;
   }
 
@@ -146,19 +146,17 @@ class BleClient extends ServiceClient {
         id: _device.mac,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
-      ).listen((event) {
+      ).listen((event) async {
         switch (event.connectionState) {
           case DeviceConnectionState.connected:
             if (v)
               Utils.log(ServiceClient.TAG, 'Connected to ${_device.mac}');
-            _requestMtu();
+            await _requestMtu();
 
-            onEvent(DiscoveryEvent(
-              Service.CONNECTION_PERFORMED, _device.mac
-            ));
+            onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, _device.mac));
 
             if (_connectListener != null)
-              _connectListener(_device.mac);
+              _connectListener(_device.mac, _device.uuid);
 
             state = Service.STATE_CONNECTED;
             break;

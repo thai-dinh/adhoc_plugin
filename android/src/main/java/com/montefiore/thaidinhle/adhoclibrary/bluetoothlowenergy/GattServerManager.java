@@ -189,6 +189,12 @@ public class GattServerManager {
         return btDevices;
     }
 
+    public void cancelConnection(String mac) {
+        if (verbose) Log.d(TAG, "cancelConnection()");
+
+        gattServer.cancelConnection(mapMacDevice.get(mac));
+    }
+
     public void closeGattServer() {
         if (verbose) Log.d(TAG, "closeGattServer()");
 

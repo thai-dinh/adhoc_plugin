@@ -1,43 +1,43 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/datalink/service/service_client.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 
 
 class Neighbors {
+  HashMap<String, NetworkManager> _neighbors;
   HashMap<String, String> _mapLabelMac;
-  HashMap<String, ServiceClient>  _neighbors;
 
   Neighbors() {
-    this._mapLabelMac = HashMap();
     this._neighbors = HashMap();
+    this._mapLabelMac = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  HashMap<String, ServiceClient> get neighbors => _neighbors;
+  HashMap<String, NetworkManager> get neighbors => _neighbors;
 
   HashMap<String, String> get labelMac => _mapLabelMac;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void addNeighbors(String label, String mac, ServiceClient serviceClient) {
+  void addNeighbors(String label, String mac, NetworkManager network) {
+    _neighbors.putIfAbsent(label, () => network);
     _mapLabelMac.putIfAbsent(label, () => mac);
-    _neighbors.putIfAbsent(label, () => serviceClient);
   }
 
   void remove(String remoteLabel) {
     if (_neighbors.containsKey(remoteLabel)) {
-      _neighbors.remove(remoteLabel);
       _mapLabelMac.remove(remoteLabel);
+      _neighbors.remove(remoteLabel);
     }
   }
 
-  ServiceClient getNeighbor(String remoteLabel) {
+  NetworkManager getNeighbor(String remoteLabel) {
     return _neighbors.containsKey(remoteLabel) ? _neighbors[remoteLabel] : null;
   }
 
   void clear() {
-    _neighbors.clear();
     _mapLabelMac.clear();
+    _neighbors.clear();
   }
 }

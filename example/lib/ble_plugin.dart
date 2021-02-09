@@ -9,7 +9,6 @@ class BlePlugin {
 
   BlePlugin() {
     Config config = Config();
-    config.label = 'BLUETOOTHLE';
     _wrapper = WrapperBluetoothLE(true, config, HashMap(), _initListenerApp());
   }
 
@@ -54,6 +53,8 @@ class BlePlugin {
   }
 
   void stopListeningExample() => _wrapper.stopListening();
+
+  void disconnectAllExample() => _wrapper.disconnectAll();
 
 /*------------------------------Private methods-------------------------------*/
   

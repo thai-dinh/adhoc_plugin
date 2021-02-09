@@ -94,6 +94,12 @@ class BleServer extends ServiceServer {
     state = Service.STATE_NONE;
   }
 
+  void cancelConnection(String mac) {
+    if (v) Utils.log(ServiceServer.TAG, 'Server: cancelConnection()');
+
+    BleAdHocManager.cancelConnection(mac);
+  }
+
   void send(MessageAdHoc message, String mac) {
     if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
 

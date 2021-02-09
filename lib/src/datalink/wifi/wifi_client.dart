@@ -41,11 +41,7 @@ class WifiClient extends ServiceClient {
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      if (message.header.messageType == Service.MAC_EXCHANGE_SERVER) {
-        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
-      } else {
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-      }
+      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
     });
   }
 

@@ -34,5 +34,7 @@ abstract class ServiceServer extends Service {
     return _activeConnections.contains(mac);
   }
 
+  void cancelConnection(String mac);
+
   void send(MessageAdHoc message, String mac);
 }

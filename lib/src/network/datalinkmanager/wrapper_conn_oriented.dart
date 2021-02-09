@@ -4,30 +4,30 @@ import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/neighbors.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {
+  HashMap<String, AdHocDevice> _mapAddrDevices;
+
+  HashMap<String, NetworkManager> mapAddrNetwork;
   ServiceServer serviceServer;
   Neighbors neighbors;
   int attempts;
-
-  HashMap<String, ServiceClient> mapAddrClient;
-  HashMap<String, AdHocDevice> _mapAddrDevices;
 
   WrapperConnOriented(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
     ListenerApp listenerApp
   ) : super(verbose, config, mapMacDevices, listenerApp) {
-    this.neighbors = Neighbors();
     this._mapAddrDevices = HashMap();
-    this.mapAddrClient = HashMap();
+    this.mapAddrNetwork = HashMap();
+    this.neighbors = Neighbors();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -42,20 +42,20 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  bool isDirectNeighbors(String address) {
-    return neighbors.neighbors.containsKey(address);
+  bool isDirectNeighbors(String remoteLabel) {
+    return neighbors.neighbors.containsKey(remoteLabel);
   }
 
-  void sendMessage(MessageAdHoc message, String address) {
-    ServiceClient serviceClient = neighbors.getNeighbor(address);
-    if (serviceClient != null)
-      serviceClient.send(message);
+  void sendMessage(MessageAdHoc message, String remoteLabel) {
+    NetworkManager network = neighbors.getNeighbor(remoteLabel);
+    if (network != null)
+      network.sendMessage(message);
   }
 
   bool broadcast(MessageAdHoc message) {
     if (neighbors.neighbors.length > 0) {
-      for (ServiceClient serviceClient in neighbors.neighbors.values)
-        serviceClient.send(message);
+      for (NetworkManager network in neighbors.neighbors.values)
+        network.sendMessage(message);
       return true;
     }
 
@@ -64,9 +64,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   bool broadcastExcept(MessageAdHoc message, String excludedAddress) {
     if (neighbors.neighbors.length > 0) {
-      neighbors.neighbors.forEach((address, serviceClient) {
-        if (excludedAddress != address)
-          serviceClient.send(message);
+      neighbors.neighbors.forEach((remoteLabel, network) {
+        if (excludedAddress != remoteLabel)
+          network.sendMessage(message);
       });
 
       return true;
@@ -75,59 +75,63 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     return false;
   }
 
-  void receivedPeerMessage(Header header, ServiceClient serviceClient) {
-      AdHocDevice adHocDevice = AdHocDevice(
-        name: header.name,
-        label: header.label,
-        type: type
-      );
 
-      if (!neighbors.neighbors.containsKey(header.label)) {
-        neighbors.addNeighbors(header.label, null, serviceClient);
+  void receivedPeerMessage(Header header, NetworkManager network) {
+    AdHocDevice adHocDevice = AdHocDevice(
+      label: header.label,
+      name: header.name,
+      mac: header.mac,
+      type: type
+    );
 
-        listenerApp.onConnection(adHocDevice);
+    mapMacDevices.putIfAbsent(header.mac, () => adHocDevice);
 
-        setRemoteDevices.add(adHocDevice);
+    if (!neighbors.neighbors.containsKey(header.label)) {
+      neighbors.addNeighbors(header.label, header.mac, network);
 
-        if (connectionFlooding) {
-          String id = label + DateTime.now().millisecond.toString();
-          setFloodEvents.add(id);
+      listenerApp.onConnection(adHocDevice);
 
-          header.messageType = AbstractWrapper.CONNECT_BROADCAST;
-          broadcastExcept(MessageAdHoc(header, id), label);
-          sendMessage(
-            MessageAdHoc(header, FloodMsg(id, setRemoteDevices)),
-            header.label
-          );
-        }
+      setRemoteDevices.add(adHocDevice);
+
+      if (connectionFlooding) {
+        String id = label + DateTime.now().millisecond.toString();
+        setFloodEvents.add(id);
+
+        header.messageType = AbstractWrapper.CONNECT_BROADCAST;
+        broadcastExcept(MessageAdHoc(header, id), label);
+        sendMessage(
+          MessageAdHoc(header, FloodMsg(id, setRemoteDevices)),
+          header.label
+        );
       }
+    }
   }
 
-  void disconnect(String address) {
-    ServiceClient serviceClient = neighbors.getNeighbor(address);
-    if (serviceClient != null) {
-      serviceClient.disconnect();
-      neighbors.remove(address);
+  void disconnect(String remoteLabel) {
+    NetworkManager network = neighbors.getNeighbor(remoteLabel);
+    if (network != null) {
+      network.disconnect();
+      neighbors.remove(remoteLabel);
     }
   }
 
   void disconnectAll() {
     if (neighbors.neighbors.length > 0) {
-      for (ServiceClient serviceClient in neighbors.neighbors.values)
-        serviceClient.disconnect();
+      for (NetworkManager network in neighbors.neighbors.values)
+        network.disconnect();
       neighbors.clear();
     }
   }
 
-  void connectionClosed(String remoteAddress) {
-    AdHocDevice adHocDevice = _mapAddrDevices[remoteAddress];
-    String label = adHocDevice.label;
-    if (adHocDevice != null) {
-      neighbors.remove(label);
-      _mapAddrDevices.remove(remoteAddress);
 
-      if (mapAddrClient.containsKey(remoteAddress))
-        mapAddrClient.remove(remoteAddress);
+  void connectionClosed(String remoteLabel) {
+    AdHocDevice adHocDevice = _mapAddrDevices[remoteLabel];
+    if (adHocDevice != null) {
+      String label = adHocDevice.label;
+
+      _mapAddrDevices.remove(remoteLabel);
+      mapAddrNetwork.remove(remoteLabel);
+      neighbors.remove(label);
 
       listenerApp.onConnectionClosed(adHocDevice);
 
@@ -139,6 +143,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
           messageType: AbstractWrapper.DISCONNECT_BROADCAST,
           label: label,
           name: adHocDevice.name,
+          mac: adHocDevice.mac,
           deviceType: adHocDevice.type
         );
 
