@@ -154,6 +154,7 @@ public class GattServerManager {
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 state = BluetoothLowEnergyUtils.STATE_CONNECTED;
+                gattServer.connect(device, false);
             } else {
                 state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;
             }
