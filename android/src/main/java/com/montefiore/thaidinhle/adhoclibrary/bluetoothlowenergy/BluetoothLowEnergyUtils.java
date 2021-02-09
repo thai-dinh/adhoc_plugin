@@ -8,7 +8,7 @@ public class BluetoothLowEnergyUtils {
     public static final String IDENTIFIER_UUID = "00000003-0000-1000-8000-00805f9b34fb";
 
     public static final int IDENTIFIER = 0;
-    public static final int CONNECTION_STATUS = 1;
+    public static final int MESSAGE = 1;
 
     public static final int END_MESSAGE = 0;
 

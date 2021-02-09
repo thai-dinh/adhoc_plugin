@@ -7,7 +7,6 @@ import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -152,12 +151,15 @@ class BleAdHocManager {
 
   static void closeGattServer() => _channel.invokeMethod('closeGattServer');
 
-  static void serverSendMessage(MessageAdHoc message, Identifier id) {
-    _channel.invokeMethod('serverSendMessage', <String, String>{
-      'mac': id.mac,
-      'ulid': id.ulid,
+  static void gattServerSendMessage(MessageAdHoc message, String mac) {
+    _channel.invokeMethod('sendMessage', <String, String>{
+      'mac': mac,
       'message': json.encode(message.toJson()),
     });
+  }
+
+  static void gattServerSendMacAddress(String mac) {
+    _channel.invokeMethod('sendMacAddress', mac);
   }
 
   static Future<String> getCurrentName() async {

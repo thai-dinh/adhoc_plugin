@@ -6,17 +6,14 @@ import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:ulid/ulid.dart';
 
 
 abstract class AbstractWrapper {
-  static const CONNECT_SERVER = 10;
-  static const CONNECT_CLIENT = 11;
-  static const CONNECT_BROADCAST = 12;
-  static const DISCONNECT_BROADCAST = 13;
-  static const BROADCAST = 14;
-
-  final String ownUlid = Ulid().toString();
+  static const CONNECT_SERVER = 12;
+  static const CONNECT_CLIENT = 13;
+  static const CONNECT_BROADCAST = 14;
+  static const DISCONNECT_BROADCAST = 15;
+  static const BROADCAST = 16;
 
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
@@ -31,6 +28,7 @@ abstract class AbstractWrapper {
   int type;
   String label;
   String ownName;
+  String ownMac;
 
   HashSet<AdHocDevice> setRemoteDevices;
   Set<String> setFloodEvents;

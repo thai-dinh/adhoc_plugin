@@ -152,7 +152,6 @@ class DataLinkManager {
           messageType: AbstractWrapper.BROADCAST,
           label: _config.label,
           name: await wrapper.getAdapterName(),
-          ulid: wrapper.ownUlid,
           deviceType: wrapper.type,
         );
 
@@ -178,7 +177,6 @@ class DataLinkManager {
           messageType: AbstractWrapper.BROADCAST,
           label: _config.label,
           name: await wrapper.getAdapterName(),
-          ulid: wrapper.ownUlid,
           deviceType: wrapper.type,
         );
 

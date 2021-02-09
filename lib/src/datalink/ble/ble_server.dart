@@ -5,10 +5,10 @@ import 'dart:typed_data';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
@@ -38,41 +38,41 @@ class BleServer extends ServiceServer {
     BleAdHocManager.openGattServer();
 
     _conStreamSub = _chConnect.receiveBroadcastStream()
-      .cast<Map<String, Object>>()
       .listen((map) {
-        switch (map['type']) {
-          case BleUtils.ULID_IDENTIFIER:
-          Identifier id = Identifier(mac: map['macAddress'], ulid: map['ulid']);
-            addActiveConnection(id);
-            onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, id));
+        String mac = map['macAddress'] as String;
+        switch (map['state']) {
+          case BleUtils.STATE_CONNECTED:
+            addActiveConnection(mac);
+            onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, mac));
             break;
 
-          case BleUtils.CONNECTION_STATUS:
-            Identifier id = Identifier(mac: map['macAddress']);
-            if (map['state'] == BleUtils.BLE_STATE_DISCONNECTED) {
-              removeInactiveConnection(id);
-              onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, id));
-            }
+          case BleUtils.STATE_DISCONNECTED:
+            removeInactiveConnection(mac);
+            onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, mac));
             break;
         }
       },
       onError: onError
     );
 
-    _msgStreamSub = _chMessage.receiveBroadcastStream().cast<List<dynamic>>()
-      .listen((data) {
-        List<Uint8List> listByte = data.cast<Uint8List>();
-        Uint8List messageAsListByte = Uint8List.fromList(listByte.expand(
-          (x) {
-          List<int> tmp = new List<int>.from(x);
-          tmp.removeAt(0);
-          return tmp;
-          }
-        ).toList());
+    _msgStreamSub = _chMessage.receiveBroadcastStream()
+      .listen((map) {
+        switch (map['type']) {
+          case BleUtils.IDENTIFIER:
+            MessageAdHoc message = MessageAdHoc(
+              Header(mac: map['remoteAddress'] as String),
+              map['ownAddress'] as String
+            );
 
-        String strMessage = Utf8Decoder().convert(messageAsListByte);
-        MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+            onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
+            break;
+
+          case BleUtils.MESSAGE:
+            onEvent(DiscoveryEvent(
+              Service.MESSAGE_RECEIVED, _processMessage(map['message'])
+            ));
+            break;
+        }
       },
       onError: onError
     );
@@ -97,9 +97,31 @@ class BleServer extends ServiceServer {
     state = Service.STATE_NONE;
   }
 
-  void send(MessageAdHoc message, Identifier id) {
+  void send(MessageAdHoc message, String mac) {
     if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
 
-    BleAdHocManager.serverSendMessage(message, id);
+    BleAdHocManager.gattServerSendMessage(message, mac);
+  }
+
+  void sendMacAddress(String mac) {
+    if (v) Utils.log(ServiceServer.TAG, 'Server: sendMacAddress()');
+
+    BleAdHocManager.gattServerSendMacAddress(mac);
+  }
+
+/*------------------------------Private methods-------------------------------*/
+
+  MessageAdHoc _processMessage(List<dynamic> rawMessage) {
+    List<Uint8List> listByte = rawMessage.cast<Uint8List>();
+    Uint8List messageAsListByte = Uint8List.fromList(listByte.expand(
+      (x) {
+      List<int> tmp = new List<int>.from(x);
+      tmp.removeAt(0);
+      return tmp;
+      }
+    ).toList());
+
+    String strMessage = Utf8Decoder().convert(messageAsListByte);
+    return MessageAdHoc.fromJson(json.decode(strMessage));
   }
 }

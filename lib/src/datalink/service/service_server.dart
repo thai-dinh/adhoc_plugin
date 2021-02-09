@@ -1,7 +1,4 @@
-import 'dart:collection';
-
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
@@ -9,44 +6,35 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 abstract class ServiceServer extends Service {
   static const String TAG = "[ServiceServer]";
 
-  HashMap<String, Identifier> _activeConnections;
+  List<String> _activeConnections;
 
   ServiceServer(
     bool verbose, int state, 
     void Function(DiscoveryEvent) onEvent,
     void Function(dynamic) onError
   ) : super(verbose, state, onEvent, onError) {
-    _activeConnections = HashMap();
+    _activeConnections = List.empty(growable: true);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  HashMap<String, Identifier> get activeConnections => _activeConnections;
+  List<String> get activeConnections => _activeConnections;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void addActiveConnection(Identifier id) {
-    _activeConnections.update(
-      id.mac, (value) => id, ifAbsent: () => id
-    );
+  void addActiveConnection(String mac) {
+    _activeConnections.add(mac);
   }
 
-  void removeInactiveConnection(Identifier id) {
-    _activeConnections.remove(id.mac);
+  void removeInactiveConnection(String mac) {
+    _activeConnections.remove(mac);
   }
 
-  bool containConnection(Identifier id) {
-    if (id.mac == '') {
-      for (final Identifier _id in _activeConnections.values) {
-        if (_id.ulid == id.ulid)
-          return true;
-      }
-
-      return false;
-    }
-
-    return _activeConnections.containsKey(id.mac);
+  bool containConnection(String mac) {
+    return _activeConnections.contains(mac);
   }
 
-  void send(MessageAdHoc message, Identifier id);
+  void send(MessageAdHoc message, String mac);
+
+  void sendMacAddress(String mac);
 }

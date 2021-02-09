@@ -16,6 +16,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate> _connecStreamSub;
   StreamSubscription<List<int>> _msgStreamSub;
+  StreamSubscription<List<int>> _idStreamSub;
   FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
   Uuid _serviceUuid;
@@ -48,18 +49,35 @@ class BleClient extends ServiceClient {
   void listen() {
     if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
-    final characteristic = QualifiedCharacteristic(
+    final msgCharacteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _charMessageUuid,
       deviceId: _device.mac
     );
 
-    _msgStreamSub = _reactiveBle.subscribeToCharacteristic(characteristic)
+    _msgStreamSub = _reactiveBle.subscribeToCharacteristic(msgCharacteristic)
       .listen((List<int> rawData) {
         Uint8List messageAsListByte = Uint8List.fromList(rawData);
         String strMessage = Utf8Decoder().convert(messageAsListByte);
         MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
         onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      },
+      onError: onError
+    );
+
+    final idCharacteristic = QualifiedCharacteristic(
+      serviceId: _serviceUuid,
+      characteristicId: _identifierUuid,
+      deviceId: _device.mac
+    );
+
+    _idStreamSub = _reactiveBle.subscribeToCharacteristic(idCharacteristic)
+      .listen((List<int> rawData) {
+        String ownMac = Utf8Decoder().convert(Uint8List.fromList(rawData));
+        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_CLIENT, ownMac));
+
+        _idStreamSub.cancel();
+        _idStreamSub = null;
       },
       onError: onError
     );
@@ -70,6 +88,9 @@ class BleClient extends ServiceClient {
 
     if (_msgStreamSub != null)
       _msgStreamSub.cancel();
+
+    if (_idStreamSub != null)
+      _idStreamSub.cancel();
   }
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
@@ -81,41 +102,30 @@ class BleClient extends ServiceClient {
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.mac));
   }
 
-  Future<void> send(MessageAdHoc message, {bool type = true}) async {
-    if (v) Utils.log(ServiceClient.TAG, 'Client: send()');
+  Future<void> send(MessageAdHoc message) async {
+    if (v) Utils.log(ServiceClient.TAG, 'Client: sendMessage()');
 
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');
 
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
-      characteristicId: type ? _identifierUuid : _charMessageUuid,
+      characteristicId: _charMessageUuid,
       deviceId: _device.mac
     );
 
-    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
-    int index = BleUtils.MESSAGE_BEGIN;
+    await _send(json.encode(message.toJson()), characteristic);
+  }
 
-    while (length > mtu) {
-      Uint8List chunk = msg.sublist(start, end)
-        ..insert(0, index % BleUtils.UINT8_SIZE);
-
-      await _reactiveBle.writeCharacteristicWithResponse(
-        characteristic, value: chunk.toList()
-      );
-
-      index++;
-      start += mtu;
-      end += mtu;
-      length -= mtu;
-    }
-
-    Uint8List chunk = msg.sublist(start, start + length)
-      ..insert(0, index % BleUtils.UINT8_SIZE);
+  Future<void> sendMacAddress(String mac) async {
+    final characteristic = QualifiedCharacteristic(
+      serviceId: _serviceUuid,
+      characteristicId: _identifierUuid,
+      deviceId: _device.mac
+    );
 
     await _reactiveBle.writeCharacteristicWithResponse(
-      characteristic, value: chunk.toList()
+      characteristic, value: Utf8Encoder().convert(mac).toList()
     );
   }
 
@@ -178,5 +188,28 @@ class BleClient extends ServiceClient {
         }
       }, onError: onError); 
     }
+  }
+
+  Future<void> _send(String data, QualifiedCharacteristic qChar) async {
+    Uint8List msg = Utf8Encoder().convert(data), chunk;
+    int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
+    int index = BleUtils.MESSAGE_BEGIN;
+
+    while (length > mtu) {
+      chunk = msg.sublist(start, end);
+      await _reactiveBle.writeCharacteristicWithResponse(
+        qChar, value: [index % BleUtils.UINT8_SIZE] + chunk.toList()
+      );
+
+      index++;
+      start += mtu;
+      end += mtu;
+      length -= mtu;
+    }
+
+    chunk = msg.sublist(start, start + length);
+    await _reactiveBle.writeCharacteristicWithResponse(
+      qChar, value: [BleUtils.MESSAGE_END] + chunk.toList()
+    );
   }
 }

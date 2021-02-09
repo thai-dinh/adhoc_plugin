@@ -41,7 +41,11 @@ class WifiClient extends ServiceClient {
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      if (message.header.messageType == Service.MAC_EXCHANGE_SERVER) {
+        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
+      } else {
+        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      }
     });
   }
 
@@ -60,10 +64,10 @@ class WifiClient extends ServiceClient {
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _port));
   }
 
-  void send(MessageAdHoc message) {
+  Future<void> send(MessageAdHoc message) async {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
 
-    _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
+    await _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
   }
 
 /*------------------------------Private methods-------------------------------*/

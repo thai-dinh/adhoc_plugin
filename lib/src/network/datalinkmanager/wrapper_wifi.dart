@@ -147,8 +147,22 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _onEvent(DiscoveryEvent event) {
     switch (event.type) {
+      case Service.MAC_EXCHANGE_SERVER:
+        MessageAdHoc message = event.payload as MessageAdHoc;
+        ownMac = message.pdu as String;
+        serviceServer.sendMacAddress(message.header.mac);
+        break;
+
+      case Service.MAC_EXCHANGE_CLIENT:
+        MessageAdHoc message = event.payload as MessageAdHoc;
+        ownMac = message.pdu as String;
+        break;
+
       case Service.MESSAGE_RECEIVED:
         _processMsgReceived(event.payload as MessageAdHoc);
+        break;
+
+      case Service.CONNECTION_PERFORMED:
         break;
 
       case Service.CONNECTION_CLOSED:
@@ -170,12 +184,18 @@ class WrapperWifi extends WrapperConnOriented {
       v, remotePort, _groupOwnerAddr, attempts, timeOut, _onEvent, _onError
     );
 
-    wifiClient.connectListener = (String remoteAddress) {
-      wifiClient.send(MessageAdHoc(
+    wifiClient.connectListener = (String remoteAddress) async {
+      await wifiClient.send(MessageAdHoc(
+        Header(messageType: Service.MAC_EXCHANGE_SERVER),
+        remoteAddress
+      ));
+
+      await wifiClient.send(MessageAdHoc(
         Header(
           messageType: AbstractWrapper.CONNECT_SERVER,
           label: label,
           name: ownName,
+          mac: ownMac,
           address: _ownIpAddress
         ),
         remoteAddress

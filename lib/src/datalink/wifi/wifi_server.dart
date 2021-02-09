@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/identifier.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -35,7 +35,11 @@ class WifiServer extends ServiceServer {
     _messageStreamSub = _socket.inputStream.listen((data) {
       String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      if (message.header.messageType == Service.MAC_EXCHANGE_SERVER) {
+        onEvent(DiscoveryEvent(Service.MAC_EXCHANGE_SERVER, message));
+      } else {
+        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      }
     }, onError: onError);
 
     state = Service.STATE_LISTENING;
@@ -52,9 +56,19 @@ class WifiServer extends ServiceServer {
     state = Service.STATE_NONE;
   }
 
-  void send(MessageAdHoc message, Identifier id) {
+  Future<void> send(MessageAdHoc message, String mac) async {
     if (v) Utils.log(ServiceClient.TAG, 'Server: send()');
 
-    _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
+    await _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
+  }
+
+  void sendMacAddress(String mac) {
+    if (v) Utils.log(ServiceClient.TAG, 'Server: sendMacAddress()');
+
+    MessageAdHoc message = MessageAdHoc(
+      Header(messageType: Service.MAC_EXCHANGE_CLIENT), mac
+    );
+
+    send(message, mac);
   }
 }

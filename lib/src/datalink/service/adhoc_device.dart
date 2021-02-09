@@ -7,13 +7,12 @@ class AdHocDevice {
   bool directedConnected;
   String label;
   String name;
-  String ulid;
   String mac;
   int type;
 
   AdHocDevice({
-    @required String name, @required this.type, this.mac,
-    this.label = '', this.ulid = '', this.directedConnected = false
+    @required String name, @required this.type, this.mac, this.label = '',
+    this.directedConnected = false
   }) {
     this.name = Utils.checkString(name);
   }
@@ -34,7 +33,6 @@ class AdHocDevice {
     return 'AdHocDevice{' +
               'label=' + label +
               ', name=' + name +
-              ', ulid=' + ulid +
               ', mac=' + mac +
               ', type=' + type.toString() +
               ', directedConnected=' + directedConnected.toString() +
