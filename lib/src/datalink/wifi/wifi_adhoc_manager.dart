@@ -90,7 +90,7 @@ class WifiAdHocManager {
       }
     }, onError: _onError));
 
-    FlutterP2p.register();
+    await FlutterP2p.register();
   }
 
   void unregister() {
