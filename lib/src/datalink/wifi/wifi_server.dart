@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -10,12 +9,11 @@ import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
-import 'package:flutter_p2p/flutter_p2p.dart';
+import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiServer extends ServiceServer {
-  StreamSubscription<dynamic> _messageStreamSub;
-  P2pSocket _socket;
+  WifiP2pServer _wifiP2pServer;
 
   WifiServer(
     bool verbose,
@@ -27,38 +25,36 @@ class WifiServer extends ServiceServer {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen({int serverPort}) async {
+  void listen({String hostIp, int serverPort}) async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: listen()');
 
-    _socket = await FlutterP2p.openHostPort(serverPort);
+    _wifiP2pServer = WifiP2pServer(hostIp, serverPort);
 
-    _messageStreamSub = _socket.inputStream.listen((data) {
-      String strMessage = Utf8Decoder().convert(Uint8List.fromList(data.data));
+    await _wifiP2pServer.openServer();
+    _wifiP2pServer.listen((data) {
+      String strMessage = Utf8Decoder().convert(data);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
       onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-    }, onError: onError);
+    });
 
     state = Service.STATE_LISTENING;
-
-    await FlutterP2p.acceptPort(serverPort);
   }
 
-  void stopListening() {
+  Future<void> stopListening() async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: stopListening()');
 
-    if (_messageStreamSub != null)
-      _messageStreamSub.cancel();
+    await _wifiP2pServer.closeServer();
 
     state = Service.STATE_NONE;
   }
 
-  Future<void> send(MessageAdHoc message, String mac) async {
+  Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (v) Utils.log(ServiceClient.TAG, 'Server: send()');
 
-    await _socket.write(Utf8Encoder().convert(json.encode(message.toJson())));
+    await _wifiP2pServer.write(json.encode(message.toJson()), remoteAddress);
   }
 
-  void cancelConnection(String mac) {
-    
-  } 
+  Future<void> cancelConnection(String remoteAddress) async {
+    await _wifiP2pServer.closeClient(remoteAddress); 
+  }
 }

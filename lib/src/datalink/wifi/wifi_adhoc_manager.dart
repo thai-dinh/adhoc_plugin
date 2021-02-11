@@ -8,7 +8,7 @@ import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_p2p/flutter_p2p.dart';
+import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiAdHocManager {
@@ -21,16 +21,15 @@ class WifiAdHocManager {
   void Function(dynamic error) _onError;
 
   bool _verbose;
-  bool _isConnected;
   bool _isListenerSet;
   ListenerAdapter _listenerAdapter;
-  List<StreamSubscription> _subscriptions = [];
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
+  WifiP2PManager _wifiP2PManager;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
     _mapMacDevice = HashMap();
-    _isConnected = false;
     _isListenerSet = false;
+    _wifiP2PManager = WifiP2PManager();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -39,73 +38,37 @@ class WifiAdHocManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> register(void Function(bool, bool, String) onConnection) async {
-    if (_verbose) Utils.log(TAG, 'register()');
+  Future<void> initialize(void Function(bool, bool, String) onConnection) async {
+    if (_verbose) Utils.log(TAG, '_initialize()');
 
-    if (!await _checkPermission())
-      return;
+    await _wifiP2PManager.initialize();
 
-    _subscriptions.add(FlutterP2p.wifiEvents.stateChange.listen((change) {
-      if (_listenerAdapter != null && change.isEnabled) {
-          _listenerAdapter.onEnableWifi(true);
-      } else if (_listenerAdapter != null && !change.isEnabled) {
-        _listenerAdapter.onEnableWifi(false);
+    _wifiP2PManager.wifiStateStream.listen(
+      (state) {
+        if (_listenerAdapter != null)
+          _listenerAdapter.onEnableWifi(state);
       }
-    }));
+    );
 
-    _subscriptions.add(FlutterP2p.wifiEvents.thisDeviceChange.listen((change) {
-      if (_verbose) Utils.log(TAG, 'GroupOwner: ${change.isGroupOwner}');
-      _getOwnIpAddress();
-    }));
-
-    _subscriptions.add(FlutterP2p.wifiEvents.connectionChange.listen((change) {
-      onConnection(
-        _isConnected = change.networkInfo.isConnected,
-        change.wifiP2pInfo.isGroupOwner, 
-        change.wifiP2pInfo.groupOwnerAddress
-      );
-    }));
-
-    _subscriptions.add(FlutterP2p.wifiEvents.peersChange.listen((event) {
-      event.devices.forEach((device) {
-        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
-        _mapMacDevice.putIfAbsent(device.deviceAddress, () => wifiAdHocDevice);
-
-        if (!_mapMacDevice.containsKey(device.deviceAddress)) {
-          if (_verbose) {
-            Utils.log(TAG, 'Device found: ' +
-              'Name: ${device.deviceName} - Address: ${device.deviceAddress}'
-            );
-          }
-        }
-
-        _onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
-      });
-    }, onError: _onError));
-
-    _subscriptions.add(FlutterP2p.wifiEvents.discoveryChange.listen((change) {
-      if (change.isDiscovering) {
-        if (_verbose) Utils.log(TAG, 'Discovery: ${change.isDiscovering}');
-        _onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
+    _wifiP2PManager.wifiP2pConnectionStream.listen(
+      (wifiP2pInfo) async {
+        onConnection(
+          wifiP2pInfo.groupFormed,
+          wifiP2pInfo.isGroupOwner, 
+          wifiP2pInfo.groupOwnerAddress
+        );
       }
-    }, onError: _onError));
+    );
 
-    await FlutterP2p.register();
-  }
-
-  void unregister() {
-    if (_verbose) Utils.log(TAG, 'unregister()');
-
-    _subscriptions.forEach((subscription) => subscription.cancel());
-    FlutterP2p.unregister();
+    _wifiP2PManager.thisDeviceChangeStream.listen(
+      (wifiP2pDevice) async => _onWifiReady(await _wifiP2PManager.getOwnIp())
+    );
   }
 
   void discovery(
     void onEvent(DiscoveryEvent event), void onError(dynamic error),
   ) async {
     if (_verbose) Utils.log(TAG, 'discovery()');
-
-    if (_isConnected) return;
 
     if (!_isListenerSet) {
       _onEvent = onEvent;
@@ -116,7 +79,24 @@ class WifiAdHocManager {
 
     _mapMacDevice.clear();
 
-    await FlutterP2p.discoverDevices();
+    _wifiP2PManager.discoveryStream.listen(
+      (device) {
+        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
+        _mapMacDevice.putIfAbsent(device.mac, () => wifiAdHocDevice);
+
+        if (!_mapMacDevice.containsKey(device.mac)) {
+          if (_verbose) {
+            Utils.log(TAG, 
+              'Device found -> Name: ${device.name} - Address: ${device.mac}'
+            );
+          }
+        }
+
+        _onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+      }
+    );
+
+    _wifiP2PManager.discovery();
 
     Timer(
       Duration(milliseconds: Utils.DISCOVERY_TIME),
@@ -124,21 +104,17 @@ class WifiAdHocManager {
     );
   }
 
-  Future<bool> connect(final String remoteAddress) async {
+  Future<void> connect(final String remoteAddress) async {
     if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
 
     WifiAdHocDevice device = _mapMacDevice[remoteAddress];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
 
-    return await FlutterP2p.connect(device.wifiP2pDevice);
+    await _wifiP2PManager.connect(remoteAddress);
   }
 
-  void cancelConnection(final WifiAdHocDevice device) {
-    FlutterP2p.cancelConnect(device.wifiP2pDevice);
-  }
-
-  void removeGroup() => FlutterP2p.removeGroup();
+  void removeGroup() => _wifiP2PManager.removeGroup();
 
   Future<bool> resetDeviceName() async {
     return await _channel.invokeMethod('resetDeviceName');
@@ -153,15 +129,6 @@ class WifiAdHocManager {
   }
 
 /*------------------------------Private methods-------------------------------*/
-
-  Future<bool> _checkPermission() async {
-    if (!await FlutterP2p.isLocationPermissionGranted()) {
-      await FlutterP2p.requestLocationPermission();
-      return false;
-    }
-
-    return true;
-  }
 
   void _stopDiscovery(void onEvent(DiscoveryEvent event)) {
     if (_verbose) Utils.log(TAG, 'Discovery completed');

@@ -90,15 +90,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_p2p:
-    dependency: transitive
-    description:
-      path: "."
-      ref: HEAD
-      resolved-ref: ab41cce78f5280534ac5679c33d7b037f8daffc9
-      url: "https://github.com/thai-dinh/flutter_p2p"
-    source: git
-    version: "1.0.0"
   flutter_reactive_ble:
     dependency: transitive
     description:
@@ -111,6 +102,15 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_wifi_p2p:
+    dependency: transitive
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "74cdf0a7df2fc35d5223b577000db3d2a3cc56b1"
+      url: "https://github.com/thai-dinh/flutter_wifi_p2p"
+    source: git
+    version: "0.0.1"
   functional_data:
     dependency: transitive
     description:

@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/appframework/listener_app.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -43,7 +42,7 @@ class WrapperWifi extends WrapperConnOriented {
 
     if (await WifiAdHocManager.isWifiEnabled()) {
       _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
-        ..register(_registration);
+        ..initialize(_registration);
       _isGroupOwner = false;
       _mapAddrMac = HashMap();
     } else {
@@ -54,7 +53,7 @@ class WrapperWifi extends WrapperConnOriented {
   @override
   void enable(int duration, ListenerAdapter listenerAdapter) { // TODO: To verify bc enable wifi is deprecated
     _wifiManager = WifiAdHocManager(v, _onWifiReady)
-      ..register(_registration);
+      ..initialize(_registration);
     _wifiManager.onEnableWifi(listenerAdapter);
 
     enabled = true;
@@ -65,7 +64,6 @@ class WrapperWifi extends WrapperConnOriented {
     _mapAddrMac.clear();
     neighbors.clear();
 
-    _wifiManager.unregister();
     _wifiManager = null;
 
     enabled = false;
@@ -97,12 +95,7 @@ class WrapperWifi extends WrapperConnOriented {
   @override
   void connect(int attempts, AdHocDevice adHocDevice) async {
     this.attempts = attempts;
-    
-    if (!(await _wifiManager.connect(adHocDevice.mac))) {
-      throw DeviceFailureException(
-        adHocDevice.name + '(' + adHocDevice.mac + ')' + ': Connection failed'
-      );
-    }
+    await _wifiManager.connect(adHocDevice.mac);
   }
 
   @override

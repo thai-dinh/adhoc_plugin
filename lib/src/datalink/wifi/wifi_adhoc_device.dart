@@ -1,25 +1,27 @@
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:flutter_p2p/gen/protos/protos.pb.dart';
+import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiAdHocDevice extends AdHocDevice {
-  WifiP2pDevice _wifiP2pDevice;
   String ipAddress;
   int port;
 
   WifiAdHocDevice(
-    this._wifiP2pDevice, {String ipAddress = '', String label = ''}
+    WifiP2pDevice device, {String ipAddress = '', String label = ''}
   ) : super(
-    name: _wifiP2pDevice.deviceName,
-    mac: _wifiP2pDevice.deviceAddress,
-    type: Service.WIFI
+    name: device.name, mac: device.mac, type: Service.WIFI
   ) {
     this.ipAddress = ipAddress;
     this.port = 0;
   }
 
-  WifiP2pDevice get wifiP2pDevice => _wifiP2pDevice;
+  WifiAdHocDevice.fromWifiP2pDevice(WifiP2pDevice device) : super(
+    name: device.name, mac: device.mac, type: Service.WIFI
+  ) {
+    this.ipAddress = ipAddress;
+    this.port = 0;
+  }
 
   @override
   String toString() {

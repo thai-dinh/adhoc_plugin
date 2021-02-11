@@ -119,7 +119,7 @@ class BleAdHocManager {
         listenerAdapter.onEnableBluetooth(true);
       } else {
         listenerAdapter.onEnableBluetooth(false);
-      } // TODO: other cases than ready ? -> unknown, unauthorized, locationServicesDisabled
+      }
     });
   }
 
