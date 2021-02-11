@@ -76,7 +76,7 @@ class BleClient extends ServiceClient {
     if (_connecStreamSub != null)
       _connecStreamSub.cancel();
 
-    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.mac));
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.label));
   }
 
   Future<void> send(MessageAdHoc message) async {

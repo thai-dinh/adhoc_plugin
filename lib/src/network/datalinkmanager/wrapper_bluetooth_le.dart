@@ -14,6 +14,7 @@ import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
@@ -82,13 +83,21 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       if (event.type == Service.DEVICE_DISCOVERED) {
         BleAdHocDevice device = event.payload as BleAdHocDevice;
-        mapMacDevices.putIfAbsent(device.mac, () => device);
+        mapMacDevices.putIfAbsent(device.mac, () {
+          if (v) 
+            Utils.log(TAG, "Add " + device.mac + " into mapMacDevices");
+          return device;
+        });
       } else if (event.type == Service.DISCOVERY_END) {
         HashMap<String, AdHocDevice> discoveredDevices = 
           event.payload as HashMap<String, AdHocDevice>;
 
           discoveredDevices.forEach((mac, device) {
-            mapMacDevices.putIfAbsent(mac, () => device);
+            mapMacDevices.putIfAbsent(mac, () {
+              if (v) 
+                Utils.log(TAG, "Add " + mac + " into mapMacDevices");
+              return device;
+            });
           });
 
           discoveryCompleted = true;

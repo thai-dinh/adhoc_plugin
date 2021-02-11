@@ -6,7 +6,6 @@ import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
@@ -147,7 +146,7 @@ class WrapperWifi extends WrapperConnOriented {
       _listenServer();
     } else if (isConnected && !_isGroupOwner) {
       _groupOwnerAddr = groupOwnerAddress;
-      _connect(_serverPort);
+      Future.delayed(Duration(seconds: 1), () => _connect(_serverPort));
     }
   }
 

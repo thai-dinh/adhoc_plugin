@@ -1,5 +1,5 @@
 name: adhoclibrary
-description: adhoclibrary is a library which allows to create and manage ad hoc connections on Android mobile devices
+description: Adhoclibrary is a library which allows to create and manage ad hoc connections on Android mobile devices
 version: 0.1.0
 author: Thai Dinh Le <Thai.Le@student.uliege.be>
 homepage: https://github.com/thai-dinh/AdHocLib
