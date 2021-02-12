@@ -51,7 +51,9 @@ class WifiServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (v) Utils.log(ServiceClient.TAG, 'Server: send()');
 
-    await _serverSocket.write(json.encode(message.toJson()), remoteAddress);
+    _serverSocket.write(
+      json.encode(message.toJson()), remoteAddress: remoteAddress
+    );
   }
 
   Future<void> cancelConnection(String remoteAddress) async {

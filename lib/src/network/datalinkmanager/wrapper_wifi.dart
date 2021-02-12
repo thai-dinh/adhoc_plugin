@@ -42,7 +42,7 @@ class WrapperWifi extends WrapperConnOriented {
 
     if (await WifiAdHocManager.isWifiEnabled()) {
       _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
-        ..initialize(_registration);
+        ..register(_registration);
       _isGroupOwner = false;
       _mapAddrMac = HashMap();
     } else {
@@ -53,7 +53,7 @@ class WrapperWifi extends WrapperConnOriented {
   @override
   void enable(int duration, ListenerAdapter listenerAdapter) { // TODO: To verify bc enable wifi is deprecated
     _wifiManager = WifiAdHocManager(v, _onWifiReady)
-      ..initialize(_registration);
+      ..register(_registration);
     _wifiManager.onEnableWifi(listenerAdapter);
 
     enabled = true;
@@ -164,7 +164,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _listenServer() {
     serviceServer = WifiServer(v, _onEvent, _onError)..listen(
-      serverPort: _serverPort
+      hostIp: _ownIpAddress, serverPort: _serverPort
     );
   }
 
@@ -180,7 +180,8 @@ class WrapperWifi extends WrapperConnOriented {
           label: label,
           name: ownName,
           mac: ownMac,
-          address: _ownIpAddress
+          address: _ownIpAddress,
+          deviceType: Service.WIFI
         ),
         remoteAddress
       ));
@@ -207,7 +208,8 @@ class WrapperWifi extends WrapperConnOriented {
             label: label,
             name: ownName,
             mac: ownMac,
-            address: _ownIpAddress
+            address: _ownIpAddress,
+            deviceType: Service.WIFI
           )),
           null
         );

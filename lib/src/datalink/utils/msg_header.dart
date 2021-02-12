@@ -1,5 +1,6 @@
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:meta/meta.dart';
 
 part 'msg_header.g.dart';
 
@@ -14,8 +15,8 @@ class Header {
   String _mac;
 
   Header({
-    int messageType, String label, String name, String address = '',
-    String mac = '', int deviceType
+    @required int messageType, @required String label, @required String name, 
+    @required int deviceType, String address = '', String mac = ''
   }) {
     this._messageType = messageType;
     this._label = Utils.checkString(label);

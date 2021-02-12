@@ -185,7 +185,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           label: label,
           name: ownName,
           mac: ownMac,
-          address: _ownStringUUID
+          address: _ownStringUUID,
+          deviceType: Service.BLUETOOTHLE
         ),
         remoteAddress
       ));
@@ -217,6 +218,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
               name: ownName,
               address: _ownStringUUID,
               mac: ownMac,
+              deviceType: Service.BLUETOOTHLE
             ),
             mac
           ),
@@ -289,7 +291,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           AdHocDevice(
             name: header.name,
             label: header.label,
-            type: type
+            type: type,
+            mac: ownMac
           ),
           message.pdu
         );
