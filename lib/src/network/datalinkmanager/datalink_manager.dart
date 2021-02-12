@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
-import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
-import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -24,15 +22,13 @@ class DataLinkManager {
   List<AbstractWrapper> _wrappers;
   HashMap<String, AdHocDevice> _mapAddrDevice;
 
-  DataLinkManager(this._verbose, this._config, ListenerApp listenerApp) {
+  DataLinkManager(this._verbose, this._config) {
     this._mapAddrDevice = HashMap();
     this._wrappers = List(_NB_WRAPPERS);
-    this._wrappers[Service.WIFI] = WrapperWifi(
-      _verbose, _config, _mapAddrDevice, listenerApp
-    );
-    this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(
-      _verbose, _config, _mapAddrDevice, listenerApp
-    );
+    this._wrappers[Service.WIFI] = 
+      WrapperWifi(_verbose, _config, _mapAddrDevice);
+    this._wrappers[Service.BLUETOOTHLE] =
+      WrapperBluetoothLE(_verbose, _config, _mapAddrDevice);
 
     checkState();
   }
@@ -48,27 +44,19 @@ class DataLinkManager {
     return enabled;
   }
 
-  void enable(
-    int duration, int type, ListenerAdapter listenerAdapter
-  ) {
+  void enable(int duration, int type, void Function(bool) onEnable) {
     if (!_wrappers[type].enabled) {
-      ListenerAdapter listener = ListenerAdapter(
-        onEnableBluetooth: (bool success) {
-          _processListenerAdapter(type, success, listenerAdapter);
-        },
-
-        onEnableWifi: (bool success) {
-          _processListenerAdapter(type, success, listenerAdapter);
-        }
-      );
-
-      _wrappers[type].enable(duration, listener);
+      _wrappers[type].enable(duration, (bool success) {
+        onEnable(success);
+        if (success)
+          _wrappers[type].init(_verbose, _config);
+      });
     }
   }
 
-  void enableAll(ListenerAdapter listenerAdapter) {
+  void enableAll(void Function(bool) onEnable) {
     for (AbstractWrapper wrapper in _wrappers) {
-      enable(0, wrapper.type, listenerAdapter);
+      enable(0, wrapper.type, onEnable);
     }
   }
 
@@ -85,23 +73,17 @@ class DataLinkManager {
         disable(wrapper.type);
   }
 
-  void discovery(
-    void onEvent(DiscoveryEvent event), void onError(dynamic error),
-  ) {
+  void discovery(void onEvent(DiscoveryEvent event)) {
     int enabled = checkState();
     if (enabled == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     if (enabled == _wrappers.length) {
-      _bothDiscovery(onEvent, onError);
+      _bothDiscovery(onEvent);
     } else {
       for (AbstractWrapper wrapper in _wrappers) {
         if (wrapper.enabled) {
-          wrapper.listenerBothDiscovery =
-            (HashMap<String, AdHocDevice> mapAddressDevice) {
-              onEvent(DiscoveryEvent(Service.DISCOVERY_END, mapAddressDevice));
-            };
-          wrapper.discovery(onEvent, onError);
+          wrapper.discovery(onEvent);
         }
       }
     }
@@ -256,37 +238,16 @@ class DataLinkManager {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _processListenerAdapter(
-    int type, bool success, ListenerAdapter listenerAdapter
-  ) {
-    if (success) {
-      _wrappers[type].init(_verbose, _config);
-      if (type == Service.BLUETOOTHLE) {
-        listenerAdapter.onEnableBluetooth(true);
-      } else {
-        listenerAdapter.onEnableWifi(true);
-      }
-    } else {
-      if (type == Service.BLUETOOTHLE) {
-        listenerAdapter.onEnableBluetooth(false);
-      } else {
-        listenerAdapter.onEnableWifi(false);
-      }
-    }
-  }
-
-  void _bothDiscovery(
-    void onEvent(DiscoveryEvent event), void onError(dynamic error),
-  ) {
+  void _bothDiscovery(void onEvent(DiscoveryEvent event)) {
     for (AbstractWrapper wrapper in _wrappers)
-        wrapper.discovery(onEvent, onError);
+      wrapper.discovery(onEvent);
 
     Timer.periodic(Duration(milliseconds: _POOLING_DISCOVERY), (Timer timer) {
       bool finished = true;
       for (AbstractWrapper wrapper in _wrappers) {
         if (!wrapper.discoveryCompleted) {
-            finished = false;
-            break;
+          finished = false;
+          break;
         }
       }
 

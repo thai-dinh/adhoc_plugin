@@ -59,10 +59,10 @@ class WifiClient extends ServiceClient {
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
   }
 
-  Future<void> send(MessageAdHoc message) async {
+  void send(MessageAdHoc message) {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
 
-    await _socket.write(json.encode(message.toJson()));
+    _socket.write(json.encode(message.toJson()));
   }
 
 /*------------------------------Private methods-------------------------------*/

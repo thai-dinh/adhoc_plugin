@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -17,18 +16,13 @@ class WifiAdHocManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   void Function(String) _onWifiReady;
-  void Function(DiscoveryEvent event) _onEvent;
-  void Function(dynamic error) _onError;
 
   bool _verbose;
-  bool _isListenerSet;
-  ListenerAdapter _listenerAdapter;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
   FlutterWifiP2p _wifiP2p;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
     _mapMacDevice = HashMap();
-    _isListenerSet = false;
     _wifiP2p = FlutterWifiP2p();
     _wifiP2p.verbose = _verbose;
   }
@@ -40,41 +34,19 @@ class WifiAdHocManager {
 /*-------------------------------Public methods-------------------------------*/
 
   Future<void> register(void Function(bool, bool, String) onConnection) async {
-    await _wifiP2p.register();
-
-    _wifiP2p.wifiStateStream.listen(
-      (state) {
-        if (_listenerAdapter != null)
-          _listenerAdapter.onEnableWifi(state);
-      }
-    );
-
-    _wifiP2p.wifiP2pConnectionStream.listen(
-      (wifiP2pInfo) async {
-        onConnection(
-          wifiP2pInfo.groupFormed,
-          wifiP2pInfo.isGroupOwner, 
-          wifiP2pInfo.groupOwnerAddress
-        );
-      }
-    );
+    _wifiP2p.wifiP2pConnectionStream.listen((info) {
+      onConnection(info.groupFormed, info.isGroupOwner, info.groupOwnerAddress);
+    });
 
     _wifiP2p.thisDeviceChangeStream.listen(
       (wifiP2pDevice) async => _onWifiReady(await _wifiP2p.getOwnIp())
     );
+
+    await _wifiP2p.register();
   }
 
-  void discovery(
-    void onEvent(DiscoveryEvent event), void onError(dynamic error),
-  ) async {
+  void discovery(void onEvent(DiscoveryEvent event)) async {
     if (_verbose) Utils.log(TAG, 'discovery()');
-
-    if (!_isListenerSet) {
-      _onEvent = onEvent;
-      _onError = onError;
-
-      _isListenerSet = true;
-    }
 
     _mapMacDevice.clear();
 
@@ -92,12 +64,14 @@ class WifiAdHocManager {
             }
           }
 
-          _onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+          onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
           });
-      }
+      },
+      onError: (error) => throw error,
+      onDone: () => _stopDiscovery(onEvent)
     );
 
-    await _wifiP2p.discovery();
+    _wifiP2p.discovery();
 
     Timer(
       Duration(milliseconds: Utils.DISCOVERY_TIME),
@@ -127,8 +101,8 @@ class WifiAdHocManager {
     return await _channel.invokeMethod('updateDeviceName');
   }
 
-  void onEnableWifi(ListenerAdapter listenerAdapter) {
-    this._listenerAdapter = listenerAdapter;
+  void onEnableWifi(void Function(bool) onEnable) {
+    _wifiP2p.wifiStateStream.listen((state) => onEnable(state));
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -137,10 +111,6 @@ class WifiAdHocManager {
     if (_verbose) Utils.log(TAG, 'Discovery completed');
 
     onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
-  }
-
-  Future<void> _getOwnIpAddress() async {
-    _onWifiReady(await _wifiP2p.getOwnIp());
   }
 
 /*-------------------------------Static methods-------------------------------*/

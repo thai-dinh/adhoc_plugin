@@ -1,8 +1,6 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
-import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
-import 'package:adhoclibrary/src/appframework/listener_app.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -17,7 +15,6 @@ abstract class AbstractWrapper {
 
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
-  final ListenerApp listenerApp;
 
   void Function(HashMap<String, AdHocDevice>) listenerBothDiscovery;
 
@@ -33,7 +30,7 @@ abstract class AbstractWrapper {
   HashSet<AdHocDevice> setRemoteDevices;
   Set<String> setFloodEvents;
 
-  AbstractWrapper(this.v, Config config, this.mapMacDevices, this.listenerApp) {
+  AbstractWrapper(this.v, Config config, this.mapMacDevices) {
     this.enabled = false;
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
@@ -47,13 +44,11 @@ abstract class AbstractWrapper {
 
   void init(bool verbose, [Config config]);
 
-  void enable(int duration, ListenerAdapter listenerAdapter);
+  void enable(int duration, void Function(bool) onEnable);
 
   void disable();
 
-  void discovery(
-    void onEvent(DiscoveryEvent event), void onError(dynamic error),
-  );
+  void discovery(void onEvent(DiscoveryEvent event));
 
   void connect(int attempts, AdHocDevice adHocDevice);
 

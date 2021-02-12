@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:adhoclibrary/src/appframework/listener_adapter.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
@@ -39,9 +38,9 @@ class BleAdHocManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void enable() => _channel.invokeMethod('enable');
+  Future<bool> enable() async => await _channel.invokeMethod('enable');
 
-  void disable() => _channel.invokeMethod('disable');
+  Future<bool> disable() async => await _channel.invokeMethod('disable');
 
   void enableDiscovery(int duration) {
     if (_verbose) Utils.log(TAG, 'enableDiscovery()');
@@ -55,9 +54,7 @@ class BleAdHocManager {
     Timer(Duration(seconds: duration), _stopAdvertise);
   }
 
-  void discovery(
-    void onEvent(DiscoveryEvent event), void onError(dynamic error),
-  ) {
+  void discovery(void onEvent(DiscoveryEvent event)) {
     if (_verbose) Utils.log(TAG, 'discovery()');
 
     if (_isDiscovering)
@@ -68,20 +65,24 @@ class BleAdHocManager {
     _subscription = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(BleUtils.SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
-    ).listen((device) {
-      BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
-      _mapMacDevice.putIfAbsent(device.id, () {
-        if (_verbose) {
-          Utils.log(TAG, 'Device found: ' +
-            'Name: ${device.name} - Address: ${device.id}'
-          );
-        }
+    ).listen(
+      (device) {
+        BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
+        _mapMacDevice.putIfAbsent(device.id, () {
+          if (_verbose) {
+            Utils.log(TAG, 'Device found: ' +
+              'Name: ${device.name} - Address: ${device.id}'
+            );
+          }
 
-        onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
+          onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
 
-        return bleAdHocDevice;
-      });
-    }, onError: onError);
+          return bleAdHocDevice;
+        });
+      },
+      onError: (error) => throw error,
+      onDone: () => _stopScan(onEvent)
+    );
 
     _isDiscovering = true;
     onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
@@ -113,13 +114,9 @@ class BleAdHocManager {
   Future<bool> resetDeviceName() async
     => await _channel.invokeMethod('resetDeviceName');
 
-  void onEnableBluetooth(ListenerAdapter listenerAdapter) {
+  void onEnableBluetooth(void Function(bool) onEnable) {
     _reactiveBle.statusStream.listen((status) {
-      if (status == BleStatus.ready) {
-        listenerAdapter.onEnableBluetooth(true);
-      } else {
-        listenerAdapter.onEnableBluetooth(false);
-      }
+      onEnable(status == BleStatus.ready); // TODO: change conditional
     });
   }
 
@@ -128,7 +125,7 @@ class BleAdHocManager {
   void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
   void _stopScan(void onEvent(DiscoveryEvent event)) {
-    if (_verbose) Utils.log(TAG, 'Discovery completed');
+    if (_verbose) Utils.log(TAG, 'Discovery end');
 
     _subscription.cancel();
     _subscription = null;

@@ -205,7 +205,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "971d8ebbd34dd29e9a40e733503e82a68dab74f3"
+      resolved-ref: e77bd31fee1d25e91b1b52d029a837e0e743cb60
       url: "https://github.com/thai-dinh/flutter_wifi_p2p"
     source: git
     version: "0.0.1"

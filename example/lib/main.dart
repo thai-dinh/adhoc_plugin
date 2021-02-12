@@ -29,10 +29,9 @@ class _AppState extends State<ExampleApp> {
             children: <Widget>[
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Text(
-                    'BluetoothLE'
-                  ),
+                  Text('BluetoothLE'),
                   RaisedButton(
                     child: Text('Enable discovery'),
                     onPressed: blePlugin.enableExample,
@@ -63,17 +62,7 @@ class _AppState extends State<ExampleApp> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text(
-                    'Wifi P2P'
-                  ),
-                  RaisedButton(
-                    child: Text('Enable discovery'),
-                    onPressed: wifiPlugin.enableExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Disable'),
-                    onPressed: wifiPlugin.disableExample,
-                  ),
+                  Text('Wifi P2P'),
                   RaisedButton(
                     child: Text('Discovery'),
                     onPressed: wifiPlugin.discoveryExample,
@@ -81,6 +70,10 @@ class _AppState extends State<ExampleApp> {
                   RaisedButton(
                     child: Text('Connect'),
                     onPressed: wifiPlugin.connectExample,
+                  ),
+                  RaisedButton(
+                    child: Text('Remove group'),
+                    onPressed: wifiPlugin.removeGroupExample,
                   ),
                   RaisedButton(
                     child: Text('Stop listening'),

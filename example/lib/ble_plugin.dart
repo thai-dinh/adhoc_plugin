@@ -9,23 +9,13 @@ class BlePlugin {
 
   BlePlugin() {
     Config config = Config();
-    _wrapper = WrapperBluetoothLE(true, config, HashMap(), _initListenerApp());
+    _wrapper = WrapperBluetoothLE(true, config, HashMap());
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
   void enableExample() {
-    ListenerAdapter listenerAdapter = ListenerAdapter(
-      onEnableBluetooth: (bool success) {
-
-      },
-
-      onEnableWifi: (bool success) {
-        
-      },
-    );
-
-    _wrapper.enable(3600, listenerAdapter);
+    _wrapper.enable(3600, (bool isEnable) => print('BLE: $isEnable'));
   }
 
   void disableExample() => _wrapper.disable();
@@ -43,7 +33,7 @@ class BlePlugin {
       } else {
         print('Example: Discovery started');
       }
-    }, (error) => print(error.toString()));
+    });
   }
 
   void connectExample() {
@@ -55,24 +45,4 @@ class BlePlugin {
   void stopListeningExample() => _wrapper.stopListening();
 
   void disconnectAllExample() => _wrapper.disconnectAll();
-
-/*------------------------------Private methods-------------------------------*/
-  
-  ListenerApp _initListenerApp() {
-    return ListenerApp(
-      onReceivedData: (AdHocDevice adHocDevice, Object pdu) { },
-
-      onForwardData: (AdHocDevice adHocDevice, Object pdu) { },
-
-      onConnection: (AdHocDevice adHocDevice) { },
-
-      onConnectionFailed: (Exception exception) { },
-
-      onConnectionClosed: (AdHocDevice adHocDevice) { },
-
-      onConnectionClosedFailed: (Exception exception) { },
-
-      processMsgException: (Exception exception) { }
-    );
-  }
 }

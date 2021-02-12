@@ -14,8 +14,8 @@ public class BluetoothLowEnergyManager {
     private static final String TAG = "[AdHocPlugin][BleManager]";
 
     private final BluetoothAdapter bluetoothAdapter;
-    private final BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
+    private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private boolean verbose;
     private String initialName;
 
@@ -54,12 +54,21 @@ public class BluetoothLowEnergyManager {
             .setTimeout(0) // 0 = no time limit
             .build();
 
+
+        if (bluetoothLeAdvertiser == null) {
+            bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+            if (bluetoothLeAdvertiser == null)
+                return;
+        }
+    
         bluetoothLeAdvertiser.startAdvertising(settings, data, advertiseCallback);
     }
 
     public void stopAdvertise() {
         if (verbose) Log.d(TAG, "stopAdvertise()");
-        bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
+
+        if (bluetoothLeAdvertiser != null)
+            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
     }
 
     public void setVerbose(boolean verbose) {
@@ -80,11 +89,11 @@ public class BluetoothLowEnergyManager {
         return bluetoothAdapter.getName();
     }
 
-    public void enable() {
-        bluetoothAdapter.enable();
+    public boolean enable() {
+        return bluetoothAdapter.enable();
     }
 
-    public void disable() {
-        bluetoothAdapter.disable();
+    public boolean disable() {
+        return bluetoothAdapter.disable();
     }
 }

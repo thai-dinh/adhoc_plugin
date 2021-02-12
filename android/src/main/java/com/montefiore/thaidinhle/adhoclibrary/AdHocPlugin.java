@@ -74,10 +74,10 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
 
       case "disable":
-        bleManager.disable();
+        result.success(bleManager.disable());
         break;
       case "enable":
-        bleManager.enable();
+        result.success(bleManager.enable());
         break;
       case "startAdvertise":
         bleManager.startAdvertise();
