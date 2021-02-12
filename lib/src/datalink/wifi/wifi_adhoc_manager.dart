@@ -24,12 +24,13 @@ class WifiAdHocManager {
   bool _isListenerSet;
   ListenerAdapter _listenerAdapter;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
-  WifiP2PManager _wifiP2PManager;
+  FlutterWifiP2p _wifiP2p;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
     _mapMacDevice = HashMap();
     _isListenerSet = false;
-    _wifiP2PManager = WifiP2PManager();
+    _wifiP2p = FlutterWifiP2p();
+    _wifiP2p.verbose = _verbose;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -38,19 +39,17 @@ class WifiAdHocManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> initialize(void Function(bool, bool, String) onConnection) async {
-    if (_verbose) Utils.log(TAG, '_initialize()');
+  Future<void> register(void Function(bool, bool, String) onConnection) async {
+    await _wifiP2p.register();
 
-    await _wifiP2PManager.initialize();
-
-    _wifiP2PManager.wifiStateStream.listen(
+    _wifiP2p.wifiStateStream.listen(
       (state) {
         if (_listenerAdapter != null)
           _listenerAdapter.onEnableWifi(state);
       }
     );
 
-    _wifiP2PManager.wifiP2pConnectionStream.listen(
+    _wifiP2p.wifiP2pConnectionStream.listen(
       (wifiP2pInfo) async {
         onConnection(
           wifiP2pInfo.groupFormed,
@@ -60,8 +59,8 @@ class WifiAdHocManager {
       }
     );
 
-    _wifiP2PManager.thisDeviceChangeStream.listen(
-      (wifiP2pDevice) async => _onWifiReady(await _wifiP2PManager.getOwnIp())
+    _wifiP2p.thisDeviceChangeStream.listen(
+      (wifiP2pDevice) async => _onWifiReady(await _wifiP2p.getOwnIp())
     );
   }
 
@@ -79,30 +78,34 @@ class WifiAdHocManager {
 
     _mapMacDevice.clear();
 
-    _wifiP2PManager.discoveryStream.listen(
-      (device) {
-        WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
-        _mapMacDevice.putIfAbsent(device.mac, () => wifiAdHocDevice);
+    _wifiP2p.discoveryStream.listen(
+      (listDevices) {
+        listDevices.forEach((device) {
+          WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
+          _mapMacDevice.putIfAbsent(device.mac, () => wifiAdHocDevice);
 
-        if (!_mapMacDevice.containsKey(device.mac)) {
-          if (_verbose) {
-            Utils.log(TAG, 
-              'Device found -> Name: ${device.name} - Address: ${device.mac}'
-            );
+          if (!_mapMacDevice.containsKey(device.mac)) {
+            if (_verbose) {
+              Utils.log(TAG, 
+                'Device found -> Name: ${device.name} - Address: ${device.mac}'
+              );
+            }
           }
-        }
 
-        _onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+          _onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+          });
       }
     );
 
-    _wifiP2PManager.discovery();
+    await _wifiP2p.discovery();
 
     Timer(
       Duration(milliseconds: Utils.DISCOVERY_TIME),
       () => _stopDiscovery(onEvent)
     );
   }
+
+  Future<void> unregister() async => await unregister(); 
 
   Future<void> connect(final String remoteAddress) async {
     if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
@@ -111,10 +114,10 @@ class WifiAdHocManager {
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
 
-    await _wifiP2PManager.connect(remoteAddress);
+    await _wifiP2p.connect(remoteAddress);
   }
 
-  void removeGroup() => _wifiP2PManager.removeGroup();
+  void removeGroup() => _wifiP2p.removeGroup();
 
   Future<bool> resetDeviceName() async {
     return await _channel.invokeMethod('resetDeviceName');
@@ -137,10 +140,7 @@ class WifiAdHocManager {
   }
 
   Future<void> _getOwnIpAddress() async {
-    String ipAddress = await _channel.invokeMethod('getOwnIpAddress');
-    if (ipAddress == null)
-      ipAddress = '';
-    _onWifiReady(ipAddress);
+    _onWifiReady(await _wifiP2p.getOwnIp());
   }
 
 /*-------------------------------Static methods-------------------------------*/

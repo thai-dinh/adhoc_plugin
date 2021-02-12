@@ -10,10 +10,10 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
 import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
-
+import 'package:meta/meta.dart';
 
 class WifiServer extends ServiceServer {
-  WifiP2pServer _wifiP2pServer;
+  P2pServerSocket _serverSocket;
 
   WifiServer(
     bool verbose,
@@ -25,13 +25,13 @@ class WifiServer extends ServiceServer {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen({String hostIp, int serverPort}) async {
+  void listen({@required String hostIp, @required int serverPort}) async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: listen()');
 
-    _wifiP2pServer = WifiP2pServer(hostIp, serverPort);
+    _serverSocket = P2pServerSocket(hostIp, serverPort);
 
-    await _wifiP2pServer.openServer();
-    _wifiP2pServer.listen((data) {
+    await _serverSocket.openServer();
+    _serverSocket.listen((data) {
       String strMessage = Utf8Decoder().convert(data);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
       onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
@@ -43,7 +43,7 @@ class WifiServer extends ServiceServer {
   Future<void> stopListening() async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: stopListening()');
 
-    await _wifiP2pServer.closeServer();
+    await _serverSocket.close();
 
     state = Service.STATE_NONE;
   }
@@ -51,10 +51,10 @@ class WifiServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (v) Utils.log(ServiceClient.TAG, 'Server: send()');
 
-    await _wifiP2pServer.write(json.encode(message.toJson()), remoteAddress);
+    await _serverSocket.write(json.encode(message.toJson()), remoteAddress);
   }
 
   Future<void> cancelConnection(String remoteAddress) async {
-    await _wifiP2pServer.closeClient(remoteAddress); 
+    await _serverSocket.closeSocket(remoteAddress); 
   }
 }

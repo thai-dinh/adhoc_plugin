@@ -1,6 +1,5 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:flutter/material.dart';
 
 
 class AdHocDevice {
@@ -11,7 +10,7 @@ class AdHocDevice {
   int type;
 
   AdHocDevice({
-    @required String name, @required this.type, this.mac, this.label = '',
+    String name, this.type, this.mac, this.label = '',
     this.directedConnected = false
   }) {
     this.name = Utils.checkString(name);

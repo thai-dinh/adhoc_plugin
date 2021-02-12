@@ -11,7 +11,7 @@ import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  WifiP2pClient _wifiP2pClient;
+  P2pClientSocket _socket;
   String _serverIp;
   int _port;
 
@@ -24,7 +24,7 @@ class WifiClient extends ServiceClient {
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut, onEvent, onError
   ) {
-    _wifiP2pClient = WifiP2pClient(_serverIp, _port);
+    _socket = P2pClientSocket(_serverIp, _port);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -38,7 +38,7 @@ class WifiClient extends ServiceClient {
   void listen() {
     if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
-    _wifiP2pClient.listen((data) {
+    _socket.listen((data) {
       String strMessage = Utf8Decoder().convert(data);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
       onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
@@ -48,13 +48,13 @@ class WifiClient extends ServiceClient {
   Future<void> stopListening() async {
     if (v) Utils.log(ServiceClient.TAG, 'Client: stopListening()');
     
-    await _wifiP2pClient.close();
+    await _socket.close();
   }
 
   void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
   Future<void> disconnect() async {
-    await _wifiP2pClient.close();
+    await _socket.close();
 
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
   }
@@ -62,7 +62,7 @@ class WifiClient extends ServiceClient {
   Future<void> send(MessageAdHoc message) async {
     if (v) Utils.log(ServiceClient.TAG, 'send()');
 
-    await _wifiP2pClient.write(json.encode(message.toJson()));
+    await _socket.write(json.encode(message.toJson()));
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -89,7 +89,7 @@ class WifiClient extends ServiceClient {
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
 
-      await _wifiP2pClient.connect();
+      await _socket.connect(timeOut);
 
       onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, _serverIp));
 

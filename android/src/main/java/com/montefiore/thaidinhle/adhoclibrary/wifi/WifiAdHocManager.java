@@ -15,11 +15,6 @@ import io.flutter.plugin.common.MethodChannel.Result;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
 
 import static android.os.Looper.getMainLooper;
 
@@ -60,18 +55,6 @@ public class WifiAdHocManager implements MethodCallHandler {
             break;
         case "resetDeviceName":
             result.success(resetDeviceName());
-            break;
-        case "getOwnIpAddress":
-            try {
-                byte[] ipAddressByte = getLocalIPAddress();
-                if (ipAddressByte != null) {
-                    result.success(getDottedDecimalIP(ipAddressByte));
-                } else {
-                    result.success(null);
-                }
-            } catch (SocketException exception) {
-                result.error("SocketException", "getOwnIpAddress() failed", null);
-            }
             break;
 
         default:
@@ -133,36 +116,5 @@ public class WifiAdHocManager implements MethodCallHandler {
 
     private boolean resetDeviceName() {
         return (initialName != null) ? updateDeviceName(initialName) : false;
-    }
-
-    private byte[] getLocalIPAddress() throws SocketException {
-        if (verbose) Log.d(TAG, "getLocalIPAddress()");
-        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
-            NetworkInterface intf = en.nextElement();
-            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                InetAddress inetAddress = enumIpAddr.nextElement();
-                if (!inetAddress.isLoopbackAddress() && inetAddress.toString().contains("192.168.49")) {
-                    if (inetAddress instanceof Inet4Address) {
-                        return inetAddress.getAddress();
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private String getDottedDecimalIP(byte[] ipAddressByte) {
-        if (verbose) Log.d(TAG, "getDottedDecimalIP()");
-        StringBuilder ipAddressString = new StringBuilder();
-        for (int i = 0; i < ipAddressByte.length; i++) {
-            if (i > 0) {
-                ipAddressString.append(".");
-            }
-            ipAddressString.append(ipAddressByte[i] & 0xFF);
-        }
-
-        if (verbose) Log.d(TAG, ipAddressString.toString());
-        return ipAddressString.toString();
     }
 }
