@@ -13,7 +13,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {
-  HashMap<String, AdHocDevice> _mapAddrDevices;
+  HashMap<String, AdHocDevice> _mapMacDevices;
 
   HashMap<String, NetworkManager> mapAddrNetwork;
   ServiceServer serviceServer;
@@ -23,7 +23,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   WrapperConnOriented(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
   ) : super(verbose, config, mapMacDevices) {
-    this._mapAddrDevices = HashMap();
+    this._mapMacDevices = HashMap();
     this.mapAddrNetwork = HashMap();
     this.neighbors = Neighbors();
   }
@@ -33,7 +33,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
     for (String macAddress in neighbors.labelMac.values)
-      devices.add(_mapAddrDevices[macAddress]);
+      devices.add(_mapMacDevices[macAddress]);
 
     return devices;
   }
@@ -60,10 +60,10 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     return false;
   }
 
-  bool broadcastExcept(MessageAdHoc message, String excludedAddress) {
+  bool broadcastExcept(MessageAdHoc message, String excludedLabel) {
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.forEach((remoteLabel, network) {
-        if (excludedAddress != remoteLabel)
+        if (excludedLabel != remoteLabel)
           network.sendMessage(message);
       });
 
@@ -73,16 +73,16 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     return false;
   }
 
-
   void receivedPeerMessage(Header header, NetworkManager network) {
     AdHocDevice adHocDevice = AdHocDevice(
       label: header.label,
       name: header.name,
       mac: header.mac,
+      address: header.address,
       type: type
     );
 
-    mapMacDevices.putIfAbsent(header.mac, () => adHocDevice);
+    _mapMacDevices.putIfAbsent(header.mac, () => adHocDevice);
 
     if (!neighbors.neighbors.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
@@ -90,14 +90,11 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       setRemoteDevices.add(adHocDevice);
 
       if (connectionFlooding) {
-        String id = label + DateTime.now().millisecond.toString();
+        String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
-
         header.messageType = AbstractWrapper.CONNECT_BROADCAST;
-        broadcastExcept(MessageAdHoc(header, id), label);
-        sendMessage(
-          MessageAdHoc(header, FloodMsg(id, setRemoteDevices)),
-          header.label
+        broadcastExcept(
+          MessageAdHoc(header, FloodMsg(id, setRemoteDevices)), header.label
         );
       }
     }
@@ -119,15 +116,17 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     }
   }
 
+  void connectionClosed(String mac) {
+    if (mac == null || mac.compareTo('') == 0)
+      return;
 
-  void connectionClosed(String remoteLabel) {
-    AdHocDevice adHocDevice = _mapAddrDevices[remoteLabel];
+    AdHocDevice adHocDevice = _mapMacDevices[mac];
     if (adHocDevice != null) {
       String label = adHocDevice.label;
 
-      _mapAddrDevices.remove(remoteLabel);
-      mapAddrNetwork.remove(remoteLabel);
-      neighbors.remove(label);
+      neighbors.remove(mac);
+      mapAddrNetwork.remove(adHocDevice.address);
+      _mapMacDevices.remove(mac);
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();
@@ -138,6 +137,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
           label: label,
           name: adHocDevice.name,
           mac: adHocDevice.mac,
+          address: adHocDevice.address,
           deviceType: adHocDevice.type
         );
 

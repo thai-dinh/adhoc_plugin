@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -75,6 +76,8 @@ class BleClient extends ServiceClient {
   void disconnect() {
     if (_connecStreamSub != null)
       _connecStreamSub.cancel();
+
+    BleAdHocManager.cancelConnection(_device.mac);
 
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _device.label));
   }

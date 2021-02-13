@@ -29,13 +29,13 @@ public class BluetoothLowEnergyManager {
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure (int errorCode) {
-            if (verbose) Log.d(TAG, "onStartFailure(): " + Integer.toString(errorCode));
+            if (verbose) Log.d(TAG, "Start advertise failure: " + Integer.toString(errorCode));
             super.onStartFailure(errorCode);
         }
 
         @Override
         public void onStartSuccess (AdvertiseSettings settingsInEffect) {
-            if (verbose) Log.d(TAG, "onStartSuccess()");
+            if (verbose) Log.d(TAG, "Start advertise success");
             super.onStartSuccess(settingsInEffect);
         }
     };

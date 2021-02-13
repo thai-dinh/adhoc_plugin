@@ -15,7 +15,7 @@ class BlePlugin {
 /*-------------------------------Public methods-------------------------------*/
 
   void enableExample() {
-    _wrapper.enable(3600, (bool isEnable) => print('BLE: $isEnable'));
+    _wrapper.enable(600, (bool isEnable) => print('BLE: $isEnable'));
   }
 
   void disableExample() => _wrapper.disable();

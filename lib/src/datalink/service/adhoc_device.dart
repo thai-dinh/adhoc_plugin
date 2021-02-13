@@ -8,13 +8,16 @@ class AdHocDevice {
   String label;
   String name;
   String mac;
+  String address;
   int type;
 
   AdHocDevice({
     @required String name, @required this.type, @required this.mac,
-    this.label = '', this.directedConnected = false
+    this.address = '', this.label = '', this.directedConnected = false
   }) {
     this.name = Utils.checkString(name);
+    this.address = Utils.checkString(address);
+    this.label = Utils.checkString(label);
   }
 
   String typeAsString() {
@@ -34,6 +37,7 @@ class AdHocDevice {
               'label=' + label +
               ', name=' + name +
               ', mac=' + mac +
+              ', address=' + address +
               ', type=' + type.toString() +
               ', directedConnected=' + directedConnected.toString() +
            '}';

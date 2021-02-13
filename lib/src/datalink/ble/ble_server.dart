@@ -52,7 +52,8 @@ class BleServer extends ServiceServer {
             break;
         }
       },
-      onError: onError
+      onError: onError,
+      onDone: () => _conStreamSub.cancel()
     );
 
     _msgStreamSub = _chMessage.receiveBroadcastStream()
@@ -71,7 +72,8 @@ class BleServer extends ServiceServer {
 
         onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
       },
-      onError: onError
+      onError: onError,
+      onDone: () => _msgStreamSub.cancel()
     );
 
     state = Service.STATE_LISTENING;

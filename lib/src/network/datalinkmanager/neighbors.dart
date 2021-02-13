@@ -25,8 +25,13 @@ class Neighbors {
     _mapLabelMac.putIfAbsent(label, () => mac);
   }
 
-  void remove(String remoteLabel) {
-    if (_neighbors.containsKey(remoteLabel)) {
+  void remove(String mac) {
+    if (_neighbors.containsValue(mac)) {
+      String remoteLabel;
+      remoteLabel = _mapLabelMac.keys.firstWhere(
+        (key) => _mapLabelMac[key] == mac
+      );
+
       _mapLabelMac.remove(remoteLabel);
       _neighbors.remove(remoteLabel);
     }

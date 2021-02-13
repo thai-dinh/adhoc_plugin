@@ -157,6 +157,8 @@ public class GattServerManager {
                 gattServer.connect(device, false);
             } else {
                 state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;
+                mapMacDevice.remove(device.getAddress());
+                data.remove(device.getAddress());
             }
 
             mapInfoValue.put("state", state);

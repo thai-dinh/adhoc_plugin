@@ -169,7 +169,7 @@ class WrapperWifi extends WrapperConnOriented {
     }
   }
 
-  void _onError(dynamic error) => print(error.toString());
+  void _onError(dynamic error) => throw error;
 
   void _listenServer() {
     serviceServer = WifiServer(v, _onEvent, _onError)..listen(

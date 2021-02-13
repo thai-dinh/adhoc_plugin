@@ -37,11 +37,13 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   @override
   Future<void> init(bool verbose, [Config config]) async {
     if (await BleAdHocManager.isEnabled()) {
-      _bleAdHocManager = BleAdHocManager(verbose);
-      ownName = await BleAdHocManager.getCurrentName();
-      _listenServer();
-
-      enabled = true;
+      this._bleAdHocManager = BleAdHocManager(verbose);
+      this.ownName = await BleAdHocManager.getCurrentName();
+      this.ownMac = '';
+      this._listenServer();
+      this.enabled = true;
+    } else {
+      this.enabled = false;
     }
   }
 
@@ -64,6 +66,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   @override
   void disable() {
+    mapAddrNetwork.clear();
     neighbors.neighbors.clear();
 
     _bleAdHocManager.disable();
@@ -176,7 +179,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
     bleClient.connectListener = (String mac, String uuid) async {
       mapAddrNetwork.putIfAbsent(
-        uuid, () => NetworkManager(bleClient.send, bleClient.disconnect)
+        uuid, () => NetworkManager(
+          (MessageAdHoc msg) => bleClient.send(msg), 
+          () => bleClient.disconnect()
+        )
       );
 
       await bleClient.send(MessageAdHoc(
@@ -201,7 +207,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         String mac = message.header.mac;
         ownMac = message.pdu as String;
         _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
-          ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
+          ownMac.replaceAll(new RegExp(':'), '');
+        _ownStringUUID = _ownStringUUID.toLowerCase();
 
         serviceServer.send(
           MessageAdHoc(
@@ -232,8 +239,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
           ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
-        NetworkManager network = mapAddrNetwork[message.header.address];
-        receivedPeerMessage(message.header, network);
+        receivedPeerMessage(
+          message.header, mapAddrNetwork[message.header.address]
+        );
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
@@ -247,7 +255,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
               && !isDirectNeighbors(adHocDevice.label)
             ) {
               adHocDevice.directedConnected = false;
-
               setRemoteDevices.add(adHocDevice);
             }
           }
