@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -24,15 +25,19 @@ class WrapperWifi extends WrapperConnOriented {
   String _ownIpAddress;
   String _groupOwnerAddr;
   bool _isGroupOwner;
-  WifiAdHocManager _wifiManager;
   HashMap<String, String> _mapAddrMac;
+  WifiAdHocManager _wifiManager;
 
   WrapperWifi(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapAddressDevice
-  ) : super(verbose, config, mapAddressDevice) {
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
+  ) : super(verbose, config, mapMacDevices) {
     this.type = Service.WIFI;
     this.init(verbose, config);
   }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  bool get isGroupOwner => _isGroupOwner;
 
 /*------------------------------Override methods------------------------------*/
 
@@ -41,12 +46,14 @@ class WrapperWifi extends WrapperConnOriented {
     _serverPort = config.serverPort;
 
     if (await WifiAdHocManager.isWifiEnabled()) {
-      _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
+      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)
         ..register(_registration);
-      _isGroupOwner = false;
-      _mapAddrMac = HashMap();
+      this._isGroupOwner = false;
+      this._mapAddrMac = HashMap();
+      this.ownName = await _wifiManager.adapterName;
+      this.enabled = true;
     } else {
-      enabled = false;
+      this.enabled = false;
     }
   }
 
@@ -61,7 +68,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override 
   void disable() {
-    _mapAddrMac.clear();
+    mapAddrNetwork.clear();
     neighbors.clear();
 
     _wifiManager = null;
@@ -94,14 +101,20 @@ class WrapperWifi extends WrapperConnOriented {
 
           discoveryCompleted = true;
           break;
+
+        default:
+          break;
       }
     });
   }
 
   @override
   void connect(int attempts, AdHocDevice adHocDevice) async {
-    this.attempts = attempts;
-    await _wifiManager.connect(adHocDevice.mac);
+    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac];
+    if (wifiAdHocDevice != null) {
+      this.attempts = attempts;
+      await _wifiManager.connect(adHocDevice.mac);
+    }
   }
 
   @override
@@ -130,8 +143,17 @@ class WrapperWifi extends WrapperConnOriented {
 
 /*-------------------------------Public methods-------------------------------*/
 
+  void unregister() => _wifiManager.unregister();
+
   void removeGroup() {
-    _wifiManager.unregister();
+    if (serviceServer != null) {
+      _mapAddrMac.forEach((address, mac) async {
+        await serviceServer.cancelConnection(mac);
+      });
+
+      serviceServer.activeConnections.clear();
+    }
+
     _wifiManager.removeGroup();
   }
 
@@ -152,7 +174,10 @@ class WrapperWifi extends WrapperConnOriented {
     }
   }
 
-  void _onWifiReady(String ipAddress) => _ownIpAddress = ipAddress;
+  void _onWifiReady(String ipAddress, String mac) {
+    _ownIpAddress = ipAddress;
+    ownMac = mac;
+  }
 
   void _onEvent(DiscoveryEvent event) {
     switch (event.type) {
@@ -160,11 +185,11 @@ class WrapperWifi extends WrapperConnOriented {
         _processMsgReceived(event.payload as MessageAdHoc);
         break;
 
-      case Service.CONNECTION_PERFORMED:
+      case Service.CONNECTION_CLOSED:
+        connectionClosed(_mapAddrMac[event.payload as String]);
         break;
 
-      case Service.CONNECTION_CLOSED:
-        connectionClosed(event.payload as String);
+      default:
         break;
     }
   }
@@ -177,7 +202,7 @@ class WrapperWifi extends WrapperConnOriented {
     );
   }
 
-  void _connect(int remotePort) {
+  void _connect(int remotePort) async {
     final wifiClient = WifiClient(
       v, remotePort, _groupOwnerAddr, attempts, timeOut, _onEvent, _onError
     );
@@ -185,7 +210,10 @@ class WrapperWifi extends WrapperConnOriented {
     wifiClient.connectListener = (String remoteAddress) async {
       mapAddrNetwork.putIfAbsent(
         remoteAddress,
-        () => NetworkManager(wifiClient.send, wifiClient.disconnect)
+        () => NetworkManager(
+          (MessageAdHoc msg) => wifiClient.send(msg), 
+          () => wifiClient.disconnect()
+        )
       );
 
       wifiClient.send(MessageAdHoc(
@@ -197,18 +225,17 @@ class WrapperWifi extends WrapperConnOriented {
           address: _ownIpAddress,
           deviceType: Service.WIFI
         ),
-        'null'
       ));
     };
 
-    wifiClient..connect()..listen();
+    await wifiClient.connect();
+    wifiClient.listen();
   }
 
   void _processMsgReceived(MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
-        ownMac = message.pdu as String;
 
         serviceServer.send(
           MessageAdHoc(Header(
@@ -232,7 +259,9 @@ class WrapperWifi extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
-        ownMac = message.pdu as String;
+        _mapAddrMac.putIfAbsent(
+          message.header.address, () => message.header.mac
+        );
 
         NetworkManager network = mapAddrNetwork[message.header.address];
         receivedPeerMessage(message.header, network);
@@ -262,6 +291,9 @@ class WrapperWifi extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.BROADCAST:
+        break;
+
+      default:
         break;
     }
   }

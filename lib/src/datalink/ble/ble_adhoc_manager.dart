@@ -208,8 +208,8 @@ class BleAdHocManager {
     });
   }
 
-  static void cancelConnection(String mac) {
-    _channel.invokeMethod('cancelConnection', mac);
+  static Future<void> cancelConnection(String mac) async {
+    await _channel.invokeMethod('cancelConnection', mac);
   }
 
   static Future<String> getCurrentName() async {

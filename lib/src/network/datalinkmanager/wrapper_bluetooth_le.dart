@@ -67,7 +67,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   @override
   void disable() {
     mapAddrNetwork.clear();
-    neighbors.neighbors.clear();
+    neighbors.clear();
 
     _bleAdHocManager.disable();
     _bleAdHocManager = null;

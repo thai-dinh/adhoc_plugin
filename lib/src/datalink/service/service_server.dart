@@ -27,14 +27,15 @@ abstract class ServiceServer extends Service {
   }
 
   void removeInactiveConnection(String mac) {
-    _activeConnections.remove(mac);
+    if (containConnection(mac))
+      _activeConnections.remove(mac);
   }
 
   bool containConnection(String mac) {
     return _activeConnections.contains(mac);
   }
 
-  void cancelConnection(String mac);
+  Future<void> cancelConnection(String mac);
 
   void send(MessageAdHoc message, String mac);
 }

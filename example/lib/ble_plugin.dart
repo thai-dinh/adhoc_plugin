@@ -9,6 +9,7 @@ class BlePlugin {
 
   BlePlugin() {
     Config config = Config();
+    config.connectionFlooding = true;
     _wrapper = WrapperBluetoothLE(true, config, HashMap());
   }
 

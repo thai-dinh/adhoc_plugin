@@ -15,11 +15,11 @@ class WifiAdHocManager {
   static const String _channelName = 'ad.hoc.lib/plugin.wifi.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
-  void Function(String) _onWifiReady;
-
   bool _verbose;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
   FlutterWifiP2p _wifiP2p;
+
+  void Function(String, String) _onWifiReady;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
     _mapMacDevice = HashMap();
@@ -39,7 +39,8 @@ class WifiAdHocManager {
     });
 
     _wifiP2p.thisDeviceChangeStream.listen(
-      (wifiP2pDevice) async => _onWifiReady(await _wifiP2p.getOwnIp())
+      (wifiP2pDevice) async =>
+        _onWifiReady(await _wifiP2p.ownIp, await _wifiP2p.mac)
     );
 
     await _wifiP2p.register();
@@ -54,24 +55,25 @@ class WifiAdHocManager {
       (listDevices) {
         listDevices.forEach((device) {
           WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
-          _mapMacDevice.putIfAbsent(device.mac, () => wifiAdHocDevice);
-
-          if (!_mapMacDevice.containsKey(device.mac)) {
+          _mapMacDevice.putIfAbsent(device.mac, () {
             if (_verbose) {
               Utils.log(TAG, 
                 'Device found -> Name: ${device.name} - Address: ${device.mac}'
               );
             }
-          }
+
+            return wifiAdHocDevice;
+          });
 
           onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
-          });
+        });
       },
       onError: (error) => throw error,
       onDone: () => _stopDiscovery(onEvent)
     );
 
     _wifiP2p.discovery();
+    onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
       Duration(milliseconds: Utils.DISCOVERY_TIME),

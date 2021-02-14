@@ -38,20 +38,26 @@ class WifiClient extends ServiceClient {
   void listen() {
     if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
-    _socket.listen((data) {
-      String strMessage = Utf8Decoder().convert(data);
-      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-    });
+    _socket.listen(
+      (data) {
+        String strMessage = Utf8Decoder().convert(data);
+        MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
+        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+      },
+      onDone: () async => await stopListening()
+    );
   }
 
   Future<void> stopListening() async {
     if (v) Utils.log(ServiceClient.TAG, 'Client: stopListening()');
-    
+
     await _socket.close();
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
   }
 
-  void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+  Future<void> connect() async {
+    await _connect(attempts, Duration(milliseconds: backOffTime));
+  }
 
   Future<void> disconnect() async {
     await _socket.close();
@@ -60,7 +66,7 @@ class WifiClient extends ServiceClient {
   }
 
   void send(MessageAdHoc message) {
-    if (v) Utils.log(ServiceClient.TAG, 'send()');
+    if (v) Utils.log(ServiceClient.TAG, 'Client: send()');
 
     _socket.write(json.encode(message.toJson()));
   }
