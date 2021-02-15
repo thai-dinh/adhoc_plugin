@@ -13,6 +13,14 @@ class BlePlugin {
     _wrapper = WrapperBluetoothLE(true, config, HashMap());
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
+  List<AdHocDevice> get discoveredDevices {
+    List<AdHocDevice> list = List.empty(growable: true);
+    _discoveredDevices.entries.forEach((e) => list.add(e.value));
+    return list;
+  }
+
 /*-------------------------------Public methods-------------------------------*/
 
   void enableExample() {
@@ -37,11 +45,7 @@ class BlePlugin {
     });
   }
 
-  void connectExample() {
-    _discoveredDevices.forEach((key, value) {
-      _wrapper.connect(3, value);
-    });
-  }
+  void connectExample(AdHocDevice device) => _wrapper.connect(3, device);
 
   void stopListeningExample() => _wrapper.stopListening();
 

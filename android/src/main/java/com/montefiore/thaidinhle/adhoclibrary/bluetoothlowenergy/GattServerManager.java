@@ -171,7 +171,7 @@ public class GattServerManager {
         if (verbose) Log.d(TAG, "writeToCharacteristic()");
 
         BluetoothDevice device = mapMacDevice.get(mac);
-        characteristic.setValue(message.getBytes(StandardCharsets.UTF_8));
+        characteristic.setValue(message.getBytes(StandardCharsets.UTF_8)); // TODO: if message is more than 512 bytes
         gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }
 
@@ -195,7 +195,11 @@ public class GattServerManager {
     public void cancelConnection(String mac) {
         if (verbose) Log.d(TAG, "cancelConnection()");
 
-        gattServer.cancelConnection(mapMacDevice.get(mac));
+        BluetoothDevice device = mapMacDevice.get(mac);
+        if (device == null)
+            return;
+
+        gattServer.cancelConnection(device);
     }
 
     public void closeGattServer() {

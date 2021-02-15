@@ -194,7 +194,7 @@ packages:
       name: flutter_reactive_ble
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.7.2"
+    version: "2.7.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -210,7 +210,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: dcbe120ff15fe4acf4e718926ab1d201a78efb91
+      resolved-ref: d691a8154daf1500949bb42cc02e42cdf2b60576
       url: "https://github.com/thai-dinh/flutter_wifi_p2p"
     source: git
     version: "0.0.1"
@@ -299,7 +299,7 @@ packages:
     source: hosted
     version: "1.1.0"
   location_web:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: location_web
       url: "https://pub.dartlang.org"

@@ -94,7 +94,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
         setFloodEvents.add(id);
         header.messageType = AbstractWrapper.CONNECT_BROADCAST;
         broadcastExcept(
-          MessageAdHoc(header, FloodMsg(id, setRemoteDevices)), header.label
+          MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()), header.label
         );
       }
     }

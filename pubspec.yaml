@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_reactive_ble: 2.7.2
+  flutter_reactive_ble: ^2.7.3
   json_annotation: ^3.1.1
   location: ^3.2.4
   meta: ^1.2.4
@@ -29,6 +29,7 @@ dev_dependencies:
 
   build_runner: ^1.11.1
   json_serializable: ^3.5.1
+  location_web: ^1.0.1
 
 flutter:
   plugin:

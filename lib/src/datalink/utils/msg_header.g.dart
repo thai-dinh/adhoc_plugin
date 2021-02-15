@@ -11,9 +11,9 @@ Header _$HeaderFromJson(Map<String, dynamic> json) {
     messageType: json['messageType'] as int,
     label: json['label'] as String,
     name: json['name'] as String,
+    deviceType: json['deviceType'] as int,
     address: json['address'] as String,
     mac: json['mac'] as String,
-    deviceType: json['deviceType'] as int,
   );
 }
 

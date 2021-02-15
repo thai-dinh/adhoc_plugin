@@ -1,3 +1,4 @@
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary_example/ble_plugin.dart';
 import 'package:adhoclibrary_example/wifi_plugin.dart';
 
@@ -15,6 +16,7 @@ class ExampleApp extends StatefulWidget {
 class _AppState extends State<ExampleApp> {
   BlePlugin blePlugin = BlePlugin();
   WifiPlugin wifiPlugin = WifiPlugin();
+  List<AdHocDevice> discoveredDevice = [];
 
   @override
   Widget build(BuildContext context) {
@@ -23,66 +25,55 @@ class _AppState extends State<ExampleApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Text('BluetoothLE'),
-                  RaisedButton(
-                    child: Text('Enable discovery'),
-                    onPressed: blePlugin.enableExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Disable'),
-                    onPressed: blePlugin.disableExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Discovery'),
-                    onPressed: blePlugin.discoveryExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Connect'),
-                    onPressed: blePlugin.connectExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Stop listening'),
-                    onPressed: blePlugin.stopListeningExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Disconnect all'),
-                    onPressed: blePlugin.disconnectAllExample,
-                  ),
-                ],
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            RaisedButton(
+              child: Text('Enable discovery'),
+              onPressed: blePlugin.enableExample,
+            ),
+            RaisedButton(
+              child: Text('Disable'),
+              onPressed: blePlugin.disableExample,
+            ),
+            RaisedButton(
+              child: Text('Discovery'),
+              onPressed: blePlugin.discoveryExample,
+            ),
+            RaisedButton(
+              child: Text('Get discovered device'),
+              onPressed: () {
+                setState(() {
+                  discoveredDevice = blePlugin.discoveredDevices;
+                });
+              },
+            ),
+            RaisedButton(
+              child: Text('Stop listening'),
+              onPressed: blePlugin.stopListeningExample,
+            ),
+            RaisedButton(
+              child: Text('Disconnect all'),
+              onPressed: blePlugin.disconnectAllExample,
+            ),
+            Expanded(
+              child: ListView(
+                children: discoveredDevice.map((device) {
+                  return Card(
+                    child: ListTile(
+                      title: Center(child: Text(device.name)),
+                      subtitle: Center(child: Text(device.mac)),
+                      onTap: () {
+                        print("Connect to device: ${device.mac}");
+                        blePlugin.connectExample(device);
+                      },
+                    ),
+                  );
+                }).toList(),
               ),
-
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text('Wifi P2P'),
-                  RaisedButton(
-                    child: Text('Discovery'),
-                    onPressed: wifiPlugin.discoveryExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Connect'),
-                    onPressed: wifiPlugin.connectExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Remove group'),
-                    onPressed: wifiPlugin.removeGroupExample,
-                  ),
-                  RaisedButton(
-                    child: Text('Stop listening'),
-                    onPressed: wifiPlugin.stopListeningExample,
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
