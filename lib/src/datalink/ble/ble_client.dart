@@ -58,12 +58,12 @@ class BleClient extends ServiceClient {
       .listen((List<int> rawData) {
         bytesData.add(Uint8List.fromList(rawData));
 
-        if (rawData.first == BleUtils.MESSAGE_END) {
+        if (rawData[0] == BleUtils.MESSAGE_END) {
           Uint8List messageAsListByte = Uint8List.fromList(bytesData.expand(
             (x) {
-            List<int> tmp = new List<int>.from(x);
-            tmp.removeAt(0);
-            return tmp;
+              List<int> tmp = new List<int>.from(x);
+              tmp.removeAt(0);
+              return tmp;
             }
           ).toList());
 
@@ -108,14 +108,14 @@ class BleClient extends ServiceClient {
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
-    int mtu = _device.mtu - 1, length = msg.length, start = 0, end = mtu;
+    int mtu = _device.mtu - 2, length = msg.length, start = 0, end = mtu;
     int index = BleUtils.MESSAGE_BEGIN;
 
     while (length > mtu) {
       chunk = msg.sublist(start, end);
-      await _reactiveBle.writeCharacteristicWithResponse(
+      await _reactiveBle.writeCharacteristicWithoutResponse(
         characteristic, value: [index % BleUtils.UINT8_SIZE] + chunk.toList()
-      ).catchError((error) => print(error.toString()));
+      );
 
       index++;
       start += mtu;
@@ -124,7 +124,7 @@ class BleClient extends ServiceClient {
     }
 
     chunk = msg.sublist(start, start + length);
-    await _reactiveBle.writeCharacteristicWithResponse(
+    await _reactiveBle.writeCharacteristicWithoutResponse(
       characteristic, value: [BleUtils.MESSAGE_END] + chunk.toList()
     );
   }

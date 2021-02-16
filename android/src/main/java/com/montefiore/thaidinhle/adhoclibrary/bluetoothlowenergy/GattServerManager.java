@@ -128,7 +128,10 @@ public class GattServerManager {
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
         ) {
             if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+
+            if(responseNeeded) {
+                gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
+            }
 
             String address = device.getAddress();
             ArrayList<byte[]> received = data.get(address);
@@ -147,7 +150,7 @@ public class GattServerManager {
 
         @Override
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-            if (verbose) Log.d(TAG, "onConnectionStateChange(): " + device.getAddress());
+            if (verbose) Log.d(TAG, "onConnectionStateChange(): " + device.getAddress() + ", " + newState);
 
             mapMacDevice.put(device.getAddress(), device);
             data.put(device.getAddress(), new ArrayList<byte[]>());
@@ -174,7 +177,7 @@ public class GattServerManager {
 
         @Override
         public void onMtuChanged(BluetoothDevice device, int mtu) {
-            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress());
+            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress() + "," + mtu);
             mapMacMtu.put(device.getAddress(), new Short((short) mtu));
         }
     };
@@ -185,7 +188,7 @@ public class GattServerManager {
         BluetoothDevice device = mapMacDevice.get(mac);
         byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 1;
+        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 2;
         int start = 0, end = mtu;
         byte index = 1;
 
@@ -199,6 +202,7 @@ public class GattServerManager {
             start += mtu;
             end += mtu;
             length -= mtu;
+            outputStream.reset();
         }
 
         outputStream.reset();

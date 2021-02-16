@@ -52,8 +52,10 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   bool broadcast(MessageAdHoc message) {
     if (neighbors.neighbors.length > 0) {
-      for (NetworkManager network in neighbors.neighbors.values)
-        network.sendMessage(message);
+      neighbors.neighbors.values.forEach((network) async {
+        await network.sendMessage(message);
+      });
+
       return true;
     }
 
@@ -62,9 +64,10 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   bool broadcastExcept(MessageAdHoc message, String excludedLabel) {
     if (neighbors.neighbors.length > 0) {
-      neighbors.neighbors.forEach((remoteLabel, network) {
-        if (excludedLabel != remoteLabel)
-          network.sendMessage(message);
+      neighbors.neighbors.forEach((remoteLabel, network) async {
+        if (excludedLabel.compareTo(remoteLabel) != 0) {
+          await network.sendMessage(message);
+        }
       });
 
       return true;
@@ -94,7 +97,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
         setFloodEvents.add(id);
         header.messageType = AbstractWrapper.CONNECT_BROADCAST;
         broadcastExcept(
-          MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()), header.label
+          MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()), 
+          header.label
         );
       }
     }
