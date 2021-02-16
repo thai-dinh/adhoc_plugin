@@ -18,12 +18,14 @@ import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-
 import java.util.Map;
 
 public class GattServerManager {
@@ -37,6 +39,7 @@ public class GattServerManager {
     private BluetoothManager bluetoothManager;
     private HashMap<String, ArrayList<byte[]>> data;
     private HashMap<String, BluetoothDevice> mapMacDevice;
+    private HashMap<String, Short> mapMacMtu;
     private EventChannel eventConnectionChannel;
     private EventChannel eventMessageChannel;
     private MainThreadEventSink eventConnectionSink;
@@ -46,6 +49,7 @@ public class GattServerManager {
         this.verbose = false;
         this.data = new HashMap<>();
         this.mapMacDevice = new HashMap<>();
+        this.mapMacMtu = new HashMap<>();
     }
 
     public void initEventChannels(BinaryMessenger messenger) {
@@ -154,10 +158,12 @@ public class GattServerManager {
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 state = BluetoothLowEnergyUtils.STATE_CONNECTED;
-                gattServer.connect(device, false);
+                gattServer.connect(device, true);
+                mapMacMtu.put(device.getAddress(), new Short(BluetoothLowEnergyUtils.MIN_MTU));
             } else {
                 state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;
                 mapMacDevice.remove(device.getAddress());
+                mapMacMtu.remove(device.getAddress());
                 data.remove(device.getAddress());
             }
 
@@ -165,14 +171,41 @@ public class GattServerManager {
 
             eventConnectionSink.success(mapInfoValue);
         }
+
+        @Override
+        public void onMtuChanged(BluetoothDevice device, int mtu) {
+            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress());
+            mapMacMtu.put(device.getAddress(), new Short((short) mtu));
+        }
     };
 
-    public void writeToCharacteristic(String message, String mac) {
-        if (verbose) Log.d(TAG, "writeToCharacteristic()");
+    public boolean writeToCharacteristic(String message, String mac) throws IOException {
+        if (verbose) Log.d(TAG, "writeToCharacteristic(): " + mac);
 
         BluetoothDevice device = mapMacDevice.get(mac);
-        characteristic.setValue(message.getBytes(StandardCharsets.UTF_8)); // TODO: if message is more than 512 bytes
-        gattServer.notifyCharacteristicChanged(device, characteristic, false);
+        byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 1;
+        int start = 0, end = mtu;
+        byte index = 1;
+
+        while (length > mtu) {
+            outputStream.write(index);
+            outputStream.write(Arrays.copyOfRange(bytesMsg, start, end));
+            characteristic.setValue(outputStream.toByteArray());
+            gattServer.notifyCharacteristicChanged(device, characteristic, false);
+
+            index++;
+            start += mtu;
+            end += mtu;
+            length -= mtu;
+        }
+
+        outputStream.reset();
+        outputStream.write(BluetoothLowEnergyUtils.END_MESSAGE);
+        outputStream.write(Arrays.copyOfRange(bytesMsg, start, start + length));
+        characteristic.setValue(outputStream.toByteArray());
+        return gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {

@@ -37,5 +37,5 @@ abstract class ServiceServer extends Service {
 
   Future<void> cancelConnection(String mac);
 
-  void send(MessageAdHoc message, String mac);
+  Future<void> send(MessageAdHoc message, String mac);
 }

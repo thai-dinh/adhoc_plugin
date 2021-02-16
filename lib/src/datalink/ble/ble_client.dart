@@ -47,6 +47,7 @@ class BleClient extends ServiceClient {
   void listen() {
     if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
 
+    List<Uint8List> bytesData = List.empty(growable: true);
     final msgCharacteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
@@ -55,10 +56,22 @@ class BleClient extends ServiceClient {
 
     _msgStreamSub = _reactiveBle.subscribeToCharacteristic(msgCharacteristic)
       .listen((List<int> rawData) {
-        Uint8List messageAsListByte = Uint8List.fromList(rawData);
-        String strMessage = Utf8Decoder().convert(messageAsListByte);
-        MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+        bytesData.add(Uint8List.fromList(rawData));
+
+        if (rawData.first == BleUtils.MESSAGE_END) {
+          Uint8List messageAsListByte = Uint8List.fromList(bytesData.expand(
+            (x) {
+            List<int> tmp = new List<int>.from(x);
+            tmp.removeAt(0);
+            return tmp;
+            }
+          ).toList());
+
+          String strMessage = Utf8Decoder().convert(messageAsListByte);
+          MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
+          onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+          bytesData.clear();
+        }
       },
       onError: onError
     );
@@ -95,14 +108,14 @@ class BleClient extends ServiceClient {
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
-    int mtu = _device.mtu-1, length = msg.length, start = 0, end = mtu;
+    int mtu = _device.mtu - 1, length = msg.length, start = 0, end = mtu;
     int index = BleUtils.MESSAGE_BEGIN;
 
     while (length > mtu) {
       chunk = msg.sublist(start, end);
       await _reactiveBle.writeCharacteristicWithResponse(
         characteristic, value: [index % BleUtils.UINT8_SIZE] + chunk.toList()
-      );
+      ).catchError((error) => print(error.toString()));
 
       index++;
       start += mtu;

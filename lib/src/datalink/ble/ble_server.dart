@@ -102,10 +102,10 @@ class BleServer extends ServiceServer {
    await BleAdHocManager.cancelConnection(mac);
   }
 
-  void send(MessageAdHoc message, String mac) {
+  Future<void> send(MessageAdHoc message, String mac) async {
     if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
 
-    BleAdHocManager.gattServerSendMessage(message, mac);
+    await BleAdHocManager.gattServerSendMessage(message, mac);
   }
 
 /*------------------------------Private methods-------------------------------*/

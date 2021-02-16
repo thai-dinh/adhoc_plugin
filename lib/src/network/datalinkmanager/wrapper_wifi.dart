@@ -210,7 +210,7 @@ class WrapperWifi extends WrapperConnOriented {
       mapAddrNetwork.putIfAbsent(
         remoteAddress,
         () => NetworkManager(
-          (MessageAdHoc msg) => wifiClient.send(msg), 
+          (MessageAdHoc msg) async => wifiClient.send(msg), 
           () => wifiClient.disconnect()
         )
       );

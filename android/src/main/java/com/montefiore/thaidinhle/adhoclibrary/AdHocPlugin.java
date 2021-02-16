@@ -16,6 +16,9 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import java.io.IOException;
+
+
 public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.ble.channel";
 
@@ -62,9 +65,13 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
         gattServerManager.closeGattServer();
         break;
       case "sendMessage":
-        final String mac = call.argument("mac");
-        final String message = call.argument("message");
-        gattServerManager.writeToCharacteristic(message, mac);
+        try {
+          final String mac = call.argument("mac");
+          final String message = call.argument("message");
+          result.success(gattServerManager.writeToCharacteristic(message, mac)); 
+        } catch (IOException exception) {
+          result.success(false);
+        }
         break;
       case "cancelConnection":
         final String macAddress = call.arguments();

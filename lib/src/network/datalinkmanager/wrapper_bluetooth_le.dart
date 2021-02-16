@@ -229,7 +229,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         receivedPeerMessage(
           message.header,
           NetworkManager(
-            (MessageAdHoc msg) => serviceServer.send(msg, mac),
+            (MessageAdHoc msg) async => await serviceServer.send(msg, mac),
             () => serviceServer.cancelConnection(mac)
           )
         );
@@ -246,10 +246,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
-        if (checkFloodEvent((message.pdu as FloodMsg).id)) {
+        FloodMsg floodMsg = FloodMsg.fromJson(message.pdu as Map);
+        if (checkFloodEvent(floodMsg.id)) {
           broadcastExcept(message, message.header.label);
 
-          HashSet<AdHocDevice> hashSet = (message.pdu as FloodMsg).adHocDevices;
+          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
           for (AdHocDevice adHocDevice in hashSet) {
             if (adHocDevice.label == label 
               && !setRemoteDevices.contains(adHocDevice)

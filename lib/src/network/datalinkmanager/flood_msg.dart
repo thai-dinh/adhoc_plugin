@@ -26,8 +26,9 @@ class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>, Map<Strin
 
   @override
   HashSet<AdHocDevice> fromJson(Map<String, dynamic> json) {
-    List<Map<String, dynamic>> list = json['devices'];
     List<AdHocDevice> adHocDevices = List.empty(growable: true);
+    List<Map<String, dynamic>> list = 
+      (json['devices'] as List<dynamic>).cast<Map<String, dynamic>>();
 
     list.forEach((device) => adHocDevices.add(AdHocDevice.fromJson(device)));
 

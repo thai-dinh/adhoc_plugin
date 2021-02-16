@@ -2,14 +2,14 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
 
 class NetworkManager {
-  void Function(MessageAdHoc) _sendMessage;
+  Future<void> Function(MessageAdHoc) _sendMessage;
   void Function() _disconnect;
 
   NetworkManager(this._sendMessage, this._disconnect);
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void sendMessage(MessageAdHoc message) => _sendMessage(message);
+  Future<void> sendMessage(MessageAdHoc message) async => await _sendMessage(message);
 
   void disconnect() => _disconnect();
 }
