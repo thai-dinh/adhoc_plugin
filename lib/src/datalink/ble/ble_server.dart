@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -33,7 +33,7 @@ class BleServer extends ServiceServer {
 /*-------------------------------Public methods-------------------------------*/
 
   void listen() {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: listen()');
+    if (v) log(ServiceServer.TAG, 'Server: listen()');
 
     BleAdHocManager.openGattServer();
 
@@ -41,12 +41,12 @@ class BleServer extends ServiceServer {
       .listen((map) {
         String mac = map['macAddress'] as String;
         switch (map['state']) {
-          case BleUtils.STATE_CONNECTED:
+          case STATE_CONNECTED:
             addActiveConnection(mac);
             onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, mac));
             break;
 
-          case BleUtils.STATE_DISCONNECTED:
+          case STATE_DISCONNECTED:
             removeInactiveConnection(mac);
             onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, mac));
             break;
@@ -80,7 +80,7 @@ class BleServer extends ServiceServer {
   }
 
   void stopListening() {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: stopListening');
+    if (v) log(ServiceServer.TAG, 'Server: stopListening');
 
     if (_conStreamSub != null) {
       _conStreamSub.cancel();
@@ -97,13 +97,13 @@ class BleServer extends ServiceServer {
   }
 
   Future<void> cancelConnection(String mac) async {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: cancelConnection()');
+    if (v) log(ServiceServer.TAG, 'Server: cancelConnection()');
 
    await BleAdHocManager.cancelConnection(mac);
   }
 
   Future<void> send(MessageAdHoc message, String mac) async {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
+    if (v) log(ServiceServer.TAG, 'Server: send()');
 
     await BleAdHocManager.gattServerSendMessage(message, mac);
   }

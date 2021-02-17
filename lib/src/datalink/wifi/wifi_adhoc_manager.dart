@@ -47,7 +47,7 @@ class WifiAdHocManager {
   }
 
   void discovery(void onEvent(DiscoveryEvent event)) async {
-    if (_verbose) Utils.log(TAG, 'discovery()');
+    if (_verbose) log(TAG, 'discovery()');
 
     _mapMacDevice.clear();
 
@@ -57,7 +57,7 @@ class WifiAdHocManager {
           WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
           _mapMacDevice.putIfAbsent(device.mac, () {
             if (_verbose) {
-              Utils.log(TAG, 
+              log(TAG, 
                 'Device found -> Name: ${device.name} - Address: ${device.mac}'
               );
             }
@@ -76,7 +76,7 @@ class WifiAdHocManager {
     onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
-      Duration(milliseconds: Utils.DISCOVERY_TIME),
+      Duration(milliseconds: DISCOVERY_TIME),
       () => _stopDiscovery(onEvent)
     );
   }
@@ -84,7 +84,7 @@ class WifiAdHocManager {
   Future<void> unregister() async => await unregister(); 
 
   Future<void> connect(final String remoteAddress) async {
-    if (_verbose) Utils.log(TAG, 'connect(): $remoteAddress');
+    if (_verbose) log(TAG, 'connect(): $remoteAddress');
 
     WifiAdHocDevice device = _mapMacDevice[remoteAddress];
     if (device == null)
@@ -110,7 +110,7 @@ class WifiAdHocManager {
 /*------------------------------Private methods-------------------------------*/
 
   void _stopDiscovery(void onEvent(DiscoveryEvent event)) {
-    if (_verbose) Utils.log(TAG, 'Discovery completed');
+    if (_verbose) log(TAG, 'Discovery completed');
 
     onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }

@@ -15,14 +15,14 @@ class Header {
   String _mac;
 
   Header({
-    @required int messageType, @required String label, @required String name, 
-    @required int deviceType, String address = '', String mac = ''
+    @required int messageType, String label, String name, String address = '', 
+    String mac = '', int deviceType
   }) {
     this._messageType = messageType;
-    this._label = Utils.checkString(label);
-    this._name = Utils.checkString(name);
-    this._address = Utils.checkString(address);
-    this._mac = Utils.checkString(mac);
+    this._label = checkString(label);
+    this._name = checkString(name);
+    this._address = checkString(address);
+    this._mac = checkString(mac);
     this._deviceType = deviceType;
   }
 

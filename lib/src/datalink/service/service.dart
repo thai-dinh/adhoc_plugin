@@ -31,7 +31,7 @@ abstract class Service {
 /*------------------------------Getters & Setters-----------------------------*/
 
   set state(int state) {
-    if (v) Utils.log(TAG, 'state: $_state -> $state');
+    if (v) log(TAG, 'state: $_state -> $state');
     _state = state;
   }
 

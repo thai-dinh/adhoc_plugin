@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -54,7 +54,7 @@ class BleAdHocManager {
   }
 
   void enableDiscovery(int duration) {
-    if (_verbose) Utils.log(TAG, 'enableDiscovery()');
+    if (_verbose) log(TAG, 'enableDiscovery()');
 
     if (duration < 0 || duration > 3600) 
       throw BadDurationException(
@@ -66,7 +66,7 @@ class BleAdHocManager {
   }
 
   void discovery(void onEvent(DiscoveryEvent event)) async  {
-    if (_verbose) Utils.log(TAG, 'discovery()');
+    if (_verbose) log(TAG, 'discovery()');
 
     if (!isRequested && !isGranted) {
       await _requestPermission();
@@ -82,14 +82,14 @@ class BleAdHocManager {
     _mapMacDevice.clear();
 
     _subscription = _reactiveBle.scanForDevices(
-      withServices: [Uuid.parse(BleUtils.SERVICE_UUID)],
+      withServices: [Uuid.parse(SERVICE_UUID)],
       scanMode: ScanMode.lowLatency,
     ).listen(
       (device) {
         BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
         _mapMacDevice.putIfAbsent(device.id, () {
           if (_verbose) {
-            Utils.log(TAG, 'Device found: ' +
+            log(TAG, 'Device found: ' +
               'Name: ${device.name} - Address: ${device.id}'
             );
           }
@@ -107,13 +107,13 @@ class BleAdHocManager {
     onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
-      Duration(milliseconds: Utils.DISCOVERY_TIME),
+      Duration(milliseconds: DISCOVERY_TIME),
       () => _stopScan(onEvent)
     );
   }
 
   Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
-    if (_verbose) Utils.log(TAG, 'getPairedDevices()');
+    if (_verbose) log(TAG, 'getPairedDevices()');
 
     HashMap<String, BleAdHocDevice> pairedDevices = HashMap();
     List<Map> btDevices = await _channel.invokeMethod('resetDeviceName');
@@ -163,7 +163,7 @@ class BleAdHocManager {
   void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
 
   void _stopScan(void onEvent(DiscoveryEvent event)) {
-    if (_verbose) Utils.log(TAG, 'Discovery end');
+    if (_verbose) log(TAG, 'Discovery end');
 
     _subscription.cancel();
     _subscription = null;

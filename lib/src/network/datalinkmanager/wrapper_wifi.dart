@@ -84,7 +84,7 @@ class WrapperWifi extends WrapperConnOriented {
         case Service.DEVICE_DISCOVERED:
           WifiAdHocDevice device = event.payload as WifiAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (v) Utils.log(TAG, "Add " + device.mac + " into mapMacDevices");
+            if (v) log(TAG, "Add " + device.mac + " into mapMacDevices");
             return device;
           });
           break;
@@ -93,7 +93,7 @@ class WrapperWifi extends WrapperConnOriented {
           HashMap discoveredDevices = event.payload as HashMap;
           discoveredDevices.forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
-              if (v) Utils.log(TAG, "Add " + mac + " into mapMacDevices");
+              if (v) log(TAG, "Add " + mac + " into mapMacDevices");
               return device;
             });
           });

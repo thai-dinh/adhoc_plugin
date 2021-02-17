@@ -29,10 +29,10 @@ class AdHocDevice {
     @required String name, @required this.mac, @required this.type,
     this.directedConnected = false, this.label = '', this.address = ''
   }) {
-    this.label = Utils.checkString(label);
-    this.name = Utils.checkString(name);
-    this.mac = Utils.checkString(mac);
-    this.address = Utils.checkString(address);
+    this.label = checkString(label);
+    this.name = checkString(name);
+    this.mac = checkString(mac);
+    this.address = checkString(address);
     this.type = type;
   }
 

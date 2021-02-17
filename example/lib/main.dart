@@ -50,8 +50,8 @@ class _AppState extends State<ExampleApp> {
               },
             ),
             RaisedButton(
-              child: Text('Stop listening'),
-              onPressed: blePlugin.stopListeningExample,
+              child: Text('Broadcast'),
+              onPressed: blePlugin.broadcastExample,
             ),
             RaisedButton(
               child: Text('Disconnect all'),

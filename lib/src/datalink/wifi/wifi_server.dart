@@ -26,7 +26,7 @@ class WifiServer extends ServiceServer {
 /*-------------------------------Public methods-------------------------------*/
 
   void listen({@required String hostIp, @required int serverPort}) async {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: listen()');
+    if (v) log(ServiceServer.TAG, 'Server: listen()');
 
     _serverSocket = P2pServerSocket(hostIp, serverPort);
 
@@ -42,7 +42,7 @@ class WifiServer extends ServiceServer {
   }
 
   Future<void> stopListening() async {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: stopListening()');
+    if (v) log(ServiceServer.TAG, 'Server: stopListening()');
 
     await _serverSocket.close();
 
@@ -50,7 +50,7 @@ class WifiServer extends ServiceServer {
   }
 
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
-    if (v) Utils.log(ServiceServer.TAG, 'Server: send()');
+    if (v) log(ServiceServer.TAG, 'Server: send()');
 
     _serverSocket.write(
       json.encode(message.toJson()), remoteAddress: remoteAddress

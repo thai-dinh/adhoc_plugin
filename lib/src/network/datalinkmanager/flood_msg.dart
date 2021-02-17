@@ -10,7 +10,6 @@ part 'flood_msg.g.dart';
 class FloodMsg {
   @_HashSetConverter()
   HashSet<AdHocDevice> adHocDevices;
-
   String id;
 
   FloodMsg([this.id, this.adHocDevices]);

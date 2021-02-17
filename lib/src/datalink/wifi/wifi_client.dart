@@ -36,7 +36,7 @@ class WifiClient extends ServiceClient {
 /*-------------------------------Public methods-------------------------------*/
 
   void listen() {
-    if (v) Utils.log(ServiceClient.TAG, 'Client: listen()');
+    if (v) log(ServiceClient.TAG, 'Client: listen()');
 
     _socket.listen(
       (data) {
@@ -49,7 +49,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> stopListening() async {
-    if (v) Utils.log(ServiceClient.TAG, 'Client: stopListening()');
+    if (v) log(ServiceClient.TAG, 'Client: stopListening()');
 
     await _socket.close();
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
@@ -66,7 +66,7 @@ class WifiClient extends ServiceClient {
   }
 
   void send(MessageAdHoc message) {
-    if (v) Utils.log(ServiceClient.TAG, 'Client: send()');
+    if (v) log(ServiceClient.TAG, 'Client: send()');
 
     _socket.write(json.encode(message.toJson()));
   }
@@ -79,7 +79,7 @@ class WifiClient extends ServiceClient {
     } on NoConnectionException {
       if (attempts > 0) {
         if (v)
-          Utils.log(ServiceClient.TAG, 'Connection attempt $attempts failed');
+          log(ServiceClient.TAG, 'Connection attempt $attempts failed');
 
         await Future.delayed(delay);
         return _connect(attempts - 1, delay * 2);
@@ -90,7 +90,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (v) Utils.log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
+    if (v) log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
@@ -102,7 +102,7 @@ class WifiClient extends ServiceClient {
       if (_connectListener != null)
         _connectListener(_serverIp);
 
-      if (v) Utils.log(ServiceClient.TAG, 'Connected to $_serverIp');
+      if (v) log(ServiceClient.TAG, 'Connected to $_serverIp');
 
       state = Service.STATE_CONNECTED;
     }

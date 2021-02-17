@@ -4,8 +4,8 @@ import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_client.dart';
+import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_utils.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -84,7 +84,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         case Service.DEVICE_DISCOVERED:
           BleAdHocDevice device = event.payload as BleAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (v) Utils.log(TAG, "Add " + device.mac + " into mapMacDevices");
+            if (v) log(TAG, "Add " + device.mac + " into mapMacDevices");
             return device;
           });
           break;
@@ -93,7 +93,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           HashMap discoveredDevices = event.payload as HashMap;
           discoveredDevices.forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
-              if (v) Utils.log(TAG, "Add " + mac + " into mapMacDevices");
+              if (v) log(TAG, "Add " + mac + " into mapMacDevices");
               return device;
             });
           });
@@ -207,8 +207,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       case AbstractWrapper.CONNECT_SERVER:
         String mac = message.header.mac;
         ownMac = message.pdu as String;
-        _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
-          ownMac.replaceAll(new RegExp(':'), '');
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID.toLowerCase();
 
         serviceServer.send(
@@ -237,8 +236,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       case AbstractWrapper.CONNECT_CLIENT:
         ownMac = message.pdu as String;
-        _ownStringUUID = BleUtils.BLUETOOTHLE_UUID +
-          ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
         receivedPeerMessage(
           message.header, mapAddrNetwork[message.header.address]

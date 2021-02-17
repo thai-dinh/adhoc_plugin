@@ -188,18 +188,20 @@ public class GattServerManager {
         BluetoothDevice device = mapMacDevice.get(mac);
         byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 2;
+        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 10;
         int start = 0, end = mtu;
         byte index = 1;
 
+        Log.d(TAG, "msg " + Integer.toString(bytesMsg.length));
         while (length > mtu) {
             outputStream.write(index);
             outputStream.write(Arrays.copyOfRange(bytesMsg, start, end));
+            Log.d(TAG, "size " + Integer.toString(outputStream.size()));
             characteristic.setValue(outputStream.toByteArray());
             gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
             index++;
-            start += mtu;
+            start = end;
             end += mtu;
             length -= mtu;
             outputStream.reset();
@@ -207,7 +209,8 @@ public class GattServerManager {
 
         outputStream.reset();
         outputStream.write(BluetoothLowEnergyUtils.END_MESSAGE);
-        outputStream.write(Arrays.copyOfRange(bytesMsg, start, start + length));
+        outputStream.write(Arrays.copyOfRange(bytesMsg, start, bytesMsg.length));
+        Log.d(TAG, "size " + Integer.toString(outputStream.size()));
         characteristic.setValue(outputStream.toByteArray());
         return gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }

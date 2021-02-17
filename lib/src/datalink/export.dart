@@ -2,7 +2,7 @@ export 'ble/ble_adhoc_device.dart';
 export 'ble/ble_adhoc_manager.dart';
 export 'ble/ble_client.dart';
 export 'ble/ble_server.dart';
-export 'ble/ble_utils.dart';
+export 'ble/ble_constants.dart';
 export 'exceptions/device_failure.dart';
 export 'exceptions/device_not_found.dart';
 export 'exceptions/no_connection.dart';

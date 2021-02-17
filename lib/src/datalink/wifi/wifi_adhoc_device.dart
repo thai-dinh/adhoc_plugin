@@ -12,8 +12,8 @@ class WifiAdHocDevice extends AdHocDevice {
   ) : super(
     name: device.name, mac: device.mac, type: Service.WIFI
   ) {
-    this.address = Utils.checkString(ipAddress);
-    this.label = Utils.checkString(label);
+    this.address = checkString(ipAddress);
+    this.label = checkString(label);
     this.port = 0;
   }
 
