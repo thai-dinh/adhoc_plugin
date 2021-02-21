@@ -6,31 +6,27 @@ part 'data.g.dart';
 
 @JsonSerializable()
 class Data {
-  String _destIpAddress;
-  Object _payload;
+  String destIpAddress;
+  Object payload;
 
   Data({@required String destIpAddress, @required Object payload}) {
-    this._destIpAddress = destIpAddress;
-    this._payload = payload;
+    this.destIpAddress = destIpAddress;
+    this.payload = payload;
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
+ factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
-  String get destIpAddress => _destIpAddress;
+/*-------------------------------Public methods-------------------------------*/
 
-  Object get payload => _payload;
-
-  set destIpAddress(String destIpAddress) => _destIpAddress = destIpAddress;
-
-  set payload(Object payload) => _payload = payload;
+  Map<String, dynamic> toJson() => _$DataToJson(this);
 
 /*------------------------------Override methods------------------------------*/
 
   @override
   String toString() {
     return 'Data{' +
-            'destIpAddress=' + _destIpAddress +
-            ', payload=' + _payload.toString() +
+            'destIpAddress=' + destIpAddress +
+            ', payload=' + payload.toString() +
           '}';
   }
 }

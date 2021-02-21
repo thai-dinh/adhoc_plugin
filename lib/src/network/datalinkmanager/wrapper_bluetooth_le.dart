@@ -90,7 +90,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           break;
 
         case Service.DISCOVERY_END:
-          HashMap discoveredDevices = event.payload as HashMap;
+          Map discoveredDevices = event.payload as Map;
           discoveredDevices.forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
               if (v) log(TAG, "Add " + mac + " into mapMacDevices");
@@ -99,6 +99,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           });
 
           discoveryCompleted = true;
+          break;
+
+        default:
           break;
       }
     });
@@ -162,6 +165,9 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       case Service.CONNECTION_CLOSED:
         connectionClosed(event.payload as String);
+        break;
+
+      default:
         break;
     }
   }

@@ -25,10 +25,8 @@ class DataLinkManager {
   DataLinkManager(this._verbose, this._config) {
     this._mapAddrDevice = HashMap();
     this._wrappers = List(_NB_WRAPPERS);
-    this._wrappers[Service.WIFI] = 
-      WrapperWifi(_verbose, _config, _mapAddrDevice);
-    this._wrappers[Service.BLUETOOTHLE] =
-      WrapperBluetoothLE(_verbose, _config, _mapAddrDevice);
+    this._wrappers[Service.WIFI] = WrapperWifi(_verbose, _config, _mapAddrDevice);
+    this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(_verbose, _config, _mapAddrDevice);
 
     checkState();
   }
@@ -79,7 +77,7 @@ class DataLinkManager {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     if (enabled == _wrappers.length) {
-      _bothDiscovery(onEvent);
+      _discovery(onEvent);
     } else {
       for (AbstractWrapper wrapper in _wrappers) {
         if (wrapper.enabled) {
@@ -110,7 +108,7 @@ class DataLinkManager {
   bool isDirectNeighbors(String address) {
     for (AbstractWrapper wrapper in _wrappers)
       if (wrapper.enabled && wrapper.isDirectNeighbors(address))
-          return true;
+        return true;
     return false;
   }
 
@@ -163,9 +161,10 @@ class DataLinkManager {
         );
 
         if (wrapper.broadcastExcept(MessageAdHoc(header, object), excludedAddress))
-            sent = true;
+          sent = true;
       }
     }
+
     return sent;
   }
 
@@ -187,6 +186,23 @@ class DataLinkManager {
 
   bool isEnabled(int type) => _wrappers[type].enabled;
 
+  Future<String> getAdapterName(int type) async {
+    if (_wrappers[type].enabled)
+      return await _wrappers[type].getAdapterName();
+    return null;
+  }
+
+  Future<HashMap<int, String>> getActifAdapterNames() async {
+    HashMap<int, String> adapterNames = HashMap();
+    for (AbstractWrapper wrapper in _wrappers) {
+      String name = await getAdapterName(wrapper.type);
+      if (name != null)
+        adapterNames.putIfAbsent(wrapper.type, () => name);
+    }
+
+    return adapterNames;
+  }
+
   Future<bool> updateAdapterName(int type, String newName) async {
     if (_wrappers[type].enabled) {
       return await _wrappers[type].updateDeviceName(newName);
@@ -201,9 +217,7 @@ class DataLinkManager {
     if (_wrappers[type].enabled) {
       _wrappers[type].resetDeviceName();
     } else {
-      throw DeviceFailureException(
-        _typeString(type) + ' adapter is not enabled'
-      );
+      throw DeviceFailureException(_typeString(type) + ' adapter is not enabled');
     }
   }
 
@@ -219,26 +233,9 @@ class DataLinkManager {
         wrapper.disconnect(remoteDest);
   }
 
-  Future<String> getAdapterName(int type) async {
-    if (_wrappers[type].enabled)
-      return await _wrappers[type].getAdapterName();
-    return null;
-  }
-
-  Future<HashMap<int, String>> getActifAdapterNames() async {
-      HashMap<int, String> adapterNames = HashMap();
-      for (AbstractWrapper wrapper in _wrappers) {
-          String name = await getAdapterName(wrapper.type);
-          if (name != null)
-              adapterNames.putIfAbsent(wrapper.type, () => name);
-      }
-
-      return adapterNames;
-  }
-
 /*------------------------------Private methods-------------------------------*/
 
-  void _bothDiscovery(void onEvent(DiscoveryEvent event)) {
+  void _discovery(void onEvent(DiscoveryEvent event)) {
     for (AbstractWrapper wrapper in _wrappers)
       wrapper.discovery(onEvent);
 

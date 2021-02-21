@@ -25,28 +25,26 @@
     <list default="true" id="b175e301-9bf4-4ef9-aff4-2831ba176330" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/montefiore/thaidinhle/adhoclibrary/bluetoothlowenergy/BluetoothLowEnergyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/montefiore/thaidinhle/adhoclibrary/bluetoothlowenergy/BluetoothLowEnergyManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/flutter_01.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/example/lib/ble_plugin.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/ble_plugin.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lib/wifi_plugin.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/wifi_plugin.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/datalink/ble/ble_adhoc_device.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/ble/ble_adhoc_device.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/datalink/ble/ble_adhoc_manager.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/ble/ble_adhoc_manager.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/datalink/ble/ble_client.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/ble/ble_client.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/datalink/ble/ble_server.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/ble/ble_server.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/datalink/service/adhoc_device.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/service/adhoc_device.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_adhoc_device.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_adhoc_device.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/neighbors.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/neighbors.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_client.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_client.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_server.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/datalink/wifi/wifi_server.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/aodv/aodv_message.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/aodv/aodv_message.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/aodv/data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/aodv/data.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/aodv/rerr.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/aodv/rerr.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/abstract_wrapper.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/abstract_wrapper.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/datalink_manager.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/datalink_manager.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_bluetooth_le.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_bluetooth_le.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_conn_oriented.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_conn_oriented.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_wifi.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/network/datalinkmanager/wrapper_wifi.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[5200b4bdb89f85f1]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -106,26 +104,27 @@
       <screen x="0" y="0" width="1440" height="900" />
     </state>
     <state x="184" y="112" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1440.900@0.0.1440.900" timestamp="1607376180586" />
-    <state width="1398" height="203" key="GridCell.Tab.0.bottom" timestamp="1613230642104">
+    <state width="1398" height="203" key="GridCell.Tab.0.bottom" timestamp="1613836424876">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1398" height="203" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1613230642104" />
-    <state width="1398" height="203" key="GridCell.Tab.0.center" timestamp="1613230642103">
+    <state width="1398" height="203" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1613836424876" />
+    <state width="1398" height="203" key="GridCell.Tab.0.center" timestamp="1613836424875">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1398" height="203" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1613230642103" />
-    <state width="1398" height="203" key="GridCell.Tab.0.left" timestamp="1613230642102">
+    <state width="1398" height="203" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1613836424875" />
+    <state width="1398" height="203" key="GridCell.Tab.0.left" timestamp="1613836424874">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1398" height="203" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1613230642102" />
-    <state width="1398" height="203" key="GridCell.Tab.0.right" timestamp="1613230642103">
+    <state width="1398" height="203" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1613836424874" />
+    <state width="1398" height="203" key="GridCell.Tab.0.right" timestamp="1613836424876">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1398" height="203" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1613230642103" />
-    <state x="0" y="28" width="1440" height="795" key="IDE.errors.dialog" timestamp="1613230500785">
-      <screen x="0" y="0" width="1440" height="900" />
+    <state width="1398" height="203" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1613836424876" />
+    <state x="0" y="25" width="1440" height="791" key="IDE.errors.dialog" timestamp="1613836414565">
+      <screen x="0" y="25" width="1440" height="791" />
     </state>
     <state x="0" y="28" width="1440" height="795" key="IDE.errors.dialog/0.0.1440.900@0.0.1440.900" timestamp="1613230500785" />
+    <state x="0" y="25" width="1440" height="791" key="IDE.errors.dialog/0.25.1440.791@0.25.1440.791" timestamp="1613836414565" />
     <state x="385" y="196" width="670" height="676" key="search.everywhere.popup" timestamp="1607617133223">
       <screen x="0" y="0" width="1440" height="900" />
     </state>

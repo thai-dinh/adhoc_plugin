@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -8,12 +11,14 @@ import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
-import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 import 'package:meta/meta.dart';
 
 
 class WifiServer extends ServiceServer {
-  P2pServerSocket _serverSocket;
+  StreamSubscription<Socket> _listenStreamSub;
+  HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
+  HashMap<String, Socket> _mapIpSocket;
+  ServerSocket _serverSocket;
 
   WifiServer(
     bool verbose,
@@ -21,6 +26,8 @@ class WifiServer extends ServiceServer {
     void Function(dynamic) onError
   ) : super(verbose, Service.STATE_NONE, onEvent, onError) {
     WifiAdHocManager.setVerbose(verbose);
+    _mapIpStream = HashMap();
+    _mapIpSocket = HashMap();
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -28,15 +35,43 @@ class WifiServer extends ServiceServer {
   void listen({@required String hostIp, @required int serverPort}) async {
     if (v) log(ServiceServer.TAG, 'Server: listen()');
 
-    _serverSocket = P2pServerSocket(hostIp, serverPort);
+    _serverSocket = await ServerSocket.bind(hostIp, serverPort, shared: true);
 
-    await _serverSocket.openServer();
+    _listenStreamSub = _serverSocket.listen(
+      (socket) {
+        String remoteAddress = socket.remoteAddress.address;
+        _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
+        _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
+          (data) async {
+            String strMessage = Utf8Decoder().convert(data);
+            MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
+            onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
+          },
+          onError: (error) async {
+            print('onError: $error');
+            try {
+              await socket.done;
+              throw error;
+            } catch (errors) {
+              print('onTryAndCatch: $errors');
+            }
+          },
+          onDone: () async {
+            onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, socket.address.address));
 
-    _serverSocket.listen((data) {
-      String strMessage = Utf8Decoder().convert(data);
-      MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-      onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-    });
+            _mapIpStream[remoteAddress].cancel();
+            _mapIpSocket[remoteAddress].close();
+            _mapIpSocket[remoteAddress].destroy();
+
+            try {
+              await socket.done;
+            } catch (error) {
+              print('onError: $error');
+            }
+          }
+        ));
+      },
+    );
 
     state = Service.STATE_LISTENING;
   }
@@ -44,6 +79,12 @@ class WifiServer extends ServiceServer {
   Future<void> stopListening() async {
     if (v) log(ServiceServer.TAG, 'Server: stopListening()');
 
+    _mapIpStream.forEach((ip, stream) => stream.cancel());
+    _mapIpStream.clear();
+    _mapIpSocket.forEach((ipAddress, socket) => socket.destroy());
+    _mapIpSocket.clear();
+
+    await _listenStreamSub.cancel();
     await _serverSocket.close();
 
     state = Service.STATE_NONE;
@@ -52,12 +93,17 @@ class WifiServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (v) log(ServiceServer.TAG, 'Server: send()');
 
-    _serverSocket.write(
-      json.encode(message.toJson()), remoteAddress: remoteAddress
-    );
+    _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
   }
 
   Future<void> cancelConnection(String remoteAddress) async {
-    await _serverSocket.closeSocket(remoteAddress); 
+    if (v) log(ServiceServer.TAG, 'cancelConnection()');
+
+    _mapIpStream[remoteAddress].cancel();
+    _mapIpStream.remove(remoteAddress);
+    _mapIpSocket[remoteAddress].destroy();
+    _mapIpSocket.remove(remoteAddress);
+
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, remoteAddress));
   }
 }

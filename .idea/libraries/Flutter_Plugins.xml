@@ -4,9 +4,9 @@
       <root url="file://$PROJECT_DIR$" />
       <root url="file://$USER_HOME$/Development/flutter/.pub-cache/hosted/pub.dartlang.org/location-3.2.4" />
       <root url="file://$USER_HOME$/Development/flutter/.pub-cache/hosted/pub.dartlang.org/location_web-1.0.1" />
-      <root url="file://$USER_HOME$/Development/flutter/.pub-cache/git/flutter_wifi_p2p-e77bd31fee1d25e91b1b52d029a837e0e743cb60" />
-      <root url="file://$USER_HOME$/Development/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_reactive_ble-2.7.2" />
       <root url="file://$USER_HOME$/Development/flutter/.pub-cache/hosted/pub.dartlang.org/permission_handler-5.1.0+2" />
+      <root url="file://$USER_HOME$/Development/flutter/.pub-cache/git/flutter_wifi_p2p-d691a8154daf1500949bb42cc02e42cdf2b60576" />
+      <root url="file://$USER_HOME$/Development/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_reactive_ble-2.7.3" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

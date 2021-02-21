@@ -28,7 +28,11 @@ class BleAdHocDevice extends AdHocDevice {
     this.address = this.address.toLowerCase();
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   String get uuid => address;
+
+/*------------------------------Override methods------------------------------*/
 
   @override
   String toString() {

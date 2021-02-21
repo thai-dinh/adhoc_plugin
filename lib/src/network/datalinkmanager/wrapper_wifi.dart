@@ -24,12 +24,14 @@ class WrapperWifi extends WrapperConnOriented {
   String _ownIpAddress;
   String _groupOwnerAddr;
   bool _isGroupOwner;
+  bool _isListening;
   HashMap<String, String> _mapAddrMac;
   WifiAdHocManager _wifiManager;
 
   WrapperWifi(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
+    this._isListening = false;
     this.type = Service.WIFI;
     this.init(verbose, config);
   }
@@ -118,8 +120,10 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   void stopListening() {
-    if (serviceServer != null)
+    if (serviceServer != null) {
       serviceServer.stopListening();
+      _isListening = false;
+    } 
   }
 
   @override // Not used in wifi context
@@ -166,7 +170,10 @@ class WrapperWifi extends WrapperConnOriented {
     _isGroupOwner = isGroupOwner;
     if (isConnected && _isGroupOwner) {
       _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
-      _listenServer();
+      if (!_isListening) {
+        _listenServer();
+        _isListening = true;
+      }
     } else if (isConnected && !_isGroupOwner) {
       _groupOwnerAddr = groupOwnerAddress;
       _connect(_serverPort);
@@ -232,6 +239,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
+    print(message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;

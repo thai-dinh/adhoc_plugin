@@ -16,12 +16,17 @@ class WifiAdHocManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   bool _verbose;
+  bool _isDiscovering;
+  bool _isPaused;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
+  StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   FlutterWifiP2p _wifiP2p;
 
   void Function(String, String) _onWifiReady;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
+    _isDiscovering = false;
+    _isPaused = false;
     _mapMacDevice = HashMap();
     _wifiP2p = FlutterWifiP2p();
     _wifiP2p.verbose = _verbose;
@@ -49,9 +54,17 @@ class WifiAdHocManager {
   void discovery(void onEvent(DiscoveryEvent event)) async {
     if (_verbose) log(TAG, 'discovery()');
 
+    if (_isDiscovering) 
+      return;
+
+    if (_isPaused) {
+      _discoverySub.resume();
+      return;
+    }
+
     _mapMacDevice.clear();
 
-    _wifiP2p.discoveryStream.listen(
+    _discoverySub = _wifiP2p.discoveryStream.listen(
       (listDevices) {
         listDevices.forEach((device) {
           WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
@@ -68,11 +81,10 @@ class WifiAdHocManager {
           onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
         });
       },
-      onError: (error) => throw error,
-      onDone: () => _stopDiscovery(onEvent)
     );
 
     _wifiP2p.discovery();
+    _isDiscovering = true;
     onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
@@ -112,6 +124,9 @@ class WifiAdHocManager {
   void _stopDiscovery(void onEvent(DiscoveryEvent event)) {
     if (_verbose) log(TAG, 'Discovery completed');
 
+    _isDiscovering = false;
+    _isPaused = true;
+    _discoverySub.pause();
     onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }
 

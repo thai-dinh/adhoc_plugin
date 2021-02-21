@@ -17,11 +17,17 @@ class RERR extends AodvMessage {
     this._unreachableDestSeqNum = unreachableDestSeqNum;
   }
 
+  factory RERR.fromJson(Map<String, dynamic> json) => _$RERRFromJson(json);
+
 /*------------------------------Getters & Setters-----------------------------*/
 
   String get unreachableDestIpAddress => _unreachableDestIpAddress;
 
   int get unreachableDestSeqNum => _unreachableDestSeqNum;
+
+/*-------------------------------Public methods-------------------------------*/
+
+  Map<String, dynamic> toJson() => _$RERRToJson(this);
 
 /*------------------------------Override methods------------------------------*/
 

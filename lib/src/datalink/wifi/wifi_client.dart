@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
@@ -11,7 +13,8 @@ import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  P2pClientSocket _socket;
+  StreamSubscription<Uint8List> _listenStreamSub;
+  Socket _socket;
   String _serverIp;
   int _port;
 
@@ -19,13 +22,10 @@ class WifiClient extends ServiceClient {
 
   WifiClient(
     bool verbose, this._port, this._serverIp, int attempts, int timeOut,
-    void Function(DiscoveryEvent) onEvent,
-    void Function(dynamic) onError
+    void Function(DiscoveryEvent) onEvent, void Function(dynamic) onError
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut, onEvent, onError
-  ) {
-    _socket = P2pClientSocket(_serverIp, _port);
-  }
+  );
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -38,21 +38,24 @@ class WifiClient extends ServiceClient {
   void listen() {
     if (v) log(ServiceClient.TAG, 'Client: listen()');
 
-    _socket.listen(
+    _listenStreamSub = _socket.listen(
       (data) {
         String strMessage = Utf8Decoder().convert(data);
         MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
         onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
       },
-      onDone: () async => await stopListening()
+      onDone: () async {
+        await stopListening();
+        onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
+      }
     );
   }
 
   Future<void> stopListening() async {
     if (v) log(ServiceClient.TAG, 'Client: stopListening()');
 
-    await _socket.close();
-    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
+    if (_listenStreamSub != null)
+      _listenStreamSub.pause();
   }
 
   Future<void> connect() async {
@@ -60,8 +63,12 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> disconnect() async {
-    await _socket.close();
+    await stopListening();
 
+    if (_socket != null)
+      _socket.destroy();
+
+    await FlutterWifiP2p().removeGroup();
     onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
   }
 
@@ -95,7 +102,9 @@ class WifiClient extends ServiceClient {
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
 
-      await _socket.connect(timeOut);
+      _socket = await Socket.connect(
+        _serverIp, _port, timeout: Duration(milliseconds: timeOut)
+      );
 
       onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, _serverIp));
 

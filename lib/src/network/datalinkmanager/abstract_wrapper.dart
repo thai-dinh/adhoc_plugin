@@ -16,8 +16,6 @@ abstract class AbstractWrapper {
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;
 
-  void Function(HashMap<String, AdHocDevice>) listenerBothDiscovery;
-
   bool enabled;
   bool connectionFlooding;
   bool discoveryCompleted;
