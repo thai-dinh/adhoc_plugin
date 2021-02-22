@@ -44,6 +44,16 @@ class WifiClient extends ServiceClient {
         MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
         onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
       },
+      onError: (error) async {
+        try {
+          await _socket.done;
+        } catch (e) {
+          // Error reported below as it is the same instance of 'error'
+          await stopListening();
+        }
+
+        onEvent(DiscoveryEvent(Service.CONNECTION_EXCEPTION, error));
+      },
       onDone: () async {
         await stopListening();
         onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));

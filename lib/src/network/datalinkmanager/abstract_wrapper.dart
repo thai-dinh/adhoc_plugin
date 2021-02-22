@@ -7,11 +7,11 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
 
 abstract class AbstractWrapper {
-  static const CONNECT_SERVER = 10;
-  static const CONNECT_CLIENT = 11;
-  static const CONNECT_BROADCAST = 12;
-  static const DISCONNECT_BROADCAST = 13;
-  static const BROADCAST = 14;
+  static const CONNECT_SERVER = 11;
+  static const CONNECT_CLIENT = 12;
+  static const CONNECT_BROADCAST = 13;
+  static const DISCONNECT_BROADCAST = 14;
+  static const BROADCAST = 15;
 
   final bool v;
   final HashMap<String, AdHocDevice> mapMacDevices;

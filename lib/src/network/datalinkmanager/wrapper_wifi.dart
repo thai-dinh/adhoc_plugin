@@ -191,6 +191,9 @@ class WrapperWifi extends WrapperConnOriented {
         _processMsgReceived(event.payload as MessageAdHoc);
         break;
 
+      case Service.CONNECTION_EXCEPTION:
+        break;
+
       case Service.CONNECTION_CLOSED:
         connectionClosed(_mapAddrMac[event.payload as String]);
         break;

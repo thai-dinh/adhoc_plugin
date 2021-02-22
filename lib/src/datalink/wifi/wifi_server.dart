@@ -47,30 +47,17 @@ class WifiServer extends ServiceServer {
             MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
             onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
           },
-          onError: (error) async {
-            print('onError: $error');
-            try {
-              await socket.done;
-              throw error;
-            } catch (errors) {
-              print('onTryAndCatch: $errors');
-            }
+          onError: (error) {
+            // Error reported below as it is the same instance of 'error' below
+            _closeSocket(remoteAddress);
           },
-          onDone: () async {
-            onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, socket.address.address));
-
-            _mapIpStream[remoteAddress].cancel();
-            _mapIpSocket[remoteAddress].close();
-            _mapIpSocket[remoteAddress].destroy();
-
-            try {
-              await socket.done;
-            } catch (error) {
-              print('onError: $error');
-            }
+          onDone: () {
+            onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, remoteAddress));
+            _closeSocket(remoteAddress);
           }
         ));
       },
+      onError: (error) => onEvent(DiscoveryEvent(Service.CONNECTION_EXCEPTION, error))
     );
 
     state = Service.STATE_LISTENING;
@@ -99,11 +86,16 @@ class WifiServer extends ServiceServer {
   Future<void> cancelConnection(String remoteAddress) async {
     if (v) log(ServiceServer.TAG, 'cancelConnection()');
 
+    _closeSocket(remoteAddress);
+    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, remoteAddress));
+  }
+
+/*------------------------------Private methods-------------------------------*/
+
+  void _closeSocket(String remoteAddress) {
     _mapIpStream[remoteAddress].cancel();
     _mapIpStream.remove(remoteAddress);
-    _mapIpSocket[remoteAddress].destroy();
+    _mapIpSocket[remoteAddress].close();
     _mapIpSocket.remove(remoteAddress);
-
-    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, remoteAddress));
   }
 }

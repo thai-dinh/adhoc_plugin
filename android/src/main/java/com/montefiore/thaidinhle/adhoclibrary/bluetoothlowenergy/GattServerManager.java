@@ -192,11 +192,9 @@ public class GattServerManager {
         int start = 0, end = mtu;
         byte index = 1;
 
-        Log.d(TAG, "msg " + Integer.toString(bytesMsg.length));
         while (length > mtu) {
             outputStream.write(index);
             outputStream.write(Arrays.copyOfRange(bytesMsg, start, end));
-            Log.d(TAG, "size " + Integer.toString(outputStream.size()));
             characteristic.setValue(outputStream.toByteArray());
             gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
@@ -210,7 +208,6 @@ public class GattServerManager {
         outputStream.reset();
         outputStream.write(BluetoothLowEnergyUtils.END_MESSAGE);
         outputStream.write(Arrays.copyOfRange(bytesMsg, start, bytesMsg.length));
-        Log.d(TAG, "size " + Integer.toString(outputStream.size()));
         characteristic.setValue(outputStream.toByteArray());
         return gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }

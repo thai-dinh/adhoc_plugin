@@ -19,6 +19,7 @@ abstract class Service {
   static const DISCOVERY_END = 7;
   static const CONNECTION_PERFORMED = 8;
   static const CONNECTION_CLOSED = 9;
+  static const CONNECTION_EXCEPTION = 10;
 
   int _state;
 

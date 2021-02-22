@@ -59,6 +59,12 @@ class WifiAdHocManager {
 
     if (_isPaused) {
       _discoverySub.resume();
+
+      Timer(
+        Duration(milliseconds: DISCOVERY_TIME),
+        () => _stopDiscovery(onEvent)
+      );
+
       return;
     }
 
