@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
@@ -8,10 +9,8 @@ class BlePlugin {
   WrapperBluetoothLE _wrapper;
 
   BlePlugin() {
-    _discoveredDevices = HashMap();
-    Config config = Config();
-    config.connectionFlooding = true;
-    _wrapper = WrapperBluetoothLE(true, config, HashMap());
+    this._discoveredDevices = HashMap();
+    this._wrapper = WrapperBluetoothLE(true, Config()..connectionFlooding = true, HashMap());
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -36,7 +35,8 @@ class BlePlugin {
 
   void discovery() {
     print('BlePlugin: discovery');
-    _wrapper.discovery((event) {
+    _wrapper.discovery();
+    _wrapper.discoveryStream.listen((DiscoveryEvent event) {
       if (event.type == Service.DISCOVERY_END)
         _discoveredDevices = event.payload;
     });

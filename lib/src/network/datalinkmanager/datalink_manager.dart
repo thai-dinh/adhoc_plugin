@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
@@ -71,17 +70,17 @@ class DataLinkManager {
         disable(wrapper.type);
   }
 
-  void discovery(void onEvent(DiscoveryEvent event)) {
+  void discovery() {
     int enabled = checkState();
     if (enabled == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     if (enabled == _wrappers.length) {
-      _discovery(onEvent);
+      _discovery();
     } else {
       for (AbstractWrapper wrapper in _wrappers) {
         if (wrapper.enabled) {
-          wrapper.discovery(onEvent);
+          wrapper.discovery();
         }
       }
     }
@@ -105,11 +104,22 @@ class DataLinkManager {
         wrapper.stopListening();
   }
 
-  bool isDirectNeighbors(String address) {
-    for (AbstractWrapper wrapper in _wrappers)
-      if (wrapper.enabled && wrapper.isDirectNeighbors(address))
-        return true;
-    return false;
+  void removeGroup() {
+    WrapperWifi wrapperWifi = _wrappers[Service.WIFI];
+    if (wrapperWifi.enabled) {
+      wrapperWifi.removeGroup();
+    } else {
+      throw DeviceFailureException("Wifi is not enabled");
+    }
+  }
+
+  bool isWifiGroupOwner() {
+    WrapperWifi wrapperWifi = _wrappers[Service.WIFI];
+    if (wrapperWifi.enabled) {
+      return wrapperWifi.isWifiGroupOwner();
+    } else {
+      throw DeviceFailureException("Wifi is not enabled");
+    }
   }
 
   void sendMessage(MessageAdHoc message, String address) {
@@ -174,6 +184,13 @@ class DataLinkManager {
     return null;
   }
 
+  bool isDirectNeighbors(String address) {
+    for (AbstractWrapper wrapper in _wrappers)
+      if (wrapper.enabled && wrapper.isDirectNeighbors(address))
+        return true;
+    return false;
+  }
+
   List<AdHocDevice> getDirectNeighbors() {
     List<AdHocDevice> adHocDevices = List.empty(growable: true);
 
@@ -235,9 +252,9 @@ class DataLinkManager {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _discovery(void onEvent(DiscoveryEvent event)) {
+  void _discovery() {
     for (AbstractWrapper wrapper in _wrappers)
-      wrapper.discovery(onEvent);
+      wrapper.discovery();
 
     Timer.periodic(Duration(milliseconds: _POOLING_DISCOVERY), (Timer timer) {
       bool finished = true;
@@ -249,7 +266,7 @@ class DataLinkManager {
       }
 
       if (finished) {
-        onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapAddrDevice));
+        // onEvent(Event(Service.DISCOVERY_END, _mapAddrDevice));
         timer.cancel();
       }
     });

@@ -1,4 +1,5 @@
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 
 
@@ -9,9 +10,9 @@ abstract class Service {
   static const BLUETOOTHLE = 1;
 
   static const STATE_NONE = 0;
-  static const STATE_LISTENING = 1;
+  static const STATE_CONNECTED = 1;
   static const STATE_CONNECTING = 2;
-  static const STATE_CONNECTED = 3;
+  static const STATE_LISTENING = 3;
 
   static const MESSAGE_RECEIVED = 4;
   static const DEVICE_DISCOVERED = 5;
@@ -23,24 +24,18 @@ abstract class Service {
 
   int _state;
 
-  void Function(DiscoveryEvent) onEvent;
-  void Function(dynamic) onError;
-  bool v;
+  bool verbose;
+  Stream<ConnectStatus> connStatusStream;
+  Stream<MessageAdHoc> messageStream;
 
-  Service(this.v, this._state, this.onEvent, this.onError);
+  Service(this.verbose, this._state);
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   set state(int state) {
-    if (v) log(TAG, 'state: $_state -> $state');
+    if (verbose) log(TAG, 'state: $_state -> $state');
     _state = state;
   }
 
   int get state => _state;
-
-/*-------------------------------Public methods-------------------------------*/
-
-  void listen();
-
-  void stopListening();
 }

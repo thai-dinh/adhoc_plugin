@@ -91,7 +91,6 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       neighbors.addNeighbors(header.label, header.mac, network);
 
       setRemoteDevices.add(adHocDevice);
-
       if (connectionFlooding) {
         String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);

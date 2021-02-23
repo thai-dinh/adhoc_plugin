@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/appframework/config.dart';
+import 'package:adhoclibrary/src/dataLink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -24,17 +25,19 @@ class AodvManager {
   AodvHelper aodvHelper;
   HashMap<String, int> mapDestSequenceNumber;
 
-  String ownName;
-  String ownMac;
-  String ownAddress;
-  int ownSequenceNum;
-  DataLinkManager dataLink;
-  MessageAdHoc dataMessage;
+  String _ownName;
+  String _ownMac;
+  String _ownAddress;
+  int _ownSequenceNum;
+  DataLinkManager _dataLink;
+  MessageAdHoc _dataMessage;
 
-  AodvManager(this._verbose) {
+  AodvManager(this._verbose, Config config) {
     this.aodvHelper = AodvHelper(_verbose);
-    this.ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
+    this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
     this.mapDestSequenceNumber = HashMap();
+    this._ownAddress = config.label;
+    this._dataLink = DataLinkManager(_verbose, config);
     if (_verbose)
       this._initTimerDebugRIB();
   }
@@ -44,9 +47,9 @@ class AodvManager {
   void sendMessageTo(Object pdu, String address) {
     Header header = Header(
       messageType: Constants.DATA, 
-      name: ownName,
-      mac: ownMac, 
-      address: ownAddress,
+      name: _ownName,
+      mac: _ownMac, 
+      address: _ownAddress,
       deviceType: 0
     );
 
@@ -78,10 +81,10 @@ class AodvManager {
   }
 
   void _getNextSequenceNumber() {
-    if (ownSequenceNum < Constants.MAX_VALID_SEQ_NUM) {
-      ++ownSequenceNum;
+    if (_ownSequenceNum < Constants.MAX_VALID_SEQ_NUM) {
+      ++_ownSequenceNum;
     } else {
-      ownSequenceNum = Constants.MIN_VALID_SEQ_NUM;
+      _ownSequenceNum = Constants.MIN_VALID_SEQ_NUM;
     }
   }
 
@@ -98,11 +101,11 @@ class AodvManager {
   }
 
   void _sendDirect(MessageAdHoc message, String address) {
-    dataLink.sendMessage(message, address);
+    _dataLink.sendMessage(message, address);
   }
 
   void _send(MessageAdHoc message, String address) {
-    if (dataLink.isDirectNeighbors(address)) {
+    if (_dataLink.isDirectNeighbors(address)) {
       EntryRoutingTable destNext = aodvHelper.getNextfromDest(address);
       if (destNext != null && message.header.messageType == Constants.DATA) {
         destNext.updateDataPath(address);
@@ -124,7 +127,7 @@ class AodvManager {
     } else if (message.header.messageType == Constants.RERR) {
       if (_verbose) log(TAG, "RERR sent");
     } else {
-      dataMessage = message;
+      _dataMessage = message;
       _getNextSequenceNumber();
       startTimerRREQ(address, Constants.RREQ_RETRIES, Constants.NET_TRANVERSAL_TIME);
     }
@@ -136,17 +139,17 @@ class AodvManager {
     String originateAddr = message.header.label;
     if (_verbose) log(TAG, "Received RREQ from " + originateAddr);
 
-    if (rreq.destIpAddress.compareTo(ownAddress) == 0) {
+    if (rreq.destIpAddress.compareTo(_ownAddress) == 0) {
       saveDestSequenceNumber(rreq.originIpAddress, rreq.originSequenceNum);
 
-      if (_verbose) log(TAG, ownAddress + " is the destination (stop RREQ broadcast)");
+      if (_verbose) log(TAG, _ownAddress + " is the destination (stop RREQ broadcast)");
 
       EntryRoutingTable entry = aodvHelper.addEntryRoutingTable(
         rreq.originIpAddress, originateAddr, hop, rreq.originSequenceNum, Constants.NO_LIFE_TIME, null
       );
 
       if (entry != null) {
-        if (rreq.destSequenceNum > ownSequenceNum) {
+        if (rreq.destSequenceNum > _ownSequenceNum) {
           _getNextSequenceNumber();
         }
 
@@ -154,8 +157,8 @@ class AodvManager {
           type: Constants.RREP, 
           hopCount: Constants.INIT_HOP_COUNT, 
           destIpAddress: rreq.originIpAddress, 
-          sequenceNum: ownSequenceNum, 
-          originIpAddress: ownAddress, 
+          sequenceNum: _ownSequenceNum, 
+          originIpAddress: _ownAddress, 
           lifetime: Constants.LIFE_TIME
         );
 
@@ -165,8 +168,8 @@ class AodvManager {
           MessageAdHoc(
             Header(
               messageType: Constants.RREP, 
-              address: ownAddress, 
-              name: ownName
+              address: _ownAddress, 
+              name: _ownName
             ),
             rrep
           ),
@@ -178,18 +181,18 @@ class AodvManager {
     } else if (aodvHelper.containsDest(rreq.destIpAddress)) {
       _sendRREP_GRAT(message.header.label, rreq);
     } else {
-      if (rreq.originIpAddress.compareTo(ownAddress) == 0) {
+      if (rreq.originIpAddress.compareTo(_ownAddress) == 0) {
         if (_verbose) log(TAG, "Reject own RREQ " + rreq.originIpAddress);
       } else if (aodvHelper.addBroadcastId(rreq.originIpAddress, rreq.rreqId)) {
         rreq.incrementHopCount();
         message.header = Header(
           messageType: Constants.RREQ, 
-          address: ownAddress,
-          name: ownName
+          address: _ownAddress,
+          name: _ownName
         );
         message.pdu = rreq;
 
-        dataLink.broadcastExcept(message, originateAddr);
+        _dataLink.broadcastExcept(message, originateAddr);
 
         aodvHelper.addEntryRoutingTable(rreq.originIpAddress, originateAddr, hop, rreq.originSequenceNum, Constants.NO_LIFE_TIME, null);
 
@@ -207,14 +210,14 @@ class AodvManager {
 
     if (_verbose) log(TAG, "Received RREP from " + nextHop);
 
-    if (rrep.destIpAddress.compareTo(ownAddress) == 0) {
-      if (_verbose) log(TAG, ownAddress + " is the destination (stop RREP)");
+    if (rrep.destIpAddress.compareTo(_ownAddress) == 0) {
+      if (_verbose) log(TAG, _ownAddress + " is the destination (stop RREP)");
         saveDestSequenceNumber(rrep.originIpAddress, rrep.sequenceNum);
 
         aodvHelper.addEntryRoutingTable(rrep.originIpAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, null);
 
-        Data data = dataMessage.pdu as Data;
-        _send(dataMessage, data.destIpAddress);
+        Data data = _dataMessage.pdu as Data;
+        _send(_dataMessage, data.destIpAddress);
 
         timerFlushForwardRoute(rrep.originIpAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
@@ -229,8 +232,8 @@ class AodvManager {
           MessageAdHoc(
             Header(
               messageType: Constants.RREP, 
-              address: ownAddress,
-              name: ownName
+              address: _ownAddress,
+              name: _ownName
             ), 
             rrep),
           destNext.next
@@ -247,8 +250,8 @@ class AodvManager {
     RREP rrep = message.pdu as RREP;
     int hopCount = rrep.incrementHopCount();
 
-    if (rrep.destIpAddress.compareTo(ownAddress) == 0) {
-      if (_verbose) log(TAG, ownAddress + " is the destination (stop RREP)");
+    if (rrep.destIpAddress.compareTo(_ownAddress) == 0) {
+      if (_verbose) log(TAG, _ownAddress + " is the destination (stop RREP)");
 
       aodvHelper.addEntryRoutingTable(rrep.originIpAddress, message.header.label, hopCount, rrep.sequenceNum, rrep.lifetime, null);
 
@@ -266,8 +269,8 @@ class AodvManager {
 
         message.header = Header(
           messageType: Constants.RREP_GRATUITOUS,
-          address: ownAddress,
-          name: ownName
+          address: _ownAddress,
+          name: _ownName
         );
 
         _send(message, destNext.next);
@@ -281,13 +284,13 @@ class AodvManager {
 
     if (_verbose) log(TAG, "Received RERR from " + originateAddr + " -> Node " + rerr.unreachableDestIpAddress + " is unreachable");
 
-    if (rerr.unreachableDestIpAddress.compareTo(ownAddress) == 0) {
+    if (rerr.unreachableDestIpAddress.compareTo(_ownAddress) == 0) {
       if (_verbose) log(TAG, "RERR received on the destination (stop forward)");
     } else if (aodvHelper.containsDest(rerr.unreachableDestIpAddress)) {
       message.header = Header(
         messageType: Constants.RERR, 
-        address: ownAddress, 
-        name: ownName
+        address: _ownAddress, 
+        name: _ownName
       );
         
       List<String> precursors = aodvHelper.getPrecursorsFromDest(rerr.unreachableDestIpAddress);
@@ -311,8 +314,8 @@ class AodvManager {
 
     if (_verbose) log(TAG, "Data message received from: " + message.header.label);
 
-    if (data.destIpAddress.compareTo(ownAddress) == 0) {
-      if (_verbose) log(TAG, ownAddress + " is the destination (stop DATA message)");
+    if (data.destIpAddress.compareTo(_ownAddress) == 0) {
+      if (_verbose) log(TAG, _ownAddress + " is the destination (stop DATA message)");
     } else {
       EntryRoutingTable destNext = aodvHelper.getNextfromDest(data.destIpAddress);
       if (destNext == null) {
@@ -340,8 +343,8 @@ class AodvManager {
 
     MessageAdHoc message = MessageAdHoc(
       Header(messageType: Constants.RREQ, 
-        address: ownAddress, 
-        name: ownName
+        address: _ownAddress, 
+        name: _ownName
       ),
       RREQ(
         type: Constants.RREQ, 
@@ -349,27 +352,27 @@ class AodvManager {
         rreqId: aodvHelper.getIncrementRreqId(),
         destSequenceNum: getDestSequenceNumber(destAddr), 
         destIpAddress: destAddr, 
-        originSequenceNum: ownSequenceNum, 
-        originIpAddress: ownAddress
+        originSequenceNum: _ownSequenceNum, 
+        originIpAddress: _ownAddress
       )
     );
         
-    dataLink.broadcast(message);
+    _dataLink.broadcast(message);
 
   }
 
   void sendRRER(String brokenNodeAddress) {
     if (aodvHelper.containsNext(brokenNodeAddress)) {
       String dest = aodvHelper.getDestFromNext(brokenNodeAddress);
-      if (dest.compareTo(ownAddress) == 0) {
+      if (dest.compareTo(_ownAddress) == 0) {
         if (_verbose) log(TAG, "RERR received on the destination (stop forward)");
       } else {  
-        RERR rrer = RERR(type: Constants.RERR, unreachableDestIpAddress: dest, unreachableDestSeqNum: ownSequenceNum);
+        RERR rrer = RERR(type: Constants.RERR, unreachableDestIpAddress: dest, unreachableDestSeqNum: _ownSequenceNum);
         List<String> precursors = aodvHelper.getPrecursorsFromDest(dest);
         if (precursors != null) {
           for (String precursor in precursors) {
             if (_verbose) log(TAG, "send RERR to " + precursor);
-            _send(MessageAdHoc(Header(messageType: Constants.RERR, address: ownAddress, name: ownName), rrer), precursor);
+            _send(MessageAdHoc(Header(messageType: Constants.RERR, address: _ownAddress, name: _ownName), rrer), precursor);
           }
         }
 
@@ -392,12 +395,12 @@ class AodvManager {
       type: Constants.RREP_GRATUITOUS, 
       hopCount: rreq.hopCount, 
       destIpAddress: rreq.destIpAddress, 
-      sequenceNum: ownSequenceNum, 
+      sequenceNum: _ownSequenceNum, 
       originIpAddress: rreq.originIpAddress, 
       lifetime: Constants.LIFE_TIME
     );
 
-    _send(MessageAdHoc(Header(messageType: Constants.RREP_GRATUITOUS, address: ownAddress, name: ownName), rrep), entry.next);
+    _send(MessageAdHoc(Header(messageType: Constants.RREP_GRATUITOUS, address: _ownAddress, name: _ownName), rrep), entry.next);
     if (_verbose) log(TAG, "Send Gratuitous RREP to " + entry.next);
 
     rrep = RREP(
@@ -410,7 +413,7 @@ class AodvManager {
       lifetime: Constants.LIFE_TIME
     );
 
-    _send(MessageAdHoc(Header(messageType: Constants.RREP, address: ownAddress, name: ownName), rrep), rreq.originIpAddress);
+    _send(MessageAdHoc(Header(messageType: Constants.RREP, address: _ownAddress, name: _ownName), rrep), rreq.originIpAddress);
     if (_verbose) log(TAG, "Send RREP to " + rreq.originIpAddress);
   }
 

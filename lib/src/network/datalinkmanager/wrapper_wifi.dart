@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -27,18 +29,26 @@ class WrapperWifi extends WrapperConnOriented {
   bool _isListening;
   HashMap<String, String> _mapAddrMac;
   WifiAdHocManager _wifiManager;
+  StreamController<DiscoveryEvent> _controller;
 
   WrapperWifi(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this._isListening = false;
     this.type = Service.WIFI;
+    this._controller = StreamController<DiscoveryEvent>();
     this.init(verbose, config);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   bool get isGroupOwner => _isGroupOwner;
+
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in _controller.stream) {
+      yield event;
+    }
+  }
 
 /*------------------------------Override methods------------------------------*/
 
@@ -78,9 +88,10 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   @override
-  void discovery(void onEvent(DiscoveryEvent event)) {
-    _wifiManager.discovery((DiscoveryEvent event) {
-      onEvent(event);
+  void discovery() {
+    _wifiManager.discovery();
+    _wifiManager.discoveryStream.listen((DiscoveryEvent event) {
+      _controller.add(event);
 
       switch (event.type) {
         case Service.DEVICE_DISCOVERED:
@@ -185,36 +196,34 @@ class WrapperWifi extends WrapperConnOriented {
     ownMac = mac;
   }
 
-  void _onEvent(DiscoveryEvent event) {
-    switch (event.type) {
-      case Service.MESSAGE_RECEIVED:
-        _processMsgReceived(event.payload as MessageAdHoc);
-        break;
+  void _onEvent(Service service) {
+    service.connStatusStream.listen((ConnectStatus info) {
+      switch (info.status) {
+        case Service.CONNECTION_CLOSED:
+          connectionClosed(info.address);
+          break;
 
-      case Service.CONNECTION_EXCEPTION:
-        break;
+        case Service.CONNECTION_PERFORMED:
+          break;
 
-      case Service.CONNECTION_CLOSED:
-        connectionClosed(_mapAddrMac[event.payload as String]);
-        break;
+        case Service.CONNECTION_EXCEPTION:
+          break;
 
-      default:
-        break;
-    }
+        default:
+          break;
+      }
+    });
+
+    service.messageStream.listen((MessageAdHoc msg) => _processMsgReceived(msg));
   }
 
-  void _onError(dynamic error) => throw error;
-
   void _listenServer() {
-    serviceServer = WifiServer(v, _onEvent, _onError)..listen(
-      hostIp: _ownIpAddress, serverPort: _serverPort
-    );
+    serviceServer = WifiServer(v)..start(hostIp: _ownIpAddress, serverPort: _serverPort);
+    _onEvent(serviceServer);
   }
 
   void _connect(int remotePort) async {
-    final wifiClient = WifiClient(
-      v, remotePort, _groupOwnerAddr, attempts, timeOut, _onEvent, _onError
-    );
+    final wifiClient = WifiClient(v, remotePort, _groupOwnerAddr, attempts, timeOut);
 
     wifiClient.connectListener = (String remoteAddress) async {
       mapAddrNetwork.putIfAbsent(
@@ -238,7 +247,7 @@ class WrapperWifi extends WrapperConnOriented {
     };
 
     await wifiClient.connect();
-    wifiClient.listen();
+    _onEvent(wifiClient);
   }
 
   void _processMsgReceived(MessageAdHoc message) {

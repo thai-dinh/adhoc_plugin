@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
@@ -8,6 +9,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -22,6 +24,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.d
 class WrapperBluetoothLE extends WrapperConnOriented {
   static const String TAG = "[WrapperBle]";
 
+  StreamController<DiscoveryEvent> _controller;
   BleAdHocManager _bleAdHocManager;
   String _ownStringUUID;
 
@@ -29,7 +32,16 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this.type = Service.BLUETOOTHLE;
+    this._controller = StreamController<DiscoveryEvent>();
     this.init(verbose);
+  }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in _controller.stream) {
+      yield event;
+    }
   }
 
 /*------------------------------Override methods------------------------------*/
@@ -76,9 +88,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  void discovery(void onEvent(DiscoveryEvent event)) {
-    _bleAdHocManager.discovery((DiscoveryEvent event) {
-      onEvent(event);
+  void discovery() {
+    _bleAdHocManager.discovery();
+    _bleAdHocManager.discoveryStream.listen((DiscoveryEvent event) {
+      _controller.add(event);
 
       switch (event.type) {
         case Service.DEVICE_DISCOVERED:
@@ -154,34 +167,34 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _onEvent(DiscoveryEvent event) {
-    switch (event.type) {
-      case Service.MESSAGE_RECEIVED:
-        _processMsgReceived(event.payload as MessageAdHoc);
-        break;
+  void _onEvent(Service service) {
+    service.connStatusStream.listen((ConnectStatus info) {
+      switch (info.status) {
+        case Service.CONNECTION_CLOSED:
+          connectionClosed(info.address);
+          break;
 
-      case Service.CONNECTION_PERFORMED:
-        break;
+        case Service.CONNECTION_PERFORMED:
+          break;
 
-      case Service.CONNECTION_CLOSED:
-        connectionClosed(event.payload as String);
-        break;
+        case Service.CONNECTION_EXCEPTION:
+          break;
 
-      default:
-        break;
-    }
+        default:
+          break;
+      }
+    });
+
+    service.messageStream.listen((MessageAdHoc msg) => _processMsgReceived(msg));
   }
 
-  void _onError(dynamic error) => throw error;
-
   void _listenServer() {
-    serviceServer = BleServer(v, _onEvent, _onError)..listen();
+    serviceServer = BleServer(v)..start();
+    _onEvent(serviceServer);
   }
 
   void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
-    final bleClient = BleClient(
-      v, bleAdHocDevice, attempts, timeOut, _onEvent, _onError
-    );
+    final bleClient = BleClient(v, bleAdHocDevice, attempts, timeOut);
 
     bleClient.connectListener = (String mac, String uuid) async {
       mapAddrNetwork.putIfAbsent(
@@ -204,7 +217,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       ));
     };
 
-    bleClient..connect()..listen();
+    _onEvent(bleClient);
+    bleClient.connect();
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
@@ -287,6 +301,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
       case AbstractWrapper.BROADCAST:
         break;
+
+      default:
     }
   }
 }

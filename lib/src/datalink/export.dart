@@ -7,6 +7,8 @@ export 'exceptions/device_failure.dart';
 export 'exceptions/device_not_found.dart';
 export 'exceptions/no_connection.dart';
 export 'service/adhoc_device.dart';
+export 'service/connect_status.dart';
+export 'service/discovery_event.dart';
 export 'service/service_client.dart';
 export 'service/service_server.dart';
 export 'service/service.dart';

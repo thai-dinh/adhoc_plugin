@@ -1,6 +1,6 @@
 import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:adhoclibrary_example/ble_plugin.dart';
-import 'package:adhoclibrary_example/wifi_plugin.dart';
+import 'package:adhoclibrary_example/datalink/ble_plugin.dart';
+import 'package:adhoclibrary_example/datalink/wifi_plugin.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

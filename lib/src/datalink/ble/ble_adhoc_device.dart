@@ -8,24 +8,19 @@ class BleAdHocDevice extends AdHocDevice {
   int mtu;
 
   BleAdHocDevice(DiscoveredDevice device) : super(
-    name: device.name,
-    mac: device.id,
-    type: Service.BLUETOOTHLE,
+    name: device.name, mac: device.id, type: Service.BLUETOOTHLE,
   ) {
     this.mtu = MIN_MTU;
-    this.address = BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '');
-    this.address = this.address.toLowerCase();
+    this.address = 
+      (BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '')).toLowerCase();
   }
 
   BleAdHocDevice.fromMap(Map map) : super(
-    name: map['deviceName'],
-    mac: map['macAddress'], 
-    type: Service.BLUETOOTHLE
+    name: map['deviceName'], mac: map['macAddress'], type: Service.BLUETOOTHLE
   ) {
     this.mtu = MIN_MTU;
-    this.address = BLUETOOTHLE_UUID + 
-      map['macAddress'].replaceAll(new RegExp(':'), '').toLowerCase();
-    this.address = this.address.toLowerCase();
+    this.address = 
+      (BLUETOOTHLE_UUID + map['macAddress'].replaceAll(new RegExp(':'), '')).toLowerCase();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -38,8 +33,8 @@ class BleAdHocDevice extends AdHocDevice {
   String toString() {
     return 'BleAdHocDevice{' +
               'mtu=' + mtu.toString() +
-              ', uuid=' + address +
               ', label=' + label +
+              ', uuid=' + address +
               ', name' + name +
               ', mac' + mac.toString() +
               ', type' + type.toString() +

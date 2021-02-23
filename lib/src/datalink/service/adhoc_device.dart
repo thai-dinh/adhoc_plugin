@@ -1,7 +1,6 @@
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'adhoc_device.g.dart';
 
@@ -11,10 +10,10 @@ part 'adhoc_device.g.dart';
 class AdHocDevice {
   bool directedConnected;
   String label;
-  String name;
-  String mac;
   String address;
-  int type;
+  String _name;
+  String _mac;
+  int _type;
 
   /// Creates an [AdHocDevice] object.
   ///
@@ -26,15 +25,21 @@ class AdHocDevice {
   /// If [address] is given, it is either an UUID in case of Bluetooth Low 
   /// Energy, or an IPv4 address in case of Wifi P2P.
   AdHocDevice({
-    @required String name, @required this.mac, @required this.type,
-    this.directedConnected = false, this.label = '', this.address = ''
+    this.directedConnected = false, this.label = '', String address = '', 
+    String name, String mac, int type = 2,
   }) {
     this.label = checkString(label);
-    this.name = checkString(name);
-    this.mac = checkString(mac);
     this.address = checkString(address);
-    this.type = type;
+    this._name = checkString(name);
+    this._mac = checkString(mac);
+    this._type = type;
   }
+
+  String get name => _name;
+
+  String get mac => _mac;
+
+  int get type => _type;
 
   /// Creates an [AdHocDevice] object from a JSON representation.
   factory AdHocDevice.fromJson(Map<String, dynamic> json) 
@@ -47,7 +52,7 @@ class AdHocDevice {
   ///
   /// The type of this instance can be Bluetooth Low Energy (BluetoothLE),
   /// Wifi P2P (Wifi), or unknown (UNKNOWN) if the type is not specified.
-  String typeAsString() {
+  String _typeAsString() {
     switch (type) {
       case Service.BLUETOOTHLE:
         return "BluetoothLE";
@@ -63,10 +68,10 @@ class AdHocDevice {
   String toString() {
     return 'AdHocDevice{' +
               'label=' + label +
-              ', name=' + name +
+              ', name=' + _name +
               ', mac=' + mac +
               ', address=' + address +
-              ', type=' + typeAsString() +
+              ', type=' + _typeAsString() +
               ', directedConnected=' + directedConnected.toString() +
            '}';
   }

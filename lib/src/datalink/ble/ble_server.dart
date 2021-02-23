@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -19,21 +17,46 @@ class BleServer extends ServiceServer {
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
   static const EventChannel _chMessage = const EventChannel(_chMessageName);
 
+  StreamController<ConnectStatus> _controller;
   StreamSubscription<dynamic> _conStreamSub;
-  StreamSubscription<dynamic> _msgStreamSub;
 
-  BleServer(
-    bool verbose,
-    void Function(DiscoveryEvent) onEvent,
-    void Function(dynamic) onError
-  ) : super(verbose, Service.STATE_NONE, onEvent, onError) {
+  BleServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     BleAdHocManager.setVerbose(verbose);
+    this._controller = StreamController<ConnectStatus>();
+  }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  Stream<ConnectStatus> get connStatusStream async* {
+    await for (ConnectStatus status in _controller.stream) {
+      yield status;
+    }
+  }
+
+  Stream<MessageAdHoc> get messageStream async* {
+    await for (Map map in _chMessage.receiveBroadcastStream()) {
+      MessageAdHoc message = 
+        processMessage((map['message'] as List<dynamic>).cast<Uint8List>());
+
+      if (message.header.mac.compareTo('') == 0) {
+        message.header = Header(
+          messageType: message.header.messageType,
+          label: message.header.label,
+          name: message.header.name,
+          address: message.header.address,
+          mac: map['macAddress'],
+          deviceType: message.header.deviceType
+        );
+      }
+
+      yield message;
+    }
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen() {
-    if (v) log(ServiceServer.TAG, 'Server: listen()');
+  void start() {
+    if (verbose) log(ServiceServer.TAG, 'Server: start()');
 
     BleAdHocManager.openGattServer();
 
@@ -41,86 +64,44 @@ class BleServer extends ServiceServer {
       .listen((map) {
         String mac = map['macAddress'] as String;
         switch (map['state']) {
-          case STATE_CONNECTED:
+          case Service.STATE_CONNECTED:
             addActiveConnection(mac);
-            onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, mac));
+            _controller.add(ConnectStatus(Service.CONNECTION_PERFORMED, address: mac));
             break;
 
-          case STATE_DISCONNECTED:
+          case Service.STATE_NONE:
             removeInactiveConnection(mac);
-            onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, mac));
+            _controller.add(ConnectStatus(Service.CONNECTION_CLOSED, address: mac));
             break;
         }
       },
-      onError: onError,
-      onDone: () => _conStreamSub.cancel()
-    );
-
-    _msgStreamSub = _chMessage.receiveBroadcastStream()
-      .listen((map) {
-        MessageAdHoc message = _processMessage(map['message']);
-        if (message.header.mac.compareTo('') == 0) {
-          message.header = Header(
-            messageType: message.header.messageType,
-            label: message.header.label,
-            name: message.header.name,
-            address: message.header.address,
-            mac: map['macAddress'],
-            deviceType: message.header.deviceType
-          );
-        }
-
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-      },
-      onError: onError,
-      onDone: () => _msgStreamSub.cancel()
     );
 
     state = Service.STATE_LISTENING;
   }
 
   void stopListening() {
-    if (v) log(ServiceServer.TAG, 'Server: stopListening');
+    if (verbose) log(ServiceServer.TAG, 'Server: stopListening');
 
     if (_conStreamSub != null) {
       _conStreamSub.cancel();
       _conStreamSub = null;
     }
 
-    if (_msgStreamSub != null) {
-      _msgStreamSub.cancel();
-      _msgStreamSub = null;
-    }
-
     BleAdHocManager.closeGattServer();
+
     state = Service.STATE_NONE;
   }
 
   Future<void> cancelConnection(String mac) async {
-    if (v) log(ServiceServer.TAG, 'Server: cancelConnection()');
+    if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection()');
 
-   await BleAdHocManager.cancelConnection(mac);
+    await BleAdHocManager.cancelConnection(mac);
   }
 
   Future<void> send(MessageAdHoc message, String mac) async {
-    if (v) log(ServiceServer.TAG, 'Server: send()');
+    if (verbose) log(ServiceServer.TAG, 'Server: send()');
 
     await BleAdHocManager.gattServerSendMessage(message, mac);
-  }
-
-/*------------------------------Private methods-------------------------------*/
-
-  MessageAdHoc _processMessage(List<dynamic> rawMessage) {
-    List<Uint8List> listByte = rawMessage.cast<Uint8List>();
-    Uint8List messageAsListByte = Uint8List.fromList(listByte.expand(
-      (x) {
-      List<int> tmp = new List<int>.from(x);
-      tmp.removeAt(0);
-      return tmp;
-      }
-    ).toList());
-
-    String strMessage = Utf8Decoder().convert(messageAsListByte);
-    return MessageAdHoc.fromJson(json.decode(strMessage));
   }
 }

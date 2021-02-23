@@ -19,22 +19,30 @@ class WifiAdHocManager {
   bool _isDiscovering;
   bool _isPaused;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
+  StreamController<DiscoveryEvent> _controller;
   StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   FlutterWifiP2p _wifiP2p;
 
   void Function(String, String) _onWifiReady;
 
   WifiAdHocManager(this._verbose, this._onWifiReady) {
-    _isDiscovering = false;
-    _isPaused = false;
-    _mapMacDevice = HashMap();
-    _wifiP2p = FlutterWifiP2p();
-    _wifiP2p.verbose = _verbose;
+    this._isDiscovering = false;
+    this._isPaused = false;
+    this._mapMacDevice = HashMap();
+    this._controller = StreamController<DiscoveryEvent>();
+    this._wifiP2p = FlutterWifiP2p();
+    this._wifiP2p.verbose = _verbose;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
+
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in _controller.stream) {
+      yield event;
+    }
+  }
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -51,7 +59,7 @@ class WifiAdHocManager {
     await _wifiP2p.register();
   }
 
-  void discovery(void onEvent(DiscoveryEvent event)) async {
+  void discovery() async {
     if (_verbose) log(TAG, 'discovery()');
 
     if (_isDiscovering) 
@@ -62,7 +70,7 @@ class WifiAdHocManager {
 
       Timer(
         Duration(milliseconds: DISCOVERY_TIME),
-        () => _stopDiscovery(onEvent)
+        () => _stopDiscovery()
       );
 
       return;
@@ -84,18 +92,18 @@ class WifiAdHocManager {
             return wifiAdHocDevice;
           });
 
-          onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+          _controller.add(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
         });
       },
     );
 
     _wifiP2p.discovery();
     _isDiscovering = true;
-    onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
+    _controller.add(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
     Timer(
       Duration(milliseconds: DISCOVERY_TIME),
-      () => _stopDiscovery(onEvent)
+      () => _stopDiscovery()
     );
   }
 
@@ -127,13 +135,13 @@ class WifiAdHocManager {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _stopDiscovery(void onEvent(DiscoveryEvent event)) {
+  void _stopDiscovery() {
     if (_verbose) log(TAG, 'Discovery completed');
 
     _isDiscovering = false;
     _isPaused = true;
     _discoverySub.pause();
-    onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
+    _controller.add(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/

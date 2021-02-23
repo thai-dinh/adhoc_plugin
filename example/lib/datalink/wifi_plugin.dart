@@ -10,8 +10,8 @@ class WifiPlugin {
   WifiPlugin() {
     _discoveredDevices = HashMap();
     Config config = Config();
-    config.label = 'WIFI';
     config.serverPort = 4444;
+    config.connectionFlooding = true;
     _wrapper = WrapperWifi(true, config, HashMap());
   }
 
@@ -27,7 +27,8 @@ class WifiPlugin {
 
   void discovery() {
     print('WifiPlugin: discovery');
-    _wrapper.discovery((event) {
+    _wrapper.discovery();
+    _wrapper.discoveryStream.listen((DiscoveryEvent event) {
       if (event.type == Service.DISCOVERY_END)
         _discoveredDevices = event.payload;
     });

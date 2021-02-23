@@ -11,7 +11,7 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:location/location.dart' show Location, PermissionStatus;
+import 'package:location/location.dart';
 
 
 class BleAdHocManager {
@@ -28,6 +28,7 @@ class BleAdHocManager {
   Location _location;
   FlutterReactiveBle _reactiveBle;
   HashMap<String, BleAdHocDevice> _mapMacDevice;
+  StreamController<DiscoveryEvent> _controller;
   StreamSubscription<DiscoveredDevice> _subscription;
   StreamSubscription<BleStatus> _stateStreamSub;
 
@@ -36,6 +37,7 @@ class BleAdHocManager {
     this._location = Location();
     this._reactiveBle = FlutterReactiveBle();
     this._mapMacDevice = HashMap<String, BleAdHocDevice>();
+    this._controller = StreamController<DiscoveryEvent>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -44,12 +46,19 @@ class BleAdHocManager {
 
   HashMap<String, BleAdHocDevice> get hashMapBleDevice => _mapMacDevice;
 
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in _controller.stream) {
+      yield event;
+    }
+  }
+
 /*-------------------------------Public methods-------------------------------*/
 
   Future<bool> enable() async => await _channel.invokeMethod('enable');
 
   Future<bool> disable() async {
-    await _stateStreamSub.cancel();
+    if (_stateStreamSub != null)
+      await _stateStreamSub.cancel();
     return await _channel.invokeMethod('disable');
   }
 
@@ -62,10 +71,12 @@ class BleAdHocManager {
       );
 
     _channel.invokeMethod('startAdvertise');
-    Timer(Duration(seconds: duration), _stopAdvertise);
+    Timer(Duration(seconds: duration), () {
+      _channel.invokeMethod('stopAdvertise');
+    });
   }
 
-  void discovery(void onEvent(DiscoveryEvent event)) async  {
+  void discovery() async  {
     if (_verbose) log(TAG, 'discovery()');
 
     if (!isRequested && !isGranted) {
@@ -77,7 +88,7 @@ class BleAdHocManager {
     }
 
     if (_isDiscovering)
-      this._stopScan((event) { });
+      _stopScan();
 
     _mapMacDevice.clear();
 
@@ -88,28 +99,19 @@ class BleAdHocManager {
       (device) {
         BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
         _mapMacDevice.putIfAbsent(device.id, () {
-          if (_verbose) {
-            log(TAG, 'Device found: ' +
-              'Name: ${device.name} - Address: ${device.id}'
-            );
-          }
+          if (_verbose)
+            log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
 
-          onEvent(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
-
+          _controller.add(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
           return bleAdHocDevice;
         });
       },
-      onError: (error) => throw error,
-      onDone: () => _stopScan(onEvent)
     );
 
     _isDiscovering = true;
-    onEvent(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
+    _controller.add(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
 
-    Timer(
-      Duration(milliseconds: DISCOVERY_TIME),
-      () => _stopScan(onEvent)
-    );
+    Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
 
   Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
@@ -127,11 +129,9 @@ class BleAdHocManager {
     return pairedDevices;
   }
 
-  Future<bool> updateDeviceName(String name) async
-    => await _channel.invokeMethod('updateDeviceName', name);
+  Future<bool> updateDeviceName(String name) async => await _channel.invokeMethod('updateDeviceName', name);
 
-  Future<bool> resetDeviceName() async
-    => await _channel.invokeMethod('resetDeviceName');
+  Future<bool> resetDeviceName() async => await _channel.invokeMethod('resetDeviceName');
 
   void onEnableBluetooth(void Function(bool) onEnable) {
     _stateStreamSub = _reactiveBle.statusStream.listen((status) async {
@@ -160,9 +160,7 @@ class BleAdHocManager {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _stopAdvertise() => _channel.invokeMethod('stopAdvertise');
-
-  void _stopScan(void onEvent(DiscoveryEvent event)) {
+  void _stopScan() {
     if (_verbose) log(TAG, 'Discovery end');
 
     _subscription.cancel();
@@ -170,7 +168,7 @@ class BleAdHocManager {
 
     _isDiscovering = false;
 
-    onEvent(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
+    _controller.add(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
   }
 
   Future<void> _requestPermission() async {

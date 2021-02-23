@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  StreamSubscription<Uint8List> _listenStreamSub;
+  StreamController<ConnectStatus> _controller;
   Socket _socket;
   String _serverIp;
   int _port;
@@ -22,10 +22,11 @@ class WifiClient extends ServiceClient {
 
   WifiClient(
     bool verbose, this._port, this._serverIp, int attempts, int timeOut,
-    void Function(DiscoveryEvent) onEvent, void Function(dynamic) onError
   ) : super(
-    verbose, Service.STATE_NONE, attempts, timeOut, onEvent, onError
-  );
+    verbose, Service.STATE_NONE, attempts, timeOut
+  ) {
+    this._controller = StreamController<ConnectStatus>();
+  }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -33,57 +34,33 @@ class WifiClient extends ServiceClient {
     this._connectListener = connectListener;
   }
 
+  Stream<ConnectStatus> get connStatusStream async* {
+    await for (ConnectStatus status in _controller.stream) {
+      yield status;
+    }
+  }
+
+  Stream<MessageAdHoc> get messageStream async* {
+    await for (Uint8List data in _socket.asBroadcastStream()) {
+      String strMessage = Utf8Decoder().convert(data);
+      yield MessageAdHoc.fromJson(json.decode(strMessage));
+    }
+  }
+
 /*-------------------------------Public methods-------------------------------*/
-
-  void listen() {
-    if (v) log(ServiceClient.TAG, 'Client: listen()');
-
-    _listenStreamSub = _socket.listen(
-      (data) {
-        String strMessage = Utf8Decoder().convert(data);
-        MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
-        onEvent(DiscoveryEvent(Service.MESSAGE_RECEIVED, message));
-      },
-      onError: (error) async {
-        try {
-          await _socket.done;
-        } catch (e) {
-          // Error reported below as it is the same instance of 'error'
-          await stopListening();
-        }
-
-        onEvent(DiscoveryEvent(Service.CONNECTION_EXCEPTION, error));
-      },
-      onDone: () async {
-        await stopListening();
-        onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
-      }
-    );
-  }
-
-  Future<void> stopListening() async {
-    if (v) log(ServiceClient.TAG, 'Client: stopListening()');
-
-    if (_listenStreamSub != null)
-      _listenStreamSub.pause();
-  }
 
   Future<void> connect() async {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
 
   Future<void> disconnect() async {
-    await stopListening();
-
-    if (_socket != null)
-      _socket.destroy();
-
     await FlutterWifiP2p().removeGroup();
-    onEvent(DiscoveryEvent(Service.CONNECTION_CLOSED, _serverIp));
+
+    _controller.add(ConnectStatus(Service.STATE_NONE, address: _serverIp));
   }
 
   void send(MessageAdHoc message) {
-    if (v) log(ServiceClient.TAG, 'Client: send()');
+    if (verbose) log(ServiceClient.TAG, 'Client: send()');
 
     _socket.write(json.encode(message.toJson()));
   }
@@ -95,7 +72,7 @@ class WifiClient extends ServiceClient {
       await _connectionAttempt();
     } on NoConnectionException {
       if (attempts > 0) {
-        if (v)
+        if (verbose)
           log(ServiceClient.TAG, 'Connection attempt $attempts failed');
 
         await Future.delayed(delay);
@@ -107,7 +84,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (v) log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
+    if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
@@ -116,12 +93,12 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      onEvent(DiscoveryEvent(Service.CONNECTION_PERFORMED, _serverIp));
+      _controller.add(ConnectStatus(Service.STATE_CONNECTED, address: _serverIp));
 
       if (_connectListener != null)
         _connectListener(_serverIp);
 
-      if (v) log(ServiceClient.TAG, 'Connected to $_serverIp');
+      if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIp');
 
       state = Service.STATE_CONNECTED;
     }

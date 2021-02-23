@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
 
@@ -46,7 +45,7 @@ abstract class AbstractWrapper {
 
   void disable();
 
-  void discovery(void onEvent(DiscoveryEvent event));
+  void discovery();
 
   void connect(int attempts, AdHocDevice adHocDevice);
 
