@@ -2,7 +2,7 @@ import 'dart:collection';
 
 
 class EntryRoutingTable {
-  String _destIpAddress;
+  String _destAddress;
   String _next;
   int _hop;
   int _destSeqNum;
@@ -11,13 +11,13 @@ class EntryRoutingTable {
   HashMap<String, int> _activesDataPath;
 
   EntryRoutingTable(
-    this._destIpAddress, this._next, this._hop, this._destSeqNum,
+    this._destAddress, this._next, this._hop, this._destSeqNum,
     this._lifetime, this._precursors
   );
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  String get destIpAddress => _destIpAddress;
+  String get destAddress => _destAddress;
 
   String get next => _next;
 
@@ -60,10 +60,10 @@ class EntryRoutingTable {
 
   @override
   String toString() {
-    return '- dst: ' + _destIpAddress +
+    return '- dst: ' + _destAddress +
             ' nxt: ' + _next +
             ' hop: ' + _hop.toString() +
             ' seq: ' + _destSeqNum.toString() + displayPrecursors() +
-            ' dataPath ' + _activesDataPath[_destIpAddress].toString();
+            ' dataPath ' + _activesDataPath[_destAddress].toString();
   }
 }

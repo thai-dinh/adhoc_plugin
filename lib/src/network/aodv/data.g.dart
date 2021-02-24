@@ -8,12 +8,12 @@ part of 'data.dart';
 
 Data _$DataFromJson(Map<String, dynamic> json) {
   return Data(
-    destIpAddress: json['destIpAddress'] as String,
-    payload: json['payload'],
+    json['destAddress'] as String,
+    json['payload'],
   );
 }
 
 Map<String, dynamic> _$DataToJson(Data instance) => <String, dynamic>{
-      'destIpAddress': instance.destIpAddress,
+      'destAddress': instance.destAddress,
       'payload': instance.payload,
     };

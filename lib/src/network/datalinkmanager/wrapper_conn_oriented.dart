@@ -10,15 +10,16 @@ import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/neighbors.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {
   HashMap<String, AdHocDevice> _mapMacDevices;
 
   HashMap<String, NetworkManager> mapAddrNetwork;
-  ServiceServer serviceServer;
-  Neighbors neighbors;
   int attempts;
+  Neighbors neighbors;
+  ServiceServer serviceServer;
 
   WrapperConnOriented(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
@@ -130,6 +131,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       neighbors.remove(mac);
       mapAddrNetwork.remove(adHocDevice.address);
       _mapMacDevices.remove(mac);
+
+      eventCtrl.add(WrapperEvent(AbstractWrapper.BROKEN_LINK, adHocDevice.label));
+      eventCtrl.add(WrapperEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();

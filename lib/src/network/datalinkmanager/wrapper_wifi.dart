@@ -17,6 +17,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 
 
 class WrapperWifi extends WrapperConnOriented {
@@ -25,30 +26,25 @@ class WrapperWifi extends WrapperConnOriented {
   int _serverPort;
   String _ownIpAddress;
   String _groupOwnerAddr;
+  bool _isDiscovering;
   bool _isGroupOwner;
   bool _isListening;
   HashMap<String, String> _mapAddrMac;
+  StreamSubscription<DiscoveryEvent> _discoverySub;
   WifiAdHocManager _wifiManager;
-  StreamController<DiscoveryEvent> _controller;
 
   WrapperWifi(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
+    this._isDiscovering = false;
     this._isListening = false;
     this.type = Service.WIFI;
-    this._controller = StreamController<DiscoveryEvent>();
     this.init(verbose, config);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   bool get isGroupOwner => _isGroupOwner;
-
-  Stream<DiscoveryEvent> get discoveryStream async* {
-    await for (DiscoveryEvent event in _controller.stream) {
-      yield event;
-    }
-  }
 
 /*------------------------------Override methods------------------------------*/
 
@@ -62,6 +58,7 @@ class WrapperWifi extends WrapperConnOriented {
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
       this.ownName = await _wifiManager.adapterName;
+      this._initialize();
       this.enabled = true;
     } else {
       this.enabled = false;
@@ -70,7 +67,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   void enable(int duration, void Function(bool) onEnable) {
-    _wifiManager = WifiAdHocManager(v, _onWifiReady)
+    _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
       ..register(_registration);
     _wifiManager.onEnableWifi(onEnable);
 
@@ -89,35 +86,12 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   void discovery() {
+    if (_isDiscovering)
+      return;
+
+    _discoverySub.resume();
     _wifiManager.discovery();
-    _wifiManager.discoveryStream.listen((DiscoveryEvent event) {
-      _controller.add(event);
-
-      switch (event.type) {
-        case Service.DEVICE_DISCOVERED:
-          WifiAdHocDevice device = event.payload as WifiAdHocDevice;
-          mapMacDevices.putIfAbsent(device.mac, () {
-            if (v) log(TAG, "Add " + device.mac + " into mapMacDevices");
-            return device;
-          });
-          break;
-
-        case Service.DISCOVERY_END:
-          HashMap discoveredDevices = event.payload as HashMap;
-          discoveredDevices.forEach((mac, device) {
-            mapMacDevices.putIfAbsent(mac, () {
-              if (v) log(TAG, "Add " + mac + " into mapMacDevices");
-              return device;
-            });
-          });
-
-          discoveryCompleted = true;
-          break;
-
-        default:
-          break;
-      }
-    });
+    _isDiscovering = true;
   }
 
   @override
@@ -175,6 +149,41 @@ class WrapperWifi extends WrapperConnOriented {
 
 /*------------------------------Private methods-------------------------------*/
 
+  void _initialize() {
+    _discoverySub = _wifiManager.discoveryStream.listen((DiscoveryEvent event) {
+      discoveryCtrl.add(event);
+
+      switch (event.type) {
+        case Service.DEVICE_DISCOVERED:
+          WifiAdHocDevice device = event.payload as WifiAdHocDevice;
+          mapMacDevices.putIfAbsent(device.mac, () {
+            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
+            return device;
+          });
+          break;
+
+        case Service.DISCOVERY_END:
+          if (verbose) log(TAG, 'Discovery end');
+          (event.payload as Map).forEach((mac, device) {
+            mapMacDevices.putIfAbsent(mac, () {
+              if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
+              return device;
+            });
+          });
+
+          discoveryCompleted = true;
+          _isDiscovering = false;
+          _discoverySub.pause();
+          break;
+
+        default:
+          break;
+      }
+    });
+
+    _discoverySub.pause();
+  }
+
   void _registration(
     bool isConnected, bool isGroupOwner, String groupOwnerAddress
   ) {
@@ -218,12 +227,12 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(v)..start(hostIp: _ownIpAddress, serverPort: _serverPort);
+    serviceServer = WifiServer(verbose)..start(hostIp: _ownIpAddress, serverPort: _serverPort);
     _onEvent(serviceServer);
   }
 
   void _connect(int remotePort) async {
-    final wifiClient = WifiClient(v, remotePort, _groupOwnerAddr, attempts, timeOut);
+    final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
 
     wifiClient.connectListener = (String remoteAddress) async {
       mapAddrNetwork.putIfAbsent(

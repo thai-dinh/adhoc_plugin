@@ -8,22 +8,21 @@ part 'rreq.g.dart';
 class RREQ extends AodvMessage {
   int _hopCount;
   int _rreqId;
-  int _destSequenceNum;
-  String _destIpAddress;
+  int destSequenceNum;
+  String _destAddress;
   int _originSequenceNum;
-  String _originIpAddress;
+  String _originAddress;
 
   RREQ({
     int type = 0, int hopCount = 0, int rreqId = 0, 
-    int destSequenceNum = 0, String destIpAddress = '', 
-    int originSequenceNum = 0, String originIpAddress = ''
+    this.destSequenceNum = 0, String destAddress = '', 
+    int originSequenceNum = 0, String originAddress = ''
   }) : super(type) {
     this._hopCount = hopCount;
     this._rreqId = rreqId;
-    this._destSequenceNum = destSequenceNum;
-    this._destIpAddress = destIpAddress;
+    this._destAddress = destAddress;
     this._originSequenceNum = originSequenceNum;
-    this._originIpAddress = originIpAddress;
+    this._originAddress = originAddress;
   }
 
   factory RREQ.fromJson(Map<String, dynamic> json) => _$RREQFromJson(json);
@@ -34,15 +33,11 @@ class RREQ extends AodvMessage {
 
   int get rreqId => _rreqId;
 
-  int get destSequenceNum => _destSequenceNum;
-
-  String get destIpAddress => _destIpAddress;
+  String get destAddress => _destAddress;
 
   int get originSequenceNum => _originSequenceNum;
 
-  String get originIpAddress => _originIpAddress;
-
-  set destSequenceNum(int destSequenceNum) => _destSequenceNum = destSequenceNum;
+  String get originAddress => _originAddress;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -58,10 +53,10 @@ class RREQ extends AodvMessage {
             'type=' + type.toString() +
             ', hopCount=' + _hopCount.toString() +
             ', rreqId=' + _rreqId.toString() +
-            ', destSequenceNum=' + _destSequenceNum.toString() +
-            ', destIpAddress=' + _destIpAddress  +
+            ', destSequenceNum=' + destSequenceNum.toString() +
+            ', destAddress=' + _destAddress  +
             ', originSequenceNum=' + _originSequenceNum.toString() +
-            ', originIpAddress=' + _originIpAddress +
+            ', originAddress=' + _originAddress +
           '}';
   }
 }

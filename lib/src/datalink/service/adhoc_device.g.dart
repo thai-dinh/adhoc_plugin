@@ -8,12 +8,12 @@ part of 'adhoc_device.dart';
 
 AdHocDevice _$AdHocDeviceFromJson(Map<String, dynamic> json) {
   return AdHocDevice(
-    name: json['name'] as String,
-    mac: json['mac'] as String,
-    type: json['type'] as int,
     directedConnected: json['directedConnected'] as bool,
     label: json['label'] as String,
     address: json['address'] as String,
+    name: json['name'] as String,
+    mac: json['mac'] as String,
+    type: json['type'] as int,
   );
 }
 
@@ -21,8 +21,8 @@ Map<String, dynamic> _$AdHocDeviceToJson(AdHocDevice instance) =>
     <String, dynamic>{
       'directedConnected': instance.directedConnected,
       'label': instance.label,
+      'address': instance.address,
       'name': instance.name,
       'mac': instance.mac,
-      'address': instance.address,
       'type': instance.type,
     };

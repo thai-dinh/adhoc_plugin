@@ -4,11 +4,13 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_bluetooth_le.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
@@ -20,14 +22,32 @@ class DataLinkManager {
   Config _config;
   List<AbstractWrapper> _wrappers;
   HashMap<String, AdHocDevice> _mapAddrDevice;
+  StreamController<DiscoveryEvent> _discoveryCtrl;
+  StreamController<WrapperEvent> _eventCtrl;
 
   DataLinkManager(this._verbose, this._config) {
     this._mapAddrDevice = HashMap();
     this._wrappers = List(_NB_WRAPPERS);
     this._wrappers[Service.WIFI] = WrapperWifi(_verbose, _config, _mapAddrDevice);
     this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(_verbose, _config, _mapAddrDevice);
+    this._discoveryCtrl = StreamController<DiscoveryEvent>();
+    this._eventCtrl = StreamController<WrapperEvent>();
+    this._initialize();
+    this.checkState();
+  }
 
-    checkState();
+/*------------------------------Getters & Setters-----------------------------*/
+
+  Stream<WrapperEvent> get eventStream async* {
+    await for (WrapperEvent event in _eventCtrl.stream) {
+      yield event;
+    }
+  }
+
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in _discoveryCtrl.stream) {
+      yield event;
+    }
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -42,18 +62,13 @@ class DataLinkManager {
   }
 
   void enable(int duration, int type, void Function(bool) onEnable) {
-    if (!_wrappers[type].enabled) {
-      _wrappers[type].enable(duration, (bool success) {
-        onEnable(success);
-        if (success)
-          _wrappers[type].init(_verbose, _config);
-      });
-    }
+    if (!_wrappers[type].enabled)
+      _wrappers[type].enable(duration, (bool success) => onEnable(success));
   }
 
   void enableAll(void Function(bool) onEnable) {
     for (AbstractWrapper wrapper in _wrappers) {
-      enable(0, wrapper.type, onEnable);
+      enable(3600, wrapper.type, onEnable);
     }
   }
 
@@ -252,6 +267,24 @@ class DataLinkManager {
 
 /*------------------------------Private methods-------------------------------*/
 
+  void _initialize() {
+    _wrappers[Service.WIFI].eventStream.listen((event) {
+      _eventCtrl.add(event);
+    });
+
+    _wrappers[Service.BLUETOOTHLE].eventStream.listen((event) {
+      _eventCtrl.add(event);
+    });
+
+    _wrappers[Service.BLUETOOTHLE].discoveryStream.listen((event) {
+      _discoveryCtrl.add(event);
+    });
+
+    _wrappers[Service.WIFI].discoveryStream.listen((event) {
+      _discoveryCtrl.add(event);
+    });
+  }
+
   void _discovery() {
     for (AbstractWrapper wrapper in _wrappers)
       wrapper.discovery();
@@ -265,10 +298,8 @@ class DataLinkManager {
         }
       }
 
-      if (finished) {
-        // onEvent(Event(Service.DISCOVERY_END, _mapAddrDevice));
+      if (finished)
         timer.cancel();
-      }
     });
 
     for (AbstractWrapper wrapper in _wrappers)

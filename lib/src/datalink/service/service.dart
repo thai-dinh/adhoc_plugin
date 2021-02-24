@@ -33,9 +33,25 @@ abstract class Service {
 /*------------------------------Getters & Setters-----------------------------*/
 
   set state(int state) {
-    if (verbose) log(TAG, 'state: $_state -> $state');
+    if (verbose)
+      log(TAG, 'state: ' + _stateAsString(_state) + ' -> ' + _stateAsString(state));
     _state = state;
   }
 
   int get state => _state;
+
+/*-----------------------------Private methods-------------------------------*/
+
+  String _stateAsString(int state) {
+    switch (state) {
+      case STATE_CONNECTED:
+        return 'Connected';
+      case STATE_CONNECTING:
+        return 'Connecting';
+      case STATE_LISTENING:
+        return 'Listening';
+      default:
+        return 'None';
+    }
+  }
 }

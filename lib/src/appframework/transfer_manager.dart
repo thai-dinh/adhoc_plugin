@@ -3,9 +3,11 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/network/aodv/aodv_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 
 
 class TransferManager {
@@ -20,8 +22,8 @@ class TransferManager {
   }
 
   void start() {
-    // this._aodvManager = AodvManager(_verbose);
-    // this._dataLinkManager = _aodvManager.dataLink;
+    this._aodvManager = AodvManager(_verbose, _config);
+    this._dataLinkManager = _aodvManager.dataLinkManager;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -29,6 +31,10 @@ class TransferManager {
   String get ownAddress => _config.label;
 
   Config get config => _config;
+
+  Stream<WrapperEvent> get eventStream => _dataLinkManager.eventStream;
+
+  Stream<DiscoveryEvent> get discoveryStream => _dataLinkManager.discoveryStream;
 
 /*------------------------------Network methods------------------------------*/
 
@@ -69,7 +75,7 @@ class TransferManager {
   }
 
   void discovery() {
-    // _dataLinkManager.discovery(onEvent);
+    _dataLinkManager.discovery();
   }
 
   Future<HashMap<String, AdHocDevice>> getPairedBluetoothDevices() async {

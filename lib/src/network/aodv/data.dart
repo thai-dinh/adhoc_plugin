@@ -1,18 +1,14 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'data.g.dart';
 
 
 @JsonSerializable()
 class Data {
-  String destIpAddress;
+  String destAddress;
   Object payload;
 
-  Data({@required String destIpAddress, @required Object payload}) {
-    this.destIpAddress = destIpAddress;
-    this.payload = payload;
-  }
+  Data(this.destAddress, this.payload);
 
  factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
@@ -25,7 +21,7 @@ class Data {
   @override
   String toString() {
     return 'Data{' +
-            'destIpAddress=' + destIpAddress +
+            'destAddress=' + destAddress +
             ', payload=' + payload.toString() +
           '}';
   }

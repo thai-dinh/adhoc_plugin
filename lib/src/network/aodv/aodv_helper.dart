@@ -74,6 +74,10 @@ class AodvHelper {
     return _routingTable.getDestFromNext(nextAddress);
   }
 
+  Set<MapEntry<String, EntryRoutingTable>> getEntrySet() {
+    return _routingTable.getRoutingTable().entries.toSet();
+  }
+
   List<String> getPrecursorsFromDest(String destAddress) {
     return _routingTable.getPrecursorsFromDest(destAddress);
   }

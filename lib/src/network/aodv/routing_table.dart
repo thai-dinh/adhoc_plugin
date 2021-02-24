@@ -20,23 +20,23 @@ class RoutingTable {
 /*-------------------------------Public methods-------------------------------*/
 
   bool addEntry(EntryRoutingTable entry) {
-    if (!_routingTable.containsKey(entry.destIpAddress)) {
-      if (verbose) log(TAG, "Add new entry in the RIB " + entry.destIpAddress);
-      _routingTable.putIfAbsent(entry.destIpAddress, () => entry);
-      _nextDestMapping.putIfAbsent(entry.next, () => entry.destIpAddress);
+    if (!_routingTable.containsKey(entry.destAddress)) {
+      if (verbose) log(TAG, "Add new entry in the RIB " + entry.destAddress);
+      _routingTable.putIfAbsent(entry.destAddress, () => entry);
+      _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
       return true;
     }
 
-    EntryRoutingTable existingEntry = _routingTable[entry.destIpAddress];
+    EntryRoutingTable existingEntry = _routingTable[entry.destAddress];
 
     if (existingEntry.hop >= entry.hop) {
-      _routingTable.putIfAbsent(entry.destIpAddress, () => entry);
-      _nextDestMapping.putIfAbsent(entry.next, () => entry.destIpAddress);
+      _routingTable.putIfAbsent(entry.destAddress, () => entry);
+      _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
 
       if (verbose) {
-        log(TAG, "Entry: " + existingEntry.destIpAddress
+        log(TAG, "Entry: " + existingEntry.destAddress
               + " hops: " + existingEntry.hop.toString()
-              + " is replaced by " + entry.destIpAddress
+              + " is replaced by " + entry.destAddress
               + " hops: " + entry.hop.toString());
       }
 
@@ -44,9 +44,9 @@ class RoutingTable {
     }
 
     if (verbose) {
-      log(TAG, "Entry: " + existingEntry.destIpAddress
+      log(TAG, "Entry: " + existingEntry.destAddress
             + " hops: " + existingEntry.hop.toString()
-            + " is NOT replaced by " + entry.destIpAddress
+            + " is NOT replaced by " + entry.destAddress
             + " hops: " + entry.hop.toString());
     }
 
@@ -77,8 +77,8 @@ class RoutingTable {
     return _routingTable;
   }
 
-  EntryRoutingTable getDestination(String destIpAddress) {
-    return _routingTable[destIpAddress];
+  EntryRoutingTable getDestination(String destAddress) {
+    return _routingTable[destAddress];
   }
 
   List<String> getPrecursorsFromDest(String destAddress) {

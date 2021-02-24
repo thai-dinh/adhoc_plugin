@@ -9,17 +9,17 @@ class RREP extends AodvMessage {
   int _hopCount;
   int _sequenceNum;
   int _lifetime;
-  String _destIpAddress;
-  String _originIpAddress;
+  String _destAddress;
+  String _originAddress;
 
   RREP({
-    int type = 0, int hopCount = 0, String destIpAddress = '',
-    int sequenceNum = 0, String originIpAddress = '', int lifetime = 0
+    int type = 0, int hopCount = 0, String destAddress = '',
+    int sequenceNum = 0, String originAddress = '', int lifetime = 0
   }) :super(type) {
     this._hopCount = hopCount;
-    this._destIpAddress = destIpAddress;
+    this._destAddress = destAddress;
     this._sequenceNum = sequenceNum;
-    this._originIpAddress = originIpAddress;
+    this._originAddress = originAddress;
     this._lifetime = lifetime;
   }
 
@@ -33,9 +33,9 @@ class RREP extends AodvMessage {
 
   int get lifetime => _lifetime;
 
-  String get destIpAddress => _destIpAddress;
+  String get destAddress => _destAddress;
 
-  String get originIpAddress => _originIpAddress;
+  String get originAddress => _originAddress;
 
   int incrementHopCount() => ++this._hopCount;
 
@@ -48,9 +48,9 @@ class RREP extends AodvMessage {
       return 'RREP{' +
               'type=' + type.toString() +
               ', hopCount=' + _hopCount.toString() +
-              ', destIpAddress=' + _destIpAddress +
+              ', destAddress=' + _destAddress +
               ', destSeqNum=' + _sequenceNum.toString() +
-              ', originIpAddress=' + _originIpAddress +
+              ', originAddress=' + _originAddress +
               ', lifetime=' + _lifetime.toString() +
               '}';
   }

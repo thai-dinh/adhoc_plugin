@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 
 
 abstract class AbstractWrapper {
@@ -12,7 +15,15 @@ abstract class AbstractWrapper {
   static const DISCONNECT_BROADCAST = 14;
   static const BROADCAST = 15;
 
-  final bool v;
+  static const INTERNAL_EXCEPTION = 16;
+  static const CONNECTION_EVENT = 17;
+  static const DISCONNECTION_EVENT = 18;
+  static const DATA_RECEIVED = 19;
+  static const MESSAGE_EVENT = 20;
+  static const BROKEN_LINK = 21;
+  static const DEVICE_INFO = 22;
+
+  final bool verbose;
   final HashMap<String, AdHocDevice> mapMacDevices;
 
   bool enabled;
@@ -27,7 +38,10 @@ abstract class AbstractWrapper {
   HashSet<AdHocDevice> setRemoteDevices;
   Set<String> setFloodEvents;
 
-  AbstractWrapper(this.v, Config config, this.mapMacDevices) {
+  StreamController<DiscoveryEvent> discoveryCtrl;
+  StreamController<WrapperEvent> eventCtrl;
+
+  AbstractWrapper(this.verbose, Config config, this.mapMacDevices) {
     this.enabled = false;
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
@@ -35,9 +49,27 @@ abstract class AbstractWrapper {
     this.setRemoteDevices = HashSet();
     this.setFloodEvents = Set();
     this.label = config.label;
+    this.discoveryCtrl = StreamController<DiscoveryEvent>();
+    this.eventCtrl = StreamController<WrapperEvent>();
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   List<AdHocDevice> get directNeighbors;
+
+  Stream<DiscoveryEvent> get discoveryStream async* {
+    await for (DiscoveryEvent event in discoveryCtrl.stream) {
+      yield event;
+    }
+  }
+
+  Stream<WrapperEvent> get eventStream async* {
+    await for (WrapperEvent event in eventCtrl.stream) {
+      yield event;
+    }
+  }
+
+/*------------------------------Getters & Setters-----------------------------*/
 
   void init(bool verbose, [Config config]);
 
