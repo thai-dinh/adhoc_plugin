@@ -50,13 +50,13 @@ class RREQ extends AodvMessage {
   @override
   String toString() {
     return 'RREQ{' +
-            'type=' + type.toString() +
-            ', hopCount=' + _hopCount.toString() +
-            ', rreqId=' + _rreqId.toString() +
-            ', destSequenceNum=' + destSequenceNum.toString() +
-            ', destAddress=' + _destAddress  +
-            ', originSequenceNum=' + _originSequenceNum.toString() +
-            ', originAddress=' + _originAddress +
+            'type=$type' +
+            ', hopCount=$_hopCount' +
+            ', rreqId=$_rreqId' +
+            ', destSequenceNum=$destSequenceNum' +
+            ', destAddress=$_destAddress' +
+            ', originSequenceNum=$_originSequenceNum' +
+            ', originAddress=$_originAddress' +
           '}';
   }
 }

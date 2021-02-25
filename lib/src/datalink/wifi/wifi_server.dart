@@ -95,13 +95,13 @@ class WifiServer extends ServiceServer {
   }
 
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: send()');
+    if (verbose) log(ServiceServer.TAG, 'Server: send() - $remoteAddress');
 
     _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
   }
 
   Future<void> cancelConnection(String remoteAddress) async {
-    if (verbose) log(ServiceServer.TAG, 'cancelConnection()');
+    if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
     _connectCtrl.add(ConnectStatus(Service.STATE_NONE, address: remoteAddress));

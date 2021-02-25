@@ -5,14 +5,14 @@ import 'package:adhoclibrary/src/network/aodv/entry_routing_table.dart';
 
 
 class RoutingTable {
-  static const String TAG = "[RoutingTable]";
+  static const String TAG = '[RoutingTable]';
 
-  final bool verbose;
+  final bool _verbose;
 
   HashMap<String, EntryRoutingTable> _routingTable;
   HashMap<String, String> _nextDestMapping;
 
-  RoutingTable(this.verbose) {
+  RoutingTable(this._verbose) {
     this._routingTable = HashMap();
     this._nextDestMapping = HashMap();
   }
@@ -21,7 +21,7 @@ class RoutingTable {
 
   bool addEntry(EntryRoutingTable entry) {
     if (!_routingTable.containsKey(entry.destAddress)) {
-      if (verbose) log(TAG, "Add new entry in the RIB " + entry.destAddress);
+      if (_verbose) log(TAG, 'Add new entry in the RIB ${entry.destAddress}');
       _routingTable.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
       return true;
@@ -33,21 +33,21 @@ class RoutingTable {
       _routingTable.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
 
-      if (verbose) {
-        log(TAG, "Entry: " + existingEntry.destAddress
-              + " hops: " + existingEntry.hop.toString()
-              + " is replaced by " + entry.destAddress
-              + " hops: " + entry.hop.toString());
+      if (_verbose) {
+        log(TAG, 'Entry: ${existingEntry.destAddress}'
+              + ' hops: ${existingEntry.hop}'
+              + ' is replaced by ${entry.destAddress}'
+              + ' hops: ${entry.hop}');
       }
 
       return true;
     }
 
-    if (verbose) {
-      log(TAG, "Entry: " + existingEntry.destAddress
-            + " hops: " + existingEntry.hop.toString()
-            + " is NOT replaced by " + entry.destAddress
-            + " hops: " + entry.hop.toString());
+    if (_verbose) {
+      log(TAG, 'Entry: ${existingEntry.destAddress}'
+            + ' hops: ${existingEntry.hop}'
+            + ' is NOT replaced by ${entry.destAddress}'
+            + ' hops: ${entry.hop}');
     }
 
     return false;

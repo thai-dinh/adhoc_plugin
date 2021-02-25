@@ -13,7 +13,9 @@ class EntryRoutingTable {
   EntryRoutingTable(
     this._destAddress, this._next, this._hop, this._destSeqNum,
     this._lifetime, this._precursors
-  );
+  ) {
+    this._activesDataPath = HashMap();
+  }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -60,10 +62,10 @@ class EntryRoutingTable {
 
   @override
   String toString() {
-    return '- dst: ' + _destAddress +
-            ' nxt: ' + _next +
-            ' hop: ' + _hop.toString() +
-            ' seq: ' + _destSeqNum.toString() + displayPrecursors() +
-            ' dataPath ' + _activesDataPath[_destAddress].toString();
+    return '- dst: $_destAddress' +
+            ' nxt: $_next' +
+            ' hop: $_hop' +
+            ' seq: $_destSeqNum ${displayPrecursors()}' +
+            ' dataPath $_activesDataPath[_destAddress]';
   }
 }

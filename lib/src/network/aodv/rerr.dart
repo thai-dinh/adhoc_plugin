@@ -34,10 +34,10 @@ class RERR extends AodvMessage {
   @override
   String toString() {
     return 'RERR{' +
-            'type=' + type.toString() +
-            ', unreachableDestAddress=' + _unreachableDestAddress +
-            ', unreachableDestSeqNum=' + _unreachableDestSeqNum.toString()  +
-          '}';
+              'type=$type' +
+              ', unreachableDestAddress=$_unreachableDestAddress' +
+              ', unreachableDestSeqNum=$_unreachableDestSeqNum'  +
+            '}';
   }
 }
 

@@ -28,6 +28,8 @@ class Header {
 
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   set messageType(int messageType) => this._messageType = messageType;
 
   int get deviceType => _deviceType;
@@ -42,17 +44,21 @@ class Header {
 
   String get mac => _mac;
 
+/*-------------------------------Public methods-------------------------------*/
+
   Map<String, dynamic> toJson() => _$HeaderToJson(this);
+
+/*------------------------------Override methods------------------------------*/
 
   @override
   String toString() {
     return 'Header{' +
-              'messageType=' + _messageType.toString() +
-              ', label=' + _label +
-              ', name=' + _name +
-              ', address=' + _address +
-              ', mac=' + mac +
-              ', deviceType=' + _deviceType.toString() + 
+              'messageType=${_messageType.toString()}' +
+              ', label=$_label' +
+              ', name=$_name' +
+              ', address=$_address' +
+              ', mac=$mac' +
+              ', deviceType=${_deviceType.toString()}' + 
             '}';
   }
 }

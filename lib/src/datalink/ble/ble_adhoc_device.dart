@@ -32,12 +32,12 @@ class BleAdHocDevice extends AdHocDevice {
   @override
   String toString() {
     return 'BleAdHocDevice{' +
-              'mtu=' + mtu.toString() +
-              ', label=' + label +
-              ', uuid=' + address +
-              ', name' + name +
-              ', mac' + mac.toString() +
-              ', type' + type.toString() +
+              'mtu=$mtu' +
+              ', label=$label' +
+              ', uuid=$address' +
+              ', name=$name' +
+              ', mac=$mac' +
+              ', type=$type' +
            '}';
   }
 }

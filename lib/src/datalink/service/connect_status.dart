@@ -8,6 +8,8 @@ class ConnectStatus {
     this._error = error;
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   int get status => _status;
 
   String get address => _address;

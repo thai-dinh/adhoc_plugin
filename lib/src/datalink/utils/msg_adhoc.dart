@@ -19,6 +19,8 @@ class MessageAdHoc {
   factory MessageAdHoc.fromJson(Map<String, dynamic> json) 
     => _$MessageAdHocFromJson(json);
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   set header(Header header) => this._header = header;
 
   set pdu(Object pdu) => this._pdu = pdu;
@@ -29,13 +31,17 @@ class MessageAdHoc {
   /// Generic object representing the PDU of the message.
   Object get pdu => _pdu;
 
+/*-------------------------------Public methods-------------------------------*/
+
   Map<String, dynamic> toJson() => _$MessageAdHocToJson(this);
+
+/*------------------------------Override methods------------------------------*/
 
   @override
   String toString() {
     return 'MessageAdHoc{' + 
-              'header=' + _header.toString() +
-              ', pdu=' + _pdu.toString() + 
+              'header=${_header.toString()}' +
+              ', pdu=${_pdu.toString()}' + 
             '}';
   }
 }

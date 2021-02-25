@@ -49,6 +49,8 @@ class BleServer extends ServiceServer {
         );
       }
 
+      if (verbose) log(ServiceServer.TAG, 'Server: message received');
+
       yield message;
     }
   }
@@ -94,13 +96,13 @@ class BleServer extends ServiceServer {
   }
 
   Future<void> cancelConnection(String mac) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection()');
+    if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
 
     await BleAdHocManager.cancelConnection(mac);
   }
 
   Future<void> send(MessageAdHoc message, String mac) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: send()');
+    if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
     await BleAdHocManager.gattServerSendMessage(message, mac);
   }

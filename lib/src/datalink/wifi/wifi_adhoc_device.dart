@@ -24,15 +24,17 @@ class WifiAdHocDevice extends AdHocDevice {
     this.port = 0;
   }
 
+/*------------------------------Override methods------------------------------*/
+
   @override
   String toString() {
     return 'WifiAdHocDevice' +
-              'ipAddress=' + address +
-              ', port=' + port.toString() +
-              ', label=' + label +
-              ', name' + name +
-              ', mac' + mac +
-              ', type' + type.toString() +
+              'ipAddress=$address' +
+              ', port=$port' +
+              ', label=$label' +
+              ', name$name' +
+              ', mac$mac' +
+              ', type$type' +
            '}';
   }
 }

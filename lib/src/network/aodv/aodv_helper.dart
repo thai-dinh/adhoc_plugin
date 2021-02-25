@@ -6,7 +6,7 @@ import 'package:adhoclibrary/src/network/aodv/routing_table.dart';
 
 
 class AodvHelper {
-  static const String TAG = "[AodvHelper]";
+  static const String TAG = '[AodvHelper]';
 
   final bool _verbose;
 
@@ -35,7 +35,7 @@ class AodvHelper {
     String entry = sourceAddress + rreqId.toString();
     if (!_entryBroadcast.contains(entry)) {
       _entryBroadcast.add(entry);
-      if (_verbose) log(TAG, "Add " + entry + " into broadcast set");
+      if (_verbose) log(TAG, 'Add $entry into broadcast set');
       return true;
     } else {
       return false;

@@ -58,6 +58,7 @@ class BleClient extends ServiceClient {
     await for (List<int> rawData in _reactiveBle.subscribeToCharacteristic(qChar)) {
       bytesData.add(Uint8List.fromList(rawData));
       if (rawData[0] == MESSAGE_END) {
+        if (verbose) log(ServiceClient.TAG, 'Client: message received');
         yield processMessage(bytesData);
         bytesData.clear();
       }
@@ -78,7 +79,7 @@ class BleClient extends ServiceClient {
   }
 
   Future<void> send(MessageAdHoc message) async {
-    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage()');
+    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac}');
 
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');

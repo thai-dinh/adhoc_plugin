@@ -60,7 +60,7 @@ class WifiClient extends ServiceClient {
   }
 
   void send(MessageAdHoc message) {
-    if (verbose) log(ServiceClient.TAG, 'Client: send()');
+    if (verbose) log(ServiceClient.TAG, 'Client: send() - $_serverIp');
 
     _socket.write(json.encode(message.toJson()));
   }

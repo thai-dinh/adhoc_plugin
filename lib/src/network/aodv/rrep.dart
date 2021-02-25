@@ -46,12 +46,12 @@ class RREP extends AodvMessage {
   @override
   String toString() {
       return 'RREP{' +
-              'type=' + type.toString() +
-              ', hopCount=' + _hopCount.toString() +
-              ', destAddress=' + _destAddress +
-              ', destSeqNum=' + _sequenceNum.toString() +
-              ', originAddress=' + _originAddress +
-              ', lifetime=' + _lifetime.toString() +
+                'type=$type' +
+                ', hopCount=$_hopCount' +
+                ', destAddress=$_destAddress' +
+                ', destSeqNum=$_sequenceNum' +
+                ', originAddress=$_originAddress' +
+                ', lifetime=$_lifetime' +
               '}';
   }
 }

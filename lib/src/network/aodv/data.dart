@@ -10,7 +10,7 @@ class Data {
 
   Data(this.destAddress, this.payload);
 
- factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
+  factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -21,8 +21,8 @@ class Data {
   @override
   String toString() {
     return 'Data{' +
-            'destAddress=' + destAddress +
-            ', payload=' + payload.toString() +
+            'destAddress=$destAddress' +
+            ', payload=${payload.toString()}' +
           '}';
   }
 }

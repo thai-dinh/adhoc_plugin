@@ -35,18 +35,24 @@ class AdHocDevice {
     this._type = type;
   }
 
+  /// Creates an [AdHocDevice] object from a JSON representation.
+  factory AdHocDevice.fromJson(Map<String, dynamic> json) 
+    => _$AdHocDeviceFromJson(json);
+
+/*------------------------------Getters & Setters-----------------------------*/
+
   String get name => _name;
 
   String get mac => _mac;
 
   int get type => _type;
 
-  /// Creates an [AdHocDevice] object from a JSON representation.
-  factory AdHocDevice.fromJson(Map<String, dynamic> json) 
-    => _$AdHocDeviceFromJson(json);
+/*-------------------------------Public methods-------------------------------*/
 
   /// Creates a JSON representation of this instance of [AdHocDevice].
   Map<String, dynamic> toJson() => _$AdHocDeviceToJson(this);
+
+/*------------------------------Private methods-------------------------------*/
 
   /// Returns a [String] representation of this remote device's type
   ///
@@ -63,16 +69,18 @@ class AdHocDevice {
     }
   }
 
+/*------------------------------Override methods------------------------------*/
+
   /// Returns a string representation of this object.
   @override
   String toString() {
     return 'AdHocDevice{' +
-              'label=' + label +
-              ', name=' + _name +
-              ', mac=' + mac +
-              ', address=' + address +
-              ', type=' + _typeAsString() +
-              ', directedConnected=' + directedConnected.toString() +
+              'label=$label' +
+              ', name=$_name' +
+              ', mac=$mac' +
+              ', address=$address' +
+              ', type=${_typeAsString()}' +
+              ', directedConnected=$directedConnected' +
            '}';
   }
 }

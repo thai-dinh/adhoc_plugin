@@ -34,7 +34,7 @@ abstract class Service {
 
   set state(int state) {
     if (verbose)
-      log(TAG, 'state: ' + _stateAsString(_state) + ' -> ' + _stateAsString(state));
+      log(TAG, 'state: ${_stateAsString(_state)}  -> ${_stateAsString(state)}');
     _state = state;
   }
 

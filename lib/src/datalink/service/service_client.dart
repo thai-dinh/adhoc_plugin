@@ -19,11 +19,15 @@ abstract class ServiceClient extends Service {
     this._backOffTime = new Random().nextInt(_HIGH - _LOW) + _LOW;
   }
 
+/*------------------------------Getters & Setters-----------------------------*/
+
   int get attempts => _attempts;
 
   int get backOffTime => _backOffTime *= 2;
 
   int get timeOut => _timeOut;
+
+/*-------------------------------Public methods-------------------------------*/
 
   void connect();
 

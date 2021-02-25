@@ -3,8 +3,11 @@ import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 
+/*---------------------------------Constants----------------------------------*/
 
 const DISCOVERY_TIME = 10000;
+
+/*-------------------------------Public methods-------------------------------*/
 
 String checkString(String string) => string == null ? '' : string;
 

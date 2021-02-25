@@ -177,7 +177,7 @@ public class GattServerManager {
 
         @Override
         public void onMtuChanged(BluetoothDevice device, int mtu) {
-            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress() + "," + mtu);
+            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress() + ", " + mtu);
             mapMacMtu.put(device.getAddress(), new Short((short) mtu));
         }
     };

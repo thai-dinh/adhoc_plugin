@@ -19,9 +19,10 @@ abstract class AbstractWrapper {
   static const CONNECTION_EVENT = 17;
   static const DISCONNECTION_EVENT = 18;
   static const DATA_RECEIVED = 19;
-  static const MESSAGE_EVENT = 20;
-  static const BROKEN_LINK = 21;
-  static const DEVICE_INFO = 22;
+  static const FORWARD_DATA = 20;
+  static const MESSAGE_EVENT = 21;
+  static const BROKEN_LINK = 22;
+  static const DEVICE_INFO = 23;
 
   final bool verbose;
   final HashMap<String, AdHocDevice> mapMacDevices;
