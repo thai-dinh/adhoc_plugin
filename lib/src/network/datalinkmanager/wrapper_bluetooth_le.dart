@@ -227,7 +227,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
-    print(message.toString());
+    print('WrapperBLE: ' + message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String mac = message.header.mac;
@@ -279,7 +279,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
           for (AdHocDevice adHocDevice in hashSet) {
-            if (adHocDevice.label == label 
+            if (adHocDevice.label != label 
               && !setRemoteDevices.contains(adHocDevice)
               && !isDirectNeighbors(adHocDevice.label)
             ) {

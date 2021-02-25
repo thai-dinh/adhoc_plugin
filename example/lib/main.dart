@@ -2,7 +2,6 @@ import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary_example/network/aodv_plugin.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(ExampleApp());
@@ -31,12 +30,7 @@ class _AppState extends State<ExampleApp> {
               child: ListView(
                 children: <Widget>[
                   RaisedButton(
-                    child: Center(child: Text('Exit app')),
-                    onPressed: () => SystemChannels.platform.invokeMethod('SystemNavigator.pop'),
-                  ),
-                  Center(child: Text('AODV Display')),
-                  RaisedButton(
-                    child: Center(child: Text('Refresh')),
+                    child: Center(child: Text('Get discovered devices')),
                     onPressed: () => setState(() {
                       _devices = _aodvPlugin.discoveredDevices;
                     }),
@@ -50,6 +44,15 @@ class _AppState extends State<ExampleApp> {
                     onPressed: () => _aodvPlugin.discovery(),
                   ),
                   RaisedButton(
+                    child: Center(child: Text('Send hello')),
+                    onPressed: () {
+                      Set<AdHocDevice> devices = _aodvPlugin.remoteDevices;
+                      devices.forEach((d) {
+                        _aodvPlugin.sendMessageTo('Hello world!', d);
+                      });
+                    },
+                  ),
+                  RaisedButton(
                     child: Center(child: Text('disconnectAll')),
                     onPressed: () => _aodvPlugin.disconnectAll(),
                   ),
@@ -61,10 +64,7 @@ class _AppState extends State<ExampleApp> {
                         child: ListTile(
                           title: Center(child: Text(device.name)),
                           subtitle: Center(child: Text(device.mac)),
-                          onTap: () {
-                            _aodvPlugin.connectOnce(device);
-                            _aodvPlugin.sendMessageTo('Hello', device);
-                          },
+                          onTap: () => _aodvPlugin.connectOnce(device),
                         ),
                       );
                     }).toList(),

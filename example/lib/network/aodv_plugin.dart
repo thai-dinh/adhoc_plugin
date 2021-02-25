@@ -14,7 +14,7 @@ class AodvPlugin {
     this._discoveredDevices = HashMap();
     this._aodvManager.discoveryStream.listen((DiscoveryEvent event) {
       if (event.type == Service.DISCOVERY_END) {
-        _discoveredDevices = event.payload;
+        _discoveredDevices.addAll(event.payload as Map);
       }
     });
 
@@ -30,6 +30,10 @@ class AodvPlugin {
     List<AdHocDevice> list = List.empty(growable: true);
     _discoveredDevices.entries.forEach((e) => list.add(e.value));
     return list;
+  }
+
+  Set<AdHocDevice> get remoteDevices {
+    return _dataLinkManager.setRemoteDevices;
   }
 
 /*------------------------------Network methods------------------------------*/

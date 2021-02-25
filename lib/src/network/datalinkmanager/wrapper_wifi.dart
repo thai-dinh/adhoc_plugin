@@ -17,7 +17,6 @@ import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
 
 
 class WrapperWifi extends WrapperConnOriented {

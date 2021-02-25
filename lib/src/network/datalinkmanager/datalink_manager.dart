@@ -38,6 +38,8 @@ class DataLinkManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  HashSet<AdHocDevice> get setRemoteDevices => _wrappers[Service.BLUETOOTHLE].setRemoteDevices;
+
   Stream<WrapperEvent> get eventStream async* {
     await for (WrapperEvent event in _eventCtrl.stream) {
       yield event;

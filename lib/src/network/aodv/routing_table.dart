@@ -5,7 +5,7 @@ import 'package:adhoclibrary/src/network/aodv/entry_routing_table.dart';
 
 
 class RoutingTable {
-  static const String TAG = "[_RoutingTable]";
+  static const String TAG = "[RoutingTable]";
 
   final bool verbose;
 
