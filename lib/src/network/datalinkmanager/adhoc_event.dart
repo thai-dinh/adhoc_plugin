@@ -1,9 +1,9 @@
-class WrapperEvent {
+class AdHocEvent {
   int _type;
   Object _payload;
   Object _extra;
 
-  WrapperEvent(this._type, this._payload, {Object extra}) {
+  AdHocEvent(this._type, this._payload, {Object extra}) {
     this._extra = extra;
   }
 

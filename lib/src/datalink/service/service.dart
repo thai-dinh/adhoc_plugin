@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 
@@ -25,7 +25,7 @@ abstract class Service {
   int _state;
 
   bool verbose;
-  Stream<ConnectStatus> connStatusStream;
+  Stream<ConnectionEvent> connStatusStream;
   Stream<MessageAdHoc> messageStream;
 
   Service(this.verbose, this._state);
@@ -34,7 +34,7 @@ abstract class Service {
 
   set state(int state) {
     if (verbose)
-      log(TAG, 'state: ${_stateAsString(_state)}  -> ${_stateAsString(state)}');
+      log(TAG, 'state: ${_stateAsString(_state)} -> ${_stateAsString(state)}');
     _state = state;
   }
 

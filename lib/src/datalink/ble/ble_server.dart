@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -17,18 +17,18 @@ class BleServer extends ServiceServer {
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
   static const EventChannel _chMessage = const EventChannel(_chMessageName);
 
-  StreamController<ConnectStatus> _controller;
+  StreamController<ConnectionEvent> _controller;
   StreamSubscription<dynamic> _conStreamSub;
 
   BleServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     BleAdHocManager.setVerbose(verbose);
-    this._controller = StreamController<ConnectStatus>();
+    this._controller = StreamController<ConnectionEvent>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<ConnectStatus> get connStatusStream async* {
-    await for (ConnectStatus status in _controller.stream) {
+  Stream<ConnectionEvent> get connStatusStream async* {
+    await for (ConnectionEvent status in _controller.stream) {
       yield status;
     }
   }
@@ -68,12 +68,12 @@ class BleServer extends ServiceServer {
         switch (map['state']) {
           case Service.STATE_CONNECTED:
             addActiveConnection(mac);
-            _controller.add(ConnectStatus(Service.CONNECTION_PERFORMED, address: mac));
+            _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: mac));
             break;
 
           case Service.STATE_NONE:
             removeInactiveConnection(mac);
-            _controller.add(ConnectStatus(Service.CONNECTION_CLOSED, address: mac));
+            _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: mac));
             break;
         }
       },

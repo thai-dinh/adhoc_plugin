@@ -9,7 +9,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -19,7 +19,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
 
 class WrapperBluetoothLE extends WrapperConnOriented {
@@ -175,14 +175,14 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _onEvent(Service service) {
-    service.connStatusStream.listen((ConnectStatus info) {
+    service.connStatusStream.listen((ConnectionEvent info) {
       switch (info.status) {
         case Service.CONNECTION_CLOSED:
           connectionClosed(info.address);
           break;
 
         case Service.CONNECTION_EXCEPTION:
-          eventCtrl.add(WrapperEvent(AbstractWrapper.INTERNAL_EXCEPTION, info.error));
+          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, info.error));
           break;
 
         default:
@@ -234,7 +234,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID.toLowerCase();
 
-        eventCtrl.add(WrapperEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
 
         serviceServer.send(
           MessageAdHoc(
@@ -264,7 +264,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         ownMac = message.pdu as String;
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
-        eventCtrl.add(WrapperEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
 
         receivedPeerMessage(
           message.header, mapAddrNetwork[message.header.address]
@@ -284,7 +284,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
             ) {
               adHocDevice.directedConnected = false;
 
-              eventCtrl.add(WrapperEvent(AbstractWrapper.CONNECTION_EVENT, adHocDevice));
+              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, adHocDevice));
 
               setRemoteDevices.add(adHocDevice);
             }
@@ -305,7 +305,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
             directedConnected: false
           );
 
-          eventCtrl.add(WrapperEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
+          eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
 
           if (setRemoteDevices.contains(adHocDevice))
               setRemoteDevices.remove(adHocDevice);
@@ -316,7 +316,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         Header header = message.header;
 
         eventCtrl.add(
-          WrapperEvent(
+          AdHocEvent(
             AbstractWrapper.DATA_RECEIVED, 
             AdHocDevice(
               label: header.label,
@@ -330,7 +330,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       default:
-        eventCtrl.add(WrapperEvent(AbstractWrapper.MESSAGE_EVENT, message));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.MESSAGE_EVENT, message));
         break;
     }
   }

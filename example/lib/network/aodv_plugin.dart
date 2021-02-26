@@ -18,7 +18,7 @@ class AodvPlugin {
       }
     });
 
-    this._aodvManager.eventStream.listen((WrapperEvent event) {
+    this._aodvManager.eventStream.listen((AdHocEvent event) {
       if (event.type == AbstractWrapper.DEVICE_INFO)
         print(event.type.toString() + ', [' + event.payload + '], [' + event.extra + ']');
     });
@@ -77,7 +77,7 @@ class AodvPlugin {
   }
 
   void enableBluetooth() {
-    _dataLinkManager.enable(3599, Service.BLUETOOTHLE, (enable) { });
+    _dataLinkManager.enable(3600, Service.BLUETOOTHLE, (enable) { });
   }
 
   void removeWifiGroup() {

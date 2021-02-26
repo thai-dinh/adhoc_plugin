@@ -160,8 +160,8 @@ public class GattServerManager {
             mapInfoValue.put("macAddress", device.getAddress());
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                gattServer.connect(device, false);
                 state = BluetoothLowEnergyUtils.STATE_CONNECTED;
-                gattServer.connect(device, true);
                 mapMacMtu.put(device.getAddress(), new Short(BluetoothLowEnergyUtils.MIN_MTU));
             } else {
                 state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;

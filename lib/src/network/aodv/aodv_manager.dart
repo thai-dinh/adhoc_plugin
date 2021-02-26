@@ -16,7 +16,7 @@ import 'package:adhoclibrary/src/network/aodv/rrep.dart';
 import 'package:adhoclibrary/src/network/aodv/rreq.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 import 'package:adhoclibrary/src/network/exceptions/adov_unknow_dest.dart';
 import 'package:adhoclibrary/src/network/exceptions/aodv_message.dart';
 import 'package:adhoclibrary/src/network/exceptions/aodv_unknown_type.dart';
@@ -29,7 +29,7 @@ class AodvManager {
 
   AodvHelper _aodvHelper;
   HashMap<String, int> _mapDestSequenceNumber;
-  StreamController<WrapperEvent> _eventCtrl;
+  StreamController<AdHocEvent> _eventCtrl;
 
   String _ownName;
   String _ownMac;
@@ -44,18 +44,18 @@ class AodvManager {
     this._mapDestSequenceNumber = HashMap();
     this._ownLabel = config.label;
     this._dataLink = DataLinkManager(_verbose, config);
-    this._eventCtrl = StreamController<WrapperEvent>();
+    this._eventCtrl = StreamController<AdHocEvent>();
     this._initialize();
-    // if (_verbose)
-    //   this._initTimerDebugRIB();
+    if (_verbose)
+      this._initTimerDebugRIB();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   DataLinkManager get dataLinkManager => _dataLink;
 
-  Stream<WrapperEvent> get eventStream async* {
-    await for (WrapperEvent event in _eventCtrl.stream) {
+  Stream<AdHocEvent> get eventStream async* {
+    await for (AdHocEvent event in _eventCtrl.stream) {
       switch (event.type) {
         case AbstractWrapper.BROKEN_LINK:
           _brokenLinkDetected(event.payload);
@@ -206,7 +206,7 @@ class AodvManager {
       EntryRoutingTable entry = _aodvHelper.getNextfromDest(destAddr);
       if (entry == null) {
         if (retry == 0) {
-          _eventCtrl.add(WrapperEvent(
+          _eventCtrl.add(AdHocEvent(
             AbstractWrapper.INTERNAL_EXCEPTION,
             AodvMessageException(
               'Unable to establish a communication with: $destAddr'
@@ -284,7 +284,7 @@ class AodvManager {
           entry.next
         );
 
-        _timerFlushReverseRoute(rreq.originAddress, rreq.originSequenceNum);
+        // _timerFlushReverseRoute(rreq.originAddress, rreq.originSequenceNum);
       }
     } else if (_aodvHelper.containsDest(rreq.destAddress)) {
       _sendRREP_GRATUITOUS(message.header.label, rreq);
@@ -437,7 +437,7 @@ class AodvManager {
         type: header.deviceType
       );
 
-      _eventCtrl.add(WrapperEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: data.payload));
+      _eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: data.payload));
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(data.destAddress);
       if (destNext == null) {
@@ -453,7 +453,7 @@ class AodvManager {
           type: header.deviceType
         );
 
-        _eventCtrl.add(WrapperEvent(AbstractWrapper.FORWARD_DATA, adHocDevice, extra: data.payload));
+        _eventCtrl.add(AdHocEvent(AbstractWrapper.FORWARD_DATA, adHocDevice, extra: data.payload));
 
         destNext.updateDataPath(data.destAddress);
 
@@ -596,7 +596,6 @@ class AodvManager {
   }
 
   void _processAodvMsgReceived(MessageAdHoc message) {
-    print('AODV: ${message.toString()}');
     switch (message.header.messageType) {
       case Constants.RREQ:
         _processRREQ(message);

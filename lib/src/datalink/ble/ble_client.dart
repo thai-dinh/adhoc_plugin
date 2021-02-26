@@ -6,7 +6,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -15,7 +15,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 class BleClient extends ServiceClient {
-  StreamController<ConnectStatus> _controller;
+  StreamController<ConnectionEvent> _controller;
   StreamSubscription<ConnectionStateUpdate> _subscription;
   FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
@@ -29,7 +29,7 @@ class BleClient extends ServiceClient {
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
   ) {
-    this._controller = StreamController<ConnectStatus>();
+    this._controller = StreamController<ConnectionEvent>();
     this._reactiveBle = FlutterReactiveBle();
     this._serviceUuid = Uuid.parse(SERVICE_UUID);
     this._characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
@@ -41,8 +41,8 @@ class BleClient extends ServiceClient {
     this._connectListener = connectListener;
   }
 
-  Stream<ConnectStatus> get connStatusStream async* {
-    await for (ConnectStatus status in _controller.stream) {
+  Stream<ConnectionEvent> get connStatusStream async* {
+    await for (ConnectionEvent status in _controller.stream) {
       yield status;
     }
   }
@@ -75,7 +75,7 @@ class BleClient extends ServiceClient {
 
     BleAdHocManager.cancelConnection(_device.mac);
 
-    _controller.add(ConnectStatus(Service.CONNECTION_CLOSED, address: _device.address));
+    _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _device.address));
   }
 
   Future<void> send(MessageAdHoc message) async {
@@ -154,7 +154,7 @@ class BleClient extends ServiceClient {
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
             await _requestMtu();
 
-            _controller.add(ConnectStatus(Service.CONNECTION_PERFORMED, address: _device.mac));
+            _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _device.mac));
 
             if (_connectListener != null)
               _connectListener(_device.mac, _device.uuid);

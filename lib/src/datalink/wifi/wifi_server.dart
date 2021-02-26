@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -15,7 +15,7 @@ import 'package:meta/meta.dart';
 
 
 class WifiServer extends ServiceServer {
-  StreamController<ConnectStatus> _connectCtrl;
+  StreamController<ConnectionEvent> _connectCtrl;
   StreamController<MessageAdHoc> _messageCtrl;
   StreamSubscription<Socket> _listenStreamSub;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
@@ -24,7 +24,7 @@ class WifiServer extends ServiceServer {
 
   WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     WifiAdHocManager.setVerbose(verbose);
-    this._connectCtrl = StreamController<ConnectStatus>();
+    this._connectCtrl = StreamController<ConnectionEvent>();
     this._messageCtrl = StreamController<MessageAdHoc>();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
@@ -32,8 +32,8 @@ class WifiServer extends ServiceServer {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<ConnectStatus> get connStatusStream async* {
-    await for (ConnectStatus status in _connectCtrl.stream) {
+  Stream<ConnectionEvent> get connStatusStream async* {
+    await for (ConnectionEvent status in _connectCtrl.stream) {
       yield status;
     }
   }
@@ -57,6 +57,8 @@ class WifiServer extends ServiceServer {
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {
+            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress');
+
             String strMessage = Utf8Decoder().convert(data);
             _messageCtrl.add(MessageAdHoc.fromJson(json.decode(strMessage)));
           },
@@ -66,14 +68,14 @@ class WifiServer extends ServiceServer {
           },
           onDone: () {
             _closeSocket(remoteAddress);
-            _connectCtrl.add(ConnectStatus(Service.STATE_NONE, address: remoteAddress));
+            _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
           }
         ));
 
-        _connectCtrl.add(ConnectStatus(Service.STATE_CONNECTED, address: remoteAddress));
+        _connectCtrl.add(ConnectionEvent(Service.STATE_CONNECTED, address: remoteAddress));
       },
       onError: (error) {
-        _connectCtrl.add(ConnectStatus(Service.CONNECTION_EXCEPTION, error: error));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
       }
     );
 
@@ -81,7 +83,7 @@ class WifiServer extends ServiceServer {
   }
 
   Future<void> stopListening() async {
-    if (verbose) log(ServiceServer.TAG, 'Server: stopListening()');
+    if (verbose) log(ServiceServer.TAG, 'stopListening()');
 
     _mapIpStream.forEach((ip, stream) => stream.cancel());
     _mapIpStream.clear();
@@ -95,16 +97,17 @@ class WifiServer extends ServiceServer {
   }
 
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: send() - $remoteAddress');
+    if (verbose) log(ServiceServer.TAG, 'send() to $remoteAddress');
 
     _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
+    await _mapIpSocket[remoteAddress].flush();
   }
 
   Future<void> cancelConnection(String remoteAddress) async {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
-    _connectCtrl.add(ConnectStatus(Service.STATE_NONE, address: remoteAddress));
+    _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/

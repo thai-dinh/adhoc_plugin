@@ -5,7 +5,7 @@ import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
 
 abstract class AbstractWrapper {
@@ -40,7 +40,7 @@ abstract class AbstractWrapper {
   Set<String> setFloodEvents;
 
   StreamController<DiscoveryEvent> discoveryCtrl;
-  StreamController<WrapperEvent> eventCtrl;
+  StreamController<AdHocEvent> eventCtrl;
 
   AbstractWrapper(this.verbose, Config config, this.mapMacDevices) {
     this.enabled = false;
@@ -51,7 +51,7 @@ abstract class AbstractWrapper {
     this.setFloodEvents = Set();
     this.label = config.label;
     this.discoveryCtrl = StreamController<DiscoveryEvent>();
-    this.eventCtrl = StreamController<WrapperEvent>();
+    this.eventCtrl = StreamController<AdHocEvent>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -64,8 +64,8 @@ abstract class AbstractWrapper {
     }
   }
 
-  Stream<WrapperEvent> get eventStream async* {
-    await for (WrapperEvent event in eventCtrl.stream) {
+  Stream<AdHocEvent> get eventStream async* {
+    await for (AdHocEvent event in eventCtrl.stream) {
       yield event;
     }
   }

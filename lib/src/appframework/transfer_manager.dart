@@ -7,7 +7,7 @@ import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/network/aodv/aodv_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
 
 class TransferManager {
@@ -32,7 +32,7 @@ class TransferManager {
 
   Config get config => _config;
 
-  Stream<WrapperEvent> get eventStream => _dataLinkManager.eventStream;
+  Stream<AdHocEvent> get eventStream => _dataLinkManager.eventStream;
 
   Stream<DiscoveryEvent> get discoveryStream => _dataLinkManager.discoveryStream;
 

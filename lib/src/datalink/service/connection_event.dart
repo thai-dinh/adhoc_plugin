@@ -1,9 +1,9 @@
-class ConnectStatus {
+class ConnectionEvent {
   int _status;
   String _address;
   Object _error;
 
-  ConnectStatus(this._status, {String address, dynamic error}) {
+  ConnectionEvent(this._status, {String address, dynamic error}) {
     this._address = address;
     this._error = error;
   }

@@ -3,7 +3,7 @@ import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -205,7 +205,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _onEvent(Service service) {
-    service.connStatusStream.listen((ConnectStatus info) {
+    service.connStatusStream.listen((ConnectionEvent info) {
       switch (info.status) {
         case Service.CONNECTION_CLOSED:
           connectionClosed(info.address);
@@ -259,7 +259,6 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
-    print(message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
@@ -295,10 +294,11 @@ class WrapperWifi extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_BROADCAST:
-        if (checkFloodEvent((message.pdu as FloodMsg).id)) {
+        FloodMsg floodMsg = FloodMsg.fromJson(message.pdu as Map);
+        if (checkFloodEvent(floodMsg.id)) {
           broadcastExcept(message, message.header.label);
 
-          HashSet<AdHocDevice> hashSet = (message.pdu as FloodMsg).adHocDevices;
+          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
 
           for (AdHocDevice adHocDevice in hashSet) {
             if (adHocDevice.label == label 

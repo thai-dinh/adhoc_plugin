@@ -21,11 +21,11 @@ class AodvHelper {
   }
 
   EntryRoutingTable addEntryRoutingTable(
-    String destIpAddress, String next, int hop, int seq, int lifetime, 
+    String destAddress, String next, int hop, int seq, int lifetime, 
     List<String> precursors
   ) {
     EntryRoutingTable entry = EntryRoutingTable(
-      destIpAddress, next, hop, seq, lifetime, precursors
+      destAddress, next, hop, seq, lifetime, precursors
     );
 
     return _routingTable.addEntry(entry) ? entry : null;

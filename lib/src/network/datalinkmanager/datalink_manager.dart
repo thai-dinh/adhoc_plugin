@@ -10,7 +10,7 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_bluetooth_le.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
@@ -18,20 +18,19 @@ class DataLinkManager {
   static const _POOLING_DISCOVERY = 1000;
   static const _NB_WRAPPERS = 2;
 
-  bool _verbose;
   Config _config;
   List<AbstractWrapper> _wrappers;
   HashMap<String, AdHocDevice> _mapAddrDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
-  StreamController<WrapperEvent> _eventCtrl;
+  StreamController<AdHocEvent> _eventCtrl;
 
-  DataLinkManager(this._verbose, this._config) {
+  DataLinkManager(bool verbose, this._config) {
     this._mapAddrDevice = HashMap();
     this._wrappers = List(_NB_WRAPPERS);
-    this._wrappers[Service.WIFI] = WrapperWifi(_verbose, _config, _mapAddrDevice);
-    this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(_verbose, _config, _mapAddrDevice);
+    this._wrappers[Service.WIFI] = WrapperWifi(verbose, _config, _mapAddrDevice);
+    this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(verbose, _config, _mapAddrDevice);
     this._discoveryCtrl = StreamController<DiscoveryEvent>();
-    this._eventCtrl = StreamController<WrapperEvent>();
+    this._eventCtrl = StreamController<AdHocEvent>();
     this._initialize();
     this.checkState();
   }
@@ -40,8 +39,8 @@ class DataLinkManager {
 
   HashSet<AdHocDevice> get setRemoteDevices => _wrappers[Service.BLUETOOTHLE].setRemoteDevices;
 
-  Stream<WrapperEvent> get eventStream async* {
-    await for (WrapperEvent event in _eventCtrl.stream) {
+  Stream<AdHocEvent> get eventStream async* {
+    await for (AdHocEvent event in _eventCtrl.stream) {
       yield event;
     }
   }
@@ -64,7 +63,7 @@ class DataLinkManager {
   }
 
   void enable(int duration, int type, void Function(bool) onEnable) {
-    if (!_wrappers[type].enabled)
+    // if (!_wrappers[type].enabled)
       _wrappers[type].enable(duration, (bool success) => onEnable(success));
   }
 
@@ -311,9 +310,9 @@ class DataLinkManager {
   String _typeString(int type) {
     switch (type) {
       case Service.BLUETOOTHLE:
-        return "Bluetooth";
+        return "BluetoothLE";
       case Service.WIFI:
-        return "WiFi";
+        return "Wifi";
 
       default:
         return "Unknown";

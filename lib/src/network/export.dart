@@ -5,5 +5,5 @@ export 'datalinkmanager/flood_msg.dart';
 export 'datalinkmanager/neighbors.dart';
 export 'datalinkmanager/wrapper_bluetooth_le.dart';
 export 'datalinkmanager/wrapper_conn_oriented.dart';
-export 'datalinkmanager/wrapper_event.dart';
+export 'datalinkmanager/adhoc_event.dart';
 export 'datalinkmanager/wrapper_wifi.dart';

@@ -10,7 +10,7 @@ import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/neighbors.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_event.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {
@@ -80,9 +80,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   void receivedPeerMessage(Header header, NetworkManager network) {
     AdHocDevice adHocDevice = AdHocDevice(
       label: header.label,
+      address: header.address,
       name: header.name,
       mac: header.mac,
-      address: header.address,
       type: type
     );
 
@@ -96,9 +96,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
         String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
         header.messageType = AbstractWrapper.CONNECT_BROADCAST;
-        broadcastExcept(
+        broadcast(
           MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()),
-          header.label
         );
       }
     }
@@ -132,8 +131,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       mapAddrNetwork.remove(adHocDevice.address);
       _mapMacDevices.remove(mac);
 
-      eventCtrl.add(WrapperEvent(AbstractWrapper.BROKEN_LINK, adHocDevice.label));
-      eventCtrl.add(WrapperEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
+      eventCtrl.add(AdHocEvent(AbstractWrapper.BROKEN_LINK, adHocDevice.label));
+      eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();

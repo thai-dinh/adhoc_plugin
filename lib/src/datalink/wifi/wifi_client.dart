@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoclibrary/src/datalink/service/connect_status.dart';
+import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/service/service_client.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  StreamController<ConnectStatus> _controller;
+  StreamController<ConnectionEvent> _controller;
   Socket _socket;
   String _serverIp;
   int _port;
@@ -25,7 +25,7 @@ class WifiClient extends ServiceClient {
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
   ) {
-    this._controller = StreamController<ConnectStatus>();
+    this._controller = StreamController<ConnectionEvent>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -34,14 +34,16 @@ class WifiClient extends ServiceClient {
     this._connectListener = connectListener;
   }
 
-  Stream<ConnectStatus> get connStatusStream async* {
-    await for (ConnectStatus status in _controller.stream) {
+  Stream<ConnectionEvent> get connStatusStream async* {
+    await for (ConnectionEvent status in _controller.stream) {
       yield status;
     }
   }
 
   Stream<MessageAdHoc> get messageStream async* {
     await for (Uint8List data in _socket.asBroadcastStream()) {
+      if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp');
+
       String strMessage = Utf8Decoder().convert(data);
       yield MessageAdHoc.fromJson(json.decode(strMessage));
     }
@@ -56,11 +58,11 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     await FlutterWifiP2p().removeGroup();
 
-    _controller.add(ConnectStatus(Service.STATE_NONE, address: _serverIp));
+    _controller.add(ConnectionEvent(Service.STATE_NONE, address: _serverIp));
   }
 
   void send(MessageAdHoc message) {
-    if (verbose) log(ServiceClient.TAG, 'Client: send() - $_serverIp');
+    if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp');
 
     _socket.write(json.encode(message.toJson()));
   }
@@ -93,7 +95,7 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      _controller.add(ConnectStatus(Service.STATE_CONNECTED, address: _serverIp));
+      _controller.add(ConnectionEvent(Service.STATE_CONNECTED, address: _serverIp));
 
       if (_connectListener != null)
         _connectListener(_serverIp);
