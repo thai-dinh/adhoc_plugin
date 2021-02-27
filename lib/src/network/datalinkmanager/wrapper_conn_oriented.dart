@@ -87,7 +87,6 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     );
 
     _mapMacDevices.putIfAbsent(header.mac, () => adHocDevice);
-
     if (!neighbors.neighbors.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
 

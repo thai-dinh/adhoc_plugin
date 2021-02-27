@@ -45,7 +45,8 @@ class WifiClient extends ServiceClient {
       if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp');
 
       String strMessage = Utf8Decoder().convert(data);
-      yield MessageAdHoc.fromJson(json.decode(strMessage));
+      for (String msg in strMessage.split('}{'))
+        yield MessageAdHoc.fromJson(json.decode(msg));
     }
   }
 

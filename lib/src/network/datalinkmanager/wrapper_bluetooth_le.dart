@@ -308,7 +308,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
 
           if (setRemoteDevices.contains(adHocDevice))
-              setRemoteDevices.remove(adHocDevice);
+            setRemoteDevices.remove(adHocDevice);
         }
         break;
 

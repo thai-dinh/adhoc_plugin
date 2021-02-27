@@ -100,7 +100,6 @@ class WifiServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'send() to $remoteAddress');
 
     _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
-    await _mapIpSocket[remoteAddress].flush();
   }
 
   Future<void> cancelConnection(String remoteAddress) async {

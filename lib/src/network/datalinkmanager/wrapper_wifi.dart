@@ -14,6 +14,7 @@ import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_client.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_server.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
+import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
@@ -215,6 +216,7 @@ class WrapperWifi extends WrapperConnOriented {
           break;
 
         case Service.CONNECTION_EXCEPTION:
+          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, info.error));
           break;
 
         default:
@@ -299,13 +301,15 @@ class WrapperWifi extends WrapperConnOriented {
           broadcastExcept(message, message.header.label);
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
-
           for (AdHocDevice adHocDevice in hashSet) {
-            if (adHocDevice.label == label 
+            if (adHocDevice.label != label 
               && !setRemoteDevices.contains(adHocDevice)
               && !isDirectNeighbors(adHocDevice.label)
             ) {
               adHocDevice.directedConnected = false;
+
+              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, adHocDevice));
+
               setRemoteDevices.add(adHocDevice);
             }
           }
@@ -313,14 +317,44 @@ class WrapperWifi extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.DISCONNECT_BROADCAST:
-        if (checkFloodEvent(message.pdu as String))
+        if (checkFloodEvent(message.pdu as String)) {
           broadcastExcept(message, message.header.label);
+
+          Header header = message.header;
+          AdHocDevice adHocDevice = AdHocDevice(
+            label: header.label,
+            name: header.name,
+            mac: header.mac,
+            type: type, 
+            directedConnected: false
+          );
+
+          eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
+
+          if (setRemoteDevices.contains(adHocDevice))
+            setRemoteDevices.remove(adHocDevice);
+        }
         break;
 
       case AbstractWrapper.BROADCAST:
+        Header header = message.header;
+
+        eventCtrl.add(
+          AdHocEvent(
+            AbstractWrapper.DATA_RECEIVED, 
+            AdHocDevice(
+              label: header.label,
+              name: header.name,
+              mac: header.mac,
+              type: header.deviceType
+            ),
+            extra: message.pdu
+          )
+        );
         break;
 
       default:
+        eventCtrl.add(AdHocEvent(AbstractWrapper.MESSAGE_EVENT, message));
         break;
     }
   }
