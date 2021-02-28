@@ -74,8 +74,6 @@ class BleClient extends ServiceClient {
       _subscription.cancel();
 
     BleAdHocManager.cancelConnection(_device.mac);
-
-    _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _device.address));
   }
 
   Future<void> send(MessageAdHoc message) async {

@@ -56,22 +56,7 @@ class AodvManager {
 
   Stream<AdHocEvent> get eventStream async* {
     await for (AdHocEvent event in _eventCtrl.stream) {
-      switch (event.type) {
-        case AbstractWrapper.BROKEN_LINK:
-          _brokenLinkDetected(event.payload);
-          break;
-        case AbstractWrapper.MESSAGE_EVENT:
-          _processAodvMsgReceived(event.payload);
-          break;
-        case AbstractWrapper.DEVICE_INFO:
-          _ownMac = event.payload;
-          _ownName = event.extra;
-          break;
-
-        default:
-          yield event;
-          break;
-      }
+      yield event;
     }
   }
 
@@ -95,8 +80,23 @@ class AodvManager {
 /*-----------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _dataLink.eventStream.listen((event) {
-      _eventCtrl.add(event);
+    _dataLink.eventStream.listen((AdHocEvent event) {
+      switch (event.type) {
+        case AbstractWrapper.BROKEN_LINK:
+          _brokenLinkDetected(event.payload);
+          break;
+        case AbstractWrapper.MESSAGE_EVENT:
+          _processAodvMsgReceived(event.payload);
+          break;
+        case AbstractWrapper.DEVICE_INFO:
+          _ownMac = event.payload;
+          _ownName = event.extra;
+          break;
+
+        default:
+          _eventCtrl.add(event);
+          break;
+      }
     });
   }
 
@@ -134,13 +134,13 @@ class AodvManager {
     }
 
     if (display)
-      log(TAG, buffer.toString());
+      print(buffer.toString());
   }
 
   void _brokenLinkDetected(String remoteNode) {
     if (_aodvHelper.sizeRoutingTable() > 0) {
       if (_verbose) log(TAG, 'Send RRER');
-      sendRRER(remoteNode);
+      _sendRRER(remoteNode);
     }
 
     if (_aodvHelper.containsDest(remoteNode)) {
@@ -357,7 +357,7 @@ class AodvManager {
   }
 
   void _processRREP_GRATUITOUS(MessageAdHoc message) {
-    RREP rrep = message.pdu as RREP;
+    RREP rrep = RREP.fromJson(message.pdu as Map);
     int hopCount = rrep.incrementHopCount();
 
     if (rrep.destAddress.compareTo(_ownLabel) == 0) {
@@ -390,7 +390,7 @@ class AodvManager {
   }
 
   void _processRERR(MessageAdHoc message) {
-    RERR rerr = message.pdu as RERR;
+    RERR rerr = RERR.fromJson(message.pdu as Map);
     String originateAddr = message.header.label;
 
     if (_verbose) log(TAG, 'Received RERR from $originateAddr -> Node ${rerr.unreachableDestAddress} is unreachable');
@@ -462,7 +462,7 @@ class AodvManager {
     }
   }
 
-  void sendRRER(String brokenNodeAddress) {
+  void _sendRRER(String brokenNodeAddress) {
     if (_aodvHelper.containsNext(brokenNodeAddress)) {
       String dest = _aodvHelper.getDestFromNext(brokenNodeAddress);
       if (dest.compareTo(_ownLabel) == 0) {

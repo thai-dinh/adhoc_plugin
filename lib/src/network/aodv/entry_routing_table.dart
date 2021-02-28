@@ -66,6 +66,6 @@ class EntryRoutingTable {
             ' nxt: $_next' +
             ' hop: $_hop' +
             ' seq: $_destSeqNum ${displayPrecursors()}' +
-            ' dataPath $_activesDataPath[_destAddress]';
+            ' dataPath ${_activesDataPath[_destAddress]}';
   }
 }
