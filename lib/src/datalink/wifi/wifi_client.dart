@@ -45,8 +45,18 @@ class WifiClient extends ServiceClient {
       if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp');
 
       String strMessage = Utf8Decoder().convert(data);
-      for (String msg in strMessage.split('}{'))
-        yield MessageAdHoc.fromJson(json.decode(msg));
+      List<String> strMessages = strMessage.split('}{');
+      for (int i = 0; i < strMessages.length; i++) {
+        if (strMessages.length == 1) {
+          yield MessageAdHoc.fromJson(json.decode(strMessages[i]));
+        } else if (i == 0) {
+          yield MessageAdHoc.fromJson(json.decode(strMessages[i] + '}'));
+        } else if (i == strMessages.length - 1) {
+          yield MessageAdHoc.fromJson(json.decode('{' + strMessages[i]));
+        } else {
+          yield MessageAdHoc.fromJson(json.decode('{' + strMessages[i] + '}'));
+        }
+      }
     }
   }
 
@@ -59,7 +69,7 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     await FlutterWifiP2p().removeGroup();
 
-    _controller.add(ConnectionEvent(Service.STATE_NONE, address: _serverIp));
+    _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
   }
 
   void send(MessageAdHoc message) {
@@ -96,7 +106,7 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      _controller.add(ConnectionEvent(Service.STATE_CONNECTED, address: _serverIp));
+      _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _serverIp));
 
       if (_connectListener != null)
         _connectListener(_serverIp);
