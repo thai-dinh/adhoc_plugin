@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocManager;
+import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocManager, WifiAdHocDevice;
+import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
 import '../../datalink/wifi/wifi_adhoc_manager.dart';
 
 
@@ -18,12 +19,18 @@ class WrapperWifi extends WrapperConnOriented {
   StreamSubscription<DiscoveryEvent> _discoverySub;
   WifiAdHocManager _wifiManager;
 
+  int index;
+  List<AdHocDevice> devices;
+
   WrapperWifi(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
+    this.index, this.devices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isListening = false;
     this.type = Service.WIFI;
+    this.ownName = devices[index].name;
+    this.ownMac = devices[index].mac;
     this.init(verbose, config);
   }
 
@@ -37,22 +44,26 @@ class WrapperWifi extends WrapperConnOriented {
   void init(bool verbose, [Config config]) async {
     _serverPort = config.serverPort;
 
-    if (await WifiAdHocManager.isWifiEnabled()) {
-      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)
+    for (int i = 0; i < devices.length; i++) {
+      if (i != index)
+        mapMacDevices.putIfAbsent(devices[i].mac, () => devices[i]);
+    }
+
+    // if (await WifiAdHocManager.isWifiEnabled()) {
+      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady, index, devices)
         ..register(_registration);
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
-      this.ownName = await _wifiManager.adapterName;
       this._initialize();
       this.enabled = true;
-    } else {
-      this.enabled = false;
-    }
+    // } else {
+      // this.enabled = false;
+    // }
   }
 
   @override
   void enable(int duration, void Function(bool) onEnable) {
-    _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
+    _wifiManager = WifiAdHocManager(verbose, _onWifiReady, index, devices)
       ..register(_registration);
     _wifiManager.onEnableWifi(onEnable);
 
@@ -85,6 +96,7 @@ class WrapperWifi extends WrapperConnOriented {
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
       await _wifiManager.connect(adHocDevice.mac);
+      print('yes');
     }
   }
 
@@ -187,7 +199,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _onWifiReady(String ipAddress, String mac) {
     _ownIpAddress = ipAddress;
-    ownMac = mac;
+    // ownMac = mac;
   }
 
   void _onEvent(Service service) {

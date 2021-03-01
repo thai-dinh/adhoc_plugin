@@ -1,5 +1,10 @@
+import 'dart:collection';
+import 'dart:math';
+
+import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
 import 'package:adhoclibrary_example/aodv_plugin.dart';
 import 'package:flutter/material.dart';
+import 'datalink/wifi/wifi_adhoc_device.dart';
 
 void main() {
   runApp(ExampleApp());
@@ -11,7 +16,41 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  AodvPlugin _plugin = AodvPlugin();
+  static const NAMES = ['Device A', 'Device B', 'Device C'];
+  static const NB_DEVICES = 3;
+
+  HashMap<String, AodvPlugin> _plugins = HashMap();
+  List<AdHocDevice> _adhocdevices = List.empty(growable: true); 
+
+  String _randomMac(){
+    List<String> list = [
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    ];
+    Random rand = Random(DateTime.now().millisecond);
+    StringBuffer buffer = StringBuffer();
+
+    for (int i = 0; i < 12; i++) {
+      if (i % 2 == 0 && i != 0)
+        buffer.write(':');
+      buffer.write(list[rand.nextInt(list.length)]);
+    }
+
+    return buffer.toString();
+  }
+
+  void _initialize() {
+    for (int i = 0; i < NB_DEVICES; i++)
+      _adhocdevices.add(WifiAdHocDevice.unit(NAMES[i], _randomMac()));
+
+    for (int i = 0; i < NB_DEVICES; i++)
+      _plugins.putIfAbsent(NAMES[i], () => AodvPlugin(i, _adhocdevices));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +80,9 @@ class _AppState extends State<ExampleApp> {
                             children: <Widget>[
                               RaisedButton(
                                 child: Center(child: Text('Connect')),
-                                onPressed: () {  },
+                                onPressed: () {
+                                  _plugins[NAMES[0]].connectOnce(_adhocdevices[1]);
+                                },
                               ),
                               RaisedButton(
                                 child: Center(child: Text('Disconnect')),

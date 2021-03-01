@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
+import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
+import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
@@ -26,32 +23,22 @@ class WifiAdHocManager {
 
   void Function(String, String) _onWifiReady;
 
-  WifiAdHocManager(this._verbose, this._onWifiReady) {
+  int index;
+  List<AdHocDevice> devices;
+
+  WifiAdHocManager(this._verbose, this._onWifiReady, this.index, this.devices) {
     this._isDiscovering = false;
     this._isPaused = false;
     this._mapMacDevice = HashMap();
     this._controller = StreamController<DiscoveryEvent>();
     this._wifiP2p = FlutterWifiP2p();
     this._wifiP2p.verbose = _verbose;
-    print(_randomMac());
-  }
 
-/*--------------------------------Unit Testing--------------------------------*/
-
-  String _randomMac(){
-    List<String> list = [
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    ];
-    Random rand = Random();
-    StringBuffer buffer = StringBuffer();
-
-    for (int i = 0; i < 12; i++) {
-      if (i % 2 == 0 && i != 0)
-        buffer.write(':');
-      buffer.write(list[rand.nextInt(list.length)]);
+    for (int i = 0; i < devices.length; i++) {
+      if (i != index)
+        _mapMacDevice.putIfAbsent(devices[i].mac, () => devices[i]);
     }
-
-    return buffer.toString();
+    print('init');
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -73,7 +60,7 @@ class WifiAdHocManager {
 
     _wifiP2p.thisDeviceChangeStream.listen(
       (wifiP2pDevice) async =>
-        _onWifiReady(await _wifiP2p.ownIp, await _wifiP2p.mac)
+        _onWifiReady(await _wifiP2p.ownIp, devices[index].mac)
     );
 
     await _wifiP2p.register();

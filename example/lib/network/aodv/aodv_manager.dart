@@ -23,12 +23,12 @@ class AodvManager {
   DataLinkManager _dataLink;
   MessageAdHoc _dataMessage;
 
-  AodvManager(this._verbose, Config config) {
+  AodvManager(this._verbose, Config config, int index, List<AdHocDevice> devices) {
     this._aodvHelper = AodvHelper(_verbose);
     this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
     this._mapDestSequenceNumber = HashMap();
     this._ownLabel = config.label;
-    this._dataLink = DataLinkManager(_verbose, config);
+    this._dataLink = DataLinkManager(_verbose, config, index, devices);
     this._eventCtrl = StreamController<AdHocEvent>();
     this._initialize();
     if (_verbose)

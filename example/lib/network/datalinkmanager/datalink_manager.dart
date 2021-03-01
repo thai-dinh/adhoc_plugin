@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/adhoclibrary.dart' hide WrapperWifi;
+import 'package:adhoclibrary/adhoclibrary.dart' hide WrapperWifi, WifiAdHocDevice;
 import 'wrapper_wifi.dart';
 
 
@@ -12,9 +12,9 @@ class DataLinkManager {
   HashMap<String, AdHocDevice> _mapAddrDevice;
   StreamController<AdHocEvent> _eventCtrl;
 
-  DataLinkManager(bool verbose, this._config) {
+  DataLinkManager(bool verbose, this._config, int index, List<AdHocDevice> devices) {
     this._mapAddrDevice = HashMap();
-    this._wrapper = WrapperWifi(verbose, _config, _mapAddrDevice);
+    this._wrapper = WrapperWifi(verbose, _config, _mapAddrDevice, index, devices);
     this._eventCtrl = StreamController<AdHocEvent>();
     this._initialize();
     this.checkState();
@@ -43,7 +43,7 @@ class DataLinkManager {
   }
 
   void enableAll(void Function(bool) onEnable) {
-      enable(3600, Service.WIFI, onEnable);
+    enable(3600, Service.WIFI, onEnable);
   }
 
   void disable(int type) {
@@ -72,11 +72,7 @@ class DataLinkManager {
   }
 
   void connect(int attempts, AdHocDevice adHocDevice) {
-    switch (adHocDevice.type) {
-      case Service.WIFI:
-        _wrapper.connect(attempts, adHocDevice);
-        break;
-    }
+    _wrapper.connect(attempts, adHocDevice);
   }
 
   void stopListening() {

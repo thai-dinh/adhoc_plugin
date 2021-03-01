@@ -6,15 +6,13 @@ import 'network/aodv/aodv_manager.dart';
 import 'network/datalinkmanager/datalink_manager.dart';
 
 
-
-
 class AodvPlugin {
   AodvManager _aodvManager;
   DataLinkManager _dataLinkManager;
   HashMap<String, AdHocDevice> _discoveredDevices;
 
-  AodvPlugin() {
-    this._aodvManager = AodvManager(true, Config()..connectionFlooding = true);
+  AodvPlugin(int index, List<AdHocDevice> devices) {
+    this._aodvManager = AodvManager(true, Config()..connectionFlooding = true, index, devices);
     this._dataLinkManager = _aodvManager.dataLinkManager;
     this._discoveredDevices = HashMap();
 
@@ -59,8 +57,6 @@ class AodvPlugin {
 /*------------------------------DataLink methods-----------------------------*/
 
   void connectOnce(AdHocDevice adHocDevice) {
-    if (_dataLinkManager.checkState() == 0)
-      throw DeviceFailureException("No wifi and bluetooth connectivity");
     _dataLinkManager.connect(1, adHocDevice);
   }
 
