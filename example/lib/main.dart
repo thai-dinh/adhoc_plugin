@@ -1,6 +1,4 @@
-import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:adhoclibrary_example/network/aodv_plugin.dart';
-
+import 'package:adhoclibrary_example/aodv_plugin.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -13,66 +11,125 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  AodvPlugin _aodvPlugin = AodvPlugin();
-  List<AdHocDevice> _devices = [];
+  AodvPlugin _plugin = AodvPlugin();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Adhoclibrary plugin example'),
-        ),
-        body: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Expanded(
-              child: ListView(
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: TabBar(
+              tabs: [
+                Tab(child: Center(child: Text('Device A'))),
+                Tab(child: Center(child: Text('Device B'))),
+                Tab(child: Center(child: Text('Device C'))),
+              ],
+            ),
+            title: Text('Tabs Demo'),
+          ),
+          body: TabBarView(
+            children: [
+              Column(
                 children: <Widget>[
-                  RaisedButton(
-                    child: Center(child: Text('Get discovered devices')),
-                    onPressed: () => setState(() {
-                      _devices = _aodvPlugin.discoveredDevices;
-                    }),
-                  ),
-                  RaisedButton(
-                    child: Center(child: Text('enable discovery')),
-                    onPressed: () => _aodvPlugin.enableBluetooth(),
-                  ),
-                  RaisedButton(
-                    child: Center(child: Text('discovery')),
-                    onPressed: () => _aodvPlugin.discovery(),
-                  ),
-                  RaisedButton(
-                    child: Center(child: Text('Send hello')),
-                    onPressed: () {
-                      Set<AdHocDevice> devices = _aodvPlugin.remoteDevices;
-                      devices.forEach((d) {
-                        _aodvPlugin.sendMessageTo('Hello world!', d);
-                      });
-                    },
-                  ),
-                  RaisedButton(
-                    child: Center(child: Text('disconnectAll')),
-                    onPressed: () => _aodvPlugin.disconnectAll(),
-                  ),
-                  ListView(
-                    shrinkWrap: true,
-                    physics: ClampingScrollPhysics(),
-                    children: _devices.map((device) {
-                      return Card(
-                        child: ListTile(
-                          title: Center(child: Text(device.name)),
-                          subtitle: Center(child: Text(device.mac)),
-                          onTap: () => _aodvPlugin.connectOnce(device),
+                  Expanded(
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Column(
+                            children: <Widget>[
+                              RaisedButton(
+                                child: Center(child: Text('Connect')),
+                                onPressed: () {  },
+                              ),
+                              RaisedButton(
+                                child: Center(child: Text('Disconnect')),
+                                onPressed: () {  },
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    }).toList(),
+                        Expanded(
+                          child: Column(
+                            children: <Widget>[
+                              Text('Name: '),
+                              Text('MAC: '),
+                              Text('ID: '),
+                              Text('Port: '),
+                              Text('IP: '),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: <Widget>[
+                              Text('Routing table'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: <Widget>[
+
+                    ],
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          children: <Widget>[
+                            RaisedButton(
+                              child: Center(child: Text('Send')),
+                              onPressed: () {  },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          children: <Widget>[
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                hintText: 'Message',
+                              ),
+                              validator: (value) {
+                                if (value.isEmpty) {
+                                  return 'Please enter some text';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                        children: <Widget>[
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              hintText: 'Destination',
+                            ),
+                            validator: (value) {
+                              if (value.isEmpty) {
+                                return 'Please enter some text';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-          ],
+              Icon(Icons.directions_transit),
+              Icon(Icons.directions_bike),
+            ],
+          ),
         ),
       ),
     );

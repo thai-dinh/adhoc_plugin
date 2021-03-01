@@ -1,6 +1,11 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/adhoclibrary.dart';
+import 'package:adhoclibrary/adhoclibrary.dart' hide AodvManager, DataLinkManager;
+
+import 'network/aodv/aodv_manager.dart';
+import 'network/datalinkmanager/datalink_manager.dart';
+
+
 
 
 class AodvPlugin {
@@ -12,11 +17,6 @@ class AodvPlugin {
     this._aodvManager = AodvManager(true, Config()..connectionFlooding = true);
     this._dataLinkManager = _aodvManager.dataLinkManager;
     this._discoveredDevices = HashMap();
-    this._aodvManager.discoveryStream.listen((DiscoveryEvent event) {
-      if (event.type == Service.DISCOVERY_END) {
-        _discoveredDevices.addAll(event.payload as Map);
-      }
-    });
 
     this._aodvManager.eventStream.listen((AdHocEvent event) {
       if (event.type == AbstractWrapper.DEVICE_INFO)
