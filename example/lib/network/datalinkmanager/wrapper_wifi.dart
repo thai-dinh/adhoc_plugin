@@ -154,6 +154,7 @@ class WrapperWifi extends WrapperConnOriented {
 
     wifiClient.connectListener = (String remoteAddress) async {
       _ownIpAddress = remoteAddress;
+      print('client: ' + _ownIpAddress);
       mapAddrNetwork.putIfAbsent(
         remotePort.toString(),
         () => NetworkManager(
@@ -168,7 +169,7 @@ class WrapperWifi extends WrapperConnOriented {
           label: label,
           name: ownName,
           mac: ownMac,
-          address: _ownIpAddress,
+          address: remoteAddress,
           deviceType: Service.WIFI
         ),
       ));

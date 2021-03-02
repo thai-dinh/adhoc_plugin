@@ -64,7 +64,7 @@ class WifiClient extends ServiceClient {
   }
 
   void send(MessageAdHoc message) {
-    if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:${_socket.port}');
+    if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
     _socket.write(json.encode(message.toJson()));
   }
@@ -88,7 +88,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
+    if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIp:$_port');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       state = Service.STATE_CONNECTING;
@@ -100,9 +100,9 @@ class WifiClient extends ServiceClient {
       _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _serverIp));
 
       if (_connectListener != null)
-        _connectListener(_port.toString());
+        _connectListener(_socket.port.toString());
 
-      if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIp');
+      if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIp:$_port');
 
       state = Service.STATE_CONNECTED;
     }
