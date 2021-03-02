@@ -32,17 +32,9 @@ class WifiServer extends ServiceServer {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<ConnectionEvent> get connStatusStream async* {
-    await for (ConnectionEvent status in _connectCtrl.stream) {
-      yield status;
-    }
-  }
+  Stream<ConnectionEvent> get connStatusStream => _connectCtrl.stream;
 
-  Stream<MessageAdHoc> get messageStream async* {
-    await for (MessageAdHoc msg in _messageCtrl.stream) {
-      yield msg;
-    }
-  }
+  Stream<MessageAdHoc> get messageStream => _messageCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 

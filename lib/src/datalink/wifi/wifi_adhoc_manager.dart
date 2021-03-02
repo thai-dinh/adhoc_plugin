@@ -38,11 +38,7 @@ class WifiAdHocManager {
 
   Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
 
-  Stream<DiscoveryEvent> get discoveryStream async* {
-    await for (DiscoveryEvent event in _controller.stream) {
-      yield event;
-    }
-  }
+  Stream<DiscoveryEvent> get discoveryStream => _controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 

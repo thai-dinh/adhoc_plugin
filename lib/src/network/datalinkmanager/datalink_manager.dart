@@ -43,17 +43,9 @@ class DataLinkManager {
       ..addAll(_wrappers[Service.WIFI].setRemoteDevices);
   }
 
-  Stream<AdHocEvent> get eventStream async* {
-    await for (AdHocEvent event in _eventCtrl.stream) {
-      yield event;
-    }
-  }
+  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
-  Stream<DiscoveryEvent> get discoveryStream async* {
-    await for (DiscoveryEvent event in _discoveryCtrl.stream) {
-      yield event;
-    }
-  }
+  Stream<DiscoveryEvent> get discoveryStream => _discoveryCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 

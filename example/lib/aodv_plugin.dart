@@ -34,6 +34,8 @@ class AodvPlugin {
     return _dataLinkManager.setRemoteDevices;
   }
 
+  Stream<String> get logs => _aodvManager.logs;
+
 /*------------------------------Network methods------------------------------*/
 
   void sendMessageTo(Object message, AdHocDevice adHocDevice) {

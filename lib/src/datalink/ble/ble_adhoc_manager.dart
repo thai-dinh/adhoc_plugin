@@ -46,11 +46,7 @@ class BleAdHocManager {
 
   HashMap<String, BleAdHocDevice> get hashMapBleDevice => _mapMacDevice;
 
-  Stream<DiscoveryEvent> get discoveryStream async* {
-    await for (DiscoveryEvent event in _controller.stream) {
-      yield event;
-    }
-  }
+  Stream<DiscoveryEvent> get discoveryStream => _controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 

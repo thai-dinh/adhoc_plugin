@@ -34,11 +34,7 @@ class WifiClient extends ServiceClient {
     this._connectListener = connectListener;
   }
 
-  Stream<ConnectionEvent> get connStatusStream async* {
-    await for (ConnectionEvent status in _controller.stream) {
-      yield status;
-    }
-  }
+  Stream<ConnectionEvent> get connStatusStream => _controller.stream;
 
   Stream<MessageAdHoc> get messageStream async* {
     await for (Uint8List data in _socket.asBroadcastStream()) {

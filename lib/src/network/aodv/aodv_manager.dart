@@ -54,11 +54,7 @@ class AodvManager {
 
   DataLinkManager get dataLinkManager => _dataLink;
 
-  Stream<AdHocEvent> get eventStream async* {
-    await for (AdHocEvent event in _eventCtrl.stream) {
-      yield event;
-    }
-  }
+  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
   Stream<DiscoveryEvent> get discoveryStream => _dataLink.discoveryStream;
 
