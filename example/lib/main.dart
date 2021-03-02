@@ -3,9 +3,9 @@ import 'dart:math';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
 import 'package:adhoclibrary_example/aodv_plugin.dart';
+import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import 'datalink/wifi/wifi_adhoc_device.dart';
+
 
 void main() {
   runApp(ExampleApp());
@@ -17,8 +17,8 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  static const NAMES = ['Device A', 'Device B', 'Device C'];
-  static const NB_DEVICES = 3;
+  static const NAMES = ['Device A', 'Device B', 'Device C', 'Device D'];
+  static const NB_DEVICES = 4;
 
   HashMap<String, AodvPlugin> _plugins = HashMap();
   List<AdHocDevice> _adhocdevices = List.empty(growable: true);
@@ -45,7 +45,7 @@ class _AppState extends State<ExampleApp> {
       logs.add(List.empty(growable: true));
 
     for (int i = 0; i < NB_DEVICES; i++) {
-      int port = Random(DateTime.now().millisecond).nextInt(9999);
+      int port = Random(DateTime.now().microsecond).nextInt(9999);
       while (port < 1000)
         port = Random(DateTime.now().millisecond).nextInt(9999);
       String mac = _randomMac();
@@ -77,11 +77,18 @@ class _AppState extends State<ExampleApp> {
                   children: <Widget>[
                     RaisedButton(
                       child: Center(child: Text('Connect')),
-                      onPressed: () => _plugins[NAMES[index]].connectOnce(_adhocdevices[0])
+                      onPressed: () {
+                        int j = index-1;
+                        if (j < 0)
+                          j = 0;
+                        _plugins[NAMES[index]].connectOnce(_adhocdevices[j]);
+                      }
                     ),
                     RaisedButton(
                       child: Center(child: Text('Disconnect')),
-                      onPressed: () {  },
+                      onPressed: () {
+                        _plugins[NAMES[index]].disconnect(_adhocdevices[_destID].label);
+                      },
                     ),
                   ],
                 ),
@@ -171,6 +178,7 @@ class _AppState extends State<ExampleApp> {
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(hintText: 'Destination'),
                     onEditingComplete: () {
+                      print(_dstCtrl.text);
                       switch (_dstCtrl.text) {
                         case 'A':
                           _destID = 0;
@@ -180,6 +188,9 @@ class _AppState extends State<ExampleApp> {
                           break;
                         case 'C':
                           _destID = 2;
+                          break;
+                        case 'D':
+                          _destID = 3;
                           break;
                       }
                     },
@@ -203,7 +214,7 @@ class _AppState extends State<ExampleApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: DefaultTabController(
-        length: 3,
+        length: 4,
         child: Scaffold(
           appBar: AppBar(
             bottom: TabBar(
@@ -211,15 +222,16 @@ class _AppState extends State<ExampleApp> {
                 Tab(child: Center(child: Text('Device A'))),
                 Tab(child: Center(child: Text('Device B'))),
                 Tab(child: Center(child: Text('Device C'))),
+                Tab(child: Center(child: Text('Device D'))),
               ],
             ),
-            title: Text('Tabs Demo'),
           ),
           body: TabBarView(
             children: [
               _display(0),
               _display(1),
               _display(2),
+              _display(3),
             ],
           ),
         ),

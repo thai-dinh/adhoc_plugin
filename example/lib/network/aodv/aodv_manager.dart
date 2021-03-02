@@ -312,7 +312,7 @@ class AodvManager {
         Data data = _dataMessage.pdu as Data;
         _send(_dataMessage, data.destAddress);
 
-        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(rrep.destAddress);
       if (destNext == null) {
@@ -335,7 +335,7 @@ class AodvManager {
 
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
 
-        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
       }
     }
   }

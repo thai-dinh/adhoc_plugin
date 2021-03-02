@@ -86,4 +86,8 @@ class AodvPlugin {
   void disconnectAll() {
     _dataLinkManager.disconnectAll();
   }
+
+  void disconnect(String label) {
+    _dataLinkManager.disconnect(label);
+  }
 }
