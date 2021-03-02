@@ -44,7 +44,6 @@ class WrapperWifi extends WrapperConnOriented {
     }
 
     this._serverPort = (devices[index] as WifiAdHocDevice).port;
-    print(_serverPort);
     this._mapAddrMac = HashMap();
     this._listenServer();
     this.enabled = true;
@@ -177,6 +176,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
+    print('$_serverPort: ' + message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;

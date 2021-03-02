@@ -58,6 +58,11 @@ class _AppState extends State<ExampleApp> {
 
   @override
   Widget build(BuildContext context) {
+    TextEditingController _dstCtrl = TextEditingController();
+    TextEditingController _msgCtrl = TextEditingController();
+    MessageAdHoc _msg;
+    int _destID;
+
     return MaterialApp(
       home: DefaultTabController(
         length: 3,
@@ -84,9 +89,7 @@ class _AppState extends State<ExampleApp> {
                             children: <Widget>[
                               RaisedButton(
                                 child: Center(child: Text('Connect')),
-                                onPressed: () {
-                                  _plugins[NAMES[1]].connectOnce(_adhocdevices[0]);
-                                },
+                                onPressed: () => _plugins[NAMES[1]].connectOnce(_adhocdevices[0])
                               ),
                               RaisedButton(
                                 child: Center(child: Text('Disconnect')),
@@ -97,12 +100,13 @@ class _AppState extends State<ExampleApp> {
                         ),
                         Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text('Name: '),
-                              Text('MAC: '),
-                              Text('ID: '),
-                              Text('Port: '),
-                              Text('IP: '),
+                              Text('Name: ${NAMES[1]}'),
+                              Text('MAC: ${_adhocdevices[1].mac}'),
+                              Text('ID: ${_adhocdevices[1].label}'),
+                              Text('Port: ${(_adhocdevices[1] as WifiAdHocDevice).port}'),
+                              Text('IP: ${_adhocdevices[1].address}'),
                             ],
                           ),
                         ),
@@ -128,7 +132,7 @@ class _AppState extends State<ExampleApp> {
                           children: <Widget>[
                             RaisedButton(
                               child: Center(child: Text('Send')),
-                              onPressed: () {  },
+                              onPressed: () => _plugins[NAMES[1]].sendMessageTo(_msg, _adhocdevices[_destID])
                             ),
                           ],
                         ),
@@ -137,14 +141,21 @@ class _AppState extends State<ExampleApp> {
                         child: Column(
                           children: <Widget>[
                             TextFormField(
-                              decoration: const InputDecoration(
-                                hintText: 'Message',
-                              ),
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Please enter some text';
-                                }
-                                return null;
+                              controller: _msgCtrl,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(hintText: 'Message'),
+                              onEditingComplete: () {
+                                _msg = MessageAdHoc(
+                                  Header(
+                                    messageType: 0,
+                                    label: _adhocdevices[1].label,
+                                    name: NAMES[1],
+                                    address: _adhocdevices[1].address,
+                                    mac: _adhocdevices[1].mac,
+                                    deviceType: Service.WIFI,
+                                  ),
+                                  _msgCtrl.text,
+                                );
                               },
                             ),
                           ],
@@ -154,14 +165,18 @@ class _AppState extends State<ExampleApp> {
                         child: Column(
                         children: <Widget>[
                           TextFormField(
-                            decoration: const InputDecoration(
-                              hintText: 'Destination',
-                            ),
-                            validator: (value) {
-                              if (value.isEmpty) {
-                                return 'Please enter some text';
+                            controller: _dstCtrl,
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(hintText: 'Destination'),
+                            onEditingComplete: () {
+                              switch (_dstCtrl.text) {
+                                case 'A':
+                                  _destID = 0;
+                                  break;
+                                case 'C':
+                                  _destID = 2;
+                                  break;
                               }
-                              return null;
                             },
                           ),
                         ],
