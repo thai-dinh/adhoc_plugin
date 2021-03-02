@@ -92,7 +92,7 @@ class DataLinkManager {
   bool isWifiGroupOwner() {
     WrapperWifi wrapperWifi = _wrapper;
     if (wrapperWifi.enabled) {
-      return wrapperWifi.isWifiGroupOwner();
+      return wrapperWifi.isGroupOwner;
     } else {
       throw DeviceFailureException("Wifi is not enabled");
     }

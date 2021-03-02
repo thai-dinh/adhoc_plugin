@@ -42,7 +42,7 @@ class WifiClient extends ServiceClient {
 
   Stream<MessageAdHoc> get messageStream async* {
     await for (Uint8List data in _socket.asBroadcastStream()) {
-      if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp');
+      if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
 
       String strMessage = Utf8Decoder().convert(data);
       List<String> strMessages = strMessage.split('}{');

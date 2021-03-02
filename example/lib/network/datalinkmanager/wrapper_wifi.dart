@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocManager, WifiAdHocDevice;
+import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
 import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
-import '../../datalink/wifi/wifi_adhoc_manager.dart';
 
 
 class WrapperWifi extends WrapperConnOriented {
@@ -13,11 +12,7 @@ class WrapperWifi extends WrapperConnOriented {
   String _ownIpAddress;
   String _groupOwnerAddr;
   bool _isDiscovering;
-  bool _isGroupOwner;
-  bool _isListening;
   HashMap<String, String> _mapAddrMac;
-  StreamSubscription<DiscoveryEvent> _discoverySub;
-  WifiAdHocManager _wifiManager;
 
   int index;
   List<AdHocDevice> devices;
@@ -27,46 +22,36 @@ class WrapperWifi extends WrapperConnOriented {
     this.index, this.devices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
-    this._isListening = false;
     this.type = Service.WIFI;
     this.ownName = devices[index].name;
     this.ownMac = devices[index].mac;
+    this._ownIpAddress = '127.0.0.1';
+    this._groupOwnerAddr = '127.0.0.1';
     this.init(verbose, config);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  bool get isGroupOwner => _isGroupOwner;
+  bool get isGroupOwner => false;
 
 /*------------------------------Override methods------------------------------*/
 
   @override
-  void init(bool verbose, [Config config]) async {
-    _serverPort = config.serverPort;
-
+  void init(bool verbose, [Config config]) {
     for (int i = 0; i < devices.length; i++) {
       if (i != index)
         mapMacDevices.putIfAbsent(devices[i].mac, () => devices[i]);
     }
 
-    // if (await WifiAdHocManager.isWifiEnabled()) {
-      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady, index, devices)
-        ..register(_registration);
-      this._isGroupOwner = false;
-      this._mapAddrMac = HashMap();
-      this._initialize();
-      this.enabled = true;
-    // } else {
-      // this.enabled = false;
-    // }
+    this._serverPort = (devices[index] as WifiAdHocDevice).port;
+    print(_serverPort);
+    this._mapAddrMac = HashMap();
+    this._listenServer();
+    this.enabled = true;
   }
 
   @override
   void enable(int duration, void Function(bool) onEnable) {
-    _wifiManager = WifiAdHocManager(verbose, _onWifiReady, index, devices)
-      ..register(_registration);
-    _wifiManager.onEnableWifi(onEnable);
-
     enabled = true;
   }
 
@@ -74,8 +59,6 @@ class WrapperWifi extends WrapperConnOriented {
   void disable() {
     mapAddrNetwork.clear();
     neighbors.clear();
-
-    _wifiManager = null;
 
     enabled = false;
   }
@@ -85,8 +68,6 @@ class WrapperWifi extends WrapperConnOriented {
     if (_isDiscovering)
       return;
 
-    _discoverySub.resume();
-    _wifiManager.discovery();
     _isDiscovering = true;
   }
 
@@ -95,8 +76,7 @@ class WrapperWifi extends WrapperConnOriented {
     WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(adHocDevice.mac);
-      print('yes');
+      _connect(wifiAdHocDevice.port);
     }
   }
 
@@ -104,7 +84,6 @@ class WrapperWifi extends WrapperConnOriented {
   void stopListening() {
     if (serviceServer != null) {
       serviceServer.stopListening();
-      _isListening = false;
     } 
   }
 
@@ -113,22 +92,22 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   Future<String> getAdapterName() async {
-    return await _wifiManager.adapterName;
+    return null;
   }
 
   @override
   Future<bool> updateDeviceName(final String name) async {
-    return await _wifiManager.updateDeviceName(name);
+    return null;
   }
 
   @override
   Future<bool> resetDeviceName() async {
-    return await _wifiManager.resetDeviceName();
+    return null;
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void unregister() => _wifiManager.unregister();
+  void unregister() { }
 
   void removeGroup() {
     if (serviceServer != null) {
@@ -138,69 +117,9 @@ class WrapperWifi extends WrapperConnOriented {
 
       serviceServer.activeConnections.clear();
     }
-
-    _wifiManager.removeGroup();
   }
-
-  bool isWifiGroupOwner() => _isGroupOwner;
 
 /*------------------------------Private methods-------------------------------*/
-
-  void _initialize() {
-    _discoverySub = _wifiManager.discoveryStream.listen((DiscoveryEvent event) {
-      discoveryCtrl.add(event);
-
-      switch (event.type) {
-        case Service.DEVICE_DISCOVERED:
-          WifiAdHocDevice device = event.payload as WifiAdHocDevice;
-          mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
-            return device;
-          });
-          break;
-
-        case Service.DISCOVERY_END:
-          if (verbose) log(TAG, 'Discovery end');
-          (event.payload as Map).forEach((mac, device) {
-            mapMacDevices.putIfAbsent(mac, () {
-              if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
-              return device;
-            });
-          });
-
-          discoveryCompleted = true;
-          _isDiscovering = false;
-          _discoverySub.pause();
-          break;
-
-        default:
-          break;
-      }
-    });
-
-    _discoverySub.pause();
-  }
-
-  void _registration(
-    bool isConnected, bool isGroupOwner, String groupOwnerAddress
-  ) {
-    _isGroupOwner = isGroupOwner;
-    if (isConnected && _isGroupOwner) {
-      _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
-      if (!_isListening) {
-        _listenServer();
-        _isListening = true;
-      }
-    } else if (isConnected && !_isGroupOwner) {
-      _groupOwnerAddr = groupOwnerAddress;
-      _connect(_serverPort);
-    }
-  }
-
-  void _onWifiReady(String ipAddress, String mac) {
-    _ownIpAddress = ipAddress;
-    // ownMac = mac;
-  }
 
   void _onEvent(Service service) {
     service.connStatusStream.listen((ConnectionEvent info) {

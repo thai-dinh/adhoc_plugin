@@ -39,8 +39,12 @@ class _AppState extends State<ExampleApp> {
   }
 
   void _initialize() {
-    for (int i = 0; i < NB_DEVICES; i++)
-      _adhocdevices.add(WifiAdHocDevice.unit(NAMES[i], _randomMac()));
+    for (int i = 0; i < NB_DEVICES; i++) {
+      int port = Random().nextInt(9999);
+      while (port < 1000)
+        port = Random().nextInt(9999);
+      _adhocdevices.add(WifiAdHocDevice.unit(NAMES[i], _randomMac(), port));
+    }
 
     for (int i = 0; i < NB_DEVICES; i++)
       _plugins.putIfAbsent(NAMES[i], () => AodvPlugin(i, _adhocdevices));
@@ -81,7 +85,7 @@ class _AppState extends State<ExampleApp> {
                               RaisedButton(
                                 child: Center(child: Text('Connect')),
                                 onPressed: () {
-                                  _plugins[NAMES[0]].connectOnce(_adhocdevices[1]);
+                                  _plugins[NAMES[1]].connectOnce(_adhocdevices[0]);
                                 },
                               ),
                               RaisedButton(

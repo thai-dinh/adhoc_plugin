@@ -57,10 +57,24 @@ class WifiServer extends ServiceServer {
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {
-            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress');
+            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.port}');
 
+            MessageAdHoc message;
             String strMessage = Utf8Decoder().convert(data);
-            _messageCtrl.add(MessageAdHoc.fromJson(json.decode(strMessage)));
+            List<String> strMessages = strMessage.split('}{');
+            for (int i = 0; i < strMessages.length; i++) {
+              if (strMessages.length == 1) {
+                message = MessageAdHoc.fromJson(json.decode(strMessages[i]));
+              } else if (i == 0) {
+                message = MessageAdHoc.fromJson(json.decode(strMessages[i] + '}'));
+              } else if (i == strMessages.length - 1) {
+                message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i]));
+              } else {
+                message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i] + '}'));
+              }
+
+              _messageCtrl.add(message);
+            }
           },
           onError: (error) {
             // Error reported below as it is the same instance of 'error' below
