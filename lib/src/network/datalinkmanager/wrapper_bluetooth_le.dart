@@ -227,7 +227,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
-    print(message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String mac = message.header.mac;

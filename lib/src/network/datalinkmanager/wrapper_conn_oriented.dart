@@ -54,7 +54,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   bool broadcast(MessageAdHoc message) {
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.values.forEach((network) async {
-        await network.sendMessage(message);
+        if (network != null)
+          await network.sendMessage(message);
       });
 
       return true;
@@ -66,7 +67,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   bool broadcastExcept(MessageAdHoc message, String excludedLabel) {
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.forEach((remoteLabel, network) async {
-        if (excludedLabel.compareTo(remoteLabel) != 0) {
+        if (excludedLabel.compareTo(remoteLabel) != 0 && network != null) {
           await network.sendMessage(message);
         }
       });

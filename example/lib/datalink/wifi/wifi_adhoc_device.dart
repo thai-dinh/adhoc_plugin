@@ -18,7 +18,6 @@ class WifiAdHocDevice extends AdHocDevice {
   WifiAdHocDevice.unit(String name, String mac, int port) : super(
     name: name, mac: mac, type: Service.WIFI
   ) {
-    this.label = checkString(label);
     this.port = port;
   }
 

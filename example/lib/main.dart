@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
 import 'package:adhoclibrary_example/aodv_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'datalink/wifi/wifi_adhoc_device.dart';
 
 void main() {
@@ -157,8 +158,6 @@ class _AppState extends State<ExampleApp> {
                         ),
                         _msgCtrl.text,
                       );
-
-                      print(_msg.toString() + ', //');
                     },
                   ),
                 ],

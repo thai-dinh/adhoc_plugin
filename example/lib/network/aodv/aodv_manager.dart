@@ -4,7 +4,7 @@ import 'dart:collection';
 import 'package:adhoclibrary/adhoclibrary.dart' hide DataLinkManager, AodvHelper;
 import 'package:adhoclibrary_example/network/aodv/aodv_helper.dart';
 import 'package:adhoclibrary_example/network/datalinkmanager/datalink_manager.dart';
-import 'constants.dart' as Constants;
+import 'package:adhoclibrary_example/network/aodv/constants.dart' as Constants;
 
 
 class AodvManager {
@@ -30,7 +30,7 @@ class AodvManager {
     this._aodvHelper = AodvHelper(_logCtrl);
     this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
     this._mapDestSequenceNumber = HashMap();
-    this._ownLabel = config.label;
+    this._ownLabel = devices[index].label;
     this._dataLink = DataLinkManager(_verbose, config, index, devices);
     this._eventCtrl = StreamController<AdHocEvent>();
     this._initialize();

@@ -4,12 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service_server.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_manager.dart';
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:meta/meta.dart';
 
 
@@ -44,7 +39,7 @@ class WifiServer extends ServiceServer {
   
     _listenStreamSub = _serverSocket.listen(
       (socket) {
-        String remoteAddress = socket.remoteAddress.address;
+        String remoteAddress = socket.port.toString();
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {

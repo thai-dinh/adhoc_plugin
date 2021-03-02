@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide WrapperWifi, WifiAdHocDevice;
-import 'wrapper_wifi.dart';
-
+import 'package:adhoclibrary_example/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {
@@ -12,7 +11,10 @@ class DataLinkManager {
   HashMap<String, AdHocDevice> _mapAddrDevice;
   StreamController<AdHocEvent> _eventCtrl;
 
-  DataLinkManager(bool verbose, this._config, int index, List<AdHocDevice> devices) {
+  int index;
+  List<AdHocDevice> devices;
+
+  DataLinkManager(bool verbose, this._config, this.index, this.devices) {
     this._mapAddrDevice = HashMap();
     this._wrapper = WrapperWifi(verbose, _config, _mapAddrDevice, index, devices);
     this._eventCtrl = StreamController<AdHocEvent>();
@@ -113,7 +115,7 @@ class DataLinkManager {
     if (_wrapper.enabled) {
       Header header = Header(
         messageType: AbstractWrapper.BROADCAST,
-        label: _config.label,
+        label: devices[index].label,
         name: await _wrapper.getAdapterName(),
         deviceType: _wrapper.type,
       );
@@ -135,7 +137,7 @@ class DataLinkManager {
     if (_wrapper.enabled) {
       Header header = Header(
         messageType: AbstractWrapper.BROADCAST,
-        label: _config.label,
+        label: devices[index].label,
         name: await _wrapper.getAdapterName(),
         deviceType: _wrapper.type,
       );

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
+import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice, WifiClient, WifiServer;
 import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
+import 'package:adhoclibrary_example/datalink/wifi/wifi_client.dart';
+import 'package:adhoclibrary_example/datalink/wifi/wifi_server.dart';
 
 
 class WrapperWifi extends WrapperConnOriented {
@@ -25,7 +27,7 @@ class WrapperWifi extends WrapperConnOriented {
     this.type = Service.WIFI;
     this.ownName = devices[index].name;
     this.ownMac = devices[index].mac;
-    this._ownIpAddress = '127.0.0.1';
+    this._ownIpAddress = (devices[index] as WifiAdHocDevice).port.toString();
     this._groupOwnerAddr = '127.0.0.1';
     this.init(verbose, config);
   }
@@ -143,7 +145,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(verbose)..start(hostIp: _ownIpAddress, serverPort: _serverPort);
+    serviceServer = WifiServer(verbose)..start(hostIp: '127.0.0.1', serverPort: _serverPort);
     _onEvent(serviceServer);
   }
 
@@ -151,8 +153,9 @@ class WrapperWifi extends WrapperConnOriented {
     final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
 
     wifiClient.connectListener = (String remoteAddress) async {
+      _ownIpAddress = remoteAddress;
       mapAddrNetwork.putIfAbsent(
-        remoteAddress,
+        remotePort.toString(),
         () => NetworkManager(
           (MessageAdHoc msg) async => wifiClient.send(msg), 
           () => wifiClient.disconnect()
@@ -176,7 +179,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
-    print('$_serverPort: ' + message.toString());
+    print(message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;

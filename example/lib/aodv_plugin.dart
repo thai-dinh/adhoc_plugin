@@ -12,10 +12,11 @@ class AodvPlugin {
   HashMap<String, AdHocDevice> _discoveredDevices;
 
   AodvPlugin(int index, List<AdHocDevice> devices) {
-    this._aodvManager = AodvManager(true, Config()..connectionFlooding = true, index, devices);
+    Config config = Config()..connectionFlooding = true;
+    devices[index].label = config.label;
+    this._aodvManager = AodvManager(true, config, index, devices);
     this._dataLinkManager = _aodvManager.dataLinkManager;
     this._discoveredDevices = HashMap();
-
     this._aodvManager.eventStream.listen((AdHocEvent event) {
       if (event.type == AbstractWrapper.DEVICE_INFO)
         print(event.type.toString() + ', [' + event.payload + '], [' + event.extra + ']');
