@@ -24,9 +24,11 @@ class AodvManager {
   MessageAdHoc _dataMessage;
 
   StreamController<String> _logCtrl;
+  StreamController<String> _rtableCtrl;
 
   AodvManager(this._verbose, Config config, int index, List<AdHocDevice> devices) {
     this._logCtrl = StreamController<String>();
+    this._rtableCtrl = StreamController<String>();
     this._aodvHelper = AodvHelper(_logCtrl);
     this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
     this._mapDestSequenceNumber = HashMap();
@@ -43,6 +45,8 @@ class AodvManager {
   DataLinkManager get dataLinkManager => _dataLink;
 
   Stream<String> get logs => _logCtrl.stream;
+
+  Stream<String> get rtable => _rtableCtrl.stream;
 
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
@@ -102,8 +106,7 @@ class AodvManager {
 
     if (_aodvHelper.getEntrySet().length > 0) {
       display = true;
-
-      buffer.write('--------Routing Table:--------\n');
+      buffer.write('-----------Routing Table:-----------\n');
       for (MapEntry<String, EntryRoutingTable> entry in _aodvHelper.getEntrySet()) {
         buffer..write(entry.value.toString())..write('\n');
       }
@@ -118,7 +121,7 @@ class AodvManager {
     }
 
     if (display)
-      print(buffer.toString());
+      _rtableCtrl.add(buffer.toString());
   }
 
   void _brokenLinkDetected(String remoteNode) {
@@ -161,6 +164,7 @@ class AodvManager {
   }
 
   void _sendDirect(MessageAdHoc message, String address) {
+    _logCtrl.add('Send directly to $address');
     _dataLink.sendMessage(message, address);
   }
 
@@ -233,9 +237,7 @@ class AodvManager {
 
     if (rreq.destAddress.compareTo(_ownLabel) == 0) {
       _saveDestSequenceNumber(rreq.originAddress, rreq.originSequenceNum);
-
       _logCtrl.add('$_ownLabel is the destination (stop RREQ broadcast)');
-
       EntryRoutingTable entry = _aodvHelper.addEntryRoutingTable(
         rreq.originAddress, originateAddr, hop, rreq.originSequenceNum, Constants.NO_LIFE_TIME, null
       );
@@ -254,7 +256,6 @@ class AodvManager {
         );
 
         _logCtrl.add('Destination reachable via ${entry.next}');
-
         _send(
           MessageAdHoc(
             Header(
@@ -306,11 +307,8 @@ class AodvManager {
     if (rrep.destAddress.compareTo(_ownLabel) == 0) {
       _logCtrl.add('$_ownLabel is the destination (stop RREP)');
         _saveDestSequenceNumber(rrep.originAddress, rrep.sequenceNum);
-
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, null);
-
-        Data data = _dataMessage.pdu as Data;
-        _send(_dataMessage, data.destAddress);
+        _send(_dataMessage, (_dataMessage.pdu as Data).destAddress);
 
         // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
@@ -319,7 +317,6 @@ class AodvManager {
         throw AodvUnknownDestException('No destNext found in the routing Table for ${rrep.destAddress}');
       } else {
         _logCtrl.add('Destination reachable via ${destNext.next}');
-
         rrep.incrementHopCount();
         _send(
           MessageAdHoc(
@@ -356,9 +353,7 @@ class AodvManager {
         throw AodvUnknownDestException('No destNext found in the routing Table for ${rrep.destAddress}');
       } else {
         _logCtrl.add('Destination reachable via ${destNext.next}');
-        
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
-
         _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
 
         message.header = Header(

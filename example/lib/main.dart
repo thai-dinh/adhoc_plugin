@@ -23,6 +23,7 @@ class _AppState extends State<ExampleApp> {
   HashMap<String, AodvPlugin> _plugins = HashMap();
   List<AdHocDevice> _adhocdevices = List.empty(growable: true);
   List<List<Widget>> logs = List.empty(growable: true);
+  List<String> _table = List.empty(growable: true);
 
   String _randomMac(){
     List<String> list = [
@@ -41,15 +42,17 @@ class _AppState extends State<ExampleApp> {
   }
 
   void _initialize() {
-    for (int i = 0; i < NB_DEVICES; i++)
+    for (int i = 0; i < NB_DEVICES; i++) {
       logs.add(List.empty(growable: true));
+      _table.add('-----------Routing Table:-----------\n--------SequenceNumber:--------\n');
+    }
 
     for (int i = 0; i < NB_DEVICES; i++) {
       int port = Random(DateTime.now().microsecond).nextInt(9999);
-      while (port < 1000)
+      while (port < 1250)
         port = Random(DateTime.now().millisecond).nextInt(9999);
       String mac = _randomMac();
-      _adhocdevices.add(WifiAdHocDevice.unit(NAMES[i], mac, port));
+      _adhocdevices.add(WifiAdHocDevice.unit(NAMES[i], mac, port, '127.0.0.1'));
     }
 
     for (int i = 0; i < NB_DEVICES; i++) {
@@ -57,6 +60,12 @@ class _AppState extends State<ExampleApp> {
       _plugins[NAMES[i]].logs.listen((log) {
         setState(() {
           logs[i].add(Text(log));
+        });
+      });
+
+      _plugins[NAMES[i]].rtable.listen((rtable) {
+        setState(() {
+          _table[i] = rtable;
         });
       });
     }
@@ -108,7 +117,7 @@ class _AppState extends State<ExampleApp> {
               Expanded(
                 child: Column(
                   children: <Widget>[
-                    Text('Routing table'),
+                    Text(_table[index]),
                   ],
                 ),
               ),
@@ -178,7 +187,6 @@ class _AppState extends State<ExampleApp> {
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(hintText: 'Destination'),
                     onEditingComplete: () {
-                      print(_dstCtrl.text);
                       switch (_dstCtrl.text) {
                         case 'A':
                           _destID = 0;

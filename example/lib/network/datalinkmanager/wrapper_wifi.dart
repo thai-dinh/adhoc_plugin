@@ -130,6 +130,7 @@ class WrapperWifi extends WrapperConnOriented {
           break;
 
         case Service.CONNECTION_PERFORMED:
+          print('conn; ' + info.address);
           break;
 
         case Service.CONNECTION_EXCEPTION:
@@ -154,7 +155,6 @@ class WrapperWifi extends WrapperConnOriented {
 
     wifiClient.connectListener = (String remoteAddress) async {
       _ownIpAddress = remoteAddress;
-      print('client: ' + _ownIpAddress);
       mapAddrNetwork.putIfAbsent(
         remotePort.toString(),
         () => NetworkManager(
@@ -180,7 +180,6 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
-    print(message.toString());
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;

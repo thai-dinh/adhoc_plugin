@@ -68,11 +68,11 @@ class WifiServer extends ServiceServer {
           },
           onDone: () {
             _closeSocket(remoteAddress);
-            _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
+            _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
           }
         ));
 
-        _connectCtrl.add(ConnectionEvent(Service.STATE_CONNECTED, address: remoteAddress));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: remoteAddress));
       },
       onError: (error) {
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
@@ -106,7 +106,7 @@ class WifiServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
-    _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
+    _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -114,6 +114,7 @@ class WifiServer extends ServiceServer {
   void _closeSocket(String remoteAddress) {
     _mapIpStream[remoteAddress].cancel();
     _mapIpStream.remove(remoteAddress);
+    _mapIpSocket[remoteAddress].destroy();
     _mapIpSocket[remoteAddress].close();
     _mapIpSocket.remove(remoteAddress);
   }

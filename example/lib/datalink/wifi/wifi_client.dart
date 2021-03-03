@@ -97,7 +97,7 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _serverIp));
+      _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _socket.port.toString()));
 
       if (_connectListener != null)
         _connectListener(_socket.port.toString());

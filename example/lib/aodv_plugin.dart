@@ -37,6 +37,8 @@ class AodvPlugin {
 
   Stream<String> get logs => _aodvManager.logs;
 
+  Stream<String> get rtable => _aodvManager.rtable;
+
 /*------------------------------Network methods------------------------------*/
 
   void sendMessageTo(Object message, AdHocDevice adHocDevice) {

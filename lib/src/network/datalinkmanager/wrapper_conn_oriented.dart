@@ -124,6 +124,11 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       return;
 
     AdHocDevice adHocDevice = _mapMacDevices[mac];
+    if (adHocDevice == null) // TODO: Unit testing
+    _mapMacDevices.forEach((k, v) {
+      adHocDevice = v;
+    });
+
     if (adHocDevice != null) {
       String label = adHocDevice.label;
 

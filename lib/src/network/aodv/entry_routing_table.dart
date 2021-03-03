@@ -62,7 +62,7 @@ class EntryRoutingTable {
 
   @override
   String toString() {
-    return '- dst: $_destAddress' +
+    return 'dst: $_destAddress' +
             ' nxt: $_next' +
             ' hop: $_hop' +
             ' seq: $_destSeqNum ${displayPrecursors()}' +
