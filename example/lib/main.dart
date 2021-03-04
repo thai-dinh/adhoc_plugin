@@ -17,8 +17,8 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _AppState extends State<ExampleApp> {
-  static const NAMES = ['Device A', 'Device B', 'Device C', 'Device D'];
-  static const NB_DEVICES = 4;
+  static const NAMES = ['Device A', 'Device B', 'Device C', 'Device D', 'Device E', 'Device F'];
+  static const NB_DEVICES = 6;
 
   HashMap<String, AodvPlugin> _plugins = HashMap();
   List<AdHocDevice> _adhocdevices = List.empty(growable: true);
@@ -89,7 +89,7 @@ class _AppState extends State<ExampleApp> {
                       onPressed: () {
                         int j = index-1;
                         if (j < 0)
-                          j = 0;
+                          j = NB_DEVICES-1;
                         _plugins[NAMES[index]].connectOnce(_adhocdevices[j]);
                       }
                     ),
@@ -200,6 +200,12 @@ class _AppState extends State<ExampleApp> {
                         case 'D':
                           _destID = 3;
                           break;
+                        case 'E':
+                          _destID = 4;
+                          break;
+                        case 'F':
+                          _destID = 5;
+                          break;
                       }
                     },
                   ),
@@ -222,7 +228,7 @@ class _AppState extends State<ExampleApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: DefaultTabController(
-        length: 4,
+        length: NB_DEVICES,
         child: Scaffold(
           appBar: AppBar(
             bottom: TabBar(
@@ -231,6 +237,8 @@ class _AppState extends State<ExampleApp> {
                 Tab(child: Center(child: Text('Device B'))),
                 Tab(child: Center(child: Text('Device C'))),
                 Tab(child: Center(child: Text('Device D'))),
+                Tab(child: Center(child: Text('Device E'))),
+                Tab(child: Center(child: Text('Device F'))),
               ],
             ),
           ),
@@ -240,6 +248,8 @@ class _AppState extends State<ExampleApp> {
               _display(1),
               _display(2),
               _display(3),
+              _display(4),
+              _display(5),
             ],
           ),
         ),

@@ -126,11 +126,7 @@ class WrapperWifi extends WrapperConnOriented {
     service.connStatusStream.listen((ConnectionEvent info) {
       switch (info.status) {
         case Service.CONNECTION_CLOSED:
-          connectionClosed(info.address);
-          break;
-
-        case Service.CONNECTION_PERFORMED:
-          print('conn; ' + info.address);
+          connectionClosed(_mapAddrMac[info.address]);
           break;
 
         case Service.CONNECTION_EXCEPTION:
@@ -154,7 +150,6 @@ class WrapperWifi extends WrapperConnOriented {
     final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
 
     wifiClient.connectListener = (String remoteAddress) async {
-      _ownIpAddress = remoteAddress;
       mapAddrNetwork.putIfAbsent(
         remotePort.toString(),
         () => NetworkManager(
@@ -183,6 +178,9 @@ class WrapperWifi extends WrapperConnOriented {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
+        _mapAddrMac.putIfAbsent(
+          remoteAddress, () => message.header.mac
+        );
 
         serviceServer.send(
           MessageAdHoc(Header(

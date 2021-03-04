@@ -43,7 +43,7 @@ class WifiServer extends ServiceServer {
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {
-            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.remotePort}');
+            if (verbose) log(ServiceServer.TAG, 'received message from ${socket.port}:${socket.remotePort}');
 
             MessageAdHoc message;
             String strMessage = Utf8Decoder().convert(data);
