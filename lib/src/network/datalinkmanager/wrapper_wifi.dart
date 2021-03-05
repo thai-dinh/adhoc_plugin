@@ -53,8 +53,7 @@ class WrapperWifi extends WrapperConnOriented {
     _serverPort = config.serverPort;
 
     if (await WifiAdHocManager.isWifiEnabled()) {
-      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)
-        ..register(_registration);
+      this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
       this.ownName = await _wifiManager.adapterName;
@@ -67,8 +66,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   void enable(int duration, void Function(bool) onEnable) {
-    _wifiManager = WifiAdHocManager(verbose, _onWifiReady)
-      ..register(_registration);
+    _wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
     _wifiManager.onEnableWifi(onEnable);
 
     enabled = true;
@@ -209,10 +207,7 @@ class WrapperWifi extends WrapperConnOriented {
     service.connStatusStream.listen((ConnectionEvent info) {
       switch (info.status) {
         case Service.CONNECTION_CLOSED:
-          connectionClosed(info.address);
-          break;
-
-        case Service.CONNECTION_PERFORMED:
+          connectionClosed(_mapAddrMac[info.address]);
           break;
 
         case Service.CONNECTION_EXCEPTION:
@@ -264,6 +259,9 @@ class WrapperWifi extends WrapperConnOriented {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
+        _mapAddrMac.putIfAbsent(
+          remoteAddress, () => message.header.mac
+        );
 
         serviceServer.send(
           MessageAdHoc(Header(

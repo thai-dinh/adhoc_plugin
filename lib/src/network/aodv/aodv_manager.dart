@@ -173,6 +173,8 @@ class AodvManager {
   }
 
   void _sendDirect(MessageAdHoc message, String address) {
+    if (_verbose) log(TAG, 'Send directly to $address');
+
     _dataLink.sendMessage(message, address);
   }
 
@@ -324,7 +326,7 @@ class AodvManager {
         Data data = _dataMessage.pdu as Data;
         _send(_dataMessage, data.destAddress);
 
-        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(rrep.destAddress);
       if (destNext == null) {
@@ -347,7 +349,7 @@ class AodvManager {
 
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
 
-        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
       }
     }
   }
@@ -361,7 +363,7 @@ class AodvManager {
 
       _aodvHelper.addEntryRoutingTable(rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, rrep.lifetime, null);
 
-      _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
+      // _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(rrep.destAddress);
       if (destNext == null) {
@@ -371,7 +373,7 @@ class AodvManager {
         
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
 
-        _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
+        // _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
 
         message.header = Header(
           messageType: Constants.RREP_GRATUITOUS,

@@ -26,7 +26,7 @@ class DataLinkManager {
 
   DataLinkManager(bool verbose, this._config) {
     this._mapAddrDevice = HashMap();
-    this._wrappers = List(_NB_WRAPPERS);
+    this._wrappers = List.filled(_NB_WRAPPERS, null);
     this._wrappers[Service.WIFI] = WrapperWifi(verbose, _config, _mapAddrDevice);
     this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(verbose, _config, _mapAddrDevice);
     this._discoveryCtrl = StreamController<DiscoveryEvent>();
@@ -64,9 +64,8 @@ class DataLinkManager {
   }
 
   void enableAll(void Function(bool) onEnable) {
-    for (AbstractWrapper wrapper in _wrappers) {
+    for (AbstractWrapper wrapper in _wrappers)
       enable(3600, wrapper.type, onEnable);
-    }
   }
 
   void disable(int type) {
@@ -265,21 +264,10 @@ class DataLinkManager {
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _wrappers[Service.WIFI].eventStream.listen((event) {
-      _eventCtrl.add(event);
-    });
-
-    _wrappers[Service.BLUETOOTHLE].eventStream.listen((event) {
-      _eventCtrl.add(event);
-    });
-
-    _wrappers[Service.BLUETOOTHLE].discoveryStream.listen((event) {
-      _discoveryCtrl.add(event);
-    });
-
-    _wrappers[Service.WIFI].discoveryStream.listen((event) {
-      _discoveryCtrl.add(event);
-    });
+    _wrappers[Service.BLUETOOTHLE].eventStream.listen((event) => _eventCtrl.add(event));
+    _wrappers[Service.BLUETOOTHLE].discoveryStream.listen((event) => _discoveryCtrl.add(event));
+    _wrappers[Service.WIFI].eventStream.listen((event) => _eventCtrl.add(event));
+    _wrappers[Service.WIFI].discoveryStream.listen((event) => _discoveryCtrl.add(event));
   }
 
   void _discovery() {

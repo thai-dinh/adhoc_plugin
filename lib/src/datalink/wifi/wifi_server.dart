@@ -50,22 +50,8 @@ class WifiServer extends ServiceServer {
           (data) async {
             if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.port}');
 
-            MessageAdHoc message;
-            String strMessage = Utf8Decoder().convert(data);
-            List<String> strMessages = strMessage.split('}{');
-            for (int i = 0; i < strMessages.length; i++) {
-              if (strMessages.length == 1) {
-                message = MessageAdHoc.fromJson(json.decode(strMessages[i]));
-              } else if (i == 0) {
-                message = MessageAdHoc.fromJson(json.decode(strMessages[i] + '}'));
-              } else if (i == strMessages.length - 1) {
-                message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i]));
-              } else {
-                message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i] + '}'));
-              }
-
-              _messageCtrl.add(message);
-            }
+            for (MessageAdHoc msg in splitMessages(Utf8Decoder().convert(data)))
+              _messageCtrl.add(msg);
           },
           onError: (error) {
             // Error reported below as it is the same instance of 'error' below
@@ -73,11 +59,11 @@ class WifiServer extends ServiceServer {
           },
           onDone: () {
             _closeSocket(remoteAddress);
-            _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
+            _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
           }
         ));
 
-        _connectCtrl.add(ConnectionEvent(Service.STATE_CONNECTED, address: remoteAddress));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: remoteAddress));
       },
       onError: (error) {
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
@@ -111,7 +97,7 @@ class WifiServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
-    _connectCtrl.add(ConnectionEvent(Service.STATE_NONE, address: remoteAddress));
+    _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/
