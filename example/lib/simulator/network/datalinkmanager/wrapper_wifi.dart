@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice, WifiClient, WifiServer;
-import 'package:adhoclibrary_example/datalink/wifi/wifi_adhoc_device.dart';
-import 'package:adhoclibrary_example/datalink/wifi/wifi_client.dart';
-import 'package:adhoclibrary_example/datalink/wifi/wifi_server.dart';
+import 'package:adhoclibrary_example/simulator/datalink/wifi/wifi_adhoc_device.dart';
+import 'package:adhoclibrary_example/simulator/datalink/wifi/wifi_client.dart';
+import 'package:adhoclibrary_example/simulator/datalink/wifi/wifi_server.dart';
 
 
 class WrapperWifi extends WrapperConnOriented {

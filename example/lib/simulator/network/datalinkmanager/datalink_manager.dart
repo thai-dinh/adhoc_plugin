@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide WrapperWifi, WifiAdHocDevice;
-import 'package:adhoclibrary_example/network/datalinkmanager/wrapper_wifi.dart';
+import 'package:adhoclibrary_example/simulator/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {

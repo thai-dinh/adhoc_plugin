@@ -14,10 +14,11 @@ abstract class Service {
   static const STATE_CONNECTING = 2;
   static const STATE_LISTENING = 3;
 
-  static const MESSAGE_RECEIVED = 4;
-  static const DEVICE_DISCOVERED = 5;
-  static const DISCOVERY_STARTED = 6;
-  static const DISCOVERY_END = 7;
+  static const DISCOVERY_STARTED = 4;
+  static const DISCOVERY_END = 5;
+  static const DEVICE_DISCOVERED = 6;
+
+  static const MESSAGE_RECEIVED = 7;
   static const CONNECTION_PERFORMED = 8;
   static const CONNECTION_CLOSED = 9;
   static const CONNECTION_EXCEPTION = 10;

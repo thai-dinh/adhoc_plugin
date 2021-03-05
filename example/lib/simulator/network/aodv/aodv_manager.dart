@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide DataLinkManager, AodvHelper;
-import 'package:adhoclibrary_example/network/aodv/aodv_helper.dart';
-import 'package:adhoclibrary_example/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoclibrary_example/network/aodv/constants.dart' as Constants;
+import 'package:adhoclibrary_example/simulator/network/aodv/constants.dart' as Constants;
+import 'package:adhoclibrary_example/simulator/network/aodv/aodv_helper.dart';
+import 'package:adhoclibrary_example/simulator/network/datalinkmanager/datalink_manager.dart';
 
 
 class AodvManager {

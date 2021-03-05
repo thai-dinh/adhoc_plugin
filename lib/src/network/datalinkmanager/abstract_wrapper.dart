@@ -20,6 +20,7 @@ abstract class AbstractWrapper {
   static const DISCONNECTION_EVENT = 18;
   static const DATA_RECEIVED = 19;
   static const FORWARD_DATA = 20;
+
   static const MESSAGE_EVENT = 21;
   static const BROKEN_LINK = 22;
   static const DEVICE_INFO = 23;
