@@ -18,7 +18,7 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   static const NAMES = ['Device A', 'Device B', 'Device C', 'Device D', 'Device E', 'Device F'];
-  static const NB_DEVICES = 3;
+  static const NB_DEVICES = 6;
 
   HashMap<String, AodvPlugin> _plugins = HashMap();
   List<AdHocDevice> _adhocdevices = List.empty(growable: true);
@@ -237,6 +237,9 @@ class _AppState extends State<ExampleApp> {
                 Tab(child: Center(child: Text('Device A'))),
                 Tab(child: Center(child: Text('Device B'))),
                 Tab(child: Center(child: Text('Device C'))),
+                Tab(child: Center(child: Text('Device D'))),
+                Tab(child: Center(child: Text('Device E'))),
+                Tab(child: Center(child: Text('Device F'))),
               ],
             ),
           ),
@@ -245,6 +248,9 @@ class _AppState extends State<ExampleApp> {
               _display(0),
               _display(1),
               _display(2),
+              _display(3),
+              _display(4),
+              _display(5),
             ],
           ),
         ),

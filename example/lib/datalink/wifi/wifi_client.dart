@@ -116,12 +116,12 @@ class WifiClient extends ServiceClient {
         }
       },
       onError: (error) {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, address: _serverIp, error: error));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
       },
       onDone: () {
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _socket.remotePort.toString()));
         _socket.destroy();
         _socket.close();
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _socket.remotePort.toString()));
       }
     );
   }
