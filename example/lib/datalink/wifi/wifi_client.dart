@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  StreamController<ConnectionEvent> _controller;
+  StreamController<ConnectionEvent> _connectCtrl;
+  StreamController<MessageAdHoc> _messageCtrl;
   Socket _socket;
   String _serverIp;
   int _port;
@@ -20,7 +20,8 @@ class WifiClient extends ServiceClient {
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
   ) {
-    this._controller = StreamController<ConnectionEvent>();
+    this._connectCtrl = StreamController<ConnectionEvent>();
+    this._messageCtrl = StreamController<MessageAdHoc>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -29,27 +30,9 @@ class WifiClient extends ServiceClient {
     this._connectListener = connectListener;
   }
 
-  Stream<ConnectionEvent> get connStatusStream => _controller.stream;
+  Stream<ConnectionEvent> get connStatusStream => _connectCtrl.stream;
 
-  Stream<MessageAdHoc> get messageStream async* {
-    await for (Uint8List data in _socket.asBroadcastStream()) {
-      if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
-
-      String strMessage = Utf8Decoder().convert(data);
-      List<String> strMessages = strMessage.split('}{');
-      for (int i = 0; i < strMessages.length; i++) {
-        if (strMessages.length == 1) {
-          yield MessageAdHoc.fromJson(json.decode(strMessages[i]));
-        } else if (i == 0) {
-          yield MessageAdHoc.fromJson(json.decode(strMessages[i] + '}'));
-        } else if (i == strMessages.length - 1) {
-          yield MessageAdHoc.fromJson(json.decode('{' + strMessages[i]));
-        } else {
-          yield MessageAdHoc.fromJson(json.decode('{' + strMessages[i] + '}'));
-        }
-      }
-    }
-  }
+  Stream<MessageAdHoc> get messageStream => _messageCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -60,7 +43,7 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     await FlutterWifiP2p().removeGroup();
 
-    _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
+    _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
   }
 
   void send(MessageAdHoc message) {
@@ -97,7 +80,9 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _socket.port.toString()));
+      _listen();
+
+      _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _socket.port.toString()));
 
       if (_connectListener != null)
         _connectListener(_socket.port.toString());
@@ -106,5 +91,38 @@ class WifiClient extends ServiceClient {
 
       state = Service.STATE_CONNECTED;
     }
+  }
+
+  void _listen() {
+    _socket.listen(
+      (data) {
+        if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
+
+        MessageAdHoc message;
+        String strMessage = Utf8Decoder().convert(data);
+        List<String> strMessages = strMessage.split('}{');
+        for (int i = 0; i < strMessages.length; i++) {
+          if (strMessages.length == 1) {
+            message = MessageAdHoc.fromJson(json.decode(strMessages[i]));
+          } else if (i == 0) {
+            message = MessageAdHoc.fromJson(json.decode(strMessages[i] + '}'));
+          } else if (i == strMessages.length - 1) {
+            message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i]));
+          } else {
+            message = MessageAdHoc.fromJson(json.decode('{' + strMessages[i] + '}'));
+          }
+
+          _messageCtrl.add(message);
+        }
+      },
+      onError: (error) {
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, address: _serverIp, error: error));
+      },
+      onDone: () {
+        _socket.destroy();
+        _socket.close();
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _socket.remotePort.toString()));
+      }
+    );
   }
 }

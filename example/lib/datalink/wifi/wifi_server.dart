@@ -63,7 +63,7 @@ class WifiServer extends ServiceServer {
             }
           },
           onError: (error) {
-            // Error reported below as it is the same instance of 'error' below
+            // Error reported below as it is the same instance of 'error' as below
             _closeSocket(remoteAddress);
           },
           onDone: () {
@@ -75,7 +75,7 @@ class WifiServer extends ServiceServer {
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: remoteAddress));
       },
       onError: (error) {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, address: remoteAddress, error: error));
       }
     );
 

@@ -47,12 +47,6 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   void sendMessage(MessageAdHoc message, String remoteLabel) {
     NetworkManager network = neighbors.getNeighbor(remoteLabel);
-    if (network == null) {
-      neighbors.neighbors.forEach((key, value) {
-        print(key);
-        print(value);
-      });
-    }
     if (network != null)
       network.sendMessage(message);
   }
@@ -85,9 +79,6 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   void receivedPeerMessage(Header header, NetworkManager network) {
-    print('---\n');
-    print(header.label);
-    print(network);
     AdHocDevice adHocDevice = AdHocDevice(
       label: header.label,
       address: header.address,
@@ -133,15 +124,10 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       return;
 
     AdHocDevice adHocDevice = _mapMacDevices[mac];
-    if (adHocDevice == null) // TODO: Unit testing
-    _mapMacDevices.forEach((k, v) {
-      adHocDevice = v;
-    });
-
     if (adHocDevice != null) {
       String label = adHocDevice.label;
 
-      neighbors.remove(mac);
+      neighbors.remove(label);
       mapAddrNetwork.remove(adHocDevice.address);
       _mapMacDevices.remove(mac);
 

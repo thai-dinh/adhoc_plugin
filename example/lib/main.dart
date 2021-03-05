@@ -18,7 +18,7 @@ class ExampleApp extends StatefulWidget {
 
 class _AppState extends State<ExampleApp> {
   static const NAMES = ['Device A', 'Device B', 'Device C', 'Device D', 'Device E', 'Device F'];
-  static const NB_DEVICES = 6;
+  static const NB_DEVICES = 3;
 
   HashMap<String, AodvPlugin> _plugins = HashMap();
   List<AdHocDevice> _adhocdevices = List.empty(growable: true);
@@ -84,7 +84,7 @@ class _AppState extends State<ExampleApp> {
               Expanded(
                 child: Column(
                   children: <Widget>[
-                    RaisedButton(
+                    ElevatedButton(
                       child: Center(child: Text('Connect')),
                       onPressed: () {
                         int j = index-1;
@@ -93,7 +93,7 @@ class _AppState extends State<ExampleApp> {
                         _plugins[NAMES[index]].connectOnce(_adhocdevices[j]);
                       }
                     ),
-                    RaisedButton(
+                    ElevatedButton(
                       child: Center(child: Text('Disconnect')),
                       onPressed: () {
                         _plugins[NAMES[index]].disconnect(_adhocdevices[_destID].label);
@@ -129,6 +129,7 @@ class _AppState extends State<ExampleApp> {
             children: <Widget>[
               Expanded(
                 child: ListView(
+                  padding: EdgeInsets.all(0.0),
                   shrinkWrap: true,
                   physics: ClampingScrollPhysics(),
                   children: logs[index].map((widget) {
@@ -148,7 +149,7 @@ class _AppState extends State<ExampleApp> {
             Expanded(
               child: Column(
                 children: <Widget>[
-                  RaisedButton(
+                  ElevatedButton(
                     child: Center(child: Text('Send')),
                     onPressed: () => _plugins[NAMES[index]].sendMessageTo(_msg, _adhocdevices[_destID])
                   ),
@@ -236,9 +237,6 @@ class _AppState extends State<ExampleApp> {
                 Tab(child: Center(child: Text('Device A'))),
                 Tab(child: Center(child: Text('Device B'))),
                 Tab(child: Center(child: Text('Device C'))),
-                Tab(child: Center(child: Text('Device D'))),
-                Tab(child: Center(child: Text('Device E'))),
-                Tab(child: Center(child: Text('Device F'))),
               ],
             ),
           ),
@@ -247,9 +245,6 @@ class _AppState extends State<ExampleApp> {
               _display(0),
               _display(1),
               _display(2),
-              _display(3),
-              _display(4),
-              _display(5),
             ],
           ),
         ),
