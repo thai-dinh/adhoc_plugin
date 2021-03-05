@@ -29,8 +29,8 @@ class DataLinkManager {
     this._wrappers = List.filled(_NB_WRAPPERS, null);
     this._wrappers[Service.WIFI] = WrapperWifi(verbose, _config, _mapAddrDevice);
     this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(verbose, _config, _mapAddrDevice);
-    this._discoveryCtrl = StreamController<DiscoveryEvent>();
-    this._eventCtrl = StreamController<AdHocEvent>();
+    this._discoveryCtrl = StreamController<DiscoveryEvent>.broadcast();
+    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
     this.checkState();
   }
@@ -59,8 +59,7 @@ class DataLinkManager {
   }
 
   void enable(int duration, int type, void Function(bool) onEnable) {
-    // if (!_wrappers[type].enabled)
-      _wrappers[type].enable(duration, (bool success) => onEnable(success));
+    _wrappers[type].enable(duration, (bool success) => onEnable(success));
   }
 
   void enableAll(void Function(bool) onEnable) {

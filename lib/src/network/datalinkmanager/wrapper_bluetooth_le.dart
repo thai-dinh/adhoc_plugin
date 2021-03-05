@@ -26,6 +26,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   static const String TAG = "[WrapperBle]";
 
   bool _isDiscovering;
+  bool _isInitialized;
   BleAdHocManager _bleAdHocManager;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   String _ownStringUUID;
@@ -34,6 +35,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
+    this._isInitialized = false;
     this.type = Service.BLUETOOTHLE;
     this.init(verbose);
   }
@@ -140,6 +142,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
+    if (_isInitialized)
+      return;
+
+    _isInitialized = true;
+
     _discoverySub = _bleAdHocManager.discoveryStream.listen((DiscoveryEvent event) {
       discoveryCtrl.add(event);
 
