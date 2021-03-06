@@ -18,4 +18,7 @@ export 'utils/utils.dart';
 export 'wifi/wifi_adhoc_device.dart';
 export 'wifi/wifi_adhoc_manager.dart';
 export 'wifi/wifi_client.dart';
+export 'wifi/wifi_p2p_device.dart';
+export 'wifi/wifi_p2p_info.dart';
+export 'wifi/wifi_p2p.dart';
 export 'wifi/wifi_server.dart';

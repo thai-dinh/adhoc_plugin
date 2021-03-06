@@ -6,8 +6,9 @@ import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p.dart';
+import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p_device.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiAdHocManager {
@@ -21,7 +22,7 @@ class WifiAdHocManager {
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _controller;
   StreamSubscription<List<WifiP2pDevice>> _discoverySub;
-  FlutterWifiP2p _wifiP2p;
+  WifiP2p _wifiP2p;
 
   void Function(String, String) _onWifiReady;
 
@@ -30,7 +31,7 @@ class WifiAdHocManager {
     this._isPaused = false;
     this._mapMacDevice = HashMap();
     this._controller = StreamController<DiscoveryEvent>();
-    this._wifiP2p = FlutterWifiP2p();
+    this._wifiP2p = WifiP2p();
     this._wifiP2p.verbose = _verbose;
   }
 

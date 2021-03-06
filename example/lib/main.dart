@@ -1,6 +1,5 @@
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary_example/distributed_cache/music_search_engine.dart';
-import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(AdHocMusicClient());
@@ -62,16 +61,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     ElevatedButton(
                       child: Center(child: Text('Search for nearby devices')),
                       onPressed: () => _manager.discovery(),
-                    ),
-                    ElevatedButton(
-                      child: Center(child: Text('Search for nearby devices')),
-                      onPressed: () {
-                        AssetsAudioPlayer.newPlayer().open(
-                          Audio("assets/audios/song1.mp3"),
-                          autoStart: true,
-                          showNotification: true,
-                        );
-                      },
                     ),
                     Expanded(
                       child: ListView(

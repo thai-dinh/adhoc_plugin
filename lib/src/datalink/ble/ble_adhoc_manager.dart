@@ -11,7 +11,6 @@ import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:location/location.dart';
 
 
 class BleAdHocManager {
@@ -19,13 +18,8 @@ class BleAdHocManager {
   static const String _channelName = 'ad.hoc.lib/plugin.ble.channel';
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
-  static bool isGranted = false;
-  static bool isRequested = false;
-  static bool isLocationOn = false;
-
   bool _verbose;
   bool _isDiscovering;
-  Location _location;
   FlutterReactiveBle _reactiveBle;
   HashMap<String, BleAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _controller;
@@ -34,7 +28,6 @@ class BleAdHocManager {
 
   BleAdHocManager(this._verbose) {
     this._isDiscovering = false;
-    this._location = Location();
     this._reactiveBle = FlutterReactiveBle();
     this._mapMacDevice = HashMap<String, BleAdHocDevice>();
     this._controller = StreamController<DiscoveryEvent>();
@@ -74,14 +67,6 @@ class BleAdHocManager {
 
   void discovery() async  {
     if (_verbose) log(TAG, 'discovery()');
-
-    if (!isRequested && !isGranted) {
-      await _requestPermission();
-      if (!isGranted)
-        return;
-    } else if (isRequested && !isGranted) {
-      return;
-    }
 
     if (_isDiscovering)
       _stopScan();
@@ -135,20 +120,8 @@ class BleAdHocManager {
         case BleStatus.ready:
           onEnable(true);
           break;
-        case BleStatus.unauthorized:
-          if (!isRequested)
-            await _requestPermission();
-          break;
-        case BleStatus.unknown:
-          break;
-        case BleStatus.unsupported:
-          break;
-        case BleStatus.poweredOff:
-          break;
-        case BleStatus.locationServicesDisabled:
-          isLocationOn = await _location.serviceEnabled();
-          if (!isLocationOn)
-            isLocationOn = await _location.requestService();
+
+        default:
           break;
       }
     });
@@ -165,21 +138,6 @@ class BleAdHocManager {
     _isDiscovering = false;
 
     _controller.add(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
-  }
-
-  Future<void> _requestPermission() async {
-    PermissionStatus permissionGranted;
-
-    permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted == PermissionStatus.granted)
-        isGranted = true;
-    } else if (permissionGranted == PermissionStatus.granted) {
-      isGranted = true;
-    }
-
-    isRequested = true;
   }
 
 /*-------------------------------Static methods-------------------------------*/
