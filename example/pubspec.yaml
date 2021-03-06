@@ -13,7 +13,6 @@ dependencies:
   adhoclibrary:
     path: ../
   cupertino_icons: ^1.0.0
-  uuid: ^3.0.1
 
 dev_dependencies:
   flutter_test:
