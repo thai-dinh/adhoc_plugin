@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 
 
 class WifiP2p {
-  static const MethodChannel _chMain = const MethodChannel('wifi.p2p/main');
+  static const MethodChannel _chMain = const MethodChannel('ad.hoc.lib/plugin.wifi.channel');
   static const EventChannel _chWifiState = const EventChannel('wifi.p2p/state');
   static const EventChannel _chDiscovery = const EventChannel('wifi.p2p/peers');
   static const EventChannel _chConnection = const EventChannel('wifi.p2p/connection');

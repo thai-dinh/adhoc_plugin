@@ -23,7 +23,7 @@ import java.util.List;
 
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
-    private static final String TAG = "[AdHoc][BroadcastReceiver]";
+    private static final String TAG = "[AdHocPlugin][BroadcastReceiver]";
 
     private boolean verbose;
     private Channel channel;

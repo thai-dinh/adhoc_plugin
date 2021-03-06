@@ -116,7 +116,7 @@ public class AdHocPlugin implements FlutterPlugin, MethodCallHandler {
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     bleManager.stopAdvertise();
     gattServerManager.closeGattServer();
-    wifiAdHocManager.setMethodCallHandler(null);
+    wifiAdHocManager.close();
     methodChannel.setMethodCallHandler(null);
   }
 }

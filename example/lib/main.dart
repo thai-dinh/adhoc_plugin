@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary_example/distributed_cache/music_search_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(AdHocMusicClient());
 
@@ -10,14 +14,20 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
+  static const platform = const MethodChannel('adhoc.music.player/main');
+
   TransferManager _manager = TransferManager(true);
   List<AdHocDevice> _devices = List.empty(growable: true);
+  String _path;
 
 /*-----------------------------Override methods------------------------------*/
 
   @override
   void initState() {
     super.initState();
+
+    _loadSongs();
+
     _manager.eventStream.listen((event) {
 
     });
@@ -62,6 +72,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       child: Center(child: Text('Search for nearby devices')),
                       onPressed: () => _manager.discovery(),
                     ),
+                    ElevatedButton(
+                      child: Center(child: Text('Play song Keep It Lit')),
+                      onPressed: () => platform.invokeMethod('play', _path),
+                    ),
                     Expanded(
                       child: ListView(
                         children: _devices.map((device) {
@@ -94,4 +108,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
 /*------------------------------Private methods------------------------------*/
 
+  void _loadSongs() async {
+    final ByteData data = await rootBundle.load('assets/device_a/Keep_It_Lit.mp3');
+    Directory tempDir = await getTemporaryDirectory();
+    File tempFile = File('${tempDir.path}/Keep_It_Lit.mp3');
+    await tempFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
+    _path = tempFile.path;
+    List list = await platform.invokeMethod('fetch');
+    print(list.length);
+    list.forEach((element) { 
+      print(element.toString());
+    });
+  }
 }

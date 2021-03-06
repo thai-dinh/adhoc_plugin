@@ -13,7 +13,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -36,7 +38,7 @@ import static android.os.Looper.getMainLooper;
 
 
 public class WifiAdHocManager implements MethodCallHandler {
-    private static final String TAG = "[AdHoc][WifiManager]";
+    private static final String TAG = "[AdHocPlugin][WifiManager]";
     private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.wifi.channel";
 
     private boolean verbose;
@@ -87,7 +89,7 @@ public class WifiAdHocManager implements MethodCallHandler {
             result.success(getMacAddress());
             break;
           case "register":
-            register(mapNameEventSink);
+            register();
             break;
           case "unregister":
             unregister();
@@ -117,8 +119,9 @@ public class WifiAdHocManager implements MethodCallHandler {
         initChannels(messenger);
     }
 
-    public void setMethodCallHandler(MethodCallHandler handler) {
-        methodChannel.setMethodCallHandler(handler);
+    public void close() {
+        unregister();
+        methodChannel.setMethodCallHandler(null);
     }
 
 /*-------------------------------Private methods------------------------------*/
@@ -163,21 +166,14 @@ public class WifiAdHocManager implements MethodCallHandler {
         }
     }
 
-    private void register(HashMap<String, EventSink> mapNameEventSink) {
+    private void register() {
         if (verbose) Log.d(TAG, "register()");
 
         final IntentFilter intentFilter = new IntentFilter();
 
-        // Indicates a change in the Wi-Fi P2P status.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-    
-        // Indicates a change in the list of available peers.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-    
-        // Indicates the state of Wi-Fi P2P connectivity has changed.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-    
-        // Indicates this device's details have changed.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     
         broadcastReceiver = new WifiDirectBroadcastReceiver(channel, mapNameEventSink, wifiP2pManager);

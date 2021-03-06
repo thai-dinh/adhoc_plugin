@@ -13,7 +13,7 @@ dependencies:
   adhoclibrary:
     path: ../
   cupertino_icons: ^1.0.0
-  just_audio: ^0.7.0
+  path_provider: ^2.0.1
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +21,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/device_a/Keep_It_Lit.mp3
