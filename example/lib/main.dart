@@ -18,6 +18,10 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
+  static const _PLAYLIST = 0;
+  static const _REQUEST = 1;
+  static const _REPLY = 2;
+
   final TransferManager _manager = TransferManager(true);
   final HashMap<String, PlatformFile> _playlist = HashMap();
   final List<AdHocDevice> _devices = List.empty(growable: true);
@@ -30,7 +34,25 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     super.initState();
 
     _manager.eventStream.listen((event) {
-      print(event.toString());
+      switch (event.type) {
+        case AbstractWrapper.DATA_RECEIVED:
+          HashMap<String, dynamic> data = event.payload;
+          if (data['type'] == _PLAYLIST) {
+            // TODO: update playlist
+          } else if (data['type'] == _REQUEST) {
+            // TODO: send to requester instead of broadcasting
+            HashMap<String, dynamic> reply = HashMap();
+            reply.putIfAbsent('type', () => _REPLY);
+            reply.putIfAbsent('name', () => data['name']);
+            reply.putIfAbsent('song', () => _playlist[data['name']].bytes);
+            _manager.broadcast(reply);
+          } else {
+            _playlist.update(data['name'], (value) => data['song']);
+          }
+          break;
+
+        default:
+      }
     });
 
     _manager.discoveryStream.listen((event) {
@@ -64,12 +86,17 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                   switch (result) {
                     case MenuOptions.add:
                       await _openFileExplorer();
+                      setState(() { 
+                        _playlist.forEach((name, file) {
+                          if (!_names.contains(name))
+                            _names.add(name);
+                        });
+                      });
                       break;
                     case MenuOptions.search:
                       showSearch(context: context, delegate: SearchBar(_manager, _playlist));
                       break;
                     case MenuOptions.display:
-                      _playlist.forEach((name, file) => _names.add(name));
                       setState(() => _display = !_display);
                       break;
                   }
@@ -93,7 +120,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     value: MenuOptions.display,
                     child: ListTile(
                       leading: const Icon(Icons.music_note),
-                      title: const Text('Display playlist'),
+                      title: const Text('Switch view'),
                     ),
                   ),
                 ],
@@ -107,6 +134,11 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                 child: Column(
                   children: <Widget>[
                     if (!_display) ...<Widget>[
+                      Card(
+                        child: ListTile(
+                          title: Center(child: Text('Ad Hoc Peers')),
+                        ),
+                      ),
                       ElevatedButton(
                         child: Center(child: Text('Search for nearby devices')),
                         onPressed: () => _manager.discovery(),
@@ -133,6 +165,11 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                         ),
                       ),
                     ] else ...<Widget>[
+                      Card(
+                        child: ListTile(
+                          title: Center(child: Text('Ad Hoc Playlist')),
+                        ),
+                      ),
                       Expanded(
                         child: ListView(
                           children: _names.map((name) {
@@ -140,8 +177,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                               child: ListTile(
                                 title: Center(child: Text(name)),
                                 onTap: () async {
-                                  // TODO: if file == null, fetch it from peers
-                                  platform.invokeMethod('play', _playlist[name].path);
+                                  PlatformFile song = _playlist[name];
+                                  if (song == null) {
+                                    // TODO: fetch it from peers
+                                    HashMap<String, dynamic> request = HashMap();
+                                    request.putIfAbsent('type', () => _REQUEST);
+                                    request.putIfAbsent('name', () => name);
+                                    _manager.broadcast(request);
+                                  } else {
+                                    platform.invokeMethod('play', song.path);
+                                  }
                                 },
                               ),
                             );
