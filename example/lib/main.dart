@@ -18,6 +18,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
   TransferManager _manager = TransferManager(true);
   List<AdHocDevice> _devices = List.empty(growable: true);
+  List<String> _songNames = List.empty(growable: true);
   String _path;
 
 /*-----------------------------Override methods------------------------------*/
@@ -83,8 +84,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                             child: ListTile(
                               title: Center(child: Text(device.name)),
                               subtitle: Center(child: Text(device.mac)),
-                              onTap: () {
-                                _manager.connect(device);
+                              onTap: () async {
+                                await _manager.connect(device);
                                 setState(() {
                                   _devices.removeWhere(
                                     (element) => (element.mac == device.mac)
@@ -114,10 +115,5 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     File tempFile = File('${tempDir.path}/Keep_It_Lit.mp3');
     await tempFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
     _path = tempFile.path;
-    List list = await platform.invokeMethod('fetch');
-    print(list.length);
-    list.forEach((element) { 
-      print(element.toString());
-    });
   }
 }

@@ -63,7 +63,7 @@ class BleClient extends ServiceClient {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+  Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
 
   void disconnect() {
     if (_subscription != null)

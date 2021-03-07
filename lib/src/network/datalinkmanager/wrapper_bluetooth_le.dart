@@ -95,11 +95,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   @override
-  void connect(int attempts, AdHocDevice adHocDevice) {
+  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
     BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.mac];
     if (bleAdHocDevice != null) {
       if (!serviceServer.containConnection(bleAdHocDevice.mac)) {
-        _connect(attempts, bleAdHocDevice);
+        await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
           adHocDevice.name + "(" + adHocDevice.mac + ") is already connected"
@@ -205,7 +205,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     _onEvent(serviceServer);
   }
 
-  void _connect(int attempts, final BleAdHocDevice bleAdHocDevice) {
+  Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
     final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut);
 
     bleClient.connectListener = (String mac, String uuid) async {
@@ -230,7 +230,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     };
 
     _onEvent(bleClient);
-    bleClient.connect();
+    await bleClient.connect();
   }
 
   void _processMsgReceived(final MessageAdHoc message) {

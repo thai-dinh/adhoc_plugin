@@ -96,14 +96,14 @@ class DataLinkManager {
     }
   }
 
-  void connect(int attempts, AdHocDevice adHocDevice) {
+  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
     switch (adHocDevice.type) {
       case Service.WIFI:
-        _wrappers[Service.WIFI].connect(attempts, adHocDevice);
+        await _wrappers[Service.WIFI].connect(attempts, adHocDevice);
         break;
 
       case Service.BLUETOOTHLE:
-        _wrappers[Service.BLUETOOTHLE].connect(attempts, adHocDevice);
+        await _wrappers[Service.BLUETOOTHLE].connect(attempts, adHocDevice);
         break;
     }
   }

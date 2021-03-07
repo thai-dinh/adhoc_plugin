@@ -52,10 +52,10 @@ class TransferManager {
 
   void discovery() => _dataLinkManager.discovery();
 
-  void connect(AdHocDevice device) {        
+  Future<void> connect(AdHocDevice device) async {        
     if (_dataLinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
-    _dataLinkManager.connect(1, device);
+    await _dataLinkManager.connect(1, device);
   }
 
   void disconnect(AdHocDevice device) => _dataLinkManager.disconnect(device.label);
