@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class MusicSearchEngine extends StatefulWidget {
   final List<String> _songs;
 
@@ -18,8 +19,8 @@ class _MusicSearchEngineState extends State<MusicSearchEngine> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ad Hoc Music Client'),
         centerTitle: true,
+        title: const Text('Ad Hoc Music Client'),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.search),

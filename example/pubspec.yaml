@@ -13,7 +13,8 @@ dependencies:
   adhoclibrary:
     path: ../
   cupertino_icons: ^1.0.0
-  file_picker: ^3.0.0
+  file_picker: 2.1.7
+  flutter_document_picker: ^4.0.1
   path_provider: ^2.0.1
 
 dev_dependencies:
@@ -22,5 +23,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/device_a/Keep_It_Lit.mp3
+

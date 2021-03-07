@@ -1,10 +1,11 @@
-import 'dart:io';
+import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary_example/distributed_cache/music_search_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter_document_picker/flutter_document_picker.dart';
+
 
 void main() => runApp(AdHocMusicClient());
 
@@ -14,11 +15,15 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
-  static const platform = const MethodChannel('adhoc.music.player/main');
+  static const _prefix = r'/data/user/0/com.montefiore.thaidinhle.adhoclibrary_example/cache/';
+  static const _platform = const MethodChannel('adhoc.music.player/main');
 
-  TransferManager _manager = TransferManager(true);
-  List<AdHocDevice> _devices = List.empty(growable: true);
-  List<String> _songNames = List.empty(growable: true);
+  final TransferManager _manager = TransferManager(true);
+  final HashMap<String, String> _mapNamePath = HashMap();
+  final List<AdHocDevice> _devices = List.empty(growable: true);
+  final List<String> _songNames = List.empty(growable: true);
+
+  bool _connected = false;
   String _path;
 
 /*-----------------------------Override methods------------------------------*/
@@ -27,10 +32,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   void initState() {
     super.initState();
 
-    _loadSongs();
-
     _manager.eventStream.listen((event) {
-
+      print(event.toString());
     });
 
     _manager.discoveryStream.listen((event) {
@@ -58,7 +61,19 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
       },
       home: Builder(
         builder: (context) => Scaffold(
-          appBar: AppBar(title: Center(child: Text('Ad Hoc Music Client'))),
+          appBar: AppBar(
+            centerTitle: true,
+            title: const Text('Ad Hoc Music Client'),
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.add_circle),
+                onPressed: () async {
+                  _path = await FlutterDocumentPicker.openDocument();
+                  _mapNamePath.putIfAbsent(_path.replaceAll(RegExp(_prefix), ''), () => _path);
+                }
+              ),
+            ],
+          ),
           body: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -73,10 +88,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       child: Center(child: Text('Search for nearby devices')),
                       onPressed: () => _manager.discovery(),
                     ),
-                    ElevatedButton(
-                      child: Center(child: Text('Play song Keep It Lit')),
-                      onPressed: () => platform.invokeMethod('play', _path),
-                    ),
                     Expanded(
                       child: ListView(
                         children: _devices.map((device) {
@@ -86,6 +97,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                               subtitle: Center(child: Text(device.mac)),
                               onTap: () async {
                                 await _manager.connect(device);
+                                _connected = true;
                                 setState(() {
                                   _devices.removeWhere(
                                     (element) => (element.mac == device.mac)
@@ -109,11 +121,4 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
 /*------------------------------Private methods------------------------------*/
 
-  void _loadSongs() async {
-    final ByteData data = await rootBundle.load('assets/device_a/Keep_It_Lit.mp3');
-    Directory tempDir = await getTemporaryDirectory();
-    File tempFile = File('${tempDir.path}/Keep_It_Lit.mp3');
-    await tempFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
-    _path = tempFile.path;
-  }
 }
