@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
@@ -41,7 +40,7 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> disconnect() async {
-    await FlutterWifiP2p().removeGroup();
+    await WifiP2p().removeGroup();
 
     _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
   }

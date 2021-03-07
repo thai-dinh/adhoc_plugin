@@ -91,7 +91,7 @@ packages:
       name: file_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.7"
+    version: "3.0.0"
   fixnum:
     dependency: transitive
     description:
@@ -104,20 +104,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_document_picker:
-    dependency: "direct main"
-    description:
-      name: flutter_document_picker
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "4.0.1"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.11"
+    version: "2.0.0"
   flutter_reactive_ble:
     dependency: transitive
     description:
@@ -239,7 +232,7 @@ packages:
       name: plugin_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.3"
+    version: "2.0.0"
   process:
     dependency: transitive
     description:
@@ -337,5 +330,5 @@ packages:
     source: hosted
     version: "0.2.0"
 sdks:
-  dart: ">=2.12.0-259.9.beta <3.0.0"
+  dart: ">=2.12.0 <3.0.0"
   flutter: ">=1.20.0"

@@ -44,7 +44,7 @@ class AodvManager {
     this._mapDestSequenceNumber = HashMap();
     this._ownLabel = config.label;
     this._dataLink = DataLinkManager(_verbose, config);
-    this._eventCtrl = StreamController<AdHocEvent>();
+    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
     if (_verbose)
       this._initTimerDebugRIB();

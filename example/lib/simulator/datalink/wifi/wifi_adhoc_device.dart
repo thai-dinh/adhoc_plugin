@@ -1,5 +1,4 @@
 import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:flutter_wifi_p2p/flutter_wifi_p2p.dart';
 
 
 class WifiAdHocDevice extends AdHocDevice {

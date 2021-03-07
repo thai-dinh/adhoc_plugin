@@ -73,7 +73,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   @override
-  void connect(int attempts, AdHocDevice adHocDevice) async {
+  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
     WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
