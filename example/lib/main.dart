@@ -1,6 +1,8 @@
 import 'dart:collection';
+import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
+import 'package:analyzer_plugin/utilities/pair.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,50 +25,62 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   static const _REPLY = 2;
 
   final TransferManager _manager = TransferManager(true);
-  final HashMap<String, PlatformFile> _playlist = HashMap();
-  final List<AdHocDevice> _devices = List.empty(growable: true);
-  final List<String> _names = List.empty(growable: true);
+  final HashMap<AdHocDevice, HashMap<String, PlatformFile>> _peersPlaylist = HashMap();
+  final HashMap<String, PlatformFile> _localPlaylist = HashMap();
+  final List<AdHocDevice> _discoveredDevices = List.empty(growable: true);
+  final List<Pair<String, String>> _playlist  = List.empty(growable: true);
 
   bool _display = false;
+  bool _requested = false;
+  String _selected = 'None';
 
   @override
   void initState() {
     super.initState();
 
     _manager.eventStream.listen((event) {
-      switch (event.type) {
-        case AbstractWrapper.DATA_RECEIVED:
-          HashMap<String, dynamic> data = event.payload;
-          if (data['type'] == _PLAYLIST) {
-            // TODO: update playlist
-          } else if (data['type'] == _REQUEST) {
-            // TODO: send to requester instead of broadcasting
-            HashMap<String, dynamic> reply = HashMap();
-            reply.putIfAbsent('type', () => _REPLY);
-            reply.putIfAbsent('name', () => data['name']);
-            reply.putIfAbsent('song', () => _playlist[data['name']].bytes);
-            _manager.broadcast(reply);
-          } else {
-            _playlist.update(data['name'], (value) => data['song']);
-          }
-          break;
+      if (event.type == AbstractWrapper.DATA_RECEIVED) {
+        AdHocDevice peer = event.payload;
+        HashMap<String, dynamic> data = event.extra;
+        switch (data['type']) {
+          case _PLAYLIST:
+            _peersPlaylist.update(
+              peer, (value) => data['playlist'], ifAbsent: () => data['playlist']
+            );
 
-        default:
+            setState(() => (data['playlist'] as Map).forEach((name, song) {
+              _playlist.add(Pair(peer.name, name));
+            }));
+            break;
+
+          case _REQUEST:
+            HashMap<String, dynamic> message = HashMap();
+            message.putIfAbsent('type', () => _REPLY);
+            message.putIfAbsent('name', () => data['name']);
+            message.putIfAbsent('song', () => _localPlaylist[data['name']].bytes);
+            _manager.sendMessageTo(message, peer);
+            break;
+
+          case _REPLY:
+            _peersPlaylist.update(peer, (value) {
+              value.putIfAbsent(data['name'] as String, () => PlatformFile(bytes: data['song'] as Uint8List));
+              return value;
+            });
+            setState(() => _requested = false);
+            break;
+
+          default:
+        }
       }
     });
 
     _manager.discoveryStream.listen((event) {
-      switch (event.type) {
-        case Service.DISCOVERY_END:
-          setState(() {
-            (event.payload as Map).entries.forEach(
-              (element) => _devices.add(element.value)
-            );
-          });
-          break;
-
-        default:
-          break;
+      if (event.type == Service.DISCOVERY_END) {
+        setState(() {
+          (event.payload as Map).entries.forEach(
+            (element) => _discoveredDevices.add(element.value)
+          );
+        });
       }
     });
   }
@@ -87,15 +101,28 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     case MenuOptions.add:
                       await _openFileExplorer();
                       setState(() { 
-                        _playlist.forEach((name, file) {
-                          if (!_names.contains(name))
-                            _names.add(name);
-                        });
+                        _localPlaylist.forEach(
+                          (name, song) {
+                            Pair pair = Pair('local', name);
+                            if (!_playlist.contains(pair))
+                              _playlist.add(Pair('local', name)); 
+                          }
+                        );
                       });
                       break;
+
                     case MenuOptions.search:
-                      showSearch(context: context, delegate: SearchBar(_manager, _playlist));
+                      setState(() async { 
+                        _selected = await showSearch(
+                          context: context,
+                          delegate: SearchBar(_localPlaylist),
+                        );
+
+                        if (_selected == null)
+                          _selected = 'None';
+                      });
                       break;
+
                     case MenuOptions.display:
                       setState(() => _display = !_display);
                       break;
@@ -145,16 +172,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       ),
                       Expanded(
                         child: ListView(
-                          children: _devices.map((device) {
+                          children: _discoveredDevices.map((device) {
                             return Card(
                               child: ListTile(
                                 title: Center(child: Text(device.name)),
                                 subtitle: Center(child: Text(device.mac)),
                                 onTap: () async {
                                   await _manager.connect(device);
-                                  _manager.broadcast(_playlist);
+                                  _manager.broadcast(_localPlaylist);
                                   setState(() {
-                                    _devices.removeWhere(
+                                    _discoveredDevices.removeWhere(
                                       (element) => (element.mac == device.mac)
                                     );
                                   });
@@ -166,28 +193,97 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       ),
                     ] else ...<Widget>[
                       Card(
+                        child: Stack(
+                          children: <Widget> [
+                            ListTile(
+                              title: Center(child: Text('$_selected')),
+                              subtitle: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  IconButton(
+                                    icon: Icon(Icons.play_arrow_rounded),
+                                    onPressed: () {
+                                      if (_selected == 'None')
+                                        return;
+
+                                      AdHocDevice dest;
+                                      PlatformFile song;
+                                      String peerName = _playlist.where((pair) => pair.last == _selected).first.first;
+                                      if (peerName.compareTo('local') == 0) {
+                                        song = _localPlaylist[_selected];
+                                      } else {
+                                        song = _peersPlaylist[peerName][_selected];
+                                      }
+
+                                      if (song == null) {
+                                        _peersPlaylist.forEach((peer, playlist) { 
+                                          if (peer.name.compareTo(peerName) == 0)
+                                            dest = peer;
+                                        });
+
+                                        HashMap<String, dynamic> message = HashMap();
+                                        message.putIfAbsent('type', () => _REQUEST);
+                                        message.putIfAbsent('name', () => _selected);
+                                        _manager.sendMessageTo(message, dest);
+                                        setState(() => _requested = true);
+                                      } else {
+                                        platform.invokeMethod('play', song.path);
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.pause_rounded),
+                                    onPressed: () {
+                                      if (_selected.compareTo('None') == 0)
+                                        return;
+                                      platform.invokeMethod('pause');
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.stop_rounded),
+                                    onPressed: () {
+                                      if (_selected.compareTo('None') == 0)
+                                        return;
+                                      _selected = 'None';
+                                      platform.invokeMethod('stop');
+                                    },
+                                  ),
+                                  if (_requested)
+                                    Container(
+                                      color: Colors.black.withOpacity(0.5),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  else
+                                    Container(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Card(
+                        color: Colors.blue,
                         child: ListTile(
-                          title: Center(child: Text('Ad Hoc Playlist')),
+                          title: Center(
+                            child: const Text(
+                              'Ad Hoc Playlist',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ),
                       Expanded(
                         child: ListView(
-                          children: _names.map((name) {
+                          children: _playlist.map((pair) {
+                            String peerName = pair.first;
+                            String songName = pair.last;
                             return Card(
                               child: ListTile(
-                                title: Center(child: Text(name)),
-                                onTap: () async {
-                                  PlatformFile song = _playlist[name];
-                                  if (song == null) {
-                                    // TODO: fetch it from peers
-                                    HashMap<String, dynamic> request = HashMap();
-                                    request.putIfAbsent('type', () => _REQUEST);
-                                    request.putIfAbsent('name', () => name);
-                                    _manager.broadcast(request);
-                                  } else {
-                                    platform.invokeMethod('play', song.path);
-                                  }
-                                },
+                                title: Center(child: Text(songName)),
+                                subtitle: Center(child: Text(peerName)),
+                                onTap: () => setState(() => _selected = songName),
                               ),
                             );
                           }).toList(),
@@ -213,22 +309,24 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     if(result != null) {
       for (PlatformFile file in result.files) {
         String name = file.name;
-        _playlist.putIfAbsent(name, () => file);
+        _localPlaylist.putIfAbsent(name, () => file);
       }
 
-      _manager.broadcast(_playlist);
+      HashMap<String, dynamic> message = HashMap();
+      message.putIfAbsent('type', () => _PLAYLIST);
+      message.putIfAbsent('playlist', () => _localPlaylist);
+      _manager.broadcast(message);
     }
   }
 }
 
-class SearchBar extends SearchDelegate {
-  final TransferManager _manager;
+class SearchBar extends SearchDelegate<String> {
   final HashMap<String, PlatformFile> _playlist;
 
   List<String> _recentPick;
   String _selected = '';
 
-  SearchBar(this._manager, this._playlist) {
+  SearchBar(this._playlist) {
     this._recentPick = List.empty(growable: true);
   }
 
@@ -252,21 +350,8 @@ class SearchBar extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    return Container(
-      child: Center(
-        child: IconButton(
-          icon: Icon(Icons.play_arrow_rounded),
-          onPressed: () {
-            PlatformFile song = _playlist[_selected];
-            if (song == null) {
-              // TODO: request it from peer
-            } else {
-              platform.invokeMethod('play', song.path);
-            }
-          },
-        ),
-      ),
-    );
+    this.close(context, _selected);
+    return null;
   }
 
   @override

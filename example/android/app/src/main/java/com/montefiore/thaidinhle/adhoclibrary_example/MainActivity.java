@@ -26,6 +26,16 @@ public class MainActivity extends FlutterActivity {
                             final String path = call.arguments();
                             play(path);
                             break;
+                        case "pause":
+                            pause();
+                            break;
+                        case "stop":
+                            stop();
+                            break;
+                        case "seek":
+                            final double position = call.arguments();
+                            seek(position);
+                            break;
 
                         default:
                             break;
@@ -58,5 +68,25 @@ public class MainActivity extends FlutterActivity {
         }
 
         mediaPlayer.start();
+    }
+
+    private void pause() {
+        if (mediaPlayer != null) {
+            mediaPlayer.pause();
+        }
+    }
+
+    private void stop() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
+
+    private void seek(double position) {
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo((int) (position * 1000));
+        }
     }
 }
