@@ -1,6 +1,5 @@
 import 'dart:collection';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:analyzer_plugin/utilities/pair.dart';
@@ -41,26 +40,18 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     super.initState();
 
     _manager.eventStream.listen((event) async {
-      print('${event.type} , ${AbstractWrapper.DATA_RECEIVED}');
       if (event.type == AbstractWrapper.DATA_RECEIVED) {
-        AdHocDevice peer = event.payload;
+        AdHocDevice peer = event.payload as AdHocDevice;
         Map<String, dynamic> data = event.extra as Map;
         switch (data['type']) {
           case _PLAYLIST:
             HashMap<String, PlatformFile> payload = HashMap();
-            (data['playlist'] as Map).forEach((name, file) async {
-              Directory tempDir = await getTemporaryDirectory();
-              File tempFile = File('${tempDir.path}/$name');
-              await tempFile.writeAsBytes(file, flush: true);
-              payload.putIfAbsent(name, () => PlatformFile(bytes: file, name: name, path: tempFile.path));
-            });
-
-            _peersPlaylist.update(
-              peer, (value) => data['playlist'], ifAbsent: () => payload
-            );
-
-            setState(() => (data['playlist'] as Map).forEach((name, song) {
+            setState(() => (data['playlist'] as List).forEach((name) {
+              payload.putIfAbsent(name, () => null);
               _playlist.add(Pair(peer.name, name));
+              _peersPlaylist.update(
+                peer, (value) => data['playlist'], ifAbsent: () => payload
+              );
             }));
             break;
 
@@ -198,17 +189,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                 subtitle: Center(child: Text(device.mac)),
                                 onTap: () async {
                                   await _manager.connect(device);
-                                  HashMap<String, Uint8List> payload = HashMap();
-                                  _localPlaylist.forEach((name, file) {
-                                    payload.putIfAbsent(name, () => file.bytes);
-                                  });
 
-                                  Future.delayed(Duration(seconds: 2));
+                                  List<String> payload = List.empty(growable: true);
+                                  _localPlaylist.forEach((name, file) => payload.add(name));
 
                                   HashMap<String, dynamic> message = HashMap();
                                   message.putIfAbsent('type', () => _PLAYLIST);
                                   message.putIfAbsent('playlist', () => payload);
                                   _manager.broadcast(message);
+
+                                  Future.delayed(Duration(seconds: 2), () => _manager.broadcast(message));
                                   setState(() {
                                     _discoveredDevices.removeWhere(
                                       (element) => (element.mac == device.mac)
@@ -279,7 +269,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                   ),
                                   if (_requested)
                                     Container(
-                                      color: Colors.black.withOpacity(0.5),
                                       child: Center(
                                         child: CircularProgressIndicator(),
                                       ),
@@ -343,13 +332,12 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           bytes: await File(file.path).readAsBytes(),
         );
 
+        print(song.bytes.length);
         _localPlaylist.putIfAbsent(file.name, () => song);
       }
 
-      HashMap<String, Uint8List> payload = HashMap();
-      _localPlaylist.forEach((name, file) {
-        payload.putIfAbsent(name, () => file.bytes);
-      });
+      List<String> payload = List.empty(growable: true);
+      _localPlaylist.forEach((name, file) => payload.add(name));
 
       HashMap<String, dynamic> message = HashMap();
       message.putIfAbsent('type', () => _PLAYLIST);

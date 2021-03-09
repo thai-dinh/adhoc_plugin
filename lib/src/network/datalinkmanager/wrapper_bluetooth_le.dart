@@ -320,7 +320,15 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.BROADCAST:
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, message));
+        Header header = message.header;
+        AdHocDevice adHocDevice = AdHocDevice(
+          label: header.label,
+          name: header.name,
+          mac: header.mac,
+          type: header.deviceType
+        );
+
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: message.pdu));
         break;
 
       default:

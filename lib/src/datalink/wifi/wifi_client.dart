@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
@@ -54,7 +56,23 @@ class WifiClient extends ServiceClient {
   void send(MessageAdHoc message) {
     if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
-    _socket.write(json.encode(message.toJson()));
+    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
+    int mtu = 10000, length = msg.length, start = 0, end = mtu;
+    int index = 1;
+
+    while (length > mtu) {
+      chunk = msg.sublist(start, end);
+      List<int> tmp = [index % UINT8_SIZE] + chunk.toList();
+      _socket.write(tmp);
+      index++;
+      start = end;
+      end += mtu;
+      length -= mtu;
+    }
+
+    chunk = msg.sublist(start, msg.length);
+    List<int> tmp = [MESSAGE_END] + chunk.toList();
+    _socket.write(tmp);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -110,7 +128,7 @@ class WifiClient extends ServiceClient {
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
       },
       onDone: () {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _socket.remotePort.toString()));
+        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
         _socket.destroy();
         _socket.close();
       }

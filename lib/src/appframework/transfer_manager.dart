@@ -37,6 +37,7 @@ class TransferManager {
   }
 
   Future<bool> broadcast(Object message) async {
+    print('transfer');
     if (_dataLinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     return await _dataLinkManager.broadcastObject(message);

@@ -52,6 +52,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   bool broadcast(MessageAdHoc message) {
+    print('wrapper');
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.values.forEach((network) async {
         if (network != null)

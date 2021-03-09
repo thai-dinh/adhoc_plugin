@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
-import 'package:adhoclibrary/src/dataLink/service/adhoc_device.dart';
+import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
@@ -17,8 +17,8 @@ import 'package:adhoclibrary/src/network/aodv/rreq.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
-import 'package:adhoclibrary/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoclibrary/src/network/exceptions/aodv_message.dart';
+import 'package:adhoclibrary/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoclibrary/src/network/exceptions/aodv_unknown_type.dart';
 
 

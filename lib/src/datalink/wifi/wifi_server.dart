@@ -17,6 +17,7 @@ class WifiServer extends ServiceServer {
   StreamController<ConnectionEvent> _connectCtrl;
   StreamController<MessageAdHoc> _messageCtrl;
   StreamSubscription<Socket> _listenStreamSub;
+  HashMap<String, List<Uint8List>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
   HashMap<String, Socket> _mapIpSocket;
   ServerSocket _serverSocket;
@@ -25,6 +26,7 @@ class WifiServer extends ServiceServer {
     WifiAdHocManager.setVerbose(verbose);
     this._connectCtrl = StreamController<ConnectionEvent>();
     this._messageCtrl = StreamController<MessageAdHoc>();
+    this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
   }
@@ -50,8 +52,21 @@ class WifiServer extends ServiceServer {
           (data) async {
             if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.port}');
 
-            for (MessageAdHoc msg in splitMessages(Utf8Decoder().convert(data)))
-              _messageCtrl.add(msg);
+            _mapNameData.update(
+              remoteAddress, 
+              (value) => value..add(data), 
+              ifAbsent: () => List<Uint8List>.empty(growable: true)
+            );
+
+            if (data[0] == 0) {
+              _messageCtrl.add(processMessage(_mapNameData[remoteAddress]));
+              _mapNameData.update(
+                remoteAddress, 
+                (value) => List<Uint8List>.empty(growable: true), 
+              );
+            }
+            // for (MessageAdHoc msg in splitMessages(Utf8Decoder().convert(data)))
+            //   _messageCtrl.add(msg);
           },
           onError: (error) {
             // Error reported below as it is the same instance of 'error' below
