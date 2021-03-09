@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
@@ -6,6 +7,7 @@ import 'package:analyzer_plugin/utilities/pair.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 
 void main() => runApp(AdHocMusicClient());
@@ -38,14 +40,23 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   void initState() {
     super.initState();
 
-    _manager.eventStream.listen((event) {
+    _manager.eventStream.listen((event) async {
+      print('${event.type} , ${AbstractWrapper.DATA_RECEIVED}');
       if (event.type == AbstractWrapper.DATA_RECEIVED) {
         AdHocDevice peer = event.payload;
-        HashMap<String, dynamic> data = event.extra;
+        Map<String, dynamic> data = event.extra as Map;
         switch (data['type']) {
           case _PLAYLIST:
+            HashMap<String, PlatformFile> payload = HashMap();
+            (data['playlist'] as Map).forEach((name, file) async {
+              Directory tempDir = await getTemporaryDirectory();
+              File tempFile = File('${tempDir.path}/$name');
+              await tempFile.writeAsBytes(file, flush: true);
+              payload.putIfAbsent(name, () => PlatformFile(bytes: file, name: name, path: tempFile.path));
+            });
+
             _peersPlaylist.update(
-              peer, (value) => data['playlist'], ifAbsent: () => data['playlist']
+              peer, (value) => data['playlist'], ifAbsent: () => payload
             );
 
             setState(() => (data['playlist'] as Map).forEach((name, song) {
@@ -62,8 +73,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             break;
 
           case _REPLY:
+            String name = data['name'];
+            Directory tempDir = await getTemporaryDirectory();
+            File tempFile = File('${tempDir.path}/$name');
+            await tempFile.writeAsBytes(data['song'], flush: true);
+
             _peersPlaylist.update(peer, (value) {
-              value.putIfAbsent(data['name'] as String, () => PlatformFile(bytes: data['song'] as Uint8List));
+              value.putIfAbsent(
+                data['name'], 
+                () => PlatformFile(bytes: data['song'], name: data['name'], path: tempFile.path)
+              );
               return value;
             });
             setState(() => _requested = false);
@@ -179,7 +198,17 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                 subtitle: Center(child: Text(device.mac)),
                                 onTap: () async {
                                   await _manager.connect(device);
-                                  _manager.broadcast(_localPlaylist);
+                                  HashMap<String, Uint8List> payload = HashMap();
+                                  _localPlaylist.forEach((name, file) {
+                                    payload.putIfAbsent(name, () => file.bytes);
+                                  });
+
+                                  Future.delayed(Duration(seconds: 2));
+
+                                  HashMap<String, dynamic> message = HashMap();
+                                  message.putIfAbsent('type', () => _PLAYLIST);
+                                  message.putIfAbsent('playlist', () => payload);
+                                  _manager.broadcast(message);
                                   setState(() {
                                     _discoveredDevices.removeWhere(
                                       (element) => (element.mac == device.mac)
@@ -212,15 +241,15 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                       if (peerName.compareTo('local') == 0) {
                                         song = _localPlaylist[_selected];
                                       } else {
-                                        song = _peersPlaylist[peerName][_selected];
-                                      }
-
-                                      if (song == null) {
                                         _peersPlaylist.forEach((peer, playlist) { 
                                           if (peer.name.compareTo(peerName) == 0)
                                             dest = peer;
                                         });
 
+                                        song = _peersPlaylist[dest][_selected];
+                                      }
+
+                                      if (song == null) {
                                         HashMap<String, dynamic> message = HashMap();
                                         message.putIfAbsent('type', () => _REQUEST);
                                         message.putIfAbsent('name', () => _selected);
@@ -308,13 +337,23 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
     if(result != null) {
       for (PlatformFile file in result.files) {
-        String name = file.name;
-        _localPlaylist.putIfAbsent(name, () => file);
+        PlatformFile song = PlatformFile(
+          name: file.name,
+          path: file.path,
+          bytes: await File(file.path).readAsBytes(),
+        );
+
+        _localPlaylist.putIfAbsent(file.name, () => song);
       }
+
+      HashMap<String, Uint8List> payload = HashMap();
+      _localPlaylist.forEach((name, file) {
+        payload.putIfAbsent(name, () => file.bytes);
+      });
 
       HashMap<String, dynamic> message = HashMap();
       message.putIfAbsent('type', () => _PLAYLIST);
-      message.putIfAbsent('playlist', () => _localPlaylist);
+      message.putIfAbsent('playlist', () => payload);
       _manager.broadcast(message);
     }
   }

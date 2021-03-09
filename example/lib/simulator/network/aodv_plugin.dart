@@ -1,9 +1,8 @@
 import 'dart:collection';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide AodvManager, DataLinkManager;
-
-import 'network/aodv/aodv_manager.dart';
-import 'network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoclibrary_example/simulator/network/aodv/aodv_manager.dart';
+import 'package:adhoclibrary_example/simulator/network/datalinkmanager/datalink_manager.dart';
 
 
 class AodvPlugin {
@@ -17,10 +16,7 @@ class AodvPlugin {
     this._aodvManager = AodvManager(true, config, index, devices);
     this._dataLinkManager = _aodvManager.dataLinkManager;
     this._discoveredDevices = HashMap();
-    this._aodvManager.eventStream.listen((AdHocEvent event) {
-      if (event.type == AbstractWrapper.DEVICE_INFO)
-        print(event.type.toString() + ', [' + event.payload + '], [' + event.extra + ']');
-    });
+    this._aodvManager.eventStream.listen((AdHocEvent event) { });
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

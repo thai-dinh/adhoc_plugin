@@ -24,7 +24,7 @@ class TransferManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<AdHocEvent> get eventStream => _dataLinkManager.eventStream;
+  Stream<AdHocEvent> get eventStream => _aodvManager.eventStream;
 
   Stream<DiscoveryEvent> get discoveryStream => _dataLinkManager.discoveryStream;
 

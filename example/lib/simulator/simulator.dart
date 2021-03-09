@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:adhoclibrary/adhoclibrary.dart' hide WifiAdHocDevice;
-import 'package:adhoclibrary_example/simulator/aodv_plugin.dart';
+import 'package:adhoclibrary_example/simulator/network/aodv_plugin.dart';
 import 'package:adhoclibrary_example/simulator/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/material.dart';
 
@@ -147,7 +147,8 @@ class _SimulatorState extends State<Simulator> {
                 children: <Widget>[
                   ElevatedButton(
                     child: Center(child: Text('Send')),
-                    onPressed: () => _plugins[NAMES[index]].sendMessageTo(_msg, _adhocdevices[_destID])
+                    onPressed: () => _plugins[NAMES[index]].broadcast(_msg)
+                    // onPressed: () => _plugins[NAMES[index]].sendMessageTo(_msg, _adhocdevices[_destID])
                   ),
                 ],
               ),
