@@ -37,6 +37,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   bool _requested = false;
   String _selected = 'None';
 
+  HashMap<String, HashMap<int, Uint8List>> _buffer = HashMap();
+
   @override
   void initState() {
     super.initState();
@@ -83,19 +85,36 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             break;
 
           case _REPLY:
-            // String name = data['name'];
-            // Directory tempDir = await getTemporaryDirectory();
-            // File tempFile = File('${tempDir.path}/$name');
-            // await tempFile.writeAsBytes(data['song'], flush: true);
+            String name = data['name'];
+            int seq = data['seq'];
+            if (!_buffer.containsKey(name)) {
+              HashMap<int, Uint8List> bytes = HashMap();
+              bytes.putIfAbsent(seq, () => data['song']);
+              _buffer.putIfAbsent(name, () => bytes);
+            } else {
+              _buffer[name].putIfAbsent(seq, () => data['song']);
+            }
 
-            // _peersPlaylist.update(peer, (value) {
-            //   value.putIfAbsent(
-            //     data['name'], 
-            //     () => PlatformFile(bytes: data['song'], name: data['name'], path: tempFile.path)
-            //   );
-            //   return value;
-            // });
-            // setState(() => _requested = false);
+            if (seq == 0) {
+              BytesBuilder builder = BytesBuilder();
+              for (int i = 1; i < _buffer[name].length; i++)
+                builder.add(_buffer[name][i]);
+              builder.add(_buffer[name][0]);
+
+              Directory tempDir = await getTemporaryDirectory();
+              File tempFile = File('${tempDir.path}/$name');
+              await tempFile.writeAsBytes(builder.toBytes(), flush: true);
+
+              _peersPlaylist.update(peer, (value) {
+                value.putIfAbsent(
+                  name, 
+                  () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
+                );
+                return value;
+              });
+
+              setState(() => _requested = false);
+            }
             break;
 
           default:

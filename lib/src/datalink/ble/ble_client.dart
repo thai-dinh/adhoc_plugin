@@ -69,7 +69,7 @@ class BleClient extends ServiceClient {
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');
 
-    id = id++ % UINT8_SIZE;
+    int _id = id++;
 
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
@@ -83,7 +83,7 @@ class BleClient extends ServiceClient {
 
     while (length > mtu) {
       chunk = msg.sublist(start, end);
-      List<int> tmp = [index % UINT8_SIZE, id] + chunk.toList();
+      List<int> tmp = [index % UINT8_SIZE, _id % UINT8_SIZE] + chunk.toList();
       await _reactiveBle.writeCharacteristicWithoutResponse(
         characteristic, value: tmp
       );
@@ -92,10 +92,13 @@ class BleClient extends ServiceClient {
       start = end;
       end += mtu;
       length -= mtu;
+
+      if (index == 256)
+        index = 1;
     }
 
     chunk = msg.sublist(start, msg.length);
-    List<int> tmp = [MESSAGE_END, id] + chunk.toList();
+    List<int> tmp = [MESSAGE_END, _id % UINT8_SIZE] + chunk.toList();
     await _reactiveBle.writeCharacteristicWithoutResponse(
       characteristic, value: tmp
     );

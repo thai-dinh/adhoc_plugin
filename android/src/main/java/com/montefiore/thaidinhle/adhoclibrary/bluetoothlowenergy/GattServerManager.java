@@ -127,7 +127,7 @@ public class GattServerManager {
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
         ) {
-            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest(): " + value[0]);
+            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest(): " + value[0] + ", " + value[1]);
 
             if(responseNeeded) {
                 gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
@@ -149,6 +149,7 @@ public class GattServerManager {
                 mapInfoValue.put("macAddress", address);
 
                 eventMessageSink.success(mapInfoValue);
+
                 HashMap<Integer, ArrayList<byte[]>> received = data.get(address);
                 received.remove(id);
                 data.put(address, received);
