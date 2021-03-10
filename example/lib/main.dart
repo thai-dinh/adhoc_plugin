@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:analyzer_plugin/utilities/pair.dart';
@@ -21,6 +22,7 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
+  static const _MAX_SIZE = 125000;
   static const _PLAYLIST = 0;
   static const _REQUEST = 1;
   static const _REPLY = 2;
@@ -56,27 +58,44 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             break;
 
           case _REQUEST:
+            Uint8List bytes = _localPlaylist[data['name']].bytes;
+            int length = bytes.length, seq = 1, start = 0, end = _MAX_SIZE;
+            while (length > _MAX_SIZE) {
+              HashMap<String, dynamic> message = HashMap();
+              message.putIfAbsent('type', () => _REPLY);
+              message.putIfAbsent('seq', () => seq);
+              message.putIfAbsent('name', () => data['name']);
+              message.putIfAbsent('song', () => bytes.sublist(start, end));
+              _manager.sendMessageTo(message, peer);
+
+              seq++;
+              start = end;
+              end += _MAX_SIZE;
+              length -= _MAX_SIZE;
+            }
+
             HashMap<String, dynamic> message = HashMap();
             message.putIfAbsent('type', () => _REPLY);
+            message.putIfAbsent('seq', () => 0);
             message.putIfAbsent('name', () => data['name']);
-            message.putIfAbsent('song', () => _localPlaylist[data['name']].bytes);
+            message.putIfAbsent('song', () => bytes.sublist(start, bytes.length));
             _manager.sendMessageTo(message, peer);
             break;
 
           case _REPLY:
-            String name = data['name'];
-            Directory tempDir = await getTemporaryDirectory();
-            File tempFile = File('${tempDir.path}/$name');
-            await tempFile.writeAsBytes(data['song'], flush: true);
+            // String name = data['name'];
+            // Directory tempDir = await getTemporaryDirectory();
+            // File tempFile = File('${tempDir.path}/$name');
+            // await tempFile.writeAsBytes(data['song'], flush: true);
 
-            _peersPlaylist.update(peer, (value) {
-              value.putIfAbsent(
-                data['name'], 
-                () => PlatformFile(bytes: data['song'], name: data['name'], path: tempFile.path)
-              );
-              return value;
-            });
-            setState(() => _requested = false);
+            // _peersPlaylist.update(peer, (value) {
+            //   value.putIfAbsent(
+            //     data['name'], 
+            //     () => PlatformFile(bytes: data['song'], name: data['name'], path: tempFile.path)
+            //   );
+            //   return value;
+            // });
+            // setState(() => _requested = false);
             break;
 
           default:

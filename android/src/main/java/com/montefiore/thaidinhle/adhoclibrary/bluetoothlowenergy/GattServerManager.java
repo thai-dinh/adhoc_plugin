@@ -37,7 +37,7 @@ public class GattServerManager {
     private BluetoothGattCharacteristic characteristic;
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
-    private HashMap<String, ArrayList<byte[]>> data;
+    private HashMap<String, HashMap<Integer, ArrayList<byte[]>>> data;
     private HashMap<String, BluetoothDevice> mapMacDevice;
     private HashMap<String, Short> mapMacMtu;
     private EventChannel eventConnectionChannel;
@@ -127,24 +127,31 @@ public class GattServerManager {
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
         ) {
-            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
+            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest(): " + value[0]);
 
             if(responseNeeded) {
                 gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
             }
 
             String address = device.getAddress();
-            ArrayList<byte[]> received = data.get(address);
-            received.add(value);
-            data.put(address, received);
+            Integer id = new Integer(value[1]);
+            HashMap<Integer, ArrayList<byte[]>> buffer = data.get(address);
+            ArrayList<byte[]> bytes = buffer.get(id);
+            if (bytes == null)
+                bytes = new ArrayList<byte[]>();
+            bytes.add(value);
+            buffer.put(id, bytes);
+            data.put(address, buffer);
 
             if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
-                mapInfoValue.put("message", data.get(address));
+                mapInfoValue.put("message", data.get(address).get(id));
                 mapInfoValue.put("macAddress", address);
 
                 eventMessageSink.success(mapInfoValue);
-                data.put(address, new ArrayList<byte[]>());
+                HashMap<Integer, ArrayList<byte[]>> received = data.get(address);
+                received.remove(id);
+                data.put(address, received);
             }
         }
 
@@ -153,7 +160,8 @@ public class GattServerManager {
             if (verbose) Log.d(TAG, "onConnectionStateChange(): " + device.getAddress() + ", " + newState);
 
             mapMacDevice.put(device.getAddress(), device);
-            data.put(device.getAddress(), new ArrayList<byte[]>());
+            HashMap<Integer, ArrayList<byte[]>> bytes = new HashMap<>();
+            data.put(device.getAddress(), bytes);
 
             int state;
             HashMap<String, Object> mapInfoValue = new HashMap<>();

@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/neighbors.dart';
@@ -14,6 +15,8 @@ import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {
+  static const String TAG = "[WrapperConn]";
+
   HashMap<String, AdHocDevice> _mapMacDevices;
 
   HashMap<String, NetworkManager> mapAddrNetwork;
@@ -52,7 +55,6 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   bool broadcast(MessageAdHoc message) {
-    print('wrapper');
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.values.forEach((network) async {
         if (network != null)
@@ -80,6 +82,8 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   void receivedPeerMessage(Header header, NetworkManager network) {
+    if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}');
+
     AdHocDevice adHocDevice = AdHocDevice(
       label: header.label,
       address: header.address,

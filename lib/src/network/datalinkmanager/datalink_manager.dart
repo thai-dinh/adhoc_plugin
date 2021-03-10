@@ -145,7 +145,6 @@ class DataLinkManager {
   }
 
   Future<bool> broadcastObject(Object object) async {
-    print('datalink');
     bool sent = false;
     for (AbstractWrapper wrapper in _wrappers) {
       if (wrapper.enabled) {

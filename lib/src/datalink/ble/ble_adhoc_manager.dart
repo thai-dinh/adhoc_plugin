@@ -153,8 +153,8 @@ class BleAdHocManager {
 
   static void closeGattServer() => _channel.invokeMethod('closeGattServer');
 
-  static Future<void> gattServerSendMessage(MessageAdHoc message, String mac) async {
-    await _channel.invokeMethod('sendMessage', <String, String>{
+  static Future<bool> gattServerSendMessage(MessageAdHoc message, String mac) async {
+    return await _channel.invokeMethod('sendMessage', <String, String>{
       'mac': mac,
       'message': json.encode(message.toJson()),
     });
