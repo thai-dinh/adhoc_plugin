@@ -36,6 +36,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   bool _display = false;
   bool _requested = false;
   String _selected = 'None';
+  int _awaited = -1;
+  int _received = 0;
 
   HashMap<String, HashMap<int, Uint8List>> _buffer = HashMap();
 
@@ -79,23 +81,30 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             HashMap<String, dynamic> message = HashMap();
             message.putIfAbsent('type', () => _REPLY);
             message.putIfAbsent('seq', () => 0);
+            message.putIfAbsent('length', () => seq);
             message.putIfAbsent('name', () => data['name']);
             message.putIfAbsent('song', () => bytes.sublist(start, bytes.length));
             _manager.sendMessageTo(message, peer);
             break;
 
           case _REPLY:
+            _received++;
+
             String name = data['name'];
             int seq = data['seq'];
+            List<int> song = (data['song'] as List<dynamic>).cast<int>();
             if (!_buffer.containsKey(name)) {
               HashMap<int, Uint8List> bytes = HashMap();
-              bytes.putIfAbsent(seq, () => data['song']);
+              bytes.putIfAbsent(seq, () => Uint8List.fromList(song));
               _buffer.putIfAbsent(name, () => bytes);
             } else {
-              _buffer[name].putIfAbsent(seq, () => data['song']);
+              _buffer[name].putIfAbsent(seq, () => Uint8List.fromList(song));
             }
 
-            if (seq == 0) {
+            if (seq == 0)
+              _awaited = data['length'];
+
+            if (_awaited == _received) {
               BytesBuilder builder = BytesBuilder();
               for (int i = 1; i < _buffer[name].length; i++)
                 builder.add(_buffer[name][i]);
@@ -105,13 +114,22 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               File tempFile = File('${tempDir.path}/$name');
               await tempFile.writeAsBytes(builder.toBytes(), flush: true);
 
-              _peersPlaylist.update(peer, (value) {
-                value.putIfAbsent(
-                  name, 
-                  () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
-                );
-                return value;
-              });
+              HashMap<String, PlatformFile> payload = HashMap();
+              payload.putIfAbsent(
+                name, 
+                () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
+              );
+
+              _peersPlaylist.update(peer, 
+                (value) {
+                  value.putIfAbsent(
+                    name, 
+                    () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
+                  );
+                  return value;
+                },
+                ifAbsent: () => payload,
+              );
 
               setState(() => _requested = false);
             }
@@ -370,7 +388,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           bytes: await File(file.path).readAsBytes(),
         );
 
-        print(song.bytes.length);
         _localPlaylist.putIfAbsent(file.name, () => song);
       }
 
