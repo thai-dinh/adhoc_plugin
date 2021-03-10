@@ -29,6 +29,7 @@ class WrapperWifi extends WrapperConnOriented {
   bool _isDiscovering;
   bool _isGroupOwner;
   bool _isListening;
+  bool _isConnecting;
   HashMap<String, String> _mapAddrMac;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   WifiAdHocManager _wifiManager;
@@ -37,7 +38,9 @@ class WrapperWifi extends WrapperConnOriented {
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
+    this._isGroupOwner = false;
     this._isListening = false;
+    this._isConnecting = false;
     this.type = Service.WIFI;
     this.init(verbose, config);
   }
@@ -194,7 +197,10 @@ class WrapperWifi extends WrapperConnOriented {
       }
     } else if (isConnected && !_isGroupOwner) {
       _groupOwnerAddr = groupOwnerAddress;
-      _connect(_serverPort);
+      if (!_isConnecting) {
+        _connect(_serverPort);
+        _isConnecting = true;
+      }
     }
   }
 

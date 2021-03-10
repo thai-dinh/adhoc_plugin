@@ -17,7 +17,7 @@ class WifiServer extends ServiceServer {
   StreamController<ConnectionEvent> _connectCtrl;
   StreamController<MessageAdHoc> _messageCtrl;
   StreamSubscription<Socket> _listenStreamSub;
-  HashMap<String, List<Uint8List>> _mapNameData;
+  HashMap<String, List<String>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
   HashMap<String, Socket> _mapIpSocket;
   ServerSocket _serverSocket;
@@ -50,23 +50,43 @@ class WifiServer extends ServiceServer {
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {
-            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.port}');
+            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.remotePort}');
+
+            int index = 0;
+            String strMessage = Utf8Decoder().convert(data), prefix = '';
+            while (strMessage[index].compareTo('/') != 0) {
+              prefix += strMessage[index];
+              index++;
+            }
+
+            index++;
 
             _mapNameData.update(
-              remoteAddress, 
-              (value) => value..add(data), 
-              ifAbsent: () => List<Uint8List>.empty(growable: true)
+              remoteAddress,
+              (value) {
+                value.add(strMessage.substring(index));
+                return value;
+              }, 
+              ifAbsent: () {
+                List<String> list = List.empty(growable: true);
+                list.add(strMessage.substring(index));
+                return list;
+              }
             );
 
-            if (data[0] == 0) {
-              _messageCtrl.add(processMessage(_mapNameData[remoteAddress]));
+            if (prefix.compareTo('0') == 0) {
+              StringBuffer buffer = StringBuffer();
+              _mapNameData[remoteAddress].forEach((subString) {
+                buffer.write(subString);
+              });
+
+              _messageCtrl.add(MessageAdHoc.fromJson(json.decode(buffer.toString())));
+
               _mapNameData.update(
                 remoteAddress, 
-                (value) => List<Uint8List>.empty(growable: true), 
+                (value) => List.empty(growable: true), 
               );
             }
-            // for (MessageAdHoc msg in splitMessages(Utf8Decoder().convert(data)))
-            //   _messageCtrl.add(msg);
           },
           onError: (error) {
             // Error reported below as it is the same instance of 'error' below

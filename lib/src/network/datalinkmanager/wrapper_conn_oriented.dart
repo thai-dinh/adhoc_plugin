@@ -82,7 +82,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   void receivedPeerMessage(Header header, NetworkManager network) {
-    if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}');
+    if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}, $network');
 
     AdHocDevice adHocDevice = AdHocDevice(
       label: header.label,

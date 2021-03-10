@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
@@ -56,23 +55,18 @@ class WifiClient extends ServiceClient {
   void send(MessageAdHoc message) {
     if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
-    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
-    int mtu = 10000, length = msg.length, start = 0, end = mtu;
-    int index = 1;
+    String msg = json.encode(message.toJson());
+    int mtu = 10000, length = msg.length, start = 0, end = mtu, index = 1;
 
     while (length > mtu) {
-      chunk = msg.sublist(start, end);
-      List<int> tmp = [index % UINT8_SIZE] + chunk.toList();
-      _socket.write(tmp);
+      _socket.write(index.toString() + '/' + msg.substring(start, end));
       index++;
       start = end;
       end += mtu;
       length -= mtu;
     }
 
-    chunk = msg.sublist(start, msg.length);
-    List<int> tmp = [MESSAGE_END] + chunk.toList();
-    _socket.write(tmp);
+    _socket.write(0.toString() + '/' + msg.substring(start, msg.length));
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -80,7 +74,7 @@ class WifiClient extends ServiceClient {
   Future<void> _connect(int attempts, Duration delay) async {
     try {
       await _connectionAttempt();
-    } on NoConnectionException {
+    } on SocketException {
       if (attempts > 0) {
         if (verbose)
           log(ServiceClient.TAG, 'Connection attempt $attempts failed');
