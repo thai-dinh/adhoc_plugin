@@ -17,10 +17,12 @@ class WifiServer extends ServiceServer {
   StreamController<ConnectionEvent> _connectCtrl;
   StreamController<MessageAdHoc> _messageCtrl;
   StreamSubscription<Socket> _listenStreamSub;
-  HashMap<String, List<String>> _mapNameData;
+  HashMap<String, HashMap<int, String>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
   HashMap<String, Socket> _mapIpSocket;
   ServerSocket _serverSocket;
+
+  StringBuffer _buffer = StringBuffer();
 
   WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     WifiAdHocManager.setVerbose(verbose);
@@ -52,40 +54,31 @@ class WifiServer extends ServiceServer {
           (data) async {
             if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.remotePort}');
 
-            int index = 0;
-            String strMessage = Utf8Decoder().convert(data), prefix = '';
-            while (strMessage[index].compareTo('/') != 0) {
-              prefix += strMessage[index];
-              index++;
-            }
+            _mapNameData.putIfAbsent(remoteAddress, () => HashMap());
 
-            index++;
-
-            _mapNameData.update(
-              remoteAddress,
-              (value) {
-                value.add(strMessage.substring(index));
-                return value;
-              }, 
-              ifAbsent: () {
-                List<String> list = List.empty(growable: true);
-                list.add(strMessage.substring(index));
-                return list;
+            String msg = Utf8Decoder().convert(data);
+            if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
+              print('Well formed');
+              _messageCtrl.add(MessageAdHoc.fromJson(json.decode(msg)));
+            } else if (msg[0].compareTo('{') == 0) {
+              if (msg.contains('}')) {
+                print('Well formed + Overflow');
+                _buffer.write(msg.substring(0, msg.indexOf('}')));
+                _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
+                _buffer.clear();
+                _buffer.write(msg.substring(msg.indexOf('}')+1));
+              } else {
+                print('Body');
+                _buffer.write(msg);
               }
-            );
-
-            if (prefix.compareTo('0') == 0) {
-              StringBuffer buffer = StringBuffer();
-              _mapNameData[remoteAddress].forEach((subString) {
-                buffer.write(subString);
-              });
-
-              _messageCtrl.add(MessageAdHoc.fromJson(json.decode(buffer.toString())));
-
-              _mapNameData.update(
-                remoteAddress, 
-                (value) => List.empty(growable: true), 
-              );
+            } else if (msg.contains('}')) {
+              print('End body');
+              _buffer.write(msg.substring(0, msg.indexOf('}')));
+              _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
+              _buffer.clear();
+              _buffer.write(msg.substring(msg.indexOf('}')+1));
+            } else {
+              print('To handle');
             }
           },
           onError: (error) {
@@ -96,7 +89,8 @@ class WifiServer extends ServiceServer {
             _closeSocket(remoteAddress);
             _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
           }
-        ));
+        )
+        );
 
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: remoteAddress));
       },
@@ -125,7 +119,17 @@ class WifiServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (verbose) log(ServiceServer.TAG, 'send() to $remoteAddress');
 
-    _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
+    String msg = json.encode(message.toJson());
+    int mtu = 10000, length = msg.length, start = 0, end = mtu;
+
+    while (length > mtu) {
+      _mapIpSocket[remoteAddress].write(msg.substring(start, end));
+      start = end;
+      end += mtu;
+      length -= mtu;
+    }
+
+    _mapIpSocket[remoteAddress].write(msg.substring(start, msg.length));
   }
 
   Future<void> cancelConnection(String remoteAddress) async {

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
@@ -18,6 +17,8 @@ class WifiClient extends ServiceClient {
   Socket _socket;
   String _serverIp;
   int _port;
+
+  StringBuffer _buffer = StringBuffer();
 
   void Function(String) _connectListener;
 
@@ -52,21 +53,20 @@ class WifiClient extends ServiceClient {
     _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
   }
 
-  void send(MessageAdHoc message) {
+  void send(MessageAdHoc message) async {
     if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
     String msg = json.encode(message.toJson());
-    int mtu = 10000, length = msg.length, start = 0, end = mtu, index = 1;
+    int mtu = 10000, length = msg.length, start = 0, end = mtu;
 
     while (length > mtu) {
-      _socket.write(index.toString() + '/' + msg.substring(start, end));
-      index++;
+      _socket.write(msg.substring(start, end));
       start = end;
       end += mtu;
       length -= mtu;
     }
 
-    _socket.write(0.toString() + '/' + msg.substring(start, msg.length));
+    _socket.write(msg.substring(start, msg.length));
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -115,8 +115,30 @@ class WifiClient extends ServiceClient {
       (data) {
         if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
 
-        for (MessageAdHoc msg in splitMessages(Utf8Decoder().convert(data)))
-          _messageCtrl.add(msg);
+        String msg = Utf8Decoder().convert(data);
+        if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
+          print('Well formed');
+          _messageCtrl.add(MessageAdHoc.fromJson(json.decode(msg)));
+        } else if (msg[0].compareTo('{') == 0) {
+          if (msg.contains('}')) {
+            print('Well formed + Overflow');
+            _buffer.write(msg.substring(0, msg.indexOf('}')));
+            _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
+            _buffer.clear();
+            _buffer.write(msg.substring(msg.indexOf('}')+1));
+          } else {
+            print('Body');
+            _buffer.write(msg);
+          }
+        } else if (msg.contains('}')) {
+          print('End body');
+          _buffer.write(msg.substring(0, msg.indexOf('}')));
+          _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
+          _buffer.clear();
+          _buffer.write(msg.substring(msg.indexOf('}')+1));
+        } else {
+          print('To handle');
+        }
       },
       onError: (error) {
         _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));

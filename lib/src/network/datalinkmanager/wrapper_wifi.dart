@@ -262,6 +262,7 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _processMsgReceived(MessageAdHoc message) {
+    print(message.header.messageType);
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
