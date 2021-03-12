@@ -20,9 +20,8 @@ class WifiServer extends ServiceServer {
   HashMap<String, HashMap<int, String>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
   HashMap<String, Socket> _mapIpSocket;
+  HashMap<String, StringBuffer> _mapIpBuffer;
   ServerSocket _serverSocket;
-
-  StringBuffer _buffer = StringBuffer();
 
   WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     WifiAdHocManager.setVerbose(verbose);
@@ -31,6 +30,7 @@ class WifiServer extends ServiceServer {
     this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
+    this._mapIpBuffer = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -55,17 +55,18 @@ class WifiServer extends ServiceServer {
             if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.remotePort}');
 
             _mapNameData.putIfAbsent(remoteAddress, () => HashMap());
+            _mapIpBuffer.putIfAbsent(remoteAddress, () => StringBuffer());
 
             String msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
               _messageCtrl.add(MessageAdHoc.fromJson(json.decode(msg)));
             } else if (msg[msg.length-1].compareTo('}') == 0) {
-              _buffer.write(msg);
-              for (MessageAdHoc _msg in splitMessages(_buffer.toString()))
+              _mapIpBuffer[remoteAddress].write(msg);
+              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString()))
                 _messageCtrl.add(_msg);
-              _buffer.clear();
+              _mapIpBuffer[remoteAddress].clear();
             } else {
-              _buffer.write(msg);
+              _mapIpBuffer[remoteAddress].write(msg);
             }
           },
           onError: (error) {

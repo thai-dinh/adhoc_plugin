@@ -75,6 +75,10 @@ public class WifiAdHocManager implements MethodCallHandler {
         case "isWifiEnabled":
             result.success(isWifiEnabled());
             break;
+        case "currentName":
+            final String currentName = call.arguments();
+            currentAdapterName = currentName;
+            break;
         case "getAdapterName":
             result.success(getAdapterName());
             break;

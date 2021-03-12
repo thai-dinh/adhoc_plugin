@@ -49,8 +49,13 @@ class WifiAdHocManager {
     });
 
     _wifiP2p.thisDeviceChangeStream.listen(
-      (wifiP2pDevice) async =>
-        _onWifiReady(await _wifiP2p.ownIp, await _wifiP2p.mac)
+      (wifiP2pDevice) async {
+        _onWifiReady(await _wifiP2p.ownIp, await _wifiP2p.mac);
+        _channel.invokeMethod(
+          'currentName', 
+          wifiP2pDevice.name.substring(wifiP2pDevice.name.indexOf(' ')+1)
+        );
+      }
     );
 
     await _wifiP2p.register();

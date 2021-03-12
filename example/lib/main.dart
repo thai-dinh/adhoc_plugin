@@ -51,17 +51,57 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         Map<String, dynamic> data = event.extra as Map;
         switch (data['type']) {
           case _PLAYLIST:
-            HashMap<String, PlatformFile> payload = HashMap();
-            setState(() => (data['playlist'] as List).forEach((name) {
-              payload.putIfAbsent(name, () => null);
-              _playlist.add(Pair(peer.name, name));
+            print('_PLAYLIST |${peer.name}|');
+
+            HashMap<String, PlatformFile> received;
+            HashSet<AdHocDevice> setDevices = _manager.setRemoteDevices;
+            List<Pair<String, String>> list = List.empty(growable: true);
+            List<String> peerNames = (data['peerNames'] as List).cast<String>();
+            List<String> songNames = (data['songNames'] as List).cast<String>();
+            String name = '';
+
+            for (int i = 0; i < peerNames.length; i++) {
+              String _peerName = peerNames[i];
+              if (_peerName.compareTo('local') == 0)
+                _peerName = peer.name;
+              list.add(Pair(_peerName, songNames[i]));
+            }
+
+            while (list.length > 0) {
+              name = list.first.first;
+
+              received = HashMap();
+              Iterable<Pair<String, String>> it = list.where((element) => element.first == name);
+              it.forEach((element) => received.putIfAbsent(element.last, () => null));
+
+              Iterable<AdHocDevice> itAd = setDevices.where((element) => element.name == name);
               _peersPlaylist.update(
-                peer, (value) => data['playlist'], ifAbsent: () => payload
+                itAd.isEmpty ? peer : itAd.first,
+                (value) {
+                  value.addAll(received);
+                  return value;
+                },
+                ifAbsent: () => received
               );
-            }));
+              list.removeWhere((element) => element.first == name);
+            }
+
+            setState(() {
+              _peersPlaylist.forEach(
+                (peer, map) {
+                  map.forEach((name, file) {
+                    Pair<String, String> pair = Pair(peer.name, name);
+                    if (!_playlist.contains(pair))
+                      _playlist.add(pair); 
+                  });
+                }
+              );
+            });
             break;
 
           case _REQUEST:
+            print('_REQUEST |${peer.name}|');
+
             Uint8List bytes = _localPlaylist[data['name']].bytes;
             int length = bytes.length, seq = 1, start = 0, end = _MAX_SIZE;
             while (length > _MAX_SIZE) {
@@ -88,6 +128,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             break;
 
           case _REPLY:
+            print('_REPLY |${peer.name}|');
             _received++;
 
             String name = data['name'];
@@ -120,7 +161,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                 () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
               );
 
-              _peersPlaylist.update(peer, 
+              _peersPlaylist.update(peer,
                 (value) {
                   value.putIfAbsent(
                     name, 
@@ -132,6 +173,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               );
 
               setState(() => _requested = false);
+              _received = 0;
             }
             break;
 
@@ -166,15 +208,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                   switch (result) {
                     case MenuOptions.add:
                       await _openFileExplorer();
-                      setState(() { 
-                        _localPlaylist.forEach(
-                          (name, song) {
-                            Pair pair = Pair('local', name);
-                            if (!_playlist.contains(pair))
-                              _playlist.add(Pair('local', name)); 
-                          }
-                        );
-                      });
                       break;
 
                     case MenuOptions.search:
@@ -246,12 +279,17 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                 onTap: () async {
                                   await _manager.connect(device);
 
-                                  List<String> payload = List.empty(growable: true);
-                                  _localPlaylist.forEach((name, file) => payload.add(name));
+                                  List<String> peerNames = List.empty(growable: true);
+                                  List<String> songNames = List.empty(growable: true);
+                                  _playlist.forEach((element) {
+                                    peerNames.add(element.first);
+                                    songNames.add(element.last);
+                                  });
 
                                   HashMap<String, dynamic> message = HashMap();
                                   message.putIfAbsent('type', () => _PLAYLIST);
-                                  message.putIfAbsent('playlist', () => payload);
+                                  message.putIfAbsent('peerNames', () => peerNames);
+                                  message.putIfAbsent('songNames', () => songNames);
                                   _manager.broadcast(message);
 
                                   Future.delayed(Duration(seconds: 2), () => _manager.broadcast(message));
@@ -284,6 +322,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                       AdHocDevice dest;
                                       PlatformFile song;
                                       String peerName = _playlist.where((pair) => pair.last == _selected).first.first;
+                                      print('|$peerName|');
                                       if (peerName.compareTo('local') == 0) {
                                         song = _localPlaylist[_selected];
                                       } else {
@@ -391,12 +430,27 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         _localPlaylist.putIfAbsent(file.name, () => song);
       }
 
-      List<String> payload = List.empty(growable: true);
-      _localPlaylist.forEach((name, file) => payload.add(name));
+      setState(() {
+        _localPlaylist.forEach(
+          (name, song) {
+            Pair<String, String> pair = Pair('local', name);
+            if (!_playlist.contains(pair))
+              _playlist.add(pair); 
+          }
+        );
+      });
+
+      List<String> peerNames = List.empty(growable: true);
+      List<String> songNames = List.empty(growable: true);
+      _playlist.forEach((element) {
+        peerNames.add(element.first);
+        songNames.add(element.last);
+      });
 
       HashMap<String, dynamic> message = HashMap();
       message.putIfAbsent('type', () => _PLAYLIST);
-      message.putIfAbsent('playlist', () => payload);
+      message.putIfAbsent('peerNames', () => peerNames);
+      message.putIfAbsent('songNames', () => songNames);
       _manager.broadcast(message);
     }
   }

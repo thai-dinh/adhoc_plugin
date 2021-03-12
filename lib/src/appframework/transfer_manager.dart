@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:core';
 
 import 'package:adhoclibrary/src/appframework/config.dart';
@@ -23,6 +24,8 @@ class TransferManager {
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
+
+  HashSet<AdHocDevice> get setRemoteDevices => _dataLinkManager.setRemoteDevices;
 
   Stream<AdHocEvent> get eventStream => _aodvManager.eventStream;
 
