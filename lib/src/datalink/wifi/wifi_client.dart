@@ -57,7 +57,7 @@ class WifiClient extends ServiceClient {
     if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
     String msg = json.encode(message.toJson());
-    int mtu = 10000, length = msg.length, start = 0, end = mtu;
+    int mtu = 7500, length = msg.length, start = 0, end = mtu;
 
     while (length > mtu) {
       _socket.write(msg.substring(start, end));
@@ -117,27 +117,14 @@ class WifiClient extends ServiceClient {
 
         String msg = Utf8Decoder().convert(data);
         if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          print('Well formed');
           _messageCtrl.add(MessageAdHoc.fromJson(json.decode(msg)));
-        } else if (msg[0].compareTo('{') == 0) {
-          if (msg.contains('}')) {
-            print('Well formed + Overflow');
-            _buffer.write(msg.substring(0, msg.indexOf('}')));
-            _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
-            _buffer.clear();
-            _buffer.write(msg.substring(msg.indexOf('}')+1));
-          } else {
-            print('Body');
-            _buffer.write(msg);
-          }
-        } else if (msg.contains('}')) {
-          print('End body');
-          _buffer.write(msg.substring(0, msg.indexOf('}')));
-          _messageCtrl.add(MessageAdHoc.fromJson(json.decode(_buffer.toString())));
+        } else if (msg[msg.length-1].compareTo('}') == 0) {
+          _buffer.write(msg);
+          for (MessageAdHoc _msg in splitMessages(_buffer.toString()))
+            _messageCtrl.add(_msg);
           _buffer.clear();
-          _buffer.write(msg.substring(msg.indexOf('}')+1));
         } else {
-          print('To handle');
+          _buffer.write(msg);
         }
       },
       onError: (error) {
