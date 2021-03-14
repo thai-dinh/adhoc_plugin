@@ -18,7 +18,7 @@ class TransferManager {
 
   TransferManager(bool verbose, {Config config}) {
     this._verbose = verbose;
-    this._aodvManager = AodvManager(_verbose, (config == null) ? Config() : config);
+    this._aodvManager = AodvManager(_verbose, (config == null) ? Config() : config..connectionFlooding = true);
     this._dataLinkManager = _aodvManager.dataLinkManager;
     this._dataLinkManager.enableAll((state) { });
   }

@@ -59,12 +59,18 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             List<String> songNames = (data['songNames'] as List).cast<String>();
             String name = '';
 
+            print('DEBUG 0:');
             for (int i = 0; i < peerNames.length; i++) {
               String _peerName = peerNames[i];
               if (_peerName.compareTo('local') == 0)
                 _peerName = peer.name;
+              print('($_peerName, ${songNames[i]})');
               list.add(Pair(_peerName, songNames[i]));
             }
+            print('----------');
+            _playlist.forEach((element) {
+              print(element.toString());
+            });
 
             while (list.length > 0) {
               name = list.first.first;
@@ -85,6 +91,11 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               list.removeWhere((element) => element.first == name);
             }
 
+            print('DEBUG 1:');
+            _playlist.forEach((element) {
+              print(element.toString());
+            });
+
             setState(() {
               _peersPlaylist.forEach(
                 (peer, map) {
@@ -95,6 +106,11 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                   });
                 }
               );
+            });
+
+            print('DEBUG 2:');
+            _playlist.forEach((element) {
+              print(element.toString());
             });
 
             _updatePlaylist(peer: peer, except: true);
@@ -417,7 +433,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     message.putIfAbsent('songNames', () => songNames);
     if (peer == null) {
       return _manager.broadcast(message);
-    } else if (except) {
+    } else if (except != null && except) {
       return _manager.broadcastExcept(message, peer);
     } else {
       _manager.sendMessageTo(message, peer);
@@ -447,7 +463,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           (name, song) {
             Pair<String, String> pair = Pair('local', name);
             if (!_playlist.contains(pair))
-              _playlist.add(pair); 
+              _playlist.add(pair);
           }
         );
       });
