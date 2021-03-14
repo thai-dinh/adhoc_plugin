@@ -179,6 +179,20 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
           default:
         }
+      } else if (event.type == AbstractWrapper.CONNECTION_EVENT) {
+        AdHocDevice peer = event.payload as AdHocDevice;
+        List<String> peerNames = List.empty(growable: true);
+        List<String> songNames = List.empty(growable: true);
+        _playlist.forEach((element) {
+          peerNames.add(element.first);
+          songNames.add(element.last);
+        });
+
+        HashMap<String, dynamic> message = HashMap();
+        message.putIfAbsent('type', () => _PLAYLIST);
+        message.putIfAbsent('peerNames', () => peerNames);
+        message.putIfAbsent('songNames', () => songNames);
+        _manager.sendMessageTo(message, peer);
       }
     });
 
