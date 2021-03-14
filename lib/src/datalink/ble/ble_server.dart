@@ -106,6 +106,6 @@ class BleServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
-    await BleAdHocManager.gattServerSendMessage(message, mac);
+    print(await BleAdHocManager.gattServerSendMessage(message, mac));
   }
 }

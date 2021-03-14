@@ -190,6 +190,15 @@ public class GattServerManager {
             if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress() + ", " + mtu);
             mapMacMtu.put(device.getAddress(), new Short((short) mtu));
         }
+
+        @Override
+        public void onNotificationSent (BluetoothDevice device, int status) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                if (verbose) Log.d(TAG, "onNotificationSent(): failed");
+            } else {
+                if (verbose) Log.d(TAG, "onNotificationSent(): success");
+            }
+        }
     };
 
     public boolean writeToCharacteristic(String message, String mac) throws IOException {

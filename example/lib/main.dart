@@ -29,6 +29,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
   final TransferManager _manager = TransferManager(true);
   final HashMap<AdHocDevice, HashMap<String, PlatformFile>> _peersPlaylist = HashMap();
+  final HashMap<String, HashMap<int, Uint8List>> _buffer = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
   final List<AdHocDevice> _discoveredDevices = List.empty(growable: true);
   final List<Pair<String, String>> _playlist  = List.empty(growable: true);
@@ -38,8 +39,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   String _selected = 'None';
   int _awaited = -1;
   int _received = 0;
-
-  HashMap<String, HashMap<int, Uint8List>> _buffer = HashMap();
 
   @override
   void initState() {
@@ -97,6 +96,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                 }
               );
             });
+
+            _updatePlaylist(peer: peer, except: true);
             break;
 
           case _REQUEST:
@@ -181,18 +182,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         }
       } else if (event.type == AbstractWrapper.CONNECTION_EVENT) {
         AdHocDevice peer = event.payload as AdHocDevice;
-        List<String> peerNames = List.empty(growable: true);
-        List<String> songNames = List.empty(growable: true);
-        _playlist.forEach((element) {
-          peerNames.add(element.first);
-          songNames.add(element.last);
-        });
-
-        HashMap<String, dynamic> message = HashMap();
-        message.putIfAbsent('type', () => _PLAYLIST);
-        message.putIfAbsent('peerNames', () => peerNames);
-        message.putIfAbsent('songNames', () => songNames);
-        _manager.sendMessageTo(message, peer);
+        _updatePlaylist(peer: peer);
       }
     });
 
@@ -292,21 +282,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                 subtitle: Center(child: Text(device.mac)),
                                 onTap: () async {
                                   await _manager.connect(device);
-
-                                  List<String> peerNames = List.empty(growable: true);
-                                  List<String> songNames = List.empty(growable: true);
-                                  _playlist.forEach((element) {
-                                    peerNames.add(element.first);
-                                    songNames.add(element.last);
-                                  });
-
-                                  HashMap<String, dynamic> message = HashMap();
-                                  message.putIfAbsent('type', () => _PLAYLIST);
-                                  message.putIfAbsent('peerNames', () => peerNames);
-                                  message.putIfAbsent('songNames', () => songNames);
-                                  _manager.broadcast(message);
-
-                                  Future.delayed(Duration(seconds: 2), () => _manager.broadcast(message));
+                                  Future.delayed(Duration(seconds: 2), () => _updatePlaylist());
                                   setState(() {
                                     _discoveredDevices.removeWhere(
                                       (element) => (element.mac == device.mac)
@@ -427,6 +403,28 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     );
   }
 
+  Future<bool> _updatePlaylist({AdHocDevice peer, bool except}) async {
+    List<String> peerNames = List.empty(growable: true);
+    List<String> songNames = List.empty(growable: true);
+    _playlist.forEach((element) {
+      peerNames.add(element.first);
+      songNames.add(element.last);
+    });
+
+    HashMap<String, dynamic> message = HashMap();
+    message.putIfAbsent('type', () => _PLAYLIST);
+    message.putIfAbsent('peerNames', () => peerNames);
+    message.putIfAbsent('songNames', () => songNames);
+    if (peer == null) {
+      return _manager.broadcast(message);
+    } else if (except) {
+      return _manager.broadcastExcept(message, peer);
+    } else {
+      _manager.sendMessageTo(message, peer);
+      return true;
+    }
+  }
+
   Future<void> _openFileExplorer() async {
     FilePickerResult result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
@@ -454,18 +452,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         );
       });
 
-      List<String> peerNames = List.empty(growable: true);
-      List<String> songNames = List.empty(growable: true);
-      _playlist.forEach((element) {
-        peerNames.add(element.first);
-        songNames.add(element.last);
-      });
-
-      HashMap<String, dynamic> message = HashMap();
-      message.putIfAbsent('type', () => _PLAYLIST);
-      message.putIfAbsent('peerNames', () => peerNames);
-      message.putIfAbsent('songNames', () => songNames);
-      _manager.broadcast(message);
+      _updatePlaylist();
     }
   }
 }
