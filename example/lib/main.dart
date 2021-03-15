@@ -164,9 +164,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
               _peersPlaylist.update(peer,
                 (value) {
-                  value.putIfAbsent(
-                    name, 
-                    () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
+                  value.update(
+                    name,
+                    (value) => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
                   );
                   return value;
                 },
@@ -315,15 +315,25 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                       if (peerName.compareTo('local') == 0) {
                                         song = _localPlaylist[_selected];
                                       } else {
+                                        bool found = false;
                                         _peersPlaylist.forEach((peer, playlist) { 
-                                          if (peer.name.compareTo(peerName) == 0)
+                                          if (peer.name.compareTo(peerName) == 0 && found == false) {
                                             dest = peer;
+                                            if (_peersPlaylist[dest][_selected] != null)
+                                              found = true;
+                                          }
                                         });
 
                                         song = _peersPlaylist[dest][_selected];
                                       }
 
                                       if (song == null) {
+                                        _peersPlaylist.forEach((key, value) {
+                                          value.forEach((_key, _value) { 
+                                            print('${key.name}: $_key, $_value');
+                                          });
+                                        });
+
                                         HashMap<String, dynamic> message = HashMap();
                                         message.putIfAbsent('type', () => _REQUEST);
                                         message.putIfAbsent('name', () => _selected);
