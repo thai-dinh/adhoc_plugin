@@ -117,7 +117,8 @@ class WifiClient extends ServiceClient {
 
         String msg = Utf8Decoder().convert(data);
         if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          _messageCtrl.add(MessageAdHoc.fromJson(json.decode(msg)));
+          for (MessageAdHoc _msg in splitMessages(msg))
+            _messageCtrl.add(_msg);
         } else if (msg[msg.length-1].compareTo('}') == 0) {
           _buffer.write(msg);
           for (MessageAdHoc _msg in splitMessages(_buffer.toString()))

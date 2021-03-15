@@ -59,18 +59,12 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             List<String> songNames = (data['songNames'] as List).cast<String>();
             String name = '';
 
-            print('DEBUG 0:');
             for (int i = 0; i < peerNames.length; i++) {
               String _peerName = peerNames[i];
               if (_peerName.compareTo('local') == 0)
                 _peerName = peer.name;
-              print('($_peerName, ${songNames[i]})');
               list.add(Pair(_peerName, songNames[i]));
             }
-            print('----------');
-            _playlist.forEach((element) {
-              print(element.toString());
-            });
 
             while (list.length > 0) {
               name = list.first.first;
@@ -91,11 +85,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               list.removeWhere((element) => element.first == name);
             }
 
-            print('DEBUG 1:');
-            _playlist.forEach((element) {
-              print(element.toString());
-            });
-
             setState(() {
               _peersPlaylist.forEach(
                 (peer, map) {
@@ -106,11 +95,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                   });
                 }
               );
-            });
-
-            print('DEBUG 2:');
-            _playlist.forEach((element) {
-              print(element.toString());
             });
 
             _updatePlaylist(peer: peer, except: true);
@@ -328,7 +312,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                                       AdHocDevice dest;
                                       PlatformFile song;
                                       String peerName = _playlist.where((pair) => pair.last == _selected).first.first;
-                                      print('|$peerName|');
                                       if (peerName.compareTo('local') == 0) {
                                         song = _localPlaylist[_selected];
                                       } else {
