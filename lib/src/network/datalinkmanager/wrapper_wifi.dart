@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -41,6 +42,7 @@ class WrapperWifi extends WrapperConnOriented {
     this._isGroupOwner = false;
     this._isListening = false;
     this._isConnecting = false;
+    this.ownMac = Identifier();
     this.type = Service.WIFI;
     this.init(verbose, config);
   }
@@ -97,7 +99,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   @override
   Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
-    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac];
+    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac.wifi];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
       await _wifiManager.connect(adHocDevice.mac.wifi);

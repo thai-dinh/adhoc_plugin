@@ -6,6 +6,7 @@ import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -67,13 +68,13 @@ class BleServer extends ServiceServer {
       String strMessage = Utf8Decoder().convert(messageAsListByte);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
 
-      if (message.header.mac.ble.compareTo('') == 0) {
+      if (message.header.mac == null || message.header.mac.ble.compareTo('') == 0) {
         message.header = Header(
           messageType: message.header.messageType,
           label: message.header.label,
           name: message.header.name,
           address: message.header.address,
-          mac: map['macAddress'],
+          mac: Identifier(ble: map['macAddress']),
           deviceType: message.header.deviceType
         );
       }
@@ -106,6 +107,6 @@ class BleServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
-    print(await BleAdHocManager.gattServerSendMessage(message, mac));
+    await BleAdHocManager.gattServerSendMessage(message, mac);
   }
 }

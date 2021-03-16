@@ -87,11 +87,11 @@ class AodvManager {
           _processAodvMsgReceived(event.payload);
           break;
         case AbstractWrapper.DEVICE_INFO_BLE:
-          _ownMac.ble = event.payload;
+          _ownMac = event.payload; // TODO
           _ownName = event.extra;
           break;
         case AbstractWrapper.DEVICE_INFO_WIFI:
-          _ownMac.wifi = event.payload;
+          _ownMac = event.payload; // TODO
           _ownName = event.extra;
           break;
 

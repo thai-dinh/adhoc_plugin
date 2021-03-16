@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoclibrary/adhoclibrary.dart';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
@@ -36,6 +37,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isInitialized = false;
+    this.ownMac = Identifier();
     this.type = Service.BLUETOOTHLE;
     this.init(verbose);
   }
@@ -94,7 +96,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   @override
   Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
-    BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.mac];
+    BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.mac.ble];
     if (bleAdHocDevice != null) {
       if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);

@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 
 import io.flutter.plugin.common.BinaryMessenger;
@@ -209,7 +210,7 @@ public class GattServerManager {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 10;
         int start = 0, end = mtu;
-        byte index = 1;
+        byte index = 1, cnt = 0;
 
         while (length > mtu) {
             outputStream.write(index);
@@ -218,10 +219,17 @@ public class GattServerManager {
             gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
             index++;
+            cnt++;
             start = end;
             end += mtu;
             length -= mtu;
             outputStream.reset();
+
+            if (cnt == 30) {
+                // notifyCharacteristicChanged can only send 30 consecutives in a burst
+                SystemClock.sleep(100);
+                cnt = 0;
+            }
         }
 
         outputStream.reset();
