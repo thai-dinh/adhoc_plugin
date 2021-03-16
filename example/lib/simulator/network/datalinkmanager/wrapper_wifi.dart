@@ -42,7 +42,7 @@ class WrapperWifi extends WrapperConnOriented {
   void init(bool verbose, [Config config]) {
     for (int i = 0; i < devices.length; i++) {
       if (i != index)
-        mapMacDevices.putIfAbsent(devices[i].mac, () => devices[i]);
+        mapMacDevices.putIfAbsent(devices[i].mac.wifi, () => devices[i]);
     }
 
     this._serverPort = (devices[index] as WifiAdHocDevice).port;
@@ -179,7 +179,7 @@ class WrapperWifi extends WrapperConnOriented {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
         _mapAddrMac.putIfAbsent(
-          remoteAddress, () => message.header.mac
+          remoteAddress, () => message.header.mac.wifi
         );
 
         serviceServer.send(
@@ -205,7 +205,7 @@ class WrapperWifi extends WrapperConnOriented {
 
       case AbstractWrapper.CONNECT_CLIENT:
         _mapAddrMac.putIfAbsent(
-          message.header.address, () => message.header.mac
+          message.header.address, () => message.header.mac.wifi
         );
 
         NetworkManager network = mapAddrNetwork[message.header.address];

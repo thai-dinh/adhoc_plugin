@@ -4,6 +4,7 @@ import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service_server.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -17,12 +18,13 @@ import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 abstract class WrapperConnOriented extends AbstractWrapper {
   static const String TAG = "[WrapperConn]";
 
-  HashMap<String, AdHocDevice> _mapMacDevices;
+  HashMap<Identifier, AdHocDevice> _mapMacDevices;
 
-  HashMap<String, NetworkManager> mapAddrNetwork;
   int attempts;
   Neighbors neighbors;
   ServiceServer serviceServer;
+
+  HashMap<String, NetworkManager> mapAddrNetwork;
 
   WrapperConnOriented(
     bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
@@ -36,7 +38,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
-    for (String macAddress in neighbors.labelMac.values)
+    for (Identifier macAddress in neighbors.labelMac.values)
       devices.add(_mapMacDevices[macAddress]);
 
     return devices;
@@ -82,9 +84,9 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   }
 
   void receivedPeerMessage(Header header, NetworkManager network) {
-    if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}, $network');
+    if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}');
 
-    AdHocDevice adHocDevice = AdHocDevice(
+    AdHocDevice device = AdHocDevice(
       label: header.label,
       address: header.address,
       name: header.name,
@@ -92,11 +94,22 @@ abstract class WrapperConnOriented extends AbstractWrapper {
       type: type
     );
 
-    _mapMacDevices.putIfAbsent(header.mac, () => adHocDevice);
+    Iterable<MapEntry<Identifier, AdHocDevice>> it = 
+      _mapMacDevices.entries.where(
+        (entry) => (header.mac.ble == entry.key.ble || header.mac.wifi == entry.key.wifi)
+      );
+
+    if (it.isNotEmpty)
+      _mapMacDevices.remove(it.first.value);
+
+    _mapMacDevices.putIfAbsent(header.mac, () => device);
+
     if (!neighbors.neighbors.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
 
-      setRemoteDevices.add(adHocDevice);
+      eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, device));
+
+      setRemoteDevices.add(device);
       if (connectionFlooding) {
         String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
@@ -128,16 +141,27 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     if (mac == null || mac.compareTo('') == 0)
       return;
 
-    AdHocDevice adHocDevice = _mapMacDevices[mac];
-    if (adHocDevice != null) {
-      String label = adHocDevice.label;
+    AdHocDevice device;
+    Iterable<MapEntry<Identifier, AdHocDevice>> it = 
+      _mapMacDevices.entries.where(
+        (entry) => (mac == entry.key.ble || mac == entry.key.wifi)
+      );
+    
+    if (it.isEmpty) {
+      device = null;
+    } else {
+      device = it.first.value;
+    }
+
+    if (device != null) {
+      String label = device.label;
 
       neighbors.remove(label);
-      mapAddrNetwork.remove(adHocDevice.address);
-      _mapMacDevices.remove(mac);
+      mapAddrNetwork.remove(device.address);
+      _mapMacDevices.removeWhere((identifier, device) => (mac == identifier.ble || mac == identifier.wifi));
 
-      eventCtrl.add(AdHocEvent(AbstractWrapper.BROKEN_LINK, adHocDevice.label));
-      eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, adHocDevice));
+      eventCtrl.add(AdHocEvent(AbstractWrapper.BROKEN_LINK, device.label));
+      eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, device));
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();
@@ -146,16 +170,16 @@ abstract class WrapperConnOriented extends AbstractWrapper {
         Header header = Header(
           messageType: AbstractWrapper.DISCONNECT_BROADCAST,
           label: label,
-          name: adHocDevice.name,
-          mac: adHocDevice.mac,
-          address: adHocDevice.address,
-          deviceType: adHocDevice.type
+          name: device.name,
+          mac: device.mac,
+          address: device.address,
+          deviceType: device.type
         );
 
         broadcastExcept(MessageAdHoc(header, id), label);
 
-        if (setRemoteDevices.contains(adHocDevice))
-          setRemoteDevices.remove(adHocDevice);
+        if (setRemoteDevices.contains(device))
+          setRemoteDevices.remove(device);
       }
     } else {
       throw NoConnectionException('Error while closing connection');

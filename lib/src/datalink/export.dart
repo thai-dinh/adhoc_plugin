@@ -12,6 +12,7 @@ export 'service/discovery_event.dart';
 export 'service/service_client.dart';
 export 'service/service_server.dart';
 export 'service/service.dart';
+export 'utils/identifier.dart';
 export 'utils/msg_adhoc.dart';
 export 'utils/msg_header.dart';
 export 'utils/utils.dart';

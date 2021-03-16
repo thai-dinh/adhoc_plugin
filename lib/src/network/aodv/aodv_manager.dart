@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
@@ -31,8 +32,8 @@ class AodvManager {
   HashMap<String, int> _mapDestSequenceNumber;
   StreamController<AdHocEvent> _eventCtrl;
 
+  Identifier _ownMac;
   String _ownName;
-  String _ownMac;
   String _ownLabel;
   int _ownSequenceNum;
   DataLinkManager _dataLink;
@@ -42,6 +43,7 @@ class AodvManager {
     this._aodvHelper = AodvHelper(_verbose);
     this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
     this._mapDestSequenceNumber = HashMap();
+    this._ownMac = Identifier();
     this._ownLabel = config.label;
     this._dataLink = DataLinkManager(_verbose, config);
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
@@ -84,8 +86,12 @@ class AodvManager {
         case AbstractWrapper.MESSAGE_EVENT:
           _processAodvMsgReceived(event.payload);
           break;
-        case AbstractWrapper.DEVICE_INFO:
-          _ownMac = event.payload;
+        case AbstractWrapper.DEVICE_INFO_BLE:
+          _ownMac.ble = event.payload;
+          _ownName = event.extra;
+          break;
+        case AbstractWrapper.DEVICE_INFO_WIFI:
+          _ownMac.wifi = event.payload;
           _ownName = event.extra;
           break;
 

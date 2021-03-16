@@ -47,7 +47,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     if (await BleAdHocManager.isEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this.ownName = await BleAdHocManager.getCurrentName();
-      this.ownMac = '';
       this._listenServer();
       this._initialize();
       this.enabled = true;
@@ -64,7 +63,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       this._bleAdHocManager.enableDiscovery(duration);
       this._bleAdHocManager.onEnableBluetooth(onEnable);
       this.ownName = await BleAdHocManager.getCurrentName();
-      this.ownMac = '';
       this._listenServer();
       this._initialize();
       this.enabled = true;
@@ -98,11 +96,11 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
     BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.mac];
     if (bleAdHocDevice != null) {
-      if (!serviceServer.containConnection(bleAdHocDevice.mac)) {
+      if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
-          adHocDevice.name + "(" + adHocDevice.mac + ") is already connected"
+          adHocDevice.name + "(" + adHocDevice.mac.ble + ") is already connected"
         );
       }
     }
@@ -153,8 +151,8 @@ class WrapperBluetoothLE extends WrapperConnOriented {
       switch (event.type) {
         case Service.DEVICE_DISCOVERED:
           BleAdHocDevice device = event.payload as BleAdHocDevice;
-          mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
+          mapMacDevices.putIfAbsent(device.mac.ble, () {
+            if (verbose) log(TAG, "Add " + device.mac.ble + " into mapMacDevices");
             return device;
           });
           break;
@@ -236,12 +234,12 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case AbstractWrapper.CONNECT_SERVER:
-        String mac = message.header.mac;
-        ownMac = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
+        String mac = message.header.mac.ble;
+        ownMac.ble = message.pdu as String;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID.toLowerCase();
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, ownMac, extra: ownName));
 
         serviceServer.send(
           MessageAdHoc(
@@ -268,10 +266,10 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         break;
 
       case AbstractWrapper.CONNECT_CLIENT:
-        ownMac = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
+        ownMac.ble = message.pdu as String;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '').toLowerCase();
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, ownMac, extra: ownName));
 
         receivedPeerMessage(
           message.header, mapAddrNetwork[message.header.address]

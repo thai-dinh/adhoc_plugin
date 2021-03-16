@@ -100,7 +100,7 @@ class WrapperWifi extends WrapperConnOriented {
     WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(adHocDevice.mac);
+      await _wifiManager.connect(adHocDevice.mac.wifi);
     }
   }
 
@@ -157,8 +157,8 @@ class WrapperWifi extends WrapperConnOriented {
       switch (event.type) {
         case Service.DEVICE_DISCOVERED:
           WifiAdHocDevice device = event.payload as WifiAdHocDevice;
-          mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
+          mapMacDevices.putIfAbsent(device.mac.wifi, () {
+            if (verbose) log(TAG, "Add " + device.mac.wifi + " into mapMacDevices");
             return device;
           });
           break;
@@ -206,7 +206,7 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _onWifiReady(String ipAddress, String mac) {
     _ownIpAddress = ipAddress;
-    ownMac = mac;
+    ownMac.wifi = mac;
   }
 
   void _onEvent(Service service) {
@@ -246,7 +246,7 @@ class WrapperWifi extends WrapperConnOriented {
       );
 
       ownName = await _wifiManager.adapterName;
-      eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+      eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, ownMac, extra: ownName));
 
       wifiClient.send(MessageAdHoc(
         Header(
@@ -269,11 +269,11 @@ class WrapperWifi extends WrapperConnOriented {
       case AbstractWrapper.CONNECT_SERVER:
         String remoteAddress = message.header.address;
         _mapAddrMac.putIfAbsent(
-          remoteAddress, () => message.header.mac
+          remoteAddress, () => message.header.mac.wifi
         );
 
         ownName = await _wifiManager.adapterName;
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, ownMac, extra: ownName));
 
         serviceServer.send(
           MessageAdHoc(Header(
@@ -298,7 +298,7 @@ class WrapperWifi extends WrapperConnOriented {
 
       case AbstractWrapper.CONNECT_CLIENT:
         _mapAddrMac.putIfAbsent(
-          message.header.address, () => message.header.mac
+          message.header.address, () => message.header.mac.wifi
         );
 
         NetworkManager network = mapAddrNetwork[message.header.address];

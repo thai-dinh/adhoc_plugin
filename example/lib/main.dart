@@ -279,7 +279,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                             return Card(
                               child: ListTile(
                                 title: Center(child: Text(device.name)),
-                                subtitle: Center(child: Text(device.mac)),
+                                subtitle: Center(child: Text(device.mac.ble + '/' + device.mac.wifi)),
                                 onTap: () async {
                                   await _manager.connect(device);
                                   Future.delayed(Duration(seconds: 2), () => _updatePlaylist());

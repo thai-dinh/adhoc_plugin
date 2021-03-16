@@ -1,3 +1,4 @@
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -12,17 +13,17 @@ class Header {
   String _label;
   String _name;
   String _address;
-  String _mac;
+  Identifier _mac;
 
   Header({
     @required int messageType, String label, String name, String address = '', 
-    String mac = '', int deviceType
+    Identifier mac, int deviceType
   }) {
     this._messageType = messageType;
     this._label = checkString(label);
     this._name = checkString(name);
     this._address = checkString(address);
-    this._mac = checkString(mac);
+    this._mac = mac;
     this._deviceType = deviceType;
   }
 
@@ -42,7 +43,7 @@ class Header {
 
   String get address => _address;
 
-  String get mac => _mac;
+  Identifier get mac => _mac;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -57,7 +58,7 @@ class Header {
               ', label=$_label' +
               ', name=$_name' +
               ', address=$_address' +
-              ', mac=$mac' +
+              ', mac=$_mac' +
               ', deviceType=${_deviceType.toString()}' + 
             '}';
   }

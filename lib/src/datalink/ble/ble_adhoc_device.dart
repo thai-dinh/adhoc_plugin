@@ -1,6 +1,7 @@
 import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/service.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
@@ -8,7 +9,7 @@ class BleAdHocDevice extends AdHocDevice {
   int mtu;
 
   BleAdHocDevice(DiscoveredDevice device) : super(
-    name: device.name, mac: device.id, type: Service.BLUETOOTHLE,
+    name: device.name, mac: Identifier(ble: device.id), type: Service.BLUETOOTHLE,
   ) {
     this.mtu = MIN_MTU;
     this.address = 

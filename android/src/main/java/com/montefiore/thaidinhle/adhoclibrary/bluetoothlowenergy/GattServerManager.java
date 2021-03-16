@@ -214,7 +214,6 @@ public class GattServerManager {
         while (length > mtu) {
             outputStream.write(index);
             outputStream.write(Arrays.copyOfRange(bytesMsg, start, end));
-            Log.d(TAG, "DEBUG: " + outputStream.size());
             characteristic.setValue(outputStream.toByteArray());
             gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
@@ -228,7 +227,6 @@ public class GattServerManager {
         outputStream.reset();
         outputStream.write(BluetoothLowEnergyUtils.END_MESSAGE);
         outputStream.write(Arrays.copyOfRange(bytesMsg, start, bytesMsg.length));
-        Log.d(TAG, "DEBUG: " + outputStream.size());
         characteristic.setValue(outputStream.toByteArray());
         return gattServer.notifyCharacteristicChanged(device, characteristic, false);
     }

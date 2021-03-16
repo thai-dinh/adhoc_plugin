@@ -16,8 +16,8 @@ class AodvManager {
   HashMap<String, int> _mapDestSequenceNumber;
   StreamController<AdHocEvent> _eventCtrl;
 
+  Identifier _ownMac;
   String _ownName;
-  String _ownMac;
   String _ownLabel;
   int _ownSequenceNum;
   DataLinkManager _dataLink;
@@ -31,6 +31,7 @@ class AodvManager {
     this._rtableCtrl = StreamController<String>();
     this._aodvHelper = AodvHelper(_logCtrl);
     this._ownSequenceNum = Constants.FIRST_SEQUENCE_NUMBER;
+    this._ownMac = Identifier();
     this._mapDestSequenceNumber = HashMap();
     this._ownLabel = devices[index].label;
     this._dataLink = DataLinkManager(_verbose, config, index, devices);
@@ -76,8 +77,12 @@ class AodvManager {
         case AbstractWrapper.MESSAGE_EVENT:
           _processAodvMsgReceived(event.payload);
           break;
-        case AbstractWrapper.DEVICE_INFO:
-          _ownMac = event.payload;
+        case AbstractWrapper.DEVICE_INFO_BLE:
+          _ownMac.ble = event.payload;
+          _ownName = event.extra;
+          break;
+        case AbstractWrapper.DEVICE_INFO_WIFI:
+          _ownMac.wifi = event.payload;
           _ownName = event.extra;
           break;
 

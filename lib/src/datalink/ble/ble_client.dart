@@ -60,11 +60,11 @@ class BleClient extends ServiceClient {
     if (_msgSub != null)
       _msgSub.cancel();
 
-    BleAdHocManager.cancelConnection(_device.mac);
+    BleAdHocManager.cancelConnection(_device.mac.ble);
   }
 
   Future<void> send(MessageAdHoc message) async {
-    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac}');
+    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac.ble}');
 
     if (state == Service.STATE_NONE)
       throw NoConnectionException('No remote connection');
@@ -74,7 +74,7 @@ class BleClient extends ServiceClient {
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac
+      deviceId: _device.mac.ble
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
@@ -108,7 +108,7 @@ class BleClient extends ServiceClient {
 
   Future<void> _requestMtu() async {
     _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac, 
+      deviceId: _device.mac.ble, 
       mtu: MAX_MTU
     );
   }
@@ -134,7 +134,7 @@ class BleClient extends ServiceClient {
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       _conSub = _reactiveBle.connectToDevice(
-        id: _device.mac,
+        id: _device.mac.ble,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
       ).listen((event) async {
@@ -146,10 +146,10 @@ class BleClient extends ServiceClient {
             _listen();        
             await _requestMtu();
 
-            _conCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _device.mac));
+            _conCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _device.mac.ble));
 
             if (_connectListener != null)
-              _connectListener(_device.mac, _device.uuid);
+              _connectListener(_device.mac.ble, _device.uuid);
 
             state = Service.STATE_CONNECTED;
             break;
@@ -169,7 +169,7 @@ class BleClient extends ServiceClient {
     final qChar = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac
+      deviceId: _device.mac.ble
     );
 
     List<Uint8List> bytesData = List.empty(growable: true);

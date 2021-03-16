@@ -7,7 +7,7 @@ class WifiAdHocDevice extends AdHocDevice {
   WifiAdHocDevice(
     WifiP2pDevice device, {String ipAddress = '', String label = ''}
   ) : super(
-    name: device.name, mac: device.mac, type: Service.WIFI
+    name: device.name, mac: Identifier(wifi: device.mac), type: Service.WIFI
   ) {
     this.address = checkString(ipAddress);
     this.label = checkString(label);
@@ -15,14 +15,14 @@ class WifiAdHocDevice extends AdHocDevice {
   }
 
   WifiAdHocDevice.unit(String name, String mac, int port, String address) : super(
-    name: name, mac: mac, type: Service.WIFI
+    name: name, mac: Identifier(wifi: mac), type: Service.WIFI
   ) {
     this.address = checkString(address);
     this.port = port;
   }
 
   WifiAdHocDevice.fromWifiP2pDevice(WifiP2pDevice device) : super(
-    name: device.name, mac: device.mac, type: Service.WIFI
+    name: device.name, mac: Identifier(wifi: device.mac), type: Service.WIFI
   ) {
     this.address = '';
     this.port = 0;

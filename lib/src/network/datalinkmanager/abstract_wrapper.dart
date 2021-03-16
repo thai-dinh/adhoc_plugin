@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:adhoclibrary/src/appframework/config.dart';
 import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
 import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
+import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
 import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
 
@@ -23,7 +24,8 @@ abstract class AbstractWrapper {
 
   static const MESSAGE_EVENT = 21;
   static const BROKEN_LINK = 22;
-  static const DEVICE_INFO = 23;
+  static const DEVICE_INFO_BLE = 23;
+  static const DEVICE_INFO_WIFI = 24;
 
   final bool verbose;
   final HashMap<String, AdHocDevice> mapMacDevices;
@@ -35,7 +37,7 @@ abstract class AbstractWrapper {
   int type;
   String label;
   String ownName;
-  String ownMac;
+  Identifier ownMac;
 
   HashSet<AdHocDevice> setRemoteDevices;
   Set<String> setFloodEvents;
@@ -48,9 +50,10 @@ abstract class AbstractWrapper {
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
     this.timeOut = config.timeOut;
+    this.label = config.label;
+    this.ownMac = Identifier();
     this.setRemoteDevices = HashSet();
     this.setFloodEvents = Set();
-    this.label = config.label;
     this.discoveryCtrl = StreamController<DiscoveryEvent>();
     this.eventCtrl = StreamController<AdHocEvent>();
   }
@@ -71,7 +74,7 @@ abstract class AbstractWrapper {
     }
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
+/*-------------------------------Public methods-------------------------------*/
 
   void init(bool verbose, [Config config]);
 

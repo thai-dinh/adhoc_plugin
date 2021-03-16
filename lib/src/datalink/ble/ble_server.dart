@@ -67,7 +67,7 @@ class BleServer extends ServiceServer {
       String strMessage = Utf8Decoder().convert(messageAsListByte);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
 
-      if (message.header.mac.compareTo('') == 0) {
+      if (message.header.mac.ble.compareTo('') == 0) {
         message.header = Header(
           messageType: message.header.messageType,
           label: message.header.label,
