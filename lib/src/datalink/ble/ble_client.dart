@@ -176,7 +176,7 @@ class BleClient extends ServiceClient {
     _msgSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
       bytesData.add(Uint8List.fromList(rawData));
       if (rawData[0] == MESSAGE_END) {
-        if (verbose) log(ServiceClient.TAG, 'Client: message received');
+        if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
         _msgCtrl.add(processMessage(bytesData));
         bytesData.clear();
       }

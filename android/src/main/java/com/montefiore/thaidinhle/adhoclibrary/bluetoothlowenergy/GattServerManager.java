@@ -225,7 +225,7 @@ public class GattServerManager {
             length -= mtu;
             outputStream.reset();
 
-            if (cnt == 30) {
+            if (cnt == 10) {
                 // notifyCharacteristicChanged can only send 30 consecutives in a burst
                 SystemClock.sleep(100);
                 cnt = 0;

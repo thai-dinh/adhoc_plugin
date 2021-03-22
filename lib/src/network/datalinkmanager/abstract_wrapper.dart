@@ -62,17 +62,9 @@ abstract class AbstractWrapper {
 
   List<AdHocDevice> get directNeighbors;
 
-  Stream<DiscoveryEvent> get discoveryStream async* {
-    await for (DiscoveryEvent event in discoveryCtrl.stream) {
-      yield event;
-    }
-  }
+  Stream<DiscoveryEvent> get discoveryStream => discoveryCtrl.stream;
 
-  Stream<AdHocEvent> get eventStream async* {
-    await for (AdHocEvent event in eventCtrl.stream) {
-      yield event;
-    }
-  }
+  Stream<AdHocEvent> get eventStream => eventCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
