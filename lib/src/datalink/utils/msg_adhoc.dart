@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_adhoc.g.dart';

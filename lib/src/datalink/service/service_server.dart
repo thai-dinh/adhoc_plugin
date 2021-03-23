@@ -1,5 +1,5 @@
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 
 abstract class ServiceServer extends Service {

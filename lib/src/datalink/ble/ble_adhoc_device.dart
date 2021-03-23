@@ -1,7 +1,7 @@
-import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
-import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 

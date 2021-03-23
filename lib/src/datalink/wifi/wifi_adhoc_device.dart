@@ -1,7 +1,7 @@
-import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
 
 
 class WifiAdHocDevice extends AdHocDevice {

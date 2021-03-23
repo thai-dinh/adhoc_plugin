@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 
 class NetworkManager {

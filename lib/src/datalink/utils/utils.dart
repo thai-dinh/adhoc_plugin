@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 /*---------------------------------Constants----------------------------------*/
 

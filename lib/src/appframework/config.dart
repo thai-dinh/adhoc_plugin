@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/appframework/exceptions/bad_server_port.dart';
+import 'package:adhoc_plugin/src/appframework/exceptions/bad_server_port.dart';
 import 'package:uuid/uuid.dart';
 
 

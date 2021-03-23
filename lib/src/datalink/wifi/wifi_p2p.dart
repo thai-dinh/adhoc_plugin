@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p_device.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p_info.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_info.dart';
 import 'package:flutter/services.dart';
 
 

@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
 class Neighbors {

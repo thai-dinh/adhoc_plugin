@@ -1,4 +1,4 @@
-import 'package:adhoclibrary/src/network/aodv/aodv_message.dart';
+import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'rreq.g.dart';

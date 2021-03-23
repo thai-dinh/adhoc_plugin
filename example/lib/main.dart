@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/adhoclibrary.dart';
+import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:analyzer_plugin/utilities/pair.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

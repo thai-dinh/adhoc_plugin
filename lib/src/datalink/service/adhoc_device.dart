@@ -1,6 +1,6 @@
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'adhoc_device.g.dart';

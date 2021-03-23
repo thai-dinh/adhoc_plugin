@@ -2,15 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/service/service_client.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
+import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 

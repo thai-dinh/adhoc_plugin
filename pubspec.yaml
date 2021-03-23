@@ -1,8 +1,8 @@
-name: adhoclibrary
-description: Adhoclibrary is a library which allows to create and manage ad hoc connections on Android mobile devices
-version: 0.1.0
-author: Thai Dinh Le <Thai.Le@student.uliege.be>
-homepage: https://github.com/thai-dinh/AdHocLib
+name: adhoc_plugin
+description: Flutter plugin that allows creating and managing a mobile (Android only) ad hoc network
+version: 1.0.0
+author: Thai Dinh Le <Thai.Dinh.Le.pro@gmail.com>
+homepage: https://github.com/thai-dinh/adhoc_plugin
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
@@ -13,20 +13,20 @@ dependencies:
     sdk: flutter
 
   flutter_reactive_ble: ^2.7.3
-  json_annotation: ^4.0.0
+  json_annotation: ^4.0.1
   meta: ^1.3.0
-  uuid: ^3.0.1
+  uuid: ^3.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  build_runner: ^1.12.1
-  json_serializable: ^4.0.3
+  build_runner: ^1.12.2
+  json_serializable: ^4.1.0
 
 flutter:
   plugin:
     platforms:
       android:
-        package: com.montefiore.thaidinhle.adhoclibrary
-        pluginClass: AdHocPlugin
+        package: com.montefiore.thaidinhle.adhoc_plugin
+        pluginClass: AdhocPlugin

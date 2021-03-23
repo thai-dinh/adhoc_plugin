@@ -1,6 +1,6 @@
-# adhoclibrary_example
+# adhoc_plugin_example
 
-Demonstrates how to use the adhoclibrary plugin.
+Demonstrates how to use the adhoc_plugin plugin.
 
 ## Getting Started
 

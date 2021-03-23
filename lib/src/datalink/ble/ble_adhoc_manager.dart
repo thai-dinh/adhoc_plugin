@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/bad_duration.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
+import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 

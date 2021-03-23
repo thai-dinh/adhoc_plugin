@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/appframework/config.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_client.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_constants.dart';
-import 'package:adhoclibrary/src/datalink/ble/ble_server.dart';
-import 'package:adhoclibrary/src/datalink/exceptions/device_failure.dart';
-import 'package:adhoclibrary/src/datalink/service/adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/service/connection_event.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/identifier.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoclibrary/src/datalink/utils/msg_header.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/abstract_wrapper.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/flood_msg.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/network_manager.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/wrapper_conn_oriented.dart';
-import 'package:adhoclibrary/src/network/datalinkmanager/adhoc_event.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_client.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_server.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_conn_oriented.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/adhoc_event.dart';
 
 
 class WrapperBluetoothLE extends WrapperConnOriented {

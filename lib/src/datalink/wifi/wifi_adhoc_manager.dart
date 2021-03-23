@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoclibrary/src/datalink/exceptions/device_not_found.dart';
-import 'package:adhoclibrary/src/datalink/service/discovery_event.dart';
-import 'package:adhoclibrary/src/datalink/service/service.dart';
-import 'package:adhoclibrary/src/datalink/utils/utils.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_adhoc_device.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p.dart';
-import 'package:adhoclibrary/src/datalink/wifi/wifi_p2p_device.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
+import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
 import 'package:flutter/services.dart';
 
 
