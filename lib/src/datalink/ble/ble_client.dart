@@ -78,27 +78,22 @@ class BleClient extends ServiceClient {
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
-    int mtu = _device.mtu - 10, length = msg.length, start = 0, end = mtu;
-    int index = MESSAGE_BEGIN;
+    int mtu = _device.mtu - 5, length = msg.length, start = 0, end = mtu;
 
     while (length > mtu) {
       chunk = msg.sublist(start, end);
-      List<int> tmp = [index % UINT8_SIZE, _id % UINT8_SIZE] + chunk.toList();
+      List<int> tmp = [1, _id % UINT8_SIZE] + chunk.toList();
       await _reactiveBle.writeCharacteristicWithoutResponse(
         characteristic, value: tmp
       );
 
-      index++;
       start = end;
       end += mtu;
       length -= mtu;
-
-      if (index == 256)
-        index = 1;
     }
 
     chunk = msg.sublist(start, msg.length);
-    List<int> tmp = [MESSAGE_END, _id % UINT8_SIZE] + chunk.toList();
+    List<int> tmp = [0, _id % UINT8_SIZE] + chunk.toList();
     await _reactiveBle.writeCharacteristicWithoutResponse(
       characteristic, value: tmp
     );
