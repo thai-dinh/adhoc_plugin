@@ -108,17 +108,7 @@ class WifiServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
     if (verbose) log(ServiceServer.TAG, 'send() to $remoteAddress');
 
-    String msg = json.encode(message.toJson());
-    int mtu = 7500, length = msg.length, start = 0, end = mtu;
-
-    while (length > mtu) {
-      _mapIpSocket[remoteAddress].write(msg.substring(start, end));
-      start = end;
-      end += mtu;
-      length -= mtu;
-    }
-
-    _mapIpSocket[remoteAddress].write(msg.substring(start, msg.length));
+    _mapIpSocket[remoteAddress].write(json.encode(message.toJson()));
   }
 
   Future<void> cancelConnection(String remoteAddress) async {

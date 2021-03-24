@@ -13,11 +13,10 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
 class WifiClient extends ServiceClient {
   StreamController<ConnectionEvent> _connectCtrl;
   StreamController<MessageAdHoc> _messageCtrl;
+  StringBuffer _buffer;
   Socket _socket;
   String _serverIp;
   int _port;
-
-  StringBuffer _buffer = StringBuffer();
 
   void Function(String) _connectListener;
 
@@ -28,6 +27,7 @@ class WifiClient extends ServiceClient {
   ) {
     this._connectCtrl = StreamController<ConnectionEvent>();
     this._messageCtrl = StreamController<MessageAdHoc>();
+    this._buffer = StringBuffer();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -55,17 +55,7 @@ class WifiClient extends ServiceClient {
   void send(MessageAdHoc message) async {
     if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
 
-    String msg = json.encode(message.toJson());
-    int mtu = 7500, length = msg.length, start = 0, end = mtu;
-
-    while (length > mtu) {
-      _socket.write(msg.substring(start, end));
-      start = end;
-      end += mtu;
-      length -= mtu;
-    }
-
-    _socket.write(msg.substring(start, msg.length));
+    _socket.write(json.encode(message.toJson()));
   }
 
 /*------------------------------Private methods-------------------------------*/

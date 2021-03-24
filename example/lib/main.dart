@@ -22,7 +22,6 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
-  static const _MAX_SIZE = 125000;
   static const _PLAYLIST = 0;
   static const _REQUEST = 1;
   static const _REPLY = 2;
@@ -31,7 +30,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   final TransferManager _manager = TransferManager(true);
   final HashMap<AdHocDevice, HashMap<String, PlatformFile>> _peersPlaylist = HashMap();
   final HashMap<String, AdHocDevice> _peers = HashMap();
-  final HashMap<String, HashMap<int, Uint8List>> _buffer = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
   final List<AdHocDevice> _discoveredDevices = List.empty(growable: true);
   final List<Pair<String, String>> _playlist  = List.empty(growable: true);
@@ -39,8 +37,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   bool _display = false;
   bool _requested = false;
   String _selected = 'None';
-  int _awaited = -1;
-  int _received = 0;
 
   @override
   void initState() {
@@ -52,8 +48,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         Map<String, dynamic> data = event.extra as Map;
         switch (data['type']) {
           case _PLAYLIST:
-            print('_PLAYLIST |${peer.name}|');
-
             HashMap<String, PlatformFile> received;
             HashSet<AdHocDevice> setDevices = _manager.setRemoteDevices;
             List<Pair<String, String>> list = List.empty(growable: true);
@@ -103,85 +97,43 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             break;
 
           case _REQUEST:
-            print('_REQUEST |${peer.name}|');
-
             Uint8List bytes = _localPlaylist[data['name']].bytes;
-            int length = bytes.length, seq = 1, start = 0, end = _MAX_SIZE;
-            while (length > _MAX_SIZE) {
-              HashMap<String, dynamic> message = HashMap();
-              message.putIfAbsent('type', () => _REPLY);
-              message.putIfAbsent('seq', () => seq);
-              message.putIfAbsent('name', () => data['name']);
-              message.putIfAbsent('song', () => bytes.sublist(start, end));
-              _manager.sendMessageTo(message, peer);
-
-              seq++;
-              start = end;
-              end += _MAX_SIZE;
-              length -= _MAX_SIZE;
-            }
-
             HashMap<String, dynamic> message = HashMap();
             message.putIfAbsent('type', () => _REPLY);
-            message.putIfAbsent('seq', () => 0);
-            message.putIfAbsent('length', () => seq);
             message.putIfAbsent('name', () => data['name']);
-            message.putIfAbsent('song', () => bytes.sublist(start, bytes.length));
+            message.putIfAbsent('song', () => bytes);
             _manager.sendMessageTo(message, peer);
             break;
 
           case _REPLY:
-            print('_REPLY |${peer.name}|');
-            _received++;
-
             String name = data['name'];
-            int seq = data['seq'];
             List<int> song = (data['song'] as List<dynamic>).cast<int>();
-            if (!_buffer.containsKey(name)) {
-              HashMap<int, Uint8List> bytes = HashMap();
-              bytes.putIfAbsent(seq, () => Uint8List.fromList(song));
-              _buffer.putIfAbsent(name, () => bytes);
-            } else {
-              _buffer[name].putIfAbsent(seq, () => Uint8List.fromList(song));
-            }
 
-            if (seq == 0)
-              _awaited = data['length'];
+            Directory tempDir = await getTemporaryDirectory();
+            File tempFile = File('${tempDir.path}/$name');
+            await tempFile.writeAsBytes(Uint8List.fromList(song), flush: true);
 
-            if (_awaited == _received) {
-              BytesBuilder builder = BytesBuilder();
-              for (int i = 1; i < _buffer[name].length; i++)
-                builder.add(_buffer[name][i]);
-              builder.add(_buffer[name][0]);
+            HashMap<String, PlatformFile> payload = HashMap();
+            payload.putIfAbsent(
+              name, 
+              () => PlatformFile(bytes: Uint8List.fromList(song), name: name, path: tempFile.path)
+            );
 
-              Directory tempDir = await getTemporaryDirectory();
-              File tempFile = File('${tempDir.path}/$name');
-              await tempFile.writeAsBytes(builder.toBytes(), flush: true);
+            _peersPlaylist.update(peer,
+              (value) {
+                value.update(
+                  name,
+                  (value) => PlatformFile(bytes: Uint8List.fromList(song), name: name, path: tempFile.path)
+                );
+                return value;
+              },
+              ifAbsent: () => payload,
+            );
 
-              HashMap<String, PlatformFile> payload = HashMap();
-              payload.putIfAbsent(
-                name, 
-                () => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
-              );
-
-              _peersPlaylist.update(peer,
-                (value) {
-                  value.update(
-                    name,
-                    (value) => PlatformFile(bytes: builder.toBytes(), name: name, path: tempFile.path)
-                  );
-                  return value;
-                },
-                ifAbsent: () => payload,
-              );
-
-              setState(() => _requested = false);
-              _received = 0;
-            }
+            setState(() => _requested = false);
             break;
 
           case _PEERS:
-            print('_PEERS |${peer.name}|');
             List<String> peerNames = (data['peerNames'] as List<dynamic>).cast<String>();
             List<String> peerLabels = (data['peerLabels'] as List<dynamic>).cast<String>();
             for (int i = 0; i < peerNames.length; i++)
