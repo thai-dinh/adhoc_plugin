@@ -3,7 +3,7 @@ import 'dart:collection';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
@@ -15,7 +15,6 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_client.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_server.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/adhoc_event.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_conn_oriented.dart';
@@ -32,6 +31,7 @@ class WrapperWifi extends WrapperConnOriented {
   bool _isListening;
   bool _isConnecting;
   HashMap<String, String> _mapAddrMac;
+  HashMap<String, WifiClient> _wifiClients;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   WifiAdHocManager _wifiManager;
 
@@ -42,6 +42,7 @@ class WrapperWifi extends WrapperConnOriented {
     this._isGroupOwner = false;
     this._isListening = false;
     this._isConnecting = false;
+    this._wifiClients = HashMap();
     this.ownMac = Identifier();
     this.type = Service.WIFI;
     this.init(verbose, config);
@@ -212,58 +213,64 @@ class WrapperWifi extends WrapperConnOriented {
   }
 
   void _onEvent(Service service) {
-    service.connStatusStream.listen((ConnectionEvent info) {
-      switch (info.status) {
-        case Service.CONNECTION_CLOSED:
-          connectionClosed(_mapAddrMac[info.address]);
+    service.adhocEvent.listen((event) async { 
+      switch (event.type) {
+        case Service.MESSAGE_RECEIVED:
+          _processMsgReceived(event.payload as MessageAdHoc);
+          break;
+
+        case Service.CONNECTION_PERFORMED:
+          String remoteAddress = event.payload as String;
+          WifiClient wifiClient = _wifiClients[remoteAddress];
+          mapAddrNetwork.putIfAbsent(
+            remoteAddress,
+            () => NetworkManager(
+              (MessageAdHoc msg) async => wifiClient.send(msg), 
+              () => wifiClient.disconnect()
+            )
+          );
+
+          ownName = await _wifiManager.adapterName;
+          eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, [ownMac, ownName]));
+
+          wifiClient.send(
+            MessageAdHoc(
+              Header(
+                messageType: AbstractWrapper.CONNECT_SERVER,
+                label: label,
+                name: ownName,
+                mac: ownMac,
+                address: _ownIpAddress,
+                deviceType: Service.WIFI
+              ),
+            )
+          );
+          break;
+
+        case Service.CONNECTION_ABORTED:
+          connectionClosed(_mapAddrMac[event.payload as String]);
           break;
 
         case Service.CONNECTION_EXCEPTION:
-          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, info.error));
+          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, event.payload));
           break;
 
         default:
-          break;
       }
     });
-
-    service.messageStream.listen((MessageAdHoc msg) => _processMsgReceived(msg));
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(verbose)..start(hostIp: _ownIpAddress, serverPort: _serverPort);
+    serviceServer = WifiServer(verbose)..listen(hostIp: _ownIpAddress, serverPort: _serverPort);
     _onEvent(serviceServer);
   }
 
   void _connect(int remotePort) async {
     final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
-
-    wifiClient.connectListener = (String remoteAddress) async {
-      mapAddrNetwork.putIfAbsent(
-        remoteAddress,
-        () => NetworkManager(
-          (MessageAdHoc msg) async => wifiClient.send(msg), 
-          () => wifiClient.disconnect()
-        )
-      );
-
-      ownName = await _wifiManager.adapterName;
-      eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, ownMac, extra: ownName));
-
-      wifiClient.send(MessageAdHoc(
-        Header(
-          messageType: AbstractWrapper.CONNECT_SERVER,
-          label: label,
-          name: ownName,
-          mac: ownMac,
-          address: _ownIpAddress,
-          deviceType: Service.WIFI
-        ),
-      ));
-    };
-
     await wifiClient.connect();
     _onEvent(wifiClient);
+
+    _wifiClients.putIfAbsent(_groupOwnerAddr, () => wifiClient);
   }
 
   void _processMsgReceived(MessageAdHoc message) async {
@@ -275,7 +282,7 @@ class WrapperWifi extends WrapperConnOriented {
         );
 
         ownName = await _wifiManager.adapterName;
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, [ownMac, ownName]));
 
         serviceServer.send(
           MessageAdHoc(Header(
@@ -313,16 +320,16 @@ class WrapperWifi extends WrapperConnOriented {
           broadcastExcept(message, message.header.label);
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
-          for (AdHocDevice adHocDevice in hashSet) {
-            if (adHocDevice.label != label 
-              && !setRemoteDevices.contains(adHocDevice)
-              && !isDirectNeighbors(adHocDevice.label)
+          for (AdHocDevice device in hashSet) {
+            if (device.label != label 
+              && !setRemoteDevices.contains(device)
+              && !isDirectNeighbors(device.label)
             ) {
-              adHocDevice.directedConnected = false;
+              device.directedConnected = false;
 
-              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, adHocDevice));
+              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, device));
 
-              setRemoteDevices.add(adHocDevice);
+              setRemoteDevices.add(device);
             }
           }
         }
@@ -357,7 +364,7 @@ class WrapperWifi extends WrapperConnOriented {
           type: header.deviceType
         );
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: message.pdu));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, [adHocDevice, message.pdu]));
         break;
 
       default:

@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
@@ -17,7 +18,6 @@ import 'package:adhoc_plugin/src/network/aodv/rrep.dart';
 import 'package:adhoc_plugin/src/network/aodv/rreq.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/adhoc_event.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_message.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_type.dart';
@@ -83,16 +83,21 @@ class AodvManager {
         case AbstractWrapper.BROKEN_LINK:
           _brokenLinkDetected(event.payload);
           break;
+
         case AbstractWrapper.MESSAGE_EVENT:
           _processAodvMsgReceived(event.payload);
           break;
+
         case AbstractWrapper.DEVICE_INFO_BLE:
-          _ownMac.ble = (event.payload as Identifier).ble;
-          _ownName = event.extra;
+          List<dynamic> info = event.payload;
+          _ownMac.ble = (info[0] as Identifier).ble;
+          _ownName = info[1] as String;
           break;
+
         case AbstractWrapper.DEVICE_INFO_WIFI:
-          _ownMac.wifi= (event.payload as Identifier).wifi;
-          _ownName = event.extra;
+          List<dynamic> info = event.payload;
+          _ownMac.wifi = (info[0] as Identifier).wifi;
+          _ownName = info[1] as String;
           break;
 
         default:
@@ -332,7 +337,7 @@ class AodvManager {
         Data data = _dataMessage.pdu as Data;
         _send(_dataMessage, data.destAddress);
 
-        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(rrep.destAddress);
       if (destNext == null) {
@@ -355,7 +360,7 @@ class AodvManager {
 
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
 
-        // _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
+        _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
       }
     }
   }
@@ -379,7 +384,7 @@ class AodvManager {
         
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
 
-        // _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
+        _timerFlushReverseRoute(rrep.originAddress, rrep.sequenceNum);
 
         message.header = Header(
           messageType: Constants.RREP_GRATUITOUS,
@@ -441,7 +446,7 @@ class AodvManager {
         type: header.deviceType
       );
 
-      _eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: data.payload));
+      _eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, [adHocDevice, data.payload]));
     } else {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(data.destAddress);
       if (destNext == null) {
@@ -457,7 +462,7 @@ class AodvManager {
           type: header.deviceType
         );
 
-        _eventCtrl.add(AdHocEvent(AbstractWrapper.FORWARD_DATA, adHocDevice, extra: data.payload));
+        _eventCtrl.add(AdHocEvent(AbstractWrapper.FORWARD_DATA, [adHocDevice, data.payload]));
 
         destNext.updateDataPath(data.destAddress);
 

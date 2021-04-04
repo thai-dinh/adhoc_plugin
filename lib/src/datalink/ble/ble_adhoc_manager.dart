@@ -90,7 +90,7 @@ class BleAdHocManager {
     );
 
     _isDiscovering = true;
-    _controller.add(DiscoveryEvent(Service.DISCOVERY_STARTED, null));
+    _controller.add(DiscoveryEvent(Service.DISCOVERY_START, null));
 
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }

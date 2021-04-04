@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
@@ -19,27 +19,17 @@ class BleServer extends ServiceServer {
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
   static const EventChannel _chMessage = const EventChannel(_chMessageName);
 
-  StreamController<ConnectionEvent> _controller;
-  StreamController<MessageAdHoc> _msgCtrl;
   StreamSubscription<dynamic> _conStreamSub;
   StreamSubscription<dynamic> _msgSub;
 
   BleServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     BleAdHocManager.setVerbose(verbose);
-    this._controller = StreamController<ConnectionEvent>();
-    this._msgCtrl = StreamController<MessageAdHoc>();
   }
-
-/*------------------------------Getters & Setters-----------------------------*/
-
-  Stream<ConnectionEvent> get connStatusStream => _controller.stream;
-
-  Stream<MessageAdHoc> get messageStream => _msgCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void start() {
-    if (verbose) log(ServiceServer.TAG, 'Server: start()');
+  void listen() {
+    if (verbose) log(ServiceServer.TAG, 'Server: listen()');
 
     BleAdHocManager.openGattServer();
 
@@ -49,12 +39,12 @@ class BleServer extends ServiceServer {
         switch (map['state']) {
           case Service.STATE_CONNECTED:
             addActiveConnection(mac);
-            _controller.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: mac));
+            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, mac));
             break;
 
           case Service.STATE_NONE:
             removeInactiveConnection(mac);
-            _controller.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: mac));
+            controller.add(AdHocEvent(Service.CONNECTION_ABORTED, mac));
             break;
         }
       }, onDone: () => _conStreamSub = null,
@@ -79,15 +69,17 @@ class BleServer extends ServiceServer {
         );
       }
 
-      _msgCtrl.add(message);
+      controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, message));
     }, onDone: () => _msgSub = null);
 
     state = Service.STATE_LISTENING;
   }
 
+  @override
   void stopListening() {
     if (verbose) log(ServiceServer.TAG, 'Server: stopListening');
 
+    super.stopListening();
     if (_conStreamSub != null)
       _conStreamSub.cancel();
     if (_msgSub != null)

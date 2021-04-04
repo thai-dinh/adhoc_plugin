@@ -6,7 +6,7 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
@@ -17,8 +17,6 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   static int id = 0;
 
-  StreamController<ConnectionEvent> _conCtrl;
-  StreamController<MessageAdHoc> _msgCtrl;
   StreamSubscription<ConnectionStateUpdate> _conSub;
   StreamSubscription<List<int>> _msgSub;
   FlutterReactiveBle _reactiveBle;
@@ -26,40 +24,50 @@ class BleClient extends ServiceClient {
   Uuid _serviceUuid;
   Uuid _characteristicUuid;
 
-  void Function(String, String) _connectListener;
-
   BleClient(
     bool verbose, this._device, int attempts, int timeOut,
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
   ) {
-    this._conCtrl = StreamController<ConnectionEvent>();
-    this._msgCtrl = StreamController<MessageAdHoc>();
     this._reactiveBle = FlutterReactiveBle();
     this._serviceUuid = Uuid.parse(SERVICE_UUID);
     this._characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
   }
 
-/*------------------------------Getters & Setters-----------------------------*/
-
-  set connectListener(void Function(String, String) connectListener) {
-    this._connectListener = connectListener;
-  }
-
-  Stream<ConnectionEvent> get connStatusStream => _conCtrl.stream;
-
-  Stream<MessageAdHoc> get messageStream => _msgCtrl.stream;
-
 /*-------------------------------Public methods-------------------------------*/
 
-  Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+  void listen() {
+    final qChar = QualifiedCharacteristic(
+      serviceId: _serviceUuid,
+      characteristicId: _characteristicUuid,
+      deviceId: _device.mac.ble
+    );
 
-  void disconnect() {
+    List<Uint8List> bytesData = List.empty(growable: true);
+    _msgSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
+      bytesData.add(Uint8List.fromList(rawData));
+      if (rawData[0] == MESSAGE_END) {
+        if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
+        controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, processMessage(bytesData)));
+        bytesData.clear();
+      }
+    }, onDone: () => _msgSub = null);
+  }
+
+  @override
+  void stopListening() {
+    super.stopListening();
+
     if (_conSub != null)
       _conSub.cancel();
     if (_msgSub != null)
       _msgSub.cancel();
+  }
 
+  Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+
+  void disconnect() {
+    this.stopListening();
     BleAdHocManager.cancelConnection(_device.mac.ble);
   }
 
@@ -138,13 +146,10 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            _listen();        
+            listen();
             await _requestMtu();
 
-            _conCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _device.mac.ble));
-
-            if (_connectListener != null)
-              _connectListener(_device.mac.ble, _device.uuid);
+            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid]));
 
             state = Service.STATE_CONNECTED;
             break;
@@ -158,23 +163,5 @@ class BleClient extends ServiceClient {
         }
       });
     }
-  }
-
-  void _listen() {
-    final qChar = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _characteristicUuid,
-      deviceId: _device.mac.ble
-    );
-
-    List<Uint8List> bytesData = List.empty(growable: true);
-    _msgSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
-      bytesData.add(Uint8List.fromList(rawData));
-      if (rawData[0] == MESSAGE_END) {
-        if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
-        _msgCtrl.add(processMessage(bytesData));
-        bytesData.clear();
-      }
-    }, onDone: () => _msgSub = null);
   }
 }

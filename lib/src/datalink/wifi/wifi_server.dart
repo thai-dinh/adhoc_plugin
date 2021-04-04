@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
@@ -14,8 +14,6 @@ import 'package:meta/meta.dart';
 
 
 class WifiServer extends ServiceServer {
-  StreamController<ConnectionEvent> _connectCtrl;
-  StreamController<MessageAdHoc> _messageCtrl;
   StreamSubscription<Socket> _listenStreamSub;
   HashMap<String, HashMap<int, String>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
@@ -25,8 +23,6 @@ class WifiServer extends ServiceServer {
 
   WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
     WifiAdHocManager.setVerbose(verbose);
-    this._connectCtrl = StreamController<ConnectionEvent>();
-    this._messageCtrl = StreamController<MessageAdHoc>();
     this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
@@ -35,14 +31,12 @@ class WifiServer extends ServiceServer {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<ConnectionEvent> get connStatusStream => _connectCtrl.stream;
-
-  Stream<MessageAdHoc> get messageStream => _messageCtrl.stream;
+  Stream<AdHocEvent> get adhocEvent => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void start({@required String hostIp, @required int serverPort}) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: start()');
+  void listen({@required String hostIp, @required int serverPort}) async {
+    if (verbose) log(ServiceServer.TAG, 'Server: listen()');
 
     _serverSocket = await ServerSocket.bind(hostIp, serverPort, shared: true);
   
@@ -60,11 +54,11 @@ class WifiServer extends ServiceServer {
             String msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
               for (MessageAdHoc _msg in splitMessages(msg))
-                _messageCtrl.add(_msg);
+                controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
             } else if (msg[msg.length-1].compareTo('}') == 0) {
               _mapIpBuffer[remoteAddress].write(msg);
               for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString()))
-                _messageCtrl.add(_msg);
+                controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
               _mapIpBuffer[remoteAddress].clear();
             } else {
               _mapIpBuffer[remoteAddress].write(msg);
@@ -76,31 +70,31 @@ class WifiServer extends ServiceServer {
           },
           onDone: () {
             _closeSocket(remoteAddress);
-            _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
+            controller.add(AdHocEvent(Service.CONNECTION_ABORTED, remoteAddress));
           }
-        )
-        );
+        ));
 
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: remoteAddress));
+        controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, remoteAddress));
       },
-      onError: (error) {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
-      }
+      onDone: () => this.stopListening(),
+      onError: (error) => controller.add(AdHocEvent(Service.CONNECTION_EXCEPTION, error))
     );
 
     state = Service.STATE_LISTENING;
   }
 
-  Future<void> stopListening() async {
+  @override
+  void stopListening() {
     if (verbose) log(ServiceServer.TAG, 'stopListening()');
 
+    super.stopListening();
     _mapIpStream.forEach((ip, stream) => stream.cancel());
     _mapIpStream.clear();
     _mapIpSocket.forEach((ipAddress, socket) => socket.destroy());
     _mapIpSocket.clear();
 
-    await _listenStreamSub.cancel();
-    await _serverSocket.close();
+    _listenStreamSub.cancel();
+    _serverSocket.close();
 
     state = Service.STATE_NONE;
   }
@@ -115,7 +109,7 @@ class WifiServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
-    _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: remoteAddress));
+    controller.add(AdHocEvent(Service.CONNECTION_ABORTED, remoteAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/

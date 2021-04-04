@@ -9,7 +9,7 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_server.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
@@ -20,7 +20,6 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_conn_oriented.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/adhoc_event.dart';
 
 
 class WrapperBluetoothLE extends WrapperConnOriented {
@@ -29,6 +28,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   bool _isDiscovering;
   bool _isInitialized;
   BleAdHocManager _bleAdHocManager;
+  HashMap<String, BleClient> _bleClients;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   String _ownStringUUID;
 
@@ -37,6 +37,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isInitialized = false;
+    this._bleClients = HashMap();
     this.ownMac = Identifier();
     this.type = Service.BLUETOOTHLE;
     this.init(verbose);
@@ -182,55 +183,63 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   }
 
   void _onEvent(Service service) {
-    service.connStatusStream.listen((ConnectionEvent info) {
-      switch (info.status) {
-        case Service.CONNECTION_CLOSED:
-          connectionClosed(info.address);
+    service.adhocEvent.listen((event) async { 
+      switch (event.type) {
+        case Service.MESSAGE_RECEIVED:
+          _processMsgReceived(event.payload as MessageAdHoc);
+          break;
+
+        case Service.CONNECTION_PERFORMED:
+          String mac = (event.payload as List<dynamic>)[0];
+          String uuid = (event.payload as List<dynamic>)[1];
+          BleClient bleClient = _bleClients[mac];
+
+          mapAddrNetwork.putIfAbsent(
+            uuid, () => NetworkManager(
+              (MessageAdHoc msg) => bleClient.send(msg), 
+              () => bleClient.disconnect()
+            )
+          );
+
+          await bleClient.send(
+            MessageAdHoc(
+              Header(
+                messageType: AbstractWrapper.CONNECT_SERVER, 
+                label: label,
+                name: ownName,
+                mac: ownMac,
+                address: _ownStringUUID,
+                deviceType: Service.BLUETOOTHLE
+              ),
+              mac
+            )
+          );
+          break;
+
+        case Service.CONNECTION_ABORTED:
+          connectionClosed(event.payload as String);
           break;
 
         case Service.CONNECTION_EXCEPTION:
-          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, info.error));
+          eventCtrl.add(AdHocEvent(AbstractWrapper.INTERNAL_EXCEPTION, event.payload));
           break;
 
         default:
-          break;
       }
     });
-
-    service.messageStream.listen((MessageAdHoc msg) => _processMsgReceived(msg));
   }
 
   void _listenServer() {
-    serviceServer = BleServer(verbose)..start();
+    serviceServer = BleServer(verbose)..listen();
     _onEvent(serviceServer);
   }
 
   Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
     final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut);
-
-    bleClient.connectListener = (String mac, String uuid) async {
-      mapAddrNetwork.putIfAbsent(
-        uuid, () => NetworkManager(
-          (MessageAdHoc msg) => bleClient.send(msg), 
-          () => bleClient.disconnect()
-        )
-      );
-
-      await bleClient.send(MessageAdHoc(
-        Header(
-          messageType: AbstractWrapper.CONNECT_SERVER, 
-          label: label,
-          name: ownName,
-          mac: ownMac,
-          address: _ownStringUUID,
-          deviceType: Service.BLUETOOTHLE
-        ),
-        mac
-      ));
-    };
-
     _onEvent(bleClient);
     await bleClient.connect();
+
+    _bleClients.putIfAbsent(bleAdHocDevice.mac.ble, () => bleClient);
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
@@ -241,7 +250,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID.toLowerCase();
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, [ownMac, ownName]));
 
         serviceServer.send(
           MessageAdHoc(
@@ -271,7 +280,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
         ownMac.ble = message.pdu as String;
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '').toLowerCase();
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, ownMac, extra: ownName));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_BLE, [ownMac, ownName]));
 
         receivedPeerMessage(
           message.header, mapAddrNetwork[message.header.address]
@@ -284,16 +293,16 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           broadcastExcept(message, message.header.label);
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
-          for (AdHocDevice adHocDevice in hashSet) {
-            if (adHocDevice.label != label 
-              && !setRemoteDevices.contains(adHocDevice)
-              && !isDirectNeighbors(adHocDevice.label)
+          for (AdHocDevice device in hashSet) {
+            if (device.label != label 
+              && !setRemoteDevices.contains(device)
+              && !isDirectNeighbors(device.label)
             ) {
-              adHocDevice.directedConnected = false;
+              device.directedConnected = false;
 
-              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, adHocDevice));
+              eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, device));
 
-              setRemoteDevices.add(adHocDevice);
+              setRemoteDevices.add(device);
             }
           }
         }
@@ -328,7 +337,7 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           type: header.deviceType
         );
 
-        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, adHocDevice, extra: message.pdu));
+        eventCtrl.add(AdHocEvent(AbstractWrapper.DATA_RECEIVED, [adHocDevice, message.pdu]));
         break;
 
       default:

@@ -30,8 +30,6 @@ abstract class ServiceServer extends Service {
     return _activeConnections.contains(mac);
   }
 
-  void stopListening();
-
   Future<void> cancelConnection(String mac);
 
   Future<void> send(MessageAdHoc message, String mac);

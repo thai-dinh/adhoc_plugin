@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
@@ -12,7 +13,6 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/neighbors.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/adhoc_event.dart';
 
 
 abstract class WrapperConnOriented extends AbstractWrapper {

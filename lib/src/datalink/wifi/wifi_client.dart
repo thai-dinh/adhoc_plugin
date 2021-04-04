@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:adhoc_plugin/src/datalink/service/connection_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
@@ -11,45 +11,63 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  StreamController<ConnectionEvent> _connectCtrl;
-  StreamController<MessageAdHoc> _messageCtrl;
-  StringBuffer _buffer;
   Socket _socket;
   String _serverIp;
   int _port;
-
-  void Function(String) _connectListener;
 
   WifiClient(
     bool verbose, this._port, this._serverIp, int attempts, int timeOut,
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
-  ) {
-    this._connectCtrl = StreamController<ConnectionEvent>();
-    this._messageCtrl = StreamController<MessageAdHoc>();
-    this._buffer = StringBuffer();
-  }
-
-/*------------------------------Getters & Setters-----------------------------*/
-
-  set connectListener(void Function(String) connectListener) {
-    this._connectListener = connectListener;
-  }
-
-  Stream<ConnectionEvent> get connStatusStream => _connectCtrl.stream;
-
-  Stream<MessageAdHoc> get messageStream => _messageCtrl.stream;
+  );
 
 /*-------------------------------Public methods-------------------------------*/
+
+  void listen() {
+    StringBuffer buffer = StringBuffer();
+
+    _socket.listen(
+      (data) {
+        if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
+
+        String msg = Utf8Decoder().convert(data);
+        if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
+          for (MessageAdHoc _msg in splitMessages(msg))
+            controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
+        } else if (msg[msg.length-1].compareTo('}') == 0) {
+          buffer.write(msg);
+          for (MessageAdHoc _msg in splitMessages(buffer.toString()))
+            controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
+          buffer.clear();
+        } else {
+          buffer.write(msg);
+        }
+      },
+      onError: (error) {
+        controller.add(AdHocEvent(Service.CONNECTION_EXCEPTION, error));
+      },
+      onDone: () {
+        controller.add(AdHocEvent(Service.CONNECTION_ABORTED, _serverIp));
+        this.stopListening();
+      }
+    );
+  }
+
+  @override
+  void stopListening() {
+    super.stopListening();
+    _socket.destroy();
+    _socket.close();
+  }
 
   Future<void> connect() async {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
 
   Future<void> disconnect() async {
+    this.stopListening();
     await WifiP2p().removeGroup();
-
-    _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
+    controller.add(AdHocEvent(Service.CONNECTION_ABORTED, _serverIp));
   }
 
   void send(MessageAdHoc message) async {
@@ -86,45 +104,12 @@ class WifiClient extends ServiceClient {
         _serverIp, _port, timeout: Duration(milliseconds: timeOut)
       );
 
-      _listen();
-
-      _connectCtrl.add(ConnectionEvent(Service.CONNECTION_PERFORMED, address: _serverIp));
-
-      if (_connectListener != null)
-        _connectListener(_serverIp);
+      listen();
+      controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, _serverIp));
 
       if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIp:$_port');
 
       state = Service.STATE_CONNECTED;
     }
-  }
-
-  void _listen() {
-    _socket.listen(
-      (data) {
-        if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
-
-        String msg = Utf8Decoder().convert(data);
-        if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          for (MessageAdHoc _msg in splitMessages(msg))
-            _messageCtrl.add(_msg);
-        } else if (msg[msg.length-1].compareTo('}') == 0) {
-          _buffer.write(msg);
-          for (MessageAdHoc _msg in splitMessages(_buffer.toString()))
-            _messageCtrl.add(_msg);
-          _buffer.clear();
-        } else {
-          _buffer.write(msg);
-        }
-      },
-      onError: (error) {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_EXCEPTION, error: error));
-      },
-      onDone: () {
-        _connectCtrl.add(ConnectionEvent(Service.CONNECTION_CLOSED, address: _serverIp));
-        _socket.destroy();
-        _socket.close();
-      }
-    );
   }
 }

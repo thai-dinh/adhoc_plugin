@@ -44,8 +44,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
     _manager.eventStream.listen((event) async {
       if (event.type == AbstractWrapper.DATA_RECEIVED) {
-        AdHocDevice peer = event.payload as AdHocDevice;
-        Map<String, dynamic> data = event.extra as Map;
+        List<dynamic> payload = event.payload;
+        AdHocDevice peer = payload[0];
+        Map<String, dynamic> data = payload[1];
         switch (data['type']) {
           case _PLAYLIST:
             HashMap<String, PlatformFile> received;

@@ -13,7 +13,6 @@ export 'datalinkmanager/neighbors.dart';
 export 'datalinkmanager/network_manager.dart';
 export 'datalinkmanager/wrapper_bluetooth_le.dart';
 export 'datalinkmanager/wrapper_conn_oriented.dart';
-export 'datalinkmanager/adhoc_event.dart';
 export 'datalinkmanager/wrapper_wifi.dart';
 export 'exceptions/aodv_unknown_dest.dart';
 export 'exceptions/aodv_abstract.dart';
