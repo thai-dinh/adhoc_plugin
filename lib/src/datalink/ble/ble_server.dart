@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
@@ -36,10 +37,11 @@ class BleServer extends ServiceServer {
     _conStreamSub = _chConnect.receiveBroadcastStream()
       .listen((map) {
         String mac = map['macAddress'] as String;
+        String uuid = (BLUETOOTHLE_UUID + mac.replaceAll(new RegExp(':'), '')).toLowerCase();
         switch (map['state']) {
           case Service.STATE_CONNECTED:
             addActiveConnection(mac);
-            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, mac));
+            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [mac, uuid, 0]));
             break;
 
           case Service.STATE_NONE:

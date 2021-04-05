@@ -12,6 +12,7 @@ import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
@@ -28,7 +29,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   bool _isDiscovering;
   bool _isInitialized;
   BleAdHocManager _bleAdHocManager;
-  HashMap<String, BleClient> _bleClients;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   String _ownStringUUID;
 
@@ -37,7 +37,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isInitialized = false;
-    this._bleClients = HashMap();
     this.ownMac = Identifier();
     this.type = Service.BLUETOOTHLE;
     this.init(verbose);
@@ -190,18 +189,20 @@ class WrapperBluetoothLE extends WrapperConnOriented {
           break;
 
         case Service.CONNECTION_PERFORMED:
-          String mac = (event.payload as List<dynamic>)[0];
-          String uuid = (event.payload as List<dynamic>)[1];
-          BleClient bleClient = _bleClients[mac];
+          List<dynamic> data = event.payload as List<dynamic>;
+          String mac = data[0];
+          String uuid = data[1];
+          if (data[2] == 0)
+            break;
 
           mapAddrNetwork.putIfAbsent(
             uuid, () => NetworkManager(
-              (MessageAdHoc msg) => bleClient.send(msg), 
-              () => bleClient.disconnect()
+              (MessageAdHoc msg) async => (service as ServiceClient).send(msg), 
+              () => (service as ServiceClient).disconnect()
             )
           );
 
-          await bleClient.send(
+          (service as ServiceClient).send(
             MessageAdHoc(
               Header(
                 messageType: AbstractWrapper.CONNECT_SERVER, 
@@ -238,8 +239,6 @@ class WrapperBluetoothLE extends WrapperConnOriented {
     final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut);
     _onEvent(bleClient);
     await bleClient.connect();
-
-    _bleClients.putIfAbsent(bleAdHocDevice.mac.ble, () => bleClient);
   }
 
   void _processMsgReceived(final MessageAdHoc message) {

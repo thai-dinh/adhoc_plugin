@@ -76,7 +76,7 @@ abstract class AbstractWrapper {
 
   void discovery();
 
-  Future<void> connect(int attempts, AdHocDevice adHocDevice);
+  Future<void> connect(int attempts, AdHocDevice device);
 
   void stopListening();
 

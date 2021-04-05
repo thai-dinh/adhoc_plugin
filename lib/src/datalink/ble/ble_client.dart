@@ -149,7 +149,7 @@ class BleClient extends ServiceClient {
             listen();
             await _requestMtu();
 
-            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid]));
+            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
 
             state = Service.STATE_CONNECTED;
             break;

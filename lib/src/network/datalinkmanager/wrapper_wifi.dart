@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
@@ -31,7 +32,6 @@ class WrapperWifi extends WrapperConnOriented {
   bool _isListening;
   bool _isConnecting;
   HashMap<String, String> _mapAddrMac;
-  HashMap<String, WifiClient> _wifiClients;
   StreamSubscription<DiscoveryEvent> _discoverySub;
   WifiAdHocManager _wifiManager;
 
@@ -42,7 +42,6 @@ class WrapperWifi extends WrapperConnOriented {
     this._isGroupOwner = false;
     this._isListening = false;
     this._isConnecting = false;
-    this._wifiClients = HashMap();
     this.ownMac = Identifier();
     this.type = Service.WIFI;
     this.init(verbose, config);
@@ -220,20 +219,22 @@ class WrapperWifi extends WrapperConnOriented {
           break;
 
         case Service.CONNECTION_PERFORMED:
+          if (_ownIpAddress == _groupOwnerAddr)
+            break;
+
           String remoteAddress = event.payload as String;
-          WifiClient wifiClient = _wifiClients[remoteAddress];
           mapAddrNetwork.putIfAbsent(
             remoteAddress,
             () => NetworkManager(
-              (MessageAdHoc msg) async => wifiClient.send(msg), 
-              () => wifiClient.disconnect()
+              (MessageAdHoc msg) async => (service as ServiceClient).send(msg), 
+              () => (service as ServiceClient).disconnect()
             )
           );
 
           ownName = await _wifiManager.adapterName;
           eventCtrl.add(AdHocEvent(AbstractWrapper.DEVICE_INFO_WIFI, [ownMac, ownName]));
 
-          wifiClient.send(
+          (service as ServiceClient).send(
             MessageAdHoc(
               Header(
                 messageType: AbstractWrapper.CONNECT_SERVER,
@@ -267,10 +268,8 @@ class WrapperWifi extends WrapperConnOriented {
 
   void _connect(int remotePort) async {
     final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
-    await wifiClient.connect();
     _onEvent(wifiClient);
-
-    _wifiClients.putIfAbsent(_groupOwnerAddr, () => wifiClient);
+    await wifiClient.connect();
   }
 
   void _processMsgReceived(MessageAdHoc message) async {
