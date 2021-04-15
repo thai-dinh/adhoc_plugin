@@ -40,7 +40,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
     methodChannel = new MethodChannel(messenger, CHANNEL_NAME);
     methodChannel.setMethodCallHandler(this);
 
-    gattServerManager = new GattServerManager();
+    gattServerManager = new GattServerManager(context);
     bleManager = new BluetoothLowEnergyManager();
     wifiAdHocManager = new WifiAdHocManager(context);
     wifiAdHocManager.initMethodCallHandler(messenger);
@@ -104,6 +104,14 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "getPairedDevices":
         result.success(gattServerManager.getConnectedDevices());
+        break;
+      case "getBondState":
+        final String address = call.arguments();
+        result.success(gattServerManager.getBondState(address));
+        break;
+      case "createBond":
+        final String remoteAddress = call.arguments();
+        result.success(gattServerManager.createBond(remoteAddress));
         break;
 
       default:

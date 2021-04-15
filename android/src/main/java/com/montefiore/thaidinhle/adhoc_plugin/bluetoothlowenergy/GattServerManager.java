@@ -8,7 +8,10 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -33,24 +36,29 @@ public class GattServerManager {
     private static final String TAG = "[AdhocPlugin][GattServer]";
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
+    private static final String STREAM_BOND = "ad.hoc.lib/ble.bond";
 
     private boolean verbose;
     private BluetoothGattCharacteristic characteristic;
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
+    private Context context;
     private HashMap<String, HashMap<Integer, ArrayList<byte[]>>> data;
     private HashMap<String, BluetoothDevice> mapMacDevice;
     private HashMap<String, Short> mapMacMtu;
     private EventChannel eventConnectionChannel;
     private EventChannel eventMessageChannel;
+    private EventChannel eventBondChannel;
     private MainThreadEventSink eventConnectionSink;
     private MainThreadEventSink eventMessageSink;
+    private MainThreadEventSink eventBondSink;
 
-    public GattServerManager() {
+    public GattServerManager(Context context) {
         this.verbose = false;
         this.data = new HashMap<>();
         this.mapMacDevice = new HashMap<>();
         this.mapMacMtu = new HashMap<>();
+        this.context = context;
     }
 
     public void initEventChannels(BinaryMessenger messenger) {
@@ -89,13 +97,58 @@ public class GattServerManager {
                 eventMessageChannel.setStreamHandler(null);
             }
         });
+
+        // eventBondChannel
+        eventBondChannel = new EventChannel(messenger, STREAM_BOND);
+        eventBondChannel.setStreamHandler(new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+                if (verbose) Log.d(TAG, "Bond: onListen()");
+                eventBondSink = new MainThreadEventSink(events);
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+                if (verbose) Log.d(TAG, "Bond: onCancel()");
+                eventBondSink = null;
+                eventBondChannel.setStreamHandler(null);
+            }
+        });
+
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        context.registerReceiver(receiver, filter);
     }
 
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    if (verbose) Log.d(TAG, "BroadcastReceiver: device bonded");
+                    HashMap<String, Object> mapInfoValue = new HashMap<>();
+                    mapInfoValue.put("macAddress", device.getAddress());
+                    mapInfoValue.put("bond", true);
+                    eventBondSink.success(mapInfoValue);
+                } else if(device.getBondState() == BluetoothDevice.BOND_BONDING) {
+                    if (verbose) Log.d(TAG, "BroadcastReceiver: device bonding");
+                } else {
+                    if (verbose) Log.d(TAG, "BroadcastReceiver: device none");
+                    HashMap<String, Object> mapInfoValue = new HashMap<>();
+                    mapInfoValue.put("macAddress", device.getAddress());
+                    mapInfoValue.put("bond", false);
+                    eventBondSink.success(mapInfoValue);
+                }
+            }
+        }
+    };
+ 
     public void openGattServer(BluetoothManager bluetoothManager, Context context) {
         if (verbose) Log.d(TAG, "openGattServer()");
 
         this.bluetoothManager = bluetoothManager;
-        gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
+        this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
         characteristic = new BluetoothGattCharacteristic(
             UUID.fromString(BluetoothLowEnergyUtils.CHARACTERISTIC_UUID),
@@ -255,6 +308,28 @@ public class GattServerManager {
         return btDevices;
     }
 
+    public boolean getBondState(String mac) {
+        if (verbose) Log.d(TAG, "getBondState()");
+
+        BluetoothDevice device = mapMacDevice.get(mac);
+        if (device == null)
+            return false;
+
+        if (verbose) Log.d(TAG, Integer.toString(device.getBondState()));
+
+        return device.getBondState() == BluetoothDevice.BOND_BONDED;
+    }
+
+    public boolean createBond(String mac) {
+        if (verbose) Log.d(TAG, "createBond()");
+
+        BluetoothDevice device = mapMacDevice.get(mac);
+        if (device == null)
+            return false;
+
+        return device.createBond();
+    }
+
     public void cancelConnection(String mac) {
         if (verbose) Log.d(TAG, "cancelConnection()");
 
@@ -268,6 +343,7 @@ public class GattServerManager {
     public void closeGattServer() {
         if (verbose) Log.d(TAG, "closeGattServer()");
 
+        context.unregisterReceiver(receiver);
         gattServer.close();
         eventConnectionSink = null;
         eventMessageSink = null;

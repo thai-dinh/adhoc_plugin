@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
@@ -21,11 +22,12 @@ class BleClient extends ServiceClient {
   StreamSubscription<List<int>> _msgSub;
   FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
+  Stream<dynamic> _bondStream;
   Uuid _serviceUuid;
   Uuid _characteristicUuid;
 
   BleClient(
-    bool verbose, this._device, int attempts, int timeOut,
+    bool verbose, this._device, int attempts, int timeOut, this._bondStream
   ) : super(
     verbose, Service.STATE_NONE, attempts, timeOut
   ) {
@@ -133,7 +135,7 @@ class BleClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac}');
+    if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac.ble}');
 
     if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
       _conSub = _reactiveBle.connectToDevice(
@@ -146,12 +148,27 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            listen();
-            await _requestMtu();
+            if (!(await BleAdHocManager.getBondState(_device.mac.ble))) {
+              _bondStream.listen((event) async {
+                if (_device.mac.ble == event['macAddress']) {
+                  listen();
+                  await _requestMtu();
 
-            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+                  controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
 
-            state = Service.STATE_CONNECTED;
+                  state = Service.STATE_CONNECTED;
+                }
+              });
+
+              BleAdHocManager.createBond(_device.mac.ble);
+            } else {
+              listen();
+              await _requestMtu();
+
+              controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+
+              state = Service.STATE_CONNECTED;
+            }
             break;
 
           case DeviceConnectionState.connecting:

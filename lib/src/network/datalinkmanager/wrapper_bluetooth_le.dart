@@ -232,11 +232,12 @@ class WrapperBluetoothLE extends WrapperConnOriented {
 
   void _listenServer() {
     serviceServer = BleServer(verbose)..listen();
+    _bleAdHocManager.initialize();
     _onEvent(serviceServer);
   }
 
   Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
-    final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut);
+    final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager.bondStream);
     _onEvent(bleClient);
     await bleClient.connect();
   }
