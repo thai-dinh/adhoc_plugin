@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
@@ -94,14 +94,14 @@ class WifiAdHocManager {
             return wifiAdHocDevice;
           });
 
-          _controller.add(DiscoveryEvent(Service.DEVICE_DISCOVERED, wifiAdHocDevice));
+          _controller.add(DiscoveryEvent(DEVICE_DISCOVERED, wifiAdHocDevice));
         });
       },
     );
 
     _wifiP2p.discovery();
     _isDiscovering = true;
-    _controller.add(DiscoveryEvent(Service.DISCOVERY_START, null));
+    _controller.add(DiscoveryEvent(DISCOVERY_START, null));
 
     Timer(
       Duration(milliseconds: DISCOVERY_TIME),
@@ -143,7 +143,7 @@ class WifiAdHocManager {
     _isDiscovering = false;
     _isPaused = true;
     _discoverySub.pause();
-    _controller.add(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
+    _controller.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/

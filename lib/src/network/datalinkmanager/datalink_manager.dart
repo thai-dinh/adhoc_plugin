@@ -1,46 +1,47 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_bluetooth_le.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_ble.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {
-  static const _POOLING_DISCOVERY = 1000;
-  static const _NB_WRAPPERS = 2;
-
-  Config _config;
-  List<AbstractWrapper> _wrappers;
+  List<WrapperNetwork> _wrappers;
   HashMap<String, AdHocDevice> _mapAddrDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamController<AdHocEvent> _eventCtrl;
 
-  DataLinkManager(bool verbose, this._config) {
+  String label;
+
+  DataLinkManager(bool verbose, Config config) {
     this._mapAddrDevice = HashMap();
-    this._wrappers = List.filled(_NB_WRAPPERS, null);
-    this._wrappers[Service.WIFI] = WrapperWifi(verbose, _config, _mapAddrDevice);
-    this._wrappers[Service.BLUETOOTHLE] = WrapperBluetoothLE(verbose, _config, _mapAddrDevice);
+    this._wrappers = List.filled(NB_WRAPPERS, null);
+    this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddrDevice);
+    this._wrappers[BLE] = WrapperBle(verbose, config, _mapAddrDevice);
     this._discoveryCtrl = StreamController<DiscoveryEvent>.broadcast();
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
     this.checkState();
+    this.label = config.label;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   HashSet<AdHocDevice> get setRemoteDevices {
     return HashSet()
-      ..addAll(_wrappers[Service.BLUETOOTHLE].setRemoteDevices)
-      ..addAll(_wrappers[Service.WIFI].setRemoteDevices);
+      ..addAll(_wrappers[BLE].setRemoteDevices)
+      ..addAll(_wrappers[WIFI].setRemoteDevices);
   }
 
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
@@ -51,7 +52,7 @@ class DataLinkManager {
 
   int checkState() {
     int enabled = 0;
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         enabled++;
 
@@ -63,7 +64,7 @@ class DataLinkManager {
   }
 
   void enableAll(void Function(bool) onEnable) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       enable(3600, wrapper.type, onEnable);
   }
 
@@ -75,7 +76,7 @@ class DataLinkManager {
   }
 
   void disableAll() {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         disable(wrapper.type);
   }
@@ -88,7 +89,7 @@ class DataLinkManager {
     if (enabled == _wrappers.length) {
       _discovery();
     } else {
-      for (AbstractWrapper wrapper in _wrappers) {
+      for (WrapperNetwork wrapper in _wrappers) {
         if (wrapper.enabled) {
           wrapper.discovery();
         }
@@ -98,24 +99,24 @@ class DataLinkManager {
 
   Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
     switch (adHocDevice.type) {
-      case Service.WIFI:
-        await _wrappers[Service.WIFI].connect(attempts, adHocDevice);
+      case WIFI:
+        await _wrappers[WIFI].connect(attempts, adHocDevice);
         break;
 
-      case Service.BLUETOOTHLE:
-        await _wrappers[Service.BLUETOOTHLE].connect(attempts, adHocDevice);
+      case BLE:
+        await _wrappers[BLE].connect(attempts, adHocDevice);
         break;
     }
   }
 
   void stopListening() {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.stopListening();
   }
 
   void removeGroup() {
-    WrapperWifi wrapperWifi = _wrappers[Service.WIFI];
+    WrapperWifi wrapperWifi = _wrappers[WIFI];
     if (wrapperWifi.enabled) {
       wrapperWifi.removeGroup();
     } else {
@@ -124,7 +125,7 @@ class DataLinkManager {
   }
 
   bool isWifiGroupOwner() {
-    WrapperWifi wrapperWifi = _wrappers[Service.WIFI];
+    WrapperWifi wrapperWifi = _wrappers[WIFI];
     if (wrapperWifi.enabled) {
       return wrapperWifi.isWifiGroupOwner();
     } else {
@@ -133,24 +134,24 @@ class DataLinkManager {
   }
 
   void sendMessage(MessageAdHoc message, String address) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.sendMessage(message, address);
   }
 
   void broadcast(MessageAdHoc message) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.broadcast(message);
   }
 
   Future<bool> broadcastObject(Object object) async {
     bool sent = false;
-    for (AbstractWrapper wrapper in _wrappers) {
+    for (WrapperNetwork wrapper in _wrappers) {
       if (wrapper.enabled) {
         Header header = Header(
-          messageType: AbstractWrapper.BROADCAST,
-          label: _config.label,
+          messageType: BROADCAST,
+          label: label,
           name: await wrapper.getAdapterName(),
           deviceType: wrapper.type,
         );
@@ -164,18 +165,18 @@ class DataLinkManager {
   }
 
   void broadcastExcept(MessageAdHoc message, String excludedAddress) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.broadcastExcept(message, excludedAddress);
   }
 
   Future<bool> broadcastObjectExcept(Object object, String excludedAddress) async {
     bool sent = false;
-    for (AbstractWrapper wrapper in _wrappers) {
+    for (WrapperNetwork wrapper in _wrappers) {
       if (wrapper.enabled) {
         Header header = Header(
-          messageType: AbstractWrapper.BROADCAST,
-          label: _config.label,
+          messageType: BROADCAST,
+          label: label,
           name: await wrapper.getAdapterName(),
           deviceType: wrapper.type,
         );
@@ -188,14 +189,14 @@ class DataLinkManager {
     return sent;
   }
 
-  Future<HashMap<String, AdHocDevice>> getPaired() async {
-    if (_wrappers[Service.BLUETOOTHLE].enabled)
-      return await _wrappers[Service.BLUETOOTHLE].getPaired();
+  Future<HashMap<Identifier, AdHocDevice>> getPaired() async {
+    if (_wrappers[BLE].enabled)
+      return await _wrappers[BLE].getPaired();
     return null;
   }
 
   bool isDirectNeighbors(String address) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled && wrapper.isDirectNeighbors(address))
         return true;
     return false;
@@ -204,7 +205,7 @@ class DataLinkManager {
   List<AdHocDevice> getDirectNeighbors() {
     List<AdHocDevice> adHocDevices = List.empty(growable: true);
 
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         adHocDevices.addAll(wrapper.directNeighbors);
 
@@ -221,7 +222,7 @@ class DataLinkManager {
 
   Future<HashMap<int, String>> getActifAdapterNames() async {
     HashMap<int, String> adapterNames = HashMap();
-    for (AbstractWrapper wrapper in _wrappers) {
+    for (WrapperNetwork wrapper in _wrappers) {
       String name = await getAdapterName(wrapper.type);
       if (name != null)
         adapterNames.putIfAbsent(wrapper.type, () => name);
@@ -249,13 +250,13 @@ class DataLinkManager {
   }
 
   void disconnectAll() {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.disconnectAll();
   }
 
   void disconnect(String remoteDest) {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
         wrapper.disconnect(remoteDest);
   }
@@ -263,19 +264,19 @@ class DataLinkManager {
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _wrappers[Service.BLUETOOTHLE].eventStream.listen((event) => _eventCtrl.add(event));
-    _wrappers[Service.BLUETOOTHLE].discoveryStream.listen((event) => _discoveryCtrl.add(event));
-    _wrappers[Service.WIFI].eventStream.listen((event) => _eventCtrl.add(event));
-    _wrappers[Service.WIFI].discoveryStream.listen((event) => _discoveryCtrl.add(event));
+    _wrappers[BLE].eventStream.listen((event) => _eventCtrl.add(event));
+    _wrappers[BLE].discoveryStream.listen((event) => _discoveryCtrl.add(event));
+    _wrappers[WIFI].eventStream.listen((event) => _eventCtrl.add(event));
+    _wrappers[WIFI].discoveryStream.listen((event) => _discoveryCtrl.add(event));
   }
 
   void _discovery() {
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       wrapper.discovery();
 
-    Timer.periodic(Duration(milliseconds: _POOLING_DISCOVERY), (Timer timer) {
+    Timer.periodic(Duration(milliseconds: POOLING_DISCOVERY), (Timer timer) {
       bool finished = true;
-      for (AbstractWrapper wrapper in _wrappers) {
+      for (WrapperNetwork wrapper in _wrappers) {
         if (!wrapper.discoveryCompleted) {
           finished = false;
           break;
@@ -286,15 +287,15 @@ class DataLinkManager {
         timer.cancel();
     });
 
-    for (AbstractWrapper wrapper in _wrappers)
+    for (WrapperNetwork wrapper in _wrappers)
       wrapper.discoveryCompleted = false;
   }
 
   String _typeString(int type) {
     switch (type) {
-      case Service.BLUETOOTHLE:
-        return "BluetoothLE";
-      case Service.WIFI:
+      case BLE:
+        return "Ble";
+      case WIFI:
         return "Wifi";
 
       default:

@@ -1,37 +1,63 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/abstract_wrapper.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart' as Constants;
 import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/neighbors.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
-abstract class WrapperConnOriented extends AbstractWrapper {
-  static const String TAG = "[WrapperConn]";
+abstract class WrapperNetwork {
+  static const String TAG = "[WrapperNetwork]";
 
-  HashMap<Identifier, AdHocDevice> _mapMacDevices;
+  final bool verbose;
 
+  bool enabled;
+  bool connectionFlooding;
+  bool discoveryCompleted;
+  int type;
   int attempts;
+  int timeOut;
+  String label;
+  String ownName;
+  Identifier ownMac;
   Neighbors neighbors;
   ServiceServer serviceServer;
-
   HashMap<String, NetworkManager> mapAddrNetwork;
+  HashMap<Identifier, AdHocDevice> mapMacDevices;
 
-  WrapperConnOriented(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
-  ) : super(verbose, config, mapMacDevices) {
-    this._mapMacDevices = HashMap();
+  HashSet<AdHocDevice> setRemoteDevices;
+  Set<String> setFloodEvents;
+
+  StreamController<DiscoveryEvent> discoveryCtrl;
+  StreamController<AdHocEvent> eventCtrl;
+
+  WrapperNetwork(
+    this.verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
+  ) {
+    this.mapMacDevices = HashMap();
     this.mapAddrNetwork = HashMap();
     this.neighbors = Neighbors();
+    this.enabled = false;
+    this.connectionFlooding = config.connectionFlooding;
+    this.discoveryCompleted = false;
+    this.timeOut = config.timeOut;
+    this.label = config.label;
+    this.ownMac = Identifier();
+    this.setRemoteDevices = HashSet();
+    this.setFloodEvents = Set();
+    this.discoveryCtrl = StreamController<DiscoveryEvent>();
+    this.eventCtrl = StreamController<AdHocEvent>();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -39,12 +65,50 @@ abstract class WrapperConnOriented extends AbstractWrapper {
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
     for (Identifier macAddress in neighbors.labelMac.values)
-      devices.add(_mapMacDevices[macAddress]);
+      devices.add(mapMacDevices[macAddress]);
 
     return devices;
   }
 
+  Stream<DiscoveryEvent> get discoveryStream => discoveryCtrl.stream;
+
+  Stream<AdHocEvent> get eventStream => eventCtrl.stream;
+
+/*------------------------------Abstract methods------------------------------*/
+
+  void init(bool verbose, [Config config]);
+
+  void enable(int duration, void Function(bool) onEnable);
+
+  void disable();
+
+  void discovery();
+
+  Future<void> connect(int attempts, AdHocDevice device);
+
+  Future<HashMap<Identifier, AdHocDevice>> getPaired();
+
+  Future<String> getAdapterName();
+
+  Future<bool> updateDeviceName(String name);
+
+  Future<bool> resetDeviceName();
+
 /*-------------------------------Public methods-------------------------------*/
+
+  void stopListening() {
+    this.discoveryCtrl.close();
+    this.eventCtrl.close();
+  }
+
+  bool checkFloodEvent(String id) {
+    if (!setFloodEvents.contains(id)) {
+      setFloodEvents.add(id);
+      return true;
+    }
+
+    return false;
+  }
 
   bool isDirectNeighbors(String remoteLabel) {
     return neighbors.neighbors.containsKey(remoteLabel);
@@ -95,25 +159,25 @@ abstract class WrapperConnOriented extends AbstractWrapper {
     );
 
     Iterable<MapEntry<Identifier, AdHocDevice>> it = 
-      _mapMacDevices.entries.where(
+      mapMacDevices.entries.where(
         (entry) => (header.mac.ble == entry.key.ble || header.mac.wifi == entry.key.wifi)
       );
 
     if (it.isNotEmpty)
-      _mapMacDevices.remove(it.first.value);
+      mapMacDevices.remove(it.first.value);
 
-    _mapMacDevices.putIfAbsent(header.mac, () => device);
+    mapMacDevices.putIfAbsent(header.mac, () => device);
 
     if (!neighbors.neighbors.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
 
-      eventCtrl.add(AdHocEvent(AbstractWrapper.CONNECTION_EVENT, device));
+      eventCtrl.add(AdHocEvent(Constants.CONNECTION_EVENT, device));
 
       setRemoteDevices.add(device);
       if (connectionFlooding) {
         String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
-        header.messageType = AbstractWrapper.CONNECT_BROADCAST;
+        header.messageType = Constants.CONNECT_BROADCAST;
         broadcast(
           MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()),
         );
@@ -143,7 +207,7 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
     AdHocDevice device;
     Iterable<MapEntry<Identifier, AdHocDevice>> it = 
-      _mapMacDevices.entries.where(
+      mapMacDevices.entries.where(
         (entry) => (mac == entry.key.ble || mac == entry.key.wifi)
       );
     
@@ -158,17 +222,17 @@ abstract class WrapperConnOriented extends AbstractWrapper {
 
       neighbors.remove(label);
       mapAddrNetwork.remove(device.address);
-      _mapMacDevices.removeWhere((identifier, device) => (mac == identifier.ble || mac == identifier.wifi));
+      mapMacDevices.removeWhere((identifier, device) => (mac == identifier.ble || mac == identifier.wifi));
 
-      eventCtrl.add(AdHocEvent(AbstractWrapper.BROKEN_LINK, device.label));
-      eventCtrl.add(AdHocEvent(AbstractWrapper.DISCONNECTION_EVENT, device));
+      eventCtrl.add(AdHocEvent(Constants.BROKEN_LINK, device.label));
+      eventCtrl.add(AdHocEvent(Constants.DISCONNECTION_EVENT, device));
 
       if (connectionFlooding) {
         String id = label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
 
         Header header = Header(
-          messageType: AbstractWrapper.DISCONNECT_BROADCAST,
+          messageType: Constants.DISCONNECT_BROADCAST,
           label: label,
           name: device.name,
           mac: device.mac,

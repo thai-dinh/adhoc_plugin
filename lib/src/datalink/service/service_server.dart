@@ -1,3 +1,4 @@
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
@@ -7,7 +8,7 @@ abstract class ServiceServer extends Service {
 
   List<String> _activeConnections;
 
-  ServiceServer(bool verbose, int state) : super(verbose, state) {
+  ServiceServer(bool verbose) : super(verbose, STATE_NONE) {
     _activeConnections = List.empty(growable: true);
   }
 

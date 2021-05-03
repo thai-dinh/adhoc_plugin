@@ -5,8 +5,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
@@ -21,17 +21,13 @@ class WifiServer extends ServiceServer {
   HashMap<String, StringBuffer> _mapIpBuffer;
   ServerSocket _serverSocket;
 
-  WifiServer(bool verbose) : super(verbose, Service.STATE_NONE) {
+  WifiServer(bool verbose) : super(verbose) {
     WifiAdHocManager.setVerbose(verbose);
     this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
     this._mapIpBuffer = HashMap();
   }
-
-/*------------------------------Getters & Setters-----------------------------*/
-
-  Stream<AdHocEvent> get adhocEvent => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -54,11 +50,11 @@ class WifiServer extends ServiceServer {
             String msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
               for (MessageAdHoc _msg in splitMessages(msg))
-                controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
+                controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
             } else if (msg[msg.length-1].compareTo('}') == 0) {
               _mapIpBuffer[remoteAddress].write(msg);
               for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString()))
-                controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, _msg));
+                controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
               _mapIpBuffer[remoteAddress].clear();
             } else {
               _mapIpBuffer[remoteAddress].write(msg);
@@ -70,17 +66,17 @@ class WifiServer extends ServiceServer {
           },
           onDone: () {
             _closeSocket(remoteAddress);
-            controller.add(AdHocEvent(Service.CONNECTION_ABORTED, remoteAddress));
+            controller.add(AdHocEvent(CONNECTION_ABORTED, remoteAddress));
           }
         ));
 
-        controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, remoteAddress));
+        controller.add(AdHocEvent(CONNECTION_PERFORMED, remoteAddress));
       },
       onDone: () => this.stopListening(),
-      onError: (error) => controller.add(AdHocEvent(Service.CONNECTION_EXCEPTION, error))
+      onError: (error) => controller.add(AdHocEvent(CONNECTION_EXCEPTION, error))
     );
 
-    state = Service.STATE_LISTENING;
+    state = STATE_LISTENING;
   }
 
   @override
@@ -96,7 +92,7 @@ class WifiServer extends ServiceServer {
     _listenStreamSub.cancel();
     _serverSocket.close();
 
-    state = Service.STATE_NONE;
+    state = STATE_NONE;
   }
 
   Future<void> send(MessageAdHoc message, String remoteAddress) async {
@@ -109,7 +105,7 @@ class WifiServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
-    controller.add(AdHocEvent(Service.CONNECTION_ABORTED, remoteAddress));
+    controller.add(AdHocEvent(CONNECTION_ABORTED, remoteAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/

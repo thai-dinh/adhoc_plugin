@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart' as Constants;
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
@@ -23,7 +22,7 @@ class BleServer extends ServiceServer {
   StreamSubscription<dynamic> _conStreamSub;
   StreamSubscription<dynamic> _msgSub;
 
-  BleServer(bool verbose) : super(verbose, Service.STATE_NONE) {
+  BleServer(bool verbose) : super(verbose) {
     BleAdHocManager.setVerbose(verbose);
   }
 
@@ -37,16 +36,16 @@ class BleServer extends ServiceServer {
     _conStreamSub = _chConnect.receiveBroadcastStream()
       .listen((map) {
         String mac = map['macAddress'] as String;
-        String uuid = (BLUETOOTHLE_UUID + mac.replaceAll(new RegExp(':'), '')).toLowerCase();
+        String uuid = (Constants.BLUETOOTHLE_UUID + mac.replaceAll(new RegExp(':'), '')).toLowerCase();
         switch (map['state']) {
-          case Service.STATE_CONNECTED:
+          case Constants.STATE_CONNECTED:
             addActiveConnection(mac);
-            controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [mac, uuid, 0]));
+            controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [mac, uuid, 0]));
             break;
 
-          case Service.STATE_NONE:
+          case Constants.STATE_NONE:
             removeInactiveConnection(mac);
-            controller.add(AdHocEvent(Service.CONNECTION_ABORTED, mac));
+            controller.add(AdHocEvent(Constants.CONNECTION_ABORTED, mac));
             break;
         }
       }, onDone: () => _conStreamSub = null,
@@ -71,10 +70,10 @@ class BleServer extends ServiceServer {
         );
       }
 
-      controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, message));
+      controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, message));
     }, onDone: () => _msgSub = null);
 
-    state = Service.STATE_LISTENING;
+    state = Constants.STATE_LISTENING;
   }
 
   @override
@@ -89,7 +88,7 @@ class BleServer extends ServiceServer {
 
     BleAdHocManager.closeGattServer();
 
-    state = Service.STATE_NONE;
+    state = Constants.STATE_NONE;
   }
 
   Future<void> cancelConnection(String mac) async {

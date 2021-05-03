@@ -1,4 +1,4 @@
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -61,9 +61,9 @@ class AdHocDevice {
   /// Wifi P2P (Wifi), or unknown (UNKNOWN) if the type is not specified.
   String _typeAsString() {
     switch (type) {
-      case Service.BLUETOOTHLE:
+      case BLE:
         return "BluetoothLE";
-      case Service.WIFI:
+      case WIFI:
         return "Wifi";
       default:
         return "UNKNOWN";

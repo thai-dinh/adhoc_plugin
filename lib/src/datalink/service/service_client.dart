@@ -1,22 +1,21 @@
 import 'dart:math';
 
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 
 
 abstract class ServiceClient extends Service {
   static const String TAG = "[ServiceClient]";
-  static const int _LOW = 1500;
-  static const int _HIGH = 2500;
 
   int _attempts;
   int _backOffTime;
   int _timeOut;
 
   ServiceClient(
-    bool verbose, int state, this._attempts, this._timeOut,
-  ) : super(verbose, state) {
-    this._backOffTime = new Random().nextInt(_HIGH - _LOW) + _LOW;
+    bool verbose, this._attempts, this._timeOut,
+  ) : super(verbose, STATE_NONE) {
+    this._backOffTime = new Random().nextInt(HIGH - LOW) + LOW;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

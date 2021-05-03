@@ -14,9 +14,6 @@ const int NO_LIFE_TIME = -1;
 
 const int LIFE_TIME = EXPIRED_TIME;
 
-const int HELLO_PACKET_INTERVAL_SND = 15000;
-const int HELLO_PACKET_INTERVAL = 5000;
-
 const int DELAY = 60000;
 const int PERIOD = DELAY;
 

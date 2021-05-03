@@ -5,10 +5,9 @@ import 'dart:typed_data';
 import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart' as Constants;
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -29,7 +28,7 @@ class BleClient extends ServiceClient {
   BleClient(
     bool verbose, this._device, int attempts, int timeOut, this._bondStream
   ) : super(
-    verbose, Service.STATE_NONE, attempts, timeOut
+    verbose, attempts, timeOut
   ) {
     this._reactiveBle = FlutterReactiveBle();
     this._serviceUuid = Uuid.parse(SERVICE_UUID);
@@ -50,7 +49,7 @@ class BleClient extends ServiceClient {
       bytesData.add(Uint8List.fromList(rawData));
       if (rawData[0] == MESSAGE_END) {
         if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
-        controller.add(AdHocEvent(Service.MESSAGE_RECEIVED, processMessage(bytesData)));
+        controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, processMessage(bytesData)));
         bytesData.clear();
       }
     }, onDone: () => _msgSub = null);
@@ -76,7 +75,7 @@ class BleClient extends ServiceClient {
   Future<void> send(MessageAdHoc message) async {
     if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac.ble}');
 
-    if (state == Service.STATE_NONE)
+    if (state == Constants.STATE_NONE)
       throw NoConnectionException('No remote connection');
 
     int _id = id++;
@@ -137,7 +136,7 @@ class BleClient extends ServiceClient {
   Future<void> _connectionAttempt() async {
     if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac.ble}');
 
-    if (state == Service.STATE_NONE || state == Service.STATE_CONNECTING) {
+    if (state == Constants.STATE_NONE || state == Constants.STATE_CONNECTING) {
       _conSub = _reactiveBle.connectToDevice(
         id: _device.mac.ble,
         servicesWithCharacteristicsToDiscover: {},
@@ -154,9 +153,9 @@ class BleClient extends ServiceClient {
                   listen();
                   await _requestMtu();
 
-                  controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+                  controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
 
-                  state = Service.STATE_CONNECTED;
+                  state = Constants.STATE_CONNECTED;
                 }
               });
 
@@ -165,18 +164,18 @@ class BleClient extends ServiceClient {
               listen();
               await _requestMtu();
 
-              controller.add(AdHocEvent(Service.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+              controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
 
-              state = Service.STATE_CONNECTED;
+              state = Constants.STATE_CONNECTED;
             }
             break;
 
           case DeviceConnectionState.connecting:
-            state = Service.STATE_CONNECTING;
+            state = Constants.STATE_CONNECTING;
             break;
 
           default:
-            state = Service.STATE_NONE;
+            state = Constants.STATE_NONE;
         }
       });
     }

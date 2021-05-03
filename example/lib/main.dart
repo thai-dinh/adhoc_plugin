@@ -43,7 +43,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     super.initState();
 
     _manager.eventStream.listen((event) async {
-      if (event.type == AbstractWrapper.DATA_RECEIVED) {
+      if (event.type == DATA_RECEIVED) {
         List<dynamic> payload = event.payload;
         AdHocDevice peer = payload[0];
         Map<String, dynamic> data = payload[1];
@@ -149,7 +149,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
           default:
         }
-      } else if (event.type == AbstractWrapper.CONNECTION_EVENT) {
+      } else if (event.type == CONNECTION_EVENT) {
         AdHocDevice peer = event.payload as AdHocDevice;
         _peers.putIfAbsent(peer.name, () => peer);
         _updatePlaylist(peer: peer);
@@ -169,7 +169,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     });
 
     _manager.discoveryStream.listen((event) {
-      if (event.type == Service.DISCOVERY_END) {
+      if (event.type == DISCOVERY_END) {
         setState(() {
           (event.payload as Map).entries.forEach(
             (element) => _discoveredDevices.add(element.value)

@@ -3,10 +3,9 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_constants.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
@@ -93,14 +92,14 @@ class BleAdHocManager {
           if (_verbose)
             log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
 
-          _controller.add(DiscoveryEvent(Service.DEVICE_DISCOVERED, bleAdHocDevice));
+          _controller.add(DiscoveryEvent(DEVICE_DISCOVERED, bleAdHocDevice));
           return bleAdHocDevice;
         });
       },
     );
 
     _isDiscovering = true;
-    _controller.add(DiscoveryEvent(Service.DISCOVERY_START, null));
+    _controller.add(DiscoveryEvent(DISCOVERY_START, null));
 
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
@@ -147,7 +146,7 @@ class BleAdHocManager {
 
     _isDiscovering = false;
 
-    _controller.add(DiscoveryEvent(Service.DISCOVERY_END, _mapMacDevice));
+    _controller.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/
