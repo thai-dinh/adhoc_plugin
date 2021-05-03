@@ -1,0 +1,1 @@
+const CERTIFICATE_EXCHANGE = 30;
