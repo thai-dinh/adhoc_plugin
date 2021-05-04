@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:adhoc_plugin/src/data_security/certificate.dart';
 import "package:pointycastle/export.dart";
 
 
@@ -9,7 +11,7 @@ class CryptoEngine {
   RSAPrivateKey _privateKey;
 
   CryptoEngine() {
-    final keys = generateRSAkeyPair(_randomEngine());
+    final keys = generateRSAkeyPair();
     this._publicKey = keys.publicKey;
     this._privateKey = keys.privateKey;
   }
@@ -21,11 +23,11 @@ class CryptoEngine {
 /*-------------------------------Public methods-------------------------------*/
 
   AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> generateRSAkeyPair(
-    SecureRandom secureRandom, {int bitLength = 2048}
+    {int bitLength = 2048}
   ) {
     final keyGen = RSAKeyGenerator()..init(ParametersWithRandom(
       RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64), 
-      secureRandom
+      _random()
     ));
 
     final pair = keyGen.generateKeyPair();
@@ -41,12 +43,13 @@ class CryptoEngine {
     return signer.generateSignature(data).bytes;
   }
 
-  bool verify(Uint8List data, Uint8List signature, RSAPublicKey key) {
+  bool verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
     final verifier = RSASigner(SHA256Digest(), '0609608648016503040201');
     verifier.init(false, PublicKeyParameter<RSAPublicKey>(key));
+    certificate.signature = Uint8List(1);
 
     try {
-      return verifier.verifySignature(data, RSASignature(signature));
+      return verifier.verifySignature(Utf8Encoder().convert(certificate.toString()), RSASignature(signature));
     } on ArgumentError {
       return false;
     }
@@ -66,7 +69,7 @@ class CryptoEngine {
 
 /*------------------------------Private methods-------------------------------*/
 
-  SecureRandom _randomEngine() {
+  SecureRandom _random() {
     final secureRandom = FortunaRandom();
 
     final seedSource = Random.secure();

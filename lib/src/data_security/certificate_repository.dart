@@ -18,16 +18,20 @@ class CertificateRepository {
   }
 
   void removeCertificate(String label) {
-
+    _repository.remove(label);
   }
 
   Certificate getCertificate(String label) {
-    return null;
+    return _repository[label];
+  }
+
+  bool containCertificate(String label) {
+    return _repository.containsKey(label);
   }
 
 /*------------------------------Private methods-------------------------------*/
 
   void _manageCertificates() {
-
+    // Periodically check wether a certificate validity has expired or not
   }
 }

@@ -7,24 +7,25 @@ import 'package:adhoc_plugin/src/data_security/certificate.dart';
 import 'package:adhoc_plugin/src/data_security/certificate_repository.dart';
 import 'package:adhoc_plugin/src/data_security/constants.dart';
 import 'package:adhoc_plugin/src/data_security/crypto_engine.dart';
+import 'package:adhoc_plugin/src/data_security/data.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:pointycastle/pointycastle.dart';
+
 
 class SecureDataManager {
   final bool _verbose;
 
   AodvManager _aodvManager;
-  Base64Codec _codec;
   CertificateRepository _repository;
   CryptoEngine _engine;
   StreamController<AdHocEvent> _controller;
 
   SecureDataManager(this._verbose, Config config) {
     this._aodvManager = AodvManager(_verbose, config);
-    this._codec = Base64Codec();
     this._repository = CertificateRepository();
     this._engine = CryptoEngine();
     this._controller = StreamController<AdHocEvent>.broadcast();
@@ -45,9 +46,8 @@ class SecureDataManager {
 
   void sendEncryptedMessageTo(Object pdu, String label) {
     Certificate certificate = _repository.getCertificate(label);
-    Uint8List encrypted = 
-      _engine.encrypt(_codec.decode(pdu.toString()), certificate.key);
-    _aodvManager.sendMessageTo([true, encrypted], label);
+    Uint8List encrypted = _engine.encrypt(Utf8Encoder().convert(pdu.toString()), certificate.key);
+    _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encrypted), label);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -57,23 +57,46 @@ class SecureDataManager {
       switch (event.type) {
         case CONNECTION_EVENT:
           AdHocDevice neighbor = event.payload as AdHocDevice;
-          _aodvManager.sendMessageTo([CERTIFICATE_EXCHANGE, _engine.publicKey], neighbor.label);
+          _aodvManager.sendMessageTo(Data(CERT_XCHG_BEGIN, _engine.publicKey), neighbor.label);
           break;
 
         case DATA_RECEIVED:
-          List<dynamic> payload = event.payload as List<dynamic>;
-          AdHocDevice sender = payload[0];
-          bool state = (payload[1] as List<dynamic>)[0];
-          Object pdu = (payload[1] as List<dynamic>)[1];
-          if (state)
-            pdu = _engine.decrypt(pdu);
-
-          _controller.add(AdHocEvent(DATA_RECEIVED, [sender, pdu]));
+          _processData(event.payload);
           break;
 
         default:
           _controller.add(event);
       }
     });
+  }
+
+  void _processData(Object data) {
+    AdHocDevice neighbor = (data as List)[0] as AdHocDevice;
+    Data pdu = (data as List)[1] as Data;
+    switch (pdu.type) {
+      case CERT_XCHG_BEGIN:
+        _issueCertificate(neighbor, pdu.payload as RSAPublicKey);
+        _aodvManager.sendMessageTo(Data(CERT_XCHG_END, _engine.publicKey), neighbor.label);
+        break;
+
+      case CERT_XCHG_END:
+        _issueCertificate(neighbor, pdu.payload as RSAPublicKey);
+        break;
+
+      case ENCRYPTED_DATA:
+        _controller.add(AdHocEvent(DATA_RECEIVED, _engine.decrypt(pdu.payload as Uint8List)));
+        break;
+
+      case UNENCRYPTED_DATA:
+        _controller.add(AdHocEvent(DATA_RECEIVED, pdu.payload));
+        break;
+    }
+  }
+
+  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
+    Certificate certificate = Certificate(neighbor.label, _aodvManager.ownLabel, key);
+    Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
+    certificate.signature = signature;
+    _repository.addCertificate(certificate);
   }
 }
