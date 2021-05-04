@@ -11,16 +11,14 @@ class BleAdHocDevice extends AdHocDevice {
     name: device.name, mac: Identifier(ble: device.id), type: BLE,
   ) {
     this.mtu = MIN_MTU;
-    this.address = 
-      (BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '')).toLowerCase();
+    this.address = (BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '')).toLowerCase();
   }
 
   BleAdHocDevice.fromMap(Map map) : super(
     name: map['deviceName'], mac: map['macAddress'], type: BLE
   ) {
     this.mtu = MIN_MTU;
-    this.address = 
-      (BLUETOOTHLE_UUID + map['macAddress'].replaceAll(new RegExp(':'), '')).toLowerCase();
+    this.address = (BLUETOOTHLE_UUID + map['macAddress'].replaceAll(new RegExp(':'), '')).toLowerCase();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

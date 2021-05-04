@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/data_security/certificate.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 import "package:pointycastle/export.dart";
 
 

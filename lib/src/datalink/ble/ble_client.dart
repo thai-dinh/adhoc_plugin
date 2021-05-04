@@ -17,8 +17,8 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   static int id = 0;
 
-  StreamSubscription<ConnectionStateUpdate> _conSub;
-  StreamSubscription<List<int>> _msgSub;
+  StreamSubscription<ConnectionStateUpdate> _connnectionSub;
+  StreamSubscription<List<int>> _messageSub;
   FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
   Stream<dynamic> _bondStream;
@@ -45,24 +45,24 @@ class BleClient extends ServiceClient {
     );
 
     List<Uint8List> bytesData = List.empty(growable: true);
-    _msgSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
+    _messageSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
       bytesData.add(Uint8List.fromList(rawData));
       if (rawData[0] == MESSAGE_END) {
         if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
         controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, processMessage(bytesData)));
         bytesData.clear();
       }
-    }, onDone: () => _msgSub = null);
+    }, onDone: () => _messageSub = null);
   }
 
   @override
   void stopListening() {
     super.stopListening();
 
-    if (_conSub != null)
-      _conSub.cancel();
-    if (_msgSub != null)
-      _msgSub.cancel();
+    if (_connnectionSub != null)
+      _connnectionSub.cancel();
+    if (_messageSub != null)
+      _messageSub.cancel();
   }
 
   Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
@@ -137,7 +137,7 @@ class BleClient extends ServiceClient {
     if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac.ble}');
 
     if (state == Constants.STATE_NONE || state == Constants.STATE_CONNECTING) {
-      _conSub = _reactiveBle.connectToDevice(
+      _connnectionSub = _reactiveBle.connectToDevice(
         id: _device.mac.ble,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),

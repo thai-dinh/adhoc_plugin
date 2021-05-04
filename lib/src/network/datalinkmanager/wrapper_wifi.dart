@@ -55,7 +55,7 @@ class WrapperWifi extends WrapperNetwork {
 /*------------------------------Override methods------------------------------*/
 
   @override
-  void init(bool verbose, [Config config]) async {
+  void init(bool verbose, Config config) async {
     _serverPort = config.serverPort;
 
     if (await WifiAdHocManager.isWifiEnabled()) {
@@ -99,11 +99,11 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   @override
-  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
-    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[adHocDevice.mac.wifi];
+  Future<void> connect(int attempts, AdHocDevice device) async {
+    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[device.mac.wifi];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(adHocDevice.mac.wifi);
+      await _wifiManager.connect(device.mac.wifi);
     }
   }
 
@@ -239,7 +239,7 @@ class WrapperWifi extends WrapperNetwork {
             MessageAdHoc(
               Header(
                 messageType: CONNECT_SERVER,
-                label: label,
+                label: ownLabel,
                 name: ownName,
                 mac: ownMac,
                 address: _ownIpAddress,
@@ -287,7 +287,7 @@ class WrapperWifi extends WrapperNetwork {
         serviceServer.send(
           MessageAdHoc(Header(
             messageType: CONNECT_CLIENT,
-            label: label,
+            label: ownLabel,
             name: ownName,
             mac: ownMac,
             address: _ownIpAddress,
@@ -321,7 +321,7 @@ class WrapperWifi extends WrapperNetwork {
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
           for (AdHocDevice device in hashSet) {
-            if (device.label != label 
+            if (device.label != ownLabel 
               && !setRemoteDevices.contains(device)
               && !isDirectNeighbors(device.label)
             ) {
@@ -340,7 +340,7 @@ class WrapperWifi extends WrapperNetwork {
           broadcastExcept(message, message.header.label);
 
           Header header = message.header;
-          AdHocDevice adHocDevice = AdHocDevice(
+          AdHocDevice device = AdHocDevice(
             label: header.label,
             name: header.name,
             mac: header.mac,
@@ -348,23 +348,23 @@ class WrapperWifi extends WrapperNetwork {
             directedConnected: false
           );
 
-          eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, adHocDevice));
+          eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, device));
 
-          if (setRemoteDevices.contains(adHocDevice))
-            setRemoteDevices.remove(adHocDevice);
+          if (setRemoteDevices.contains(device))
+            setRemoteDevices.remove(device);
         }
         break;
 
       case BROADCAST:
         Header header = message.header;
-        AdHocDevice adHocDevice = AdHocDevice(
+        AdHocDevice device = AdHocDevice(
           label: header.label,
           name: header.name,
           mac: header.mac,
           type: header.deviceType
         );
 
-        eventCtrl.add(AdHocEvent(DATA_RECEIVED, [adHocDevice, message.pdu]));
+        eventCtrl.add(AdHocEvent(DATA_RECEIVED, [device, message.pdu]));
         break;
 
       default:

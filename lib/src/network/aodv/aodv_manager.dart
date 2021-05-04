@@ -36,7 +36,7 @@ class AodvManager {
   String _ownName;
   String ownLabel;
   int _ownSequenceNum;
-  DataLinkManager _dataLink;
+  DataLinkManager _datalinkManager;
   MessageAdHoc _dataMessage;
 
   AodvManager(this._verbose, Config config) {
@@ -45,7 +45,7 @@ class AodvManager {
     this._mapDestSequenceNumber = HashMap();
     this._ownMac = Identifier();
     this.ownLabel = config.label;
-    this._dataLink = DataLinkManager(_verbose, config);
+    this._datalinkManager = DataLinkManager(_verbose, config);
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
     if (_verbose)
@@ -54,11 +54,11 @@ class AodvManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  DataLinkManager get dataLinkManager => _dataLink;
+  DataLinkManager get dataLinkManager => _datalinkManager;
 
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
-  Stream<DiscoveryEvent> get discoveryStream => _dataLink.discoveryStream;
+  Stream<DiscoveryEvent> get discoveryStream => _datalinkManager.discoveryStream;
 
 /*------------------------------Public methods-------------------------------*/
 
@@ -78,7 +78,7 @@ class AodvManager {
 /*-----------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _dataLink.eventStream.listen((AdHocEvent event) {
+    _datalinkManager.eventStream.listen((AdHocEvent event) {
       switch (event.type) {
         case DatalinkConstants.BROKEN_LINK:
           _brokenLinkDetected(event.payload);
@@ -157,7 +157,7 @@ class AodvManager {
   }
 
   void _send(MessageAdHoc message, String address) {
-    if (_dataLink.isDirectNeighbors(address)) {
+    if (_datalinkManager.isDirectNeighbors(address)) {
       EntryRoutingTable destNext = _aodvHelper.getNextfromDest(address);
       if (destNext != null && message.header.messageType == AodvConstants.DATA)
         destNext.updateDataPath(address);
@@ -186,7 +186,7 @@ class AodvManager {
   void _sendDirect(MessageAdHoc message, String address) {
     if (_verbose) log(TAG, 'Send directly to $address');
 
-    _dataLink.sendMessage(message, address);
+    _datalinkManager.sendMessage(message, address);
   }
 
   void _startTimerRREQ(String destAddr, int retry, int time) {
@@ -209,7 +209,7 @@ class AodvManager {
       )
     );
 
-    _dataLink.broadcast(message);
+    _datalinkManager.broadcast(message);
 
     Timer(Duration(milliseconds: time), () {
       EntryRoutingTable entry = _aodvHelper.getNextfromDest(destAddr);
@@ -310,7 +310,7 @@ class AodvManager {
         );
         message.pdu = rreq;
 
-        _dataLink.broadcastExcept(message, originateAddr);
+        _datalinkManager.broadcastExcept(message, originateAddr);
 
         _aodvHelper.addEntryRoutingTable(rreq.originAddress, originateAddr, hop, rreq.originSequenceNum, AodvConstants.NO_LIFE_TIME, null);
 
@@ -588,7 +588,6 @@ class AodvManager {
     Timer(Duration(milliseconds: AodvConstants.EXPIRED_TABLE),
       () {
         if (_verbose) log(TAG, 'Add timer for $originAddress - seq: $sequenceNum');
-
         int lastChanged = _aodvHelper.getDataPathFromAddress(originAddress);
         int difference = (DateTime.now().millisecond - lastChanged);
         if (lastChanged == 0) {

@@ -39,13 +39,13 @@ class WrapperBle extends WrapperNetwork {
     this._isInitialized = false;
     this.ownMac = Identifier();
     this.type = BLE;
-    this.init(verbose);
+    this.init(verbose, null);
   }
 
 /*------------------------------Override methods------------------------------*/
 
   @override
-  Future<void> init(bool verbose, [Config config]) async {
+  Future<void> init(bool verbose, Config config) async {
     if (await BleAdHocManager.isEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this.ownName = await BleAdHocManager.getCurrentName();
@@ -95,14 +95,14 @@ class WrapperBle extends WrapperNetwork {
   }
 
   @override
-  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
-    BleAdHocDevice bleAdHocDevice = mapMacDevices[adHocDevice.mac.ble];
+  Future<void> connect(int attempts, AdHocDevice device) async {
+    BleAdHocDevice bleAdHocDevice = mapMacDevices[device.mac.ble];
     if (bleAdHocDevice != null) {
       if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
-          adHocDevice.name + "(" + adHocDevice.mac.ble + ") is already connected"
+          device.name + "(" + device.mac.ble + ") is already connected"
         );
       }
     }
@@ -207,7 +207,7 @@ class WrapperBle extends WrapperNetwork {
             MessageAdHoc(
               Header(
                 messageType: CONNECT_SERVER, 
-                label: label,
+                label: ownLabel,
                 name: ownName,
                 mac: ownMac,
                 address: _ownStringUUID,
@@ -257,7 +257,7 @@ class WrapperBle extends WrapperNetwork {
           MessageAdHoc(
             Header(
               messageType: CONNECT_CLIENT, 
-              label: label,
+              label: ownLabel,
               name: ownName,
               mac: ownMac,
               address: _ownStringUUID,
@@ -295,7 +295,7 @@ class WrapperBle extends WrapperNetwork {
 
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
           for (AdHocDevice device in hashSet) {
-            if (device.label != label 
+            if (device.label != ownLabel 
               && !setRemoteDevices.contains(device)
               && !isDirectNeighbors(device.label)
             ) {

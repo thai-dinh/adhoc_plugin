@@ -1,67 +1,67 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:core';
-
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
 
 
 class TransferManager {
   bool _verbose;
-  AodvManager _aodvManager;
-  DataLinkManager _dataLinkManager;
+  SecureDataManager _secureDataManager;
+  DataLinkManager _datalinkManager;
 
-  TransferManager(bool verbose, {Config config}) {
-    this._verbose = verbose;
-    this._aodvManager = AodvManager(_verbose, (config == null) ? Config() : config..connectionFlooding = true);
-    this._dataLinkManager = _aodvManager.dataLinkManager;
-    this._dataLinkManager.enableAll((state) { });
+  TransferManager(this._verbose, {Config config}) {
+    this._secureDataManager = SecureDataManager(_verbose, config);
+    this._datalinkManager = _secureDataManager.datalinkManager;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  HashSet<AdHocDevice> get setRemoteDevices => _dataLinkManager.setRemoteDevices;
+  List<AdHocDevice> get directNeighbors => _secureDataManager.directNeighbors;
 
-  Stream<AdHocEvent> get eventStream => _aodvManager.eventStream;
+  Stream<AdHocEvent> get eventStream => _secureDataManager.eventStream;
 
-  Stream<DiscoveryEvent> get discoveryStream => _dataLinkManager.discoveryStream;
+  Stream<DiscoveryEvent> get discoveryStream => _secureDataManager.discoveryStream;
 
 /*------------------------------Network methods------------------------------*/
 
-  void sendMessageTo(Object message, AdHocDevice adHocDevice) {
-    if (_dataLinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-    _aodvManager.sendMessageTo(message, adHocDevice.label);
+  void sendMessageTo(Object data, String destination) {
+    _secureDataManager.send(data, destination, false);
   }
 
-  Future<bool> broadcast(Object message) async {
-    if (_dataLinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-    return await _dataLinkManager.broadcastObject(message);
+  void sendEncryptedMessageTo(Object data, String destination) {
+    _secureDataManager.send(data, destination, true);
   }
 
-  Future<bool> broadcastExcept(Object message, AdHocDevice excludedDevice) async {
-    if (_dataLinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-    return await _dataLinkManager.broadcastObjectExcept(message, excludedDevice.label);
+  Future<bool> broadcast(Object data) async {
+    return await _secureDataManager.broadcast(data, false);
+  }
+
+  Future<bool> encryptedBroadcast(Object data) async {
+    return await _secureDataManager.broadcast(data, true);
+  }
+
+  Future<bool> broadcastExcept(Object data, AdHocDevice excluded) async {
+    return await _secureDataManager.broadcastExcept(data, excluded.label, false);
+  }
+
+  Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
+    return await _secureDataManager.broadcastExcept(data, excluded.label, true);
   }
 
 /*------------------------------DataLink methods-----------------------------*/
 
-  void discovery() => _dataLinkManager.discovery();
+  void discovery() => _datalinkManager.discovery();
 
   Future<void> connect(AdHocDevice device) async {        
-    if (_dataLinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
-    await _dataLinkManager.connect(1, device);
+    await _datalinkManager.connect(1, device);
   }
 
-  void disconnect(AdHocDevice device) => _dataLinkManager.disconnect(device.label);
+  void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label);
 
-  void disconnectAll() => _dataLinkManager.disconnectAll();
+  void disconnectAll() => _datalinkManager.disconnectAll();
 }

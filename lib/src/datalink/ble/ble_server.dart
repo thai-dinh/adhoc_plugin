@@ -19,8 +19,8 @@ class BleServer extends ServiceServer {
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
   static const EventChannel _chMessage = const EventChannel(_chMessageName);
 
-  StreamSubscription<dynamic> _conStreamSub;
-  StreamSubscription<dynamic> _msgSub;
+  StreamSubscription<dynamic> _connectionSub;
+  StreamSubscription<dynamic> _messageSub;
 
   BleServer(bool verbose) : super(verbose) {
     BleAdHocManager.setVerbose(verbose);
@@ -33,7 +33,7 @@ class BleServer extends ServiceServer {
 
     BleAdHocManager.openGattServer();
 
-    _conStreamSub = _chConnect.receiveBroadcastStream()
+    _connectionSub = _chConnect.receiveBroadcastStream()
       .listen((map) {
         String mac = map['macAddress'] as String;
         String uuid = (Constants.BLUETOOTHLE_UUID + mac.replaceAll(new RegExp(':'), '')).toLowerCase();
@@ -48,10 +48,10 @@ class BleServer extends ServiceServer {
             controller.add(AdHocEvent(Constants.CONNECTION_ABORTED, mac));
             break;
         }
-      }, onDone: () => _conStreamSub = null,
+      }, onDone: () => _connectionSub = null,
     );
 
-    _msgSub = _chMessage.receiveBroadcastStream().listen((map) {
+    _messageSub = _chMessage.receiveBroadcastStream().listen((map) {
       if (verbose) log(ServiceServer.TAG, 'Server: message received');
 
       Uint8List messageAsListByte = 
@@ -71,7 +71,7 @@ class BleServer extends ServiceServer {
       }
 
       controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, message));
-    }, onDone: () => _msgSub = null);
+    }, onDone: () => _messageSub = null);
 
     state = Constants.STATE_LISTENING;
   }
@@ -81,10 +81,10 @@ class BleServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'Server: stopListening');
 
     super.stopListening();
-    if (_conStreamSub != null)
-      _conStreamSub.cancel();
-    if (_msgSub != null)
-      _msgSub.cancel();
+    if (_connectionSub != null)
+      _connectionSub.cancel();
+    if (_messageSub != null)
+      _messageSub.cancel();
 
     BleAdHocManager.closeGattServer();
 

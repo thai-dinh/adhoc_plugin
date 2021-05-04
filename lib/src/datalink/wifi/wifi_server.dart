@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 
 
 class WifiServer extends ServiceServer {
-  StreamSubscription<Socket> _listenStreamSub;
+  StreamSubscription<Socket> _connectionSub;
   HashMap<String, HashMap<int, String>> _mapNameData;
   HashMap<String, StreamSubscription<Uint8List>> _mapIpStream;
   HashMap<String, Socket> _mapIpSocket;
@@ -36,7 +36,7 @@ class WifiServer extends ServiceServer {
 
     _serverSocket = await ServerSocket.bind(hostIp, serverPort, shared: true);
   
-    _listenStreamSub = _serverSocket.listen(
+    _connectionSub = _serverSocket.listen(
       (socket) {
         String remoteAddress = socket.remoteAddress.address;
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
@@ -89,7 +89,7 @@ class WifiServer extends ServiceServer {
     _mapIpSocket.forEach((ipAddress, socket) => socket.destroy());
     _mapIpSocket.clear();
 
-    _listenStreamSub.cancel();
+    _connectionSub.cancel();
     _serverSocket.close();
 
     state = STATE_NONE;

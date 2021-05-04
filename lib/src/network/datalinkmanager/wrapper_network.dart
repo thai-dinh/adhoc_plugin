@@ -28,7 +28,7 @@ abstract class WrapperNetwork {
   int type;
   int attempts;
   int timeOut;
-  String label;
+  String ownLabel;
   String ownName;
   Identifier ownMac;
   Neighbors neighbors;
@@ -52,7 +52,7 @@ abstract class WrapperNetwork {
     this.connectionFlooding = config.connectionFlooding;
     this.discoveryCompleted = false;
     this.timeOut = config.timeOut;
-    this.label = config.label;
+    this.ownLabel = config.label;
     this.ownMac = Identifier();
     this.setRemoteDevices = HashSet();
     this.setFloodEvents = Set();
@@ -76,7 +76,7 @@ abstract class WrapperNetwork {
 
 /*------------------------------Abstract methods------------------------------*/
 
-  void init(bool verbose, [Config config]);
+  void init(bool verbose, Config config);
 
   void enable(int duration, void Function(bool) onEnable);
 

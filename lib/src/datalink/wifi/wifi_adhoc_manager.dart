@@ -20,7 +20,7 @@ class WifiAdHocManager {
   bool _isDiscovering;
   bool _isPaused;
   HashMap<String, WifiAdHocDevice> _mapMacDevice;
-  StreamController<DiscoveryEvent> _controller;
+  StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   WifiP2p _wifiP2p;
 
@@ -30,7 +30,7 @@ class WifiAdHocManager {
     this._isDiscovering = false;
     this._isPaused = false;
     this._mapMacDevice = HashMap();
-    this._controller = StreamController<DiscoveryEvent>();
+    this._discoveryCtrl = StreamController<DiscoveryEvent>();
     this._wifiP2p = WifiP2p();
     this._wifiP2p.verbose = _verbose;
   }
@@ -39,7 +39,7 @@ class WifiAdHocManager {
 
   Future<String> get adapterName => _channel.invokeMethod('getAdapterName');
 
-  Stream<DiscoveryEvent> get discoveryStream => _controller.stream;
+  Stream<DiscoveryEvent> get discoveryStream => _discoveryCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -94,14 +94,14 @@ class WifiAdHocManager {
             return wifiAdHocDevice;
           });
 
-          _controller.add(DiscoveryEvent(DEVICE_DISCOVERED, wifiAdHocDevice));
+          _discoveryCtrl.add(DiscoveryEvent(DEVICE_DISCOVERED, wifiAdHocDevice));
         });
       },
     );
 
     _wifiP2p.discovery();
     _isDiscovering = true;
-    _controller.add(DiscoveryEvent(DISCOVERY_START, null));
+    _discoveryCtrl.add(DiscoveryEvent(DISCOVERY_START, null));
 
     Timer(
       Duration(milliseconds: DISCOVERY_TIME),
@@ -143,7 +143,7 @@ class WifiAdHocManager {
     _isDiscovering = false;
     _isPaused = true;
     _discoverySub.pause();
-    _controller.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
+    _discoveryCtrl.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/

@@ -3,16 +3,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/data_security/certificate.dart';
-import 'package:adhoc_plugin/src/data_security/certificate_repository.dart';
-import 'package:adhoc_plugin/src/data_security/constants.dart';
-import 'package:adhoc_plugin/src/data_security/crypto_engine.dart';
-import 'package:adhoc_plugin/src/data_security/data.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate_repository.dart';
+import 'package:adhoc_plugin/src/secure_data/constants.dart';
+import 'package:adhoc_plugin/src/secure_data/crypto_engine.dart';
+import 'package:adhoc_plugin/src/secure_data/data.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 
@@ -20,34 +22,69 @@ class SecureDataManager {
   final bool _verbose;
 
   AodvManager _aodvManager;
+  DataLinkManager _datalinkManager;
   CertificateRepository _repository;
   CryptoEngine _engine;
-  StreamController<AdHocEvent> _controller;
+  StreamController<AdHocEvent> _eventCtrl;
 
   SecureDataManager(this._verbose, Config config) {
     this._aodvManager = AodvManager(_verbose, config);
     this._repository = CertificateRepository();
     this._engine = CryptoEngine();
-    this._controller = StreamController<AdHocEvent>.broadcast();
+    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Stream<AdHocEvent> get eventStream => _controller.stream;
+  DataLinkManager get datalinkManager => _datalinkManager;
+
+  List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
+
+  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
   Stream<DiscoveryEvent> get discoveryStream => _aodvManager.discoveryStream;
 
 /*------------------------------Public methods--------------------------------*/
 
-  void sendMessageTo(Object pdu, String label) {
-    _aodvManager.sendMessageTo([false, pdu], label);
+  void send(Object data, String destination, bool encrypted) {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    if (encrypted) {
+      Certificate certificate = _repository.getCertificate(destination);
+      Uint8List encryptedData = _engine.encrypt(Utf8Encoder().convert(data.toString()), certificate.key);
+      _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encryptedData), destination);
+    } else {
+      _aodvManager.sendMessageTo(Data(UNENCRYPTED_DATA, data), destination);
+    }
   }
 
-  void sendEncryptedMessageTo(Object pdu, String label) {
-    Certificate certificate = _repository.getCertificate(label);
-    Uint8List encrypted = _engine.encrypt(Utf8Encoder().convert(pdu.toString()), certificate.key);
-    _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encrypted), label);
+  Future<bool> broadcast(Object data, bool encrypted) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    if (encrypted) {
+      for (final neighbor in _datalinkManager.directNeighbors)
+        send(data, neighbor.label, true);
+      return true;
+    } else {
+      return await _datalinkManager.broadcastObject(Data(UNENCRYPTED_DATA, data));
+    }
+  }
+
+  Future<bool> broadcastExcept(Object data, String excluded, bool encrypted) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    if (encrypted) {
+      for (final neighbor in _datalinkManager.directNeighbors)
+        if (neighbor.label != excluded)
+          send(data, neighbor.label, true);
+      return true;
+    } else {
+      return await _datalinkManager.broadcastObjectExcept(Data(UNENCRYPTED_DATA, data), excluded);
+    }
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -56,6 +93,8 @@ class SecureDataManager {
     _aodvManager.eventStream.listen((event) {
       switch (event.type) {
         case CONNECTION_EVENT:
+          _eventCtrl.add(event);
+
           AdHocDevice neighbor = event.payload as AdHocDevice;
           _aodvManager.sendMessageTo(Data(CERT_XCHG_BEGIN, _engine.publicKey), neighbor.label);
           break;
@@ -65,7 +104,7 @@ class SecureDataManager {
           break;
 
         default:
-          _controller.add(event);
+          _eventCtrl.add(event);
       }
     });
   }
@@ -84,11 +123,11 @@ class SecureDataManager {
         break;
 
       case ENCRYPTED_DATA:
-        _controller.add(AdHocEvent(DATA_RECEIVED, _engine.decrypt(pdu.payload as Uint8List)));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, _engine.decrypt(pdu.payload as Uint8List)));
         break;
 
       case UNENCRYPTED_DATA:
-        _controller.add(AdHocEvent(DATA_RECEIVED, pdu.payload));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, pdu.payload));
         break;
     }
   }

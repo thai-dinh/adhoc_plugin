@@ -23,40 +23,38 @@ class BleAdHocManager {
   bool _isDiscovering;
   FlutterReactiveBle _reactiveBle;
   HashMap<String, BleAdHocDevice> _mapMacDevice;
-  StreamController<DiscoveryEvent> _controller;
-  StreamController<dynamic> _eventController;
-  StreamSubscription<DiscoveredDevice> _subscription;
-  StreamSubscription<BleStatus> _stateStreamSub;
+  StreamController<DiscoveryEvent> _discoveryCtrl;
+  StreamController<dynamic> _bondCtrl;
+  StreamSubscription<DiscoveredDevice> _discoverySub;
+  StreamSubscription<BleStatus> _statusSub;
 
   BleAdHocManager(this._verbose) {
     this._isDiscovering = false;
     this._reactiveBle = FlutterReactiveBle();
     this._mapMacDevice = HashMap<String, BleAdHocDevice>();
-    this._controller = StreamController<DiscoveryEvent>();
-    this._eventController = StreamController<dynamic>.broadcast();
+    this._discoveryCtrl = StreamController<DiscoveryEvent>();
+    this._bondCtrl = StreamController<dynamic>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   Future<String> get adapterName => _methodChannel.invokeMethod('getAdapterName');
 
-  HashMap<String, BleAdHocDevice> get hashMapBleDevice => _mapMacDevice;
+  Stream<DiscoveryEvent> get discoveryStream => _discoveryCtrl.stream;
 
-  Stream<DiscoveryEvent> get discoveryStream => _controller.stream;
-
-  Stream<dynamic> get bondStream => _eventController.stream;
+  Stream<dynamic> get bondStream => _bondCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
   void initialize() {
-    _eventChannel.receiveBroadcastStream().listen((event) => _eventController.add(event));
+    _eventChannel.receiveBroadcastStream().listen((event) => _bondCtrl.add(event));
   }
 
   Future<bool> enable() async => await _methodChannel.invokeMethod('enable');
 
   Future<bool> disable() async {
-    if (_stateStreamSub != null)
-      await _stateStreamSub.cancel();
+    if (_statusSub != null)
+      await _statusSub.cancel();
     return await _methodChannel.invokeMethod('disable');
   }
 
@@ -64,14 +62,10 @@ class BleAdHocManager {
     if (_verbose) log(TAG, 'enableDiscovery()');
 
     if (duration < 0 || duration > 3600) 
-      throw BadDurationException(
-        'Duration must be between 0 and 3600 second(s)'
-      );
+      throw BadDurationException('Duration must be between 0 and 3600 second(s)');
 
     _methodChannel.invokeMethod('startAdvertise');
-    Timer(Duration(seconds: duration), () {
-      _methodChannel.invokeMethod('stopAdvertise');
-    });
+    Timer(Duration(seconds: duration), () => _methodChannel.invokeMethod('stopAdvertise'));
   }
 
   void discovery() async  {
@@ -82,24 +76,24 @@ class BleAdHocManager {
 
     _mapMacDevice.clear();
 
-    _subscription = _reactiveBle.scanForDevices(
+    _discoverySub = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(SERVICE_UUID)],
-      scanMode: ScanMode.lowLatency,
+      scanMode: ScanMode.balanced,
     ).listen(
       (device) {
-        BleAdHocDevice bleAdHocDevice = BleAdHocDevice(device);
+        BleAdHocDevice bleDevice = BleAdHocDevice(device);
         _mapMacDevice.putIfAbsent(device.id, () {
           if (_verbose)
             log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
 
-          _controller.add(DiscoveryEvent(DEVICE_DISCOVERED, bleAdHocDevice));
-          return bleAdHocDevice;
+          _discoveryCtrl.add(DiscoveryEvent(DEVICE_DISCOVERED, bleDevice));
+          return bleDevice;
         });
       },
     );
 
     _isDiscovering = true;
-    _controller.add(DiscoveryEvent(DISCOVERY_START, null));
+    _discoveryCtrl.add(DiscoveryEvent(DISCOVERY_START, null));
 
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
@@ -110,11 +104,8 @@ class BleAdHocManager {
     HashMap<String, BleAdHocDevice> pairedDevices = HashMap();
     List<Map> btDevices = await _methodChannel.invokeMethod('getPairedDevices');
 
-    for (final device in btDevices) {
-      pairedDevices.putIfAbsent(
-        device['macAddress'], () => BleAdHocDevice.fromMap(device)
-      );
-    }
+    for (final device in btDevices)
+      pairedDevices.putIfAbsent(device['macAddress'], () => BleAdHocDevice.fromMap(device));
 
     return pairedDevices;
   }
@@ -124,7 +115,7 @@ class BleAdHocManager {
   Future<bool> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
 
   void onEnableBluetooth(void Function(bool) onEnable) {
-    _stateStreamSub = _reactiveBle.statusStream.listen((status) async {
+    _statusSub = _reactiveBle.statusStream.listen((status) async {
       switch (status) {
         case BleStatus.ready:
           onEnable(true);
@@ -141,12 +132,12 @@ class BleAdHocManager {
   void _stopScan() {
     if (_verbose) log(TAG, 'Discovery end');
 
-    _subscription.cancel();
-    _subscription = null;
+    _discoverySub.cancel();
+    _discoverySub = null;
 
     _isDiscovering = false;
 
-    _controller.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
+    _discoveryCtrl.add(DiscoveryEvent(DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/

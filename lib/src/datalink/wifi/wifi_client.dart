@@ -17,9 +17,7 @@ class WifiClient extends ServiceClient {
 
   WifiClient(
     bool verbose, this._port, this._serverIp, int attempts, int timeOut,
-  ) : super(
-    verbose, attempts, timeOut
-  );
+  ) : super(verbose, attempts, timeOut);
 
 /*-------------------------------Public methods-------------------------------*/
 

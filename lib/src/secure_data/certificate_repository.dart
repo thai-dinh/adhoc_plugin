@@ -1,6 +1,7 @@
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/data_security/certificate.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate.dart';
+
 
 
 class CertificateRepository {
@@ -9,6 +10,14 @@ class CertificateRepository {
   CertificateRepository() {
     this._repository = HashMap();
     this._manageCertificates();
+  }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  List<Certificate> get certificates {
+    List<Certificate> certificates = List.empty(growable: true);
+    _repository.entries.map((entry) => certificates.add(entry.value));
+    return certificates;
   }
 
 /*------------------------------Public methods--------------------------------*/

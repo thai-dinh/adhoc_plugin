@@ -18,17 +18,17 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_wifi.dart';
 
 class DataLinkManager {
   List<WrapperNetwork> _wrappers;
-  HashMap<String, AdHocDevice> _mapAddrDevice;
+  HashMap<String, AdHocDevice> _mapAddressDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamController<AdHocEvent> _eventCtrl;
 
   String label;
 
   DataLinkManager(bool verbose, Config config) {
-    this._mapAddrDevice = HashMap();
+    this._mapAddressDevice = HashMap();
     this._wrappers = List.filled(NB_WRAPPERS, null);
-    this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddrDevice);
-    this._wrappers[BLE] = WrapperBle(verbose, config, _mapAddrDevice);
+    this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddressDevice);
+    this._wrappers[BLE] = WrapperBle(verbose, config, _mapAddressDevice);
     this._discoveryCtrl = StreamController<DiscoveryEvent>.broadcast();
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
@@ -38,10 +38,13 @@ class DataLinkManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  HashSet<AdHocDevice> get setRemoteDevices {
-    return HashSet()
-      ..addAll(_wrappers[BLE].setRemoteDevices)
-      ..addAll(_wrappers[WIFI].setRemoteDevices);
+  List<AdHocDevice> get directNeighbors {
+    List<AdHocDevice> neighbors = List.empty(growable: true);
+
+    for (int i = 0; i < NB_WRAPPERS; i++)
+      neighbors.addAll(_wrappers[i].directNeighbors);
+
+    return neighbors;
   }
 
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
