@@ -1,10 +1,8 @@
-import 'dart:collection';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+
 class SearchBar extends SearchDelegate<String> {
-  final HashMap<String, PlatformFile> _playlist;
+  final List<String> _playlist;
 
   List<String> _recentPick;
   String _selected = '';
@@ -17,8 +15,7 @@ class SearchBar extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return <Widget>[
       IconButton(
-        icon: Icon(Icons.close),
-        onPressed: () => query = '',
+        icon: Icon(Icons.close), onPressed: () => query = '',
       ),
     ];
   }
@@ -26,8 +23,7 @@ class SearchBar extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back), 
-      onPressed: () => Navigator.pop(context),
+      icon: Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context),
     );
   }
 
@@ -45,7 +41,7 @@ class SearchBar extends SearchDelegate<String> {
       suggestions = _recentPick;
     } else {
       List<String> songNames = List.empty(growable: true);
-      _playlist.forEach((key, value) => songNames.add(key));
+      _playlist.forEach((name) => songNames.add(name));
       suggestions.addAll(songNames.where((element) => element.contains(query)));
     }
 

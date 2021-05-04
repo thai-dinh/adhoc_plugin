@@ -123,11 +123,11 @@ class SecureDataManager {
         break;
 
       case ENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, _engine.decrypt(pdu.payload as Uint8List)));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [neighbor, _engine.decrypt(pdu.payload as Uint8List)]));
         break;
 
       case UNENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, pdu.payload));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [neighbor, pdu.payload]));
         break;
     }
   }

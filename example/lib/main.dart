@@ -1,3 +1,8 @@
+import 'dart:collection';
+import 'dart:typed_data';
+
+import 'package:adhoc_plugin/adhoc_plugin.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,11 +19,21 @@ class AdHocMusicClient extends StatefulWidget {
 }
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
-  
+  static const PLAYLIST = 0;
+  static const REQUEST = 0;
+  static const REPLY = 0;
+
+  final TransferManager _manager = TransferManager(true);
+  final List<AdHocDevice> _discovered = List.empty(growable: true);
+  final List<AdHocDevice> _peers = List.empty(growable: true);
+  final HashMap<String, PlatformFile> _globalPlaylist = HashMap();
+  final HashMap<String, PlatformFile> _localPlaylist = HashMap();
 
   @override
   void initState() {
     super.initState();
+    _manager.discoveryStream.listen(_processDiscoveryEvent);
+    _manager.eventStream.listen(_processAdHocEvent);
   }
 
   @override
@@ -72,12 +87,94 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Expanded(
-                child: Column(),
+                child: Column(
+                  children: <Widget>[
+                    Card(child: ListTile(title: Center(child: Text('Ad Hoc Peers')))),
+                    ElevatedButton(
+                      child: Center(child: Text('Search for nearby devices')),
+                      onPressed: () => _manager.discovery(),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: _discovered.map((device) {
+                          return Card(
+                            child: ListTile(
+                              title: Center(child: Text(device.name)),
+                              subtitle: Center(child: Text('[${device.mac.ble}/${device.mac.wifi}')),
+                              onTap: () async {
+                                await _manager.connect(device);
+                                setState(() => _discovered.removeWhere((element) => (element.mac == device.mac)));
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _processDiscoveryEvent(DiscoveryEvent event) {
+    if (event.type == DISCOVERY_END) {
+      setState(() {
+        (event.payload as Map).entries.forEach(
+          (element) => _discovered.add(element.value)
+        );
+      });
+    }
+  }
+
+  void _processAdHocEvent(AdHocEvent event) {
+    switch (event.type) {
+      case CONNECTION_EVENT:
+        _processConnection(event.payload as AdHocDevice);
+        break;
+
+      case DATA_RECEIVED:
+        _processDataReceived(event.payload as List);
+        break;
+
+      case FORWARD_DATA:
+        _processDataReceived(event.payload as List);
+        break;
+
+      default:
+    }
+  }
+
+  void _processConnection(AdHocDevice device) {
+    _peers.add(device);
+  }
+
+  void _processDataReceived(List payload) {
+    AdHocDevice peer = payload.first;
+    Map data = payload.last;
+
+    switch (data['type']) {
+      case PLAYLIST:
+        
+        break;
+
+      case REQUEST:
+        Uint8List bytes = _localPlaylist[data['name']].bytes;
+        HashMap<String, dynamic> message = HashMap();
+        message.putIfAbsent('type', () => REPLY);
+        message.putIfAbsent('name', () => data['name']);
+        message.putIfAbsent('song', () => bytes);
+        _manager.sendMessageTo(message, peer.label);
+        break;
+
+      case REPLY:
+        
+        break;
+
+      default:
+    }
   }
 }
