@@ -6,12 +6,15 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
+/// Class managing the Bluetooth Low Energy discovery and pairing process with
+/// other BLE-capable devices.
 class BleAdHocManager {
   static const String TAG = "[BleAdHocManager]";
   static const String _methodName = 'ad.hoc.lib/plugin.ble.channel';
@@ -22,16 +25,18 @@ class BleAdHocManager {
   bool _verbose;
   bool _isDiscovering;
   FlutterReactiveBle _reactiveBle;
-  HashMap<String, BleAdHocDevice> _mapMacDevice;
+  HashMap<Identifier, BleAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamController<dynamic> _bondCtrl;
   StreamSubscription<DiscoveredDevice> _discoverySub;
   StreamSubscription<BleStatus> _statusSub;
 
+  /// Initialize a newly created BleAdHocManager with the operation being logged
+  /// in the console if [_verbose] is true
   BleAdHocManager(this._verbose) {
     this._isDiscovering = false;
     this._reactiveBle = FlutterReactiveBle();
-    this._mapMacDevice = HashMap<String, BleAdHocDevice>();
+    this._mapMacDevice = HashMap();
     this._discoveryCtrl = StreamController<DiscoveryEvent>();
     this._bondCtrl = StreamController<dynamic>.broadcast();
   }
@@ -58,6 +63,8 @@ class BleAdHocManager {
     return await _methodChannel.invokeMethod('disable');
   }
 
+  /// Set the device into a discovery mode for [duration] seconds. This function
+  /// throws an [BadDurationException] if the given duration exceeds 3600 seconds
   void enableDiscovery(int duration) {
     if (_verbose) log(TAG, 'enableDiscovery()');
 
@@ -68,6 +75,7 @@ class BleAdHocManager {
     Timer(Duration(seconds: duration), () => _methodChannel.invokeMethod('stopAdvertise'));
   }
 
+  /// Trigger the discovery of other BLE-capable devices process.
   void discovery() async  {
     if (_verbose) log(TAG, 'discovery()');
 
@@ -82,7 +90,7 @@ class BleAdHocManager {
     ).listen(
       (device) {
         BleAdHocDevice bleDevice = BleAdHocDevice(device);
-        _mapMacDevice.putIfAbsent(device.id, () {
+        _mapMacDevice.putIfAbsent(bleDevice.mac, () {
           if (_verbose)
             log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
 
@@ -98,6 +106,7 @@ class BleAdHocManager {
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
 
+  /// Return all the paired BLE-capable devices.
   Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
     if (_verbose) log(TAG, 'getPairedDevices()');
 
@@ -110,8 +119,11 @@ class BleAdHocManager {
     return pairedDevices;
   }
 
+  /// Update the local adapter name of the device with [name] and return true
+  /// if the name was successfully set, otherwise false.
   Future<bool> updateDeviceName(String name) async => await _methodChannel.invokeMethod('updateDeviceName', name);
 
+  /// Reset the local adapter name of the device
   Future<bool> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
 
   void onEnableBluetooth(void Function(bool) onEnable) {

@@ -4,9 +4,12 @@ import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
+/// Class representing a remote BLE-capable device
 class BleAdHocDevice extends AdHocDevice {
   int mtu;
 
+  /// Initialize a newly created BleAdHocDevice representing a remote BLE-capable device
+  /// with information given by discovered [device]
   BleAdHocDevice(DiscoveredDevice device) : super(
     name: device.name, mac: Identifier(ble: device.id), type: BLE,
   ) {
@@ -14,6 +17,8 @@ class BleAdHocDevice extends AdHocDevice {
     this.address = (BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), '')).toLowerCase();
   }
 
+  /// Initialize a newly created BleAdHocDevice representing a remote BLE-capable device
+  /// with information given by [map]
   BleAdHocDevice.fromMap(Map map) : super(
     name: map['deviceName'], mac: map['macAddress'], type: BLE
   ) {
@@ -23,6 +28,7 @@ class BleAdHocDevice extends AdHocDevice {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Return the UUID of the remote BLE-capable device.
   String get uuid => address;
 
 /*------------------------------Override methods------------------------------*/

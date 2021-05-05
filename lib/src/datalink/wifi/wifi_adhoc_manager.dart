@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
@@ -19,7 +20,7 @@ class WifiAdHocManager {
   bool _verbose;
   bool _isDiscovering;
   bool _isPaused;
-  HashMap<String, WifiAdHocDevice> _mapMacDevice;
+  HashMap<Identifier, WifiAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   WifiP2p _wifiP2p;
@@ -83,18 +84,18 @@ class WifiAdHocManager {
     _discoverySub = _wifiP2p.discoveryStream.listen(
       (listDevices) {
         listDevices.forEach((device) {
-          WifiAdHocDevice wifiAdHocDevice = WifiAdHocDevice(device);
-          _mapMacDevice.putIfAbsent(device.mac, () {
+          WifiAdHocDevice wifiDevice = WifiAdHocDevice(device);
+          _mapMacDevice.putIfAbsent(wifiDevice.mac, () {
             if (_verbose) {
               log(TAG, 
                 'Device found -> Name: ${device.name} - Address: ${device.mac}'
               );
             }
 
-            return wifiAdHocDevice;
+            return wifiDevice;
           });
 
-          _discoveryCtrl.add(DiscoveryEvent(DEVICE_DISCOVERED, wifiAdHocDevice));
+          _discoveryCtrl.add(DiscoveryEvent(DEVICE_DISCOVERED, wifiDevice));
         });
       },
     );
@@ -111,14 +112,14 @@ class WifiAdHocManager {
 
   Future<void> unregister() async => await unregister(); 
 
-  Future<void> connect(final String remoteAddress) async {
-    if (_verbose) log(TAG, 'connect(): $remoteAddress');
+  Future<void> connect(Identifier mac) async {
+    if (_verbose) log(TAG, 'connect(): ${mac.wifi}');
 
-    WifiAdHocDevice device = _mapMacDevice[remoteAddress];
+    WifiAdHocDevice device = _mapMacDevice[mac];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
 
-    await _wifiP2p.connect(remoteAddress);
+    await _wifiP2p.connect(mac.wifi);
   }
 
   void removeGroup() => _wifiP2p.removeGroup();

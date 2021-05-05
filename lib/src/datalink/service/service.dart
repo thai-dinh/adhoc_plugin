@@ -4,7 +4,11 @@ import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
-
+/// The abstract superclass of any class implementing a plugin for the analysis
+/// server.
+///
+/// Clients may not implement or mix-in this class, but are expected to extend
+/// it.
 abstract class Service {
   static const String TAG = "[Service]";
 

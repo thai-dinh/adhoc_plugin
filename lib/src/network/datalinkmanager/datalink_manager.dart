@@ -100,14 +100,14 @@ class DataLinkManager {
     }
   }
 
-  Future<void> connect(int attempts, AdHocDevice adHocDevice) async {
-    switch (adHocDevice.type) {
+  Future<void> connect(int attempts, AdHocDevice device) async {
+    switch (device.type) {
       case WIFI:
-        await _wrappers[WIFI].connect(attempts, adHocDevice);
+        await _wrappers[WIFI].connect(attempts, device);
         break;
 
       case BLE:
-        await _wrappers[BLE].connect(attempts, adHocDevice);
+        await _wrappers[BLE].connect(attempts, device);
         break;
     }
   }
@@ -206,13 +206,13 @@ class DataLinkManager {
   }
 
   List<AdHocDevice> getDirectNeighbors() {
-    List<AdHocDevice> adHocDevices = List.empty(growable: true);
+    List<AdHocDevice> devices = List.empty(growable: true);
 
     for (WrapperNetwork wrapper in _wrappers)
       if (wrapper.enabled)
-        adHocDevices.addAll(wrapper.directNeighbors);
+        devices.addAll(wrapper.directNeighbors);
 
-    return adHocDevices;
+    return devices;
   }
 
   bool isEnabled(int type) => _wrappers[type].enabled;

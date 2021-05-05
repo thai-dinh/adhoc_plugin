@@ -100,10 +100,10 @@ class WrapperWifi extends WrapperNetwork {
 
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
-    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[device.mac.wifi];
+    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[device.mac];
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(device.mac.wifi);
+      await _wifiManager.connect(device.mac);
     }
   }
 
@@ -168,9 +168,9 @@ class WrapperWifi extends WrapperNetwork {
 
         case DISCOVERY_END:
           if (verbose) log(TAG, 'Discovery end');
-          (event.payload as Map).forEach((mac, device) {
+          (event.payload as Map<Identifier, WifiAdHocDevice>).forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
-              if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
+              if (verbose) log(TAG, "Add " + mac.wifi + " into mapMacDevices");
               return device;
             });
           });
