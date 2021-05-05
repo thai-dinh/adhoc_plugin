@@ -1,10 +1,13 @@
 import 'dart:collection';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/adhoc_plugin.dart';
+import 'package:adhoc_plugin_example/search_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 
 void main() => runApp(AdHocMusicClient());
@@ -26,8 +29,12 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   final TransferManager _manager = TransferManager(true);
   final List<AdHocDevice> _discovered = List.empty(growable: true);
   final List<AdHocDevice> _peers = List.empty(growable: true);
-  final HashMap<String, PlatformFile> _globalPlaylist = HashMap();
+  final HashMap<String, HashMap<String, PlatformFile>> _globalPlaylist = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
+
+  bool _requested = false;
+  bool _display = false;
+  String _selected = 'None';
 
   @override
   void initState() {
@@ -50,10 +57,24 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                 onSelected: (MenuOptions result) async {
                   switch (result) {
                     case MenuOptions.add:
+                      await _openFileExplorer();
                       break;
+
                     case MenuOptions.search:
+                      List<String> songs = List.empty(growable: true);
+                      _localPlaylist.entries.map((entry) => songs.add(entry.key));
+
+                      _selected = await showSearch(
+                        context: context,
+                        delegate: SearchBar(songs),
+                      );
+
+                      if (_selected == null)
+                        _selected = 'None';
                       break;
+
                     case MenuOptions.display:
+                      setState(() => _display = !_display);
                       break;
                   }
                 },
@@ -158,7 +179,28 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
     switch (data['type']) {
       case PLAYLIST:
-        
+        List<String> peers = data['peers'];
+        List<String> songs = data['songs'];
+        String peerName = peers.first;
+        HashMap<String, PlatformFile> entry = _globalPlaylist[peerName];
+        if (entry == null)
+          entry = HashMap();
+
+        for (int i = 0; i < peers.length; i++) {
+          if (peerName == peers[i]) {
+            entry.putIfAbsent(songs[i], () => null);
+          } else {
+            _globalPlaylist[peerName] = entry;
+
+            peerName = peers[i];
+            entry = _globalPlaylist[peerName];
+            if (entry == null)
+              entry = HashMap();
+            entry.putIfAbsent(songs[i], () => null);
+          }
+        }
+
+        _globalPlaylist[peerName] = entry;
         break;
 
       case REQUEST:
@@ -171,10 +213,75 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         break;
 
       case REPLY:
-        
+        _processReply(peer, data);
         break;
 
       default:
     }
+  }
+
+  void _processReply(AdHocDevice peer, Map data) async {
+    String name = data['name'];
+    Uint8List song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
+
+    Directory tempDir = await getTemporaryDirectory();
+    File tempFile = File('${tempDir.path}/$name');
+    await tempFile.writeAsBytes(song, flush: true);
+
+    HashMap<String, PlatformFile> entry = HashMap();
+    entry.putIfAbsent(
+      name, () => PlatformFile(bytes: song, name: name, path: tempFile.path)
+    );
+
+    _globalPlaylist.putIfAbsent(peer.label, () => entry);
+    setState(() => _requested = false);
+  }
+
+  Future<void> _openFileExplorer() async {
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.audio,
+    );
+
+    if(result != null) {
+      for (PlatformFile file in result.files) {
+        PlatformFile song = PlatformFile(
+          name: file.name,
+          path: file.path,
+          bytes: await File(file.path).readAsBytes(),
+        );
+
+        _localPlaylist.putIfAbsent(file.name, () => song);
+      }
+    }
+
+    _updatePlaylist();
+  }
+
+  void _updatePlaylist() async {
+    List<String> peers = List.empty(growable: true);
+    List<String> songs = List.empty(growable: true);
+
+    Map<int, String> deviceNames = await _manager.getActifAdapterNames();
+    String deviceName = 
+      deviceNames[BLE] == null ? deviceNames[WIFI] : deviceNames[BLE];
+
+    _globalPlaylist.forEach((peer, song) {
+      peers.add(peer);
+      song.forEach((key, value) {
+        songs.add(key);
+      });
+    });
+
+    _localPlaylist.forEach((name, file) {
+      peers.add(deviceName);
+      songs.add(name);
+    });
+
+    HashMap<String, dynamic> message = HashMap();
+    message.putIfAbsent('type', () => PLAYLIST);
+    message.putIfAbsent('peers', () => peers);
+    message.putIfAbsent('songs', () => songs);
+    _manager.broadcast(message);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
@@ -13,7 +15,7 @@ class TransferManager {
   DataLinkManager _datalinkManager;
 
   TransferManager(this._verbose, {Config config}) {
-    this._secureDataManager = SecureDataManager(_verbose, config);
+    this._secureDataManager = SecureDataManager(_verbose, config == null ? Config() : config);
     this._datalinkManager = _secureDataManager.datalinkManager;
   }
 
@@ -61,7 +63,27 @@ class TransferManager {
     await _datalinkManager.connect(1, device);
   }
 
+  void close() {
+    _datalinkManager.stopListening();
+  }
+
   void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label);
 
   void disconnectAll() => _datalinkManager.disconnectAll();
+
+  Future<String> getAdapterName(int type) async {
+    return _datalinkManager.getAdapterName(type);
+  }
+
+  Future<HashMap<int, String>> getActifAdapterNames() async {
+    return _datalinkManager.getActifAdapterNames();
+  }
+
+  Future<bool> updateAdapterName(int type, String newName) async {
+    return _datalinkManager.updateAdapterName(type, newName);
+  }
+
+  void resetAdapterName(int type) {
+    _datalinkManager.resetAdapterName(type);
+  }
 }
