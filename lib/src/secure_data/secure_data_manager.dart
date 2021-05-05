@@ -29,6 +29,7 @@ class SecureDataManager {
 
   SecureDataManager(this._verbose, Config config) {
     this._aodvManager = AodvManager(_verbose, config);
+    this._datalinkManager = _aodvManager.dataLinkManager;
     this._repository = CertificateRepository();
     this._engine = CryptoEngine();
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();

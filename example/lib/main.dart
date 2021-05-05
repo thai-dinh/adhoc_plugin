@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin_example/search_bar.dart';
+import 'package:analyzer_plugin/utilities/pair.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,10 +32,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   final List<AdHocDevice> _peers = List.empty(growable: true);
   final HashMap<String, HashMap<String, PlatformFile>> _globalPlaylist = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
+  final List<Pair<String, String>> _playlist = List.empty(growable: true);
 
+  // bool _peerRequest = false;
   bool _requested = false;
   bool _display = false;
   String _selected = 'None';
+  String _deviceName = 'local';
 
   @override
   void initState() {
@@ -110,27 +114,83 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               Expanded(
                 child: Column(
                   children: <Widget>[
-                    Card(child: ListTile(title: Center(child: Text('Ad Hoc Peers')))),
-                    ElevatedButton(
-                      child: Center(child: Text('Search for nearby devices')),
-                      onPressed: () => _manager.discovery(),
-                    ),
-                    Expanded(
-                      child: ListView(
-                        children: _discovered.map((device) {
-                          return Card(
-                            child: ListTile(
-                              title: Center(child: Text(device.name)),
-                              subtitle: Center(child: Text('[${device.mac.ble}/${device.mac.wifi}')),
-                              onTap: () async {
-                                await _manager.connect(device);
-                                setState(() => _discovered.removeWhere((element) => (element.mac == device.mac)));
-                              },
-                            ),
-                          );
-                        }).toList(),
+                    if (!_display) ...<Widget>[
+                      Card(child: ListTile(title: Center(child: Text('Ad Hoc Peers')))),
+
+                      ElevatedButton(
+                        child: Center(child: Text('Search for nearby devices')),
+                        onPressed: () => _manager.discovery(),
                       ),
-                    ),
+
+                      Expanded(
+                        child: ListView(
+                          children: _discovered.map((device) {
+                            return Card(
+                              child: ListTile(
+                                title: Center(child: Text(device.name)),
+                                subtitle: Center(child: Text('[${device.mac.ble}/${device.mac.wifi}')),
+                                onTap: () async {
+                                  await _manager.connect(device);
+                                  setState(() => _discovered.removeWhere((element) => (element.mac == device.mac)));
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ] else ...<Widget>[
+                      Card(child: Stack(
+                        children: <Widget> [
+                          ListTile(
+                            title: Center(child: Text('$_selected')),
+                            subtitle: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                IconButton(
+                                  icon: Icon(Icons.play_arrow_rounded),
+                                  onPressed: _play,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.pause_rounded),
+                                  onPressed: _pause,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.stop_rounded),
+                                  onPressed: _stop,
+                                ),
+                                if (_requested)
+                                  Container(child: Center(child: CircularProgressIndicator()))
+                                else
+                                  Container()
+                              ],
+                            ),
+                          ),
+                        ],
+                      )),
+
+                      Card(
+                        color: Colors.blue,
+                        child: ListTile(
+                          title: Center(
+                            child: const Text('Ad Hoc Playlist', style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        child: ListView(
+                          children: _playlist.map((pair) {
+                            return Card(
+                              child: ListTile(
+                                title: Center(child: Text(pair.last)),
+                                subtitle: Center(child: Text(pair.first)),
+                                onTap: () => setState(() => _selected = pair.last),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -198,18 +258,51 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
               entry = HashMap();
             entry.putIfAbsent(songs[i], () => null);
           }
+
+          Pair<String, String> pair = Pair(peerName, songs[i]);
+          if (!_playlist.contains(pair))
+            _playlist.add(pair);
         }
 
         _globalPlaylist[peerName] = entry;
+
+        setState(() {});
         break;
 
       case REQUEST:
-        Uint8List bytes = _localPlaylist[data['name']].bytes;
+        String name = data['name'];
+        Uint8List bytes;
+        // PlatformFile file;
+
+        if (_localPlaylist.containsKey(name)) {
+          bytes = _localPlaylist[name].bytes;
+        }
+
+        // else {
+        //   for (int i = 0; i < _globalPlaylist.length; i++) {
+        //     Map entry = _globalPlaylist[i];
+        //     if (entry.containsKey(name)) {
+        //       file = entry[name];
+        //       if (file == null) {
+        //         HashMap<String, dynamic> message = HashMap();
+        //         message.putIfAbsent('type', () => REQUEST);
+        //         message.putIfAbsent('name', () => name);
+        //         // Send label of requester too so that originated node send directly
+        //         _manager.sendMessageTo(message, _globalPlaylist.keys.elementAt(i));
+        //         _peerRequest = true;
+        //       }
+
+        //       break;
+        //     }
+        //   }
+        // }
+
         HashMap<String, dynamic> message = HashMap();
         message.putIfAbsent('type', () => REPLY);
-        message.putIfAbsent('name', () => data['name']);
+        message.putIfAbsent('name', () => name);
         message.putIfAbsent('song', () => bytes);
         _manager.sendMessageTo(message, peer.label);
+        setState(() => _requested = true);
         break;
 
       case REPLY:
@@ -220,7 +313,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     }
   }
 
-  void _processReply(AdHocDevice peer, Map data) async {
+  void _processReply(AdHocDevice peer, Map data) async { // Requester node should wait for multiple possible request so check with name of file
     String name = data['name'];
     Uint8List song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
 
@@ -252,6 +345,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         );
 
         _localPlaylist.putIfAbsent(file.name, () => song);
+        Pair<String, String> pair = Pair(_deviceName, file.name);
+        if (!_playlist.contains(pair))
+          _playlist.add(pair);
       }
     }
 
@@ -262,10 +358,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     List<String> peers = List.empty(growable: true);
     List<String> songs = List.empty(growable: true);
 
-    Map<int, String> deviceNames = await _manager.getActifAdapterNames();
-    String deviceName = 
-      deviceNames[BLE] == null ? deviceNames[WIFI] : deviceNames[BLE];
-
     _globalPlaylist.forEach((peer, song) {
       peers.add(peer);
       song.forEach((key, value) {
@@ -274,7 +366,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     });
 
     _localPlaylist.forEach((name, file) {
-      peers.add(deviceName);
+      peers.add(_deviceName);
       songs.add(name);
     });
 
@@ -283,5 +375,50 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     message.putIfAbsent('peers', () => peers);
     message.putIfAbsent('songs', () => songs);
     _manager.broadcast(message);
+  }
+
+  void _play() {
+    if (_selected.compareTo('None') == 0)
+      return;
+
+    PlatformFile file;
+    if (_localPlaylist.containsKey(_selected)) {
+      file = _localPlaylist[_selected];
+    } else {
+      for (int i = 0; i < _globalPlaylist.length; i++) {
+        Map entry = _globalPlaylist[i];
+        if (entry.containsKey(_selected)) {
+          file = entry[_selected];
+          if (file == null) {
+            HashMap<String, dynamic> message = HashMap();
+            message.putIfAbsent('type', () => REQUEST);
+            message.putIfAbsent('name', () => _selected);
+            _manager.broadcast(message);
+
+            setState(() => _requested = true);
+          }
+          break;
+        }
+      }
+    }
+
+    platform.invokeMethod('play', file.path);
+  }
+
+  void _pause() {
+    if (_selected.compareTo('None') == 0)
+      return;
+
+    platform.invokeMethod('pause');
+  }
+
+  void _stop() {
+    if (_selected.compareTo('None') == 0)
+      return;
+
+    _selected = 'None';
+    platform.invokeMethod('stop');
+
+    setState(() {});
   }
 }
