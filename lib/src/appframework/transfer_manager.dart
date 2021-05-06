@@ -4,6 +4,7 @@ import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
@@ -70,6 +71,18 @@ class TransferManager {
   void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label);
 
   void disconnectAll() => _datalinkManager.disconnectAll();
+
+  void enableBle(int duration) {
+    _datalinkManager.enable(duration, BLE);
+  }
+
+  void enableWifi(int duration) {
+    _datalinkManager.enable(duration, WIFI);
+  }
+
+  void enable() {
+    _datalinkManager.enableAll();
+  }
 
   Future<String> getAdapterName(int type) async {
     return _datalinkManager.getAdapterName(type);

@@ -125,11 +125,11 @@ class BleAdHocManager {
   /// Reset the local adapter name of the device
   Future<bool> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
 
-  void onEnableBluetooth(void Function(bool) onEnable) {
+  void onEnableBluetooth() { // TODO
     _statusSub = _reactiveBle.statusStream.listen((status) async {
       switch (status) {
         case BleStatus.ready:
-          onEnable(true);
+
           break;
 
         default:

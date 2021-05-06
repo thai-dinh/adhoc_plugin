@@ -1,10 +1,19 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'data.g.dart';
+
+
+@JsonSerializable()
 class Data {
-  int _type;
-  Object _payload;
+  int type;
+  Object payload;
   
-  Data(this._type, this._payload);
+  Data(this.type, this.payload);
 
-  int get type => _type;
+  factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
-  Object get payload => _payload;
+/*-------------------------------Public methods-------------------------------*/
+
+  Map<String, dynamic> toJson() => _$DataToJson(this);
+
 }

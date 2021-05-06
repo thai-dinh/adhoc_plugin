@@ -131,8 +131,8 @@ class WifiAdHocManager {
     return await _channel.invokeMethod('updateDeviceName');
   }
 
-  void onEnableWifi(void Function(bool) onEnable) {
-    _wifiP2p.wifiStateStream.listen((state) => onEnable(state));
+  void onEnableWifi() { // TODO stream
+    _wifiP2p.wifiStateStream.listen((state) { });
   }
 
 /*------------------------------Private methods-------------------------------*/

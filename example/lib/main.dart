@@ -43,6 +43,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
+    _manager.enableBle(3600);
     _manager.discoveryStream.listen(_processDiscoveryEvent);
     _manager.eventStream.listen(_processAdHocEvent);
   }
@@ -234,6 +235,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   }
 
   void _processDataReceived(List payload) {
+    print(payload.last);
     AdHocDevice peer = payload.first;
     Map data = payload.last;
 

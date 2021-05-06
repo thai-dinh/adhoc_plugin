@@ -61,13 +61,13 @@ class DataLinkManager {
     return enabled;
   }
 
-  void enable(int duration, int type, void Function(bool) onEnable) {
-    _wrappers[type].enable(duration, (bool success) => onEnable(success));
+  void enable(int duration, int type) {
+    _wrappers[type].enable(duration);
   }
 
-  void enableAll(void Function(bool) onEnable) {
+  void enableAll() {
     for (WrapperNetwork wrapper in _wrappers)
-      enable(3600, wrapper.type, onEnable);
+      enable(3600, wrapper.type);
   }
 
   void disable(int type) {

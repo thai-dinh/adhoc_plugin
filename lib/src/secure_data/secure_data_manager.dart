@@ -97,10 +97,22 @@ class SecureDataManager {
           _eventCtrl.add(event);
 
           AdHocDevice neighbor = event.payload as AdHocDevice;
-          _aodvManager.sendMessageTo(Data(CERT_XCHG_BEGIN, _engine.publicKey), neighbor.label);
+          String data = json.encode(
+            Data(
+              CERT_XCHG_BEGIN, 
+              [ _engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
+            ).toJson()
+          );
+
+          _aodvManager.sendMessageTo(data, neighbor.label);
           break;
 
         case DATA_RECEIVED:
+          if (!(event.payload is Data)) {
+            _eventCtrl.add(event);
+            break;
+          }
+
           _processData(event.payload);
           break;
 
@@ -112,15 +124,24 @@ class SecureDataManager {
 
   void _processData(Object data) {
     AdHocDevice neighbor = (data as List)[0] as AdHocDevice;
-    Data pdu = (data as List)[1] as Data;
+    Data pdu = Data.fromJson(json.decode((data as List)[1] as String));
     switch (pdu.type) {
       case CERT_XCHG_BEGIN:
-        _issueCertificate(neighbor, pdu.payload as RSAPublicKey);
-        _aodvManager.sendMessageTo(Data(CERT_XCHG_END, _engine.publicKey), neighbor.label);
+        List _pdu = pdu.payload;
+        _issueCertificate(neighbor, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
+        String data = json.encode(
+          Data(
+            CERT_XCHG_BEGIN,
+            [ _engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
+          ).toJson()
+        );
+
+        _aodvManager.sendMessageTo(Data(CERT_XCHG_END, data), neighbor.label);
         break;
 
       case CERT_XCHG_END:
-        _issueCertificate(neighbor, pdu.payload as RSAPublicKey);
+        List _pdu = pdu.payload;
+        _issueCertificate(neighbor, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
         break;
 
       case ENCRYPTED_DATA:

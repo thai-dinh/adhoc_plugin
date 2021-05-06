@@ -57,12 +57,11 @@ class WrapperBle extends WrapperNetwork {
   }
 
   @override
-  void enable(int duration, void Function(bool) onEnable) async {
+  void enable(int duration) async {
     if (!enabled) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       await _bleAdHocManager.enable();
       this._bleAdHocManager.enableDiscovery(duration);
-      this._bleAdHocManager.onEnableBluetooth(onEnable);
       this.ownName = await BleAdHocManager.getCurrentName();
       this._listenServer();
       this._initialize();

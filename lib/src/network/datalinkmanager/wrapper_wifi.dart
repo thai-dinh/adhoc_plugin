@@ -70,9 +70,8 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   @override
-  void enable(int duration, void Function(bool) onEnable) {
+  void enable(int duration) {
     _wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
-    _wifiManager.onEnableWifi(onEnable);
 
     enabled = true;
   }

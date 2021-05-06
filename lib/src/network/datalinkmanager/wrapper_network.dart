@@ -77,7 +77,7 @@ abstract class WrapperNetwork {
 
   void init(bool verbose, Config config);
 
-  void enable(int duration, void Function(bool) onEnable);
+  void enable(int duration);
 
   void disable();
 
