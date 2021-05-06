@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
@@ -192,7 +191,7 @@ class DataLinkManager {
     return sent;
   }
 
-  Future<HashMap<Identifier, AdHocDevice>> getPaired() async {
+  Future<HashMap<String, AdHocDevice>> getPaired() async {
     if (_wrappers[BLE].enabled)
       return await _wrappers[BLE].getPaired();
     return null;

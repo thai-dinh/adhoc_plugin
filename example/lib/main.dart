@@ -128,7 +128,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                             return Card(
                               child: ListTile(
                                 title: Center(child: Text(device.name)),
-                                subtitle: Center(child: Text('[${device.mac.ble}/${device.mac.wifi}')),
+                                subtitle: Center(child: Text('[${device.mac}')),
                                 onTap: () async {
                                   await _manager.connect(device);
                                   setState(() => _discovered.removeWhere((element) => (element.mac == device.mac)));

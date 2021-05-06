@@ -7,7 +7,6 @@ import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -30,11 +29,11 @@ abstract class WrapperNetwork {
   int timeOut;
   String ownLabel;
   String ownName;
-  Identifier ownMac;
+  String ownMac;
   Neighbors neighbors;
   ServiceServer serviceServer;
   HashMap<String, NetworkManager> mapAddrNetwork;
-  HashMap<Identifier, AdHocDevice> mapMacDevices;
+  HashMap<String, AdHocDevice> mapMacDevices;
 
   HashSet<AdHocDevice> setRemoteDevices;
   Set<String> setFloodEvents;
@@ -53,7 +52,7 @@ abstract class WrapperNetwork {
     this.discoveryCompleted = false;
     this.timeOut = config.timeOut;
     this.ownLabel = config.label;
-    this.ownMac = Identifier();
+    this.ownMac = '';
     this.setRemoteDevices = HashSet();
     this.setFloodEvents = Set();
     this.discoveryCtrl = StreamController<DiscoveryEvent>();
@@ -64,7 +63,7 @@ abstract class WrapperNetwork {
 
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
-    for (Identifier macAddress in neighbors.labelMac.values)
+    for (String macAddress in neighbors.labelMac.values)
       devices.add(mapMacDevices[macAddress]);
 
     return devices;
@@ -86,7 +85,7 @@ abstract class WrapperNetwork {
 
   Future<void> connect(int attempts, AdHocDevice device);
 
-  Future<HashMap<Identifier, AdHocDevice>> getPaired();
+  Future<HashMap<String, AdHocDevice>> getPaired();
 
   Future<String> getAdapterName();
 
@@ -158,16 +157,7 @@ abstract class WrapperNetwork {
       type: type
     );
 
-    Iterable<MapEntry<Identifier, AdHocDevice>> it = 
-      mapMacDevices.entries.where(
-        (entry) => (header.mac.ble == entry.key.ble || header.mac.wifi == entry.key.wifi)
-      );
-
-    if (it.isNotEmpty)
-      mapMacDevices.remove(it.first.value);
-
     mapMacDevices.putIfAbsent(header.mac, () => device);
-
     if (!neighbors.neighbors.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
 
@@ -205,24 +195,13 @@ abstract class WrapperNetwork {
     if (mac == null || mac.compareTo('') == 0)
       return;
 
-    AdHocDevice device;
-    Iterable<MapEntry<Identifier, AdHocDevice>> it = 
-      mapMacDevices.entries.where(
-        (entry) => (mac == entry.key.ble || mac == entry.key.wifi)
-      );
-    
-    if (it.isEmpty) {
-      device = null;
-    } else {
-      device = it.first.value;
-    }
-
+    AdHocDevice device = mapMacDevices[mac];
     if (device != null) {
       String label = device.label;
 
       neighbors.remove(label);
       mapAddrNetwork.remove(device.address);
-      mapMacDevices.removeWhere((identifier, device) => (mac == identifier.ble || mac == identifier.wifi));
+      mapMacDevices.remove(device.mac);
 
       eventCtrl.add(AdHocEvent(Constants.BROKEN_LINK, device.label));
       eventCtrl.add(AdHocEvent(Constants.DISCONNECTION_EVENT, device));

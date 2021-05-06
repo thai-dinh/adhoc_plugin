@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart' as Constants;
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -41,14 +41,14 @@ class BleClient extends ServiceClient {
     final qChar = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac.ble
+      deviceId: _device.mac
     );
 
     List<Uint8List> bytesData = List.empty(growable: true);
     _messageSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((rawData) {
       bytesData.add(Uint8List.fromList(rawData));
       if (rawData[0] == MESSAGE_END) {
-        if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac.ble}');
+        if (verbose) log(ServiceClient.TAG, 'Client: message received: ${_device.mac}');
         controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, processMessage(bytesData)));
         bytesData.clear();
       }
@@ -69,11 +69,11 @@ class BleClient extends ServiceClient {
 
   void disconnect() {
     this.stopListening();
-    BleAdHocManager.cancelConnection(_device.mac.ble);
+    BleAdHocManager.cancelConnection(_device.mac);
   }
 
   Future<void> send(MessageAdHoc message) async {
-    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac.ble}');
+    if (verbose) log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac}');
 
     if (state == Constants.STATE_NONE)
       throw NoConnectionException('No remote connection');
@@ -83,7 +83,7 @@ class BleClient extends ServiceClient {
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac.ble
+      deviceId: _device.mac
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
@@ -112,7 +112,7 @@ class BleClient extends ServiceClient {
 
   Future<void> _requestMtu() async {
     _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac.ble, 
+      deviceId: _device.mac, 
       mtu: MAX_MTU
     );
   }
@@ -134,11 +134,11 @@ class BleClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac.ble}');
+    if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac}');
 
     if (state == Constants.STATE_NONE || state == Constants.STATE_CONNECTING) {
       _connnectionSub = _reactiveBle.connectToDevice(
-        id: _device.mac.ble,
+        id: _device.mac,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
       ).listen((event) async {
@@ -147,24 +147,24 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            if (!(await BleAdHocManager.getBondState(_device.mac.ble))) {
+            if (!(await BleAdHocManager.getBondState(_device.mac))) {
               _bondStream.listen((event) async {
-                if (_device.mac.ble == event['macAddress']) {
+                if (_device.mac == event['macAddress']) {
                   listen();
                   await _requestMtu();
 
-                  controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+                  controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac, _device.uuid, 1]));
 
                   state = Constants.STATE_CONNECTED;
                 }
               });
 
-              BleAdHocManager.createBond(_device.mac.ble);
+              BleAdHocManager.createBond(_device.mac);
             } else {
               listen();
               await _requestMtu();
 
-              controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac.ble, _device.uuid, 1]));
+              controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [_device.mac, _device.uuid, 1]));
 
               state = Constants.STATE_CONNECTED;
             }

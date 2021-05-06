@@ -12,9 +12,7 @@ Header _$HeaderFromJson(Map<String, dynamic> json) {
     label: json['label'] as String,
     name: json['name'] as String,
     address: json['address'] as String,
-    mac: json['mac'] == null
-        ? null
-        : Identifier.fromJson(json['mac'] as Map<String, dynamic>),
+    mac: json['mac'] as String,
     deviceType: json['deviceType'] as int,
   );
 }

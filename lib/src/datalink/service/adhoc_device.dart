@@ -1,5 +1,4 @@
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -13,7 +12,7 @@ class AdHocDevice {
   String label;
   String address;
   String _name;
-  Identifier _mac;
+  String _mac;
   int _type;
 
   /// Creates an [AdHocDevice] object.
@@ -27,7 +26,7 @@ class AdHocDevice {
   /// Energy, or an IPv4 address in case of Wifi P2P.
   AdHocDevice({
     this.directedConnected = false, this.label = '', String address = '', 
-    String name, Identifier mac, int type = 2,
+    String name, String mac, int type = 2,
   }) {
     this.label = checkString(label);
     this.address = checkString(address);
@@ -44,7 +43,7 @@ class AdHocDevice {
 
   String get name => _name;
 
-  Identifier get mac => _mac;
+  String get mac => _mac;
 
   int get type => _type;
 

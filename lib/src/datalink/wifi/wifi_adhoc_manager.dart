@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
@@ -20,7 +19,7 @@ class WifiAdHocManager {
   bool _verbose;
   bool _isDiscovering;
   bool _isPaused;
-  HashMap<Identifier, WifiAdHocDevice> _mapMacDevice;
+  HashMap<String, WifiAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   WifiP2p _wifiP2p;
@@ -112,14 +111,14 @@ class WifiAdHocManager {
 
   Future<void> unregister() async => await unregister(); 
 
-  Future<void> connect(Identifier mac) async {
-    if (_verbose) log(TAG, 'connect(): ${mac.wifi}');
+  Future<void> connect(String mac) async {
+    if (_verbose) log(TAG, 'connect(): $mac');
 
     WifiAdHocDevice device = _mapMacDevice[mac];
     if (device == null)
       throw DeviceNotFoundException('Discovery is required before connecting');
 
-    await _wifiP2p.connect(mac.wifi);
+    await _wifiP2p.connect(mac);
   }
 
   void removeGroup() => _wifiP2p.removeGroup();

@@ -8,7 +8,6 @@ import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -43,7 +42,7 @@ class WrapperWifi extends WrapperNetwork {
     this._isGroupOwner = false;
     this._isListening = false;
     this._isConnecting = false;
-    this.ownMac = Identifier();
+    this.ownMac = '';
     this.type = WIFI;
     this.init(verbose, config);
   }
@@ -116,7 +115,7 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   @override // Not used in wifi context
-  Future<HashMap<Identifier, AdHocDevice>> getPaired() => null;
+  Future<HashMap<String, AdHocDevice>> getPaired() => null;
 
   @override
   Future<String> getAdapterName() async {
@@ -161,16 +160,16 @@ class WrapperWifi extends WrapperNetwork {
         case DEVICE_DISCOVERED:
           WifiAdHocDevice device = event.payload as WifiAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac.wifi + " into mapMacDevices");
+            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
             return device;
           });
           break;
 
         case DISCOVERY_END:
           if (verbose) log(TAG, 'Discovery end');
-          (event.payload as Map<Identifier, WifiAdHocDevice>).forEach((mac, device) {
+          (event.payload as Map<String, WifiAdHocDevice>).forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
-              if (verbose) log(TAG, "Add " + mac.wifi + " into mapMacDevices");
+              if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
               return device;
             });
           });
@@ -209,7 +208,7 @@ class WrapperWifi extends WrapperNetwork {
 
   void _onWifiReady(String ipAddress, String mac) {
     _ownIpAddress = ipAddress;
-    ownMac.wifi = mac;
+    ownMac = mac;
   }
 
   void _onEvent(Service service) {
@@ -278,7 +277,7 @@ class WrapperWifi extends WrapperNetwork {
       case CONNECT_SERVER:
         String remoteAddress = message.header.address;
         _mapAddrMac.putIfAbsent(
-          remoteAddress, () => message.header.mac.wifi
+          remoteAddress, () => message.header.mac
         );
 
         ownName = await _wifiManager.adapterName;
@@ -307,7 +306,7 @@ class WrapperWifi extends WrapperNetwork {
 
       case CONNECT_CLIENT:
         _mapAddrMac.putIfAbsent(
-          message.header.address, () => message.header.mac.wifi
+          message.header.address, () => message.header.mac
         );
 
         NetworkManager network = mapAddrNetwork[message.header.address];

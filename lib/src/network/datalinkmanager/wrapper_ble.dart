@@ -13,7 +13,6 @@ import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -37,7 +36,7 @@ class WrapperBle extends WrapperNetwork {
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isInitialized = false;
-    this.ownMac = Identifier();
+    this.ownMac = '';
     this.type = BLE;
     this.init(verbose, null);
   }
@@ -96,13 +95,13 @@ class WrapperBle extends WrapperNetwork {
 
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
-    BleAdHocDevice bleAdHocDevice = mapMacDevices[device.mac.ble];
+    BleAdHocDevice bleAdHocDevice = mapMacDevices[device.mac];
     if (bleAdHocDevice != null) {
-      if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
+      if (!serviceServer.containConnection(bleAdHocDevice.mac)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
-          device.name + "(" + device.mac.ble + ") is already connected"
+          device.name + "(" + device.mac + ") is already connected"
         );
       }
     }
@@ -112,14 +111,14 @@ class WrapperBle extends WrapperNetwork {
   void stopListening() => serviceServer.stopListening();
 
   @override
-  Future<HashMap<Identifier, AdHocDevice>> getPaired() async {
+  Future<HashMap<String, AdHocDevice>> getPaired() async {
     if (!(await BleAdHocManager.isEnabled()))
       return null;
 
-    HashMap<Identifier, BleAdHocDevice> paired = HashMap();
+    HashMap<String, BleAdHocDevice> paired = HashMap();
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
     pairedDevices.forEach((macAddress, bleAdHocDevice) {
-      paired.putIfAbsent(Identifier(ble: macAddress), () => bleAdHocDevice);
+      paired.putIfAbsent(macAddress, () => bleAdHocDevice);
     });
 
     return paired;
@@ -155,7 +154,7 @@ class WrapperBle extends WrapperNetwork {
         case DEVICE_DISCOVERED:
           BleAdHocDevice device = event.payload as BleAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac.ble + " into mapMacDevices");
+            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
             return device;
           });
           break;
@@ -246,9 +245,9 @@ class WrapperBle extends WrapperNetwork {
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case CONNECT_SERVER:
-        String mac = message.header.mac.ble;
-        ownMac.ble = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '');
+        String mac = message.header.mac;
+        ownMac = message.pdu as String;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID.toLowerCase();
 
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
@@ -278,8 +277,8 @@ class WrapperBle extends WrapperNetwork {
         break;
 
       case CONNECT_CLIENT:
-        ownMac.ble = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '').toLowerCase();
+        ownMac = message.pdu as String;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
 
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
 

@@ -5,7 +5,6 @@ import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -32,7 +31,7 @@ class AodvManager {
   HashMap<String, int> _mapDestSequenceNumber;
   StreamController<AdHocEvent> _eventCtrl;
 
-  Identifier _ownMac;
+  String _ownMac;
   String _ownName;
   String ownLabel;
   int _ownSequenceNum;
@@ -43,7 +42,7 @@ class AodvManager {
     this._aodvHelper = AodvHelper(_verbose);
     this._ownSequenceNum = AodvConstants.FIRST_SEQUENCE_NUMBER;
     this._mapDestSequenceNumber = HashMap();
-    this._ownMac = Identifier();
+    this._ownMac = '';
     this.ownLabel = config.label;
     this._datalinkManager = DataLinkManager(_verbose, config);
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
@@ -90,13 +89,13 @@ class AodvManager {
 
         case DatalinkConstants.DEVICE_INFO_BLE:
           List<dynamic> info = event.payload;
-          _ownMac.ble = (info[0] as Identifier).ble;
+          _ownMac = info[0] as String;
           _ownName = info[1] as String;
           break;
 
-        case DatalinkConstants.DEVICE_INFO_WIFI:
+        case DatalinkConstants.DEVICE_INFO_WIFI: // Always select this
           List<dynamic> info = event.payload;
-          _ownMac.wifi = (info[0] as Identifier).wifi;
+          _ownMac = info[0] as String;
           _ownName = info[1] as String;
           break;
 

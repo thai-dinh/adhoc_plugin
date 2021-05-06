@@ -1,13 +1,12 @@
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
 /// Class managing the direct neighbours of a node
 class Neighbors {
   HashMap<String, NetworkManager> _neighbors;
-  HashMap<String, Identifier> _mapLabelMac;
+  HashMap<String, String> _mapLabelMac;
 
   /// Initialize an instance of Neighbors
   Neighbors() {
@@ -21,13 +20,13 @@ class Neighbors {
   HashMap<String, NetworkManager> get neighbors => _neighbors;
 
   ///
-  HashMap<String, Identifier> get labelMac => _mapLabelMac;
+  HashMap<String, String> get labelMac => _mapLabelMac;
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Add a direct neighbours whose label is [label], MAC address is [mac], and
   /// NetworkManager as [network]
-  void addNeighbors(String label, Identifier mac, NetworkManager network) {
+  void addNeighbors(String label, String mac, NetworkManager network) {
     _neighbors.putIfAbsent(label, () => network);
     _mapLabelMac.putIfAbsent(label, () => mac);
   }

@@ -6,7 +6,6 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +24,7 @@ class BleAdHocManager {
   bool _verbose;
   bool _isDiscovering;
   FlutterReactiveBle _reactiveBle;
-  HashMap<Identifier, BleAdHocDevice> _mapMacDevice;
+  HashMap<String, BleAdHocDevice> _mapMacDevice;
   StreamController<DiscoveryEvent> _discoveryCtrl;
   StreamController<dynamic> _bondCtrl;
   StreamSubscription<DiscoveredDevice> _discoverySub;

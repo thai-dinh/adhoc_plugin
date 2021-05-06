@@ -6,7 +6,6 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart' as Constants;
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -59,13 +58,13 @@ class BleServer extends ServiceServer {
       String strMessage = Utf8Decoder().convert(messageAsListByte);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
 
-      if (message.header.mac == null || message.header.mac.ble.compareTo('') == 0) {
+      if (message.header.mac == null || message.header.mac.compareTo('') == 0) {
         message.header = Header(
           messageType: message.header.messageType,
           label: message.header.label,
           name: message.header.name,
           address: message.header.address,
-          mac: Identifier(ble: map['macAddress']),
+          mac: map['macAddress'],
           deviceType: message.header.deviceType
         );
       }
