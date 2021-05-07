@@ -24,8 +24,8 @@ class AdHocMusicClient extends StatefulWidget {
 
 class _AdHocMusicClientState extends State<AdHocMusicClient> {
   static const PLAYLIST = 0;
-  static const REQUEST = 0;
-  static const REPLY = 0;
+  static const REQUEST = 1;
+  static const REPLY = 2;
 
   final TransferManager _manager = TransferManager(true);
   final List<AdHocDevice> _discovered = List.empty(growable: true);
@@ -235,14 +235,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   }
 
   void _processDataReceived(List payload) {
-    print(payload.last);
     AdHocDevice peer = payload.first;
     Map data = payload.last;
 
     switch (data['type']) {
       case PLAYLIST:
-        List<String> peers = data['peers'];
-        List<String> songs = data['songs'];
+        List peers = data['peers'] as List;
+        List songs = data['songs'] as List;
         String peerName = peers.first;
         HashMap<String, PlatformFile> entry = _globalPlaylist[peerName];
         if (entry == null)
@@ -252,10 +251,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           if (peerName == peers[i]) {
             entry.putIfAbsent(songs[i], () => null);
           } else {
-            _globalPlaylist[peerName] = entry;
+            _globalPlaylist[peerName == _deviceName ? peer.label : peerName] = entry;
 
             peerName = peers[i];
-            entry = _globalPlaylist[peerName];
+            entry = _globalPlaylist[peerName == _deviceName ? peer.label : peerName];
             if (entry == null)
               entry = HashMap();
             entry.putIfAbsent(songs[i], () => null);
@@ -266,7 +265,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             _playlist.add(pair);
         }
 
-        _globalPlaylist[peerName] = entry;
+        _globalPlaylist[peerName == _deviceName ? peer.label : peerName] = entry;
 
         setState(() {});
         break;
@@ -304,7 +303,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         message.putIfAbsent('name', () => name);
         message.putIfAbsent('song', () => bytes);
         _manager.sendMessageTo(message, peer.label);
-        setState(() => _requested = true);
         break;
 
       case REPLY:
@@ -328,7 +326,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
       name, () => PlatformFile(bytes: song, name: name, path: tempFile.path)
     );
 
-    _globalPlaylist.putIfAbsent(peer.label, () => entry);
+    _globalPlaylist.update(peer.label, (value) => entry, ifAbsent: () => entry);
     setState(() => _requested = false);
   }
 
@@ -387,10 +385,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     if (_localPlaylist.containsKey(_selected)) {
       file = _localPlaylist[_selected];
     } else {
-      for (int i = 0; i < _globalPlaylist.length; i++) {
-        Map entry = _globalPlaylist[i];
-        if (entry.containsKey(_selected)) {
-          file = entry[_selected];
+      _globalPlaylist.forEach((peerName, playlist) {
+        if (playlist.containsKey(_selected)) {
+          file = playlist[_selected];
           if (file == null) {
             HashMap<String, dynamic> message = HashMap();
             message.putIfAbsent('type', () => REQUEST);
@@ -399,12 +396,12 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
             setState(() => _requested = true);
           }
-          break;
         }
-      }
+      });
     }
 
-    platform.invokeMethod('play', file.path);
+    if (_requested == false)
+      platform.invokeMethod('play', file.path);
   }
 
   void _pause() {

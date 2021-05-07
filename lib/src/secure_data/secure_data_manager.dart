@@ -55,9 +55,9 @@ class SecureDataManager {
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination);
       Uint8List encryptedData = _engine.encrypt(Utf8Encoder().convert(data.toString()), certificate.key);
-      _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encryptedData), destination);
+      _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encryptedData).toJson(), destination);
     } else {
-      _aodvManager.sendMessageTo(Data(UNENCRYPTED_DATA, data), destination);
+      _aodvManager.sendMessageTo(Data(UNENCRYPTED_DATA, data).toJson(), destination);
     }
   }
 
@@ -70,7 +70,7 @@ class SecureDataManager {
         send(data, neighbor.label, true);
       return true;
     } else {
-      return await _datalinkManager.broadcastObject(Data(UNENCRYPTED_DATA, data));
+      return await _datalinkManager.broadcastObject(Data(UNENCRYPTED_DATA, data).toJson());
     }
   }
 
@@ -84,7 +84,7 @@ class SecureDataManager {
           send(data, neighbor.label, true);
       return true;
     } else {
-      return await _datalinkManager.broadcastObjectExcept(Data(UNENCRYPTED_DATA, data), excluded);
+      return await _datalinkManager.broadcastObjectExcept(Data(UNENCRYPTED_DATA, data).toJson(), excluded);
     }
   }
 
@@ -97,23 +97,18 @@ class SecureDataManager {
           _eventCtrl.add(event);
 
           AdHocDevice neighbor = event.payload as AdHocDevice;
-          String data = json.encode(
-            Data(
-              CERT_XCHG_BEGIN, 
-              [ _engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
-            ).toJson()
-          );
+          Map data = Data(
+            CERT_XCHG_BEGIN, 
+            [_engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
+          ).toJson();
 
           _aodvManager.sendMessageTo(data, neighbor.label);
           break;
 
         case DATA_RECEIVED:
-          if (!(event.payload is Data)) {
-            _eventCtrl.add(event);
-            break;
-          }
-
-          _processData(event.payload);
+          List payload = event.payload as List;
+          AdHocDevice sender = payload[0] as AdHocDevice;
+          _processData(sender, Data.fromJson(payload[1] as Map));
           break;
 
         default:
@@ -122,40 +117,36 @@ class SecureDataManager {
     });
   }
 
-  void _processData(Object data) {
-    AdHocDevice neighbor = (data as List)[0] as AdHocDevice;
-    Data pdu = Data.fromJson(json.decode((data as List)[1] as String));
+  void _processData(AdHocDevice sender, Data pdu) {
     switch (pdu.type) {
       case CERT_XCHG_BEGIN:
         List _pdu = pdu.payload;
-        _issueCertificate(neighbor, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
-        String data = json.encode(
-          Data(
-            CERT_XCHG_BEGIN,
-            [ _engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
-          ).toJson()
-        );
+        _issueCertificate(sender, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
+        Map data = Data(
+          CERT_XCHG_END,
+          [ _engine.publicKey.modulus.toString(), _engine.publicKey.exponent.toString()]
+        ).toJson();
 
-        _aodvManager.sendMessageTo(Data(CERT_XCHG_END, data), neighbor.label);
+        _aodvManager.sendMessageTo(data, sender.label);
         break;
 
       case CERT_XCHG_END:
         List _pdu = pdu.payload;
-        _issueCertificate(neighbor, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
+        _issueCertificate(sender, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
         break;
 
       case ENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [neighbor, _engine.decrypt(pdu.payload as Uint8List)]));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, _engine.decrypt(pdu.payload as Uint8List)]));
         break;
 
       case UNENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [neighbor, pdu.payload]));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
         break;
     }
   }
 
   void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
-    Certificate certificate = Certificate(neighbor.label, _aodvManager.ownLabel, key);
+    Certificate certificate = Certificate(neighbor.label, _aodvManager.label, key);
     Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
     _repository.addCertificate(certificate);
