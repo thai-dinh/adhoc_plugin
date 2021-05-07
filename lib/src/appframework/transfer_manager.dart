@@ -31,26 +31,44 @@ class TransferManager {
 /*------------------------------Network methods------------------------------*/
 
   void sendMessageTo(Object data, String destination) {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     _secureDataManager.send(data, destination, false);
   }
 
   void sendEncryptedMessageTo(Object data, String destination) {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     _secureDataManager.send(data, destination, true);
   }
 
   Future<bool> broadcast(Object data) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     return await _secureDataManager.broadcast(data, false);
   }
 
   Future<bool> encryptedBroadcast(Object data) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     return await _secureDataManager.broadcast(data, true);
   }
 
   Future<bool> broadcastExcept(Object data, AdHocDevice excluded) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     return await _secureDataManager.broadcastExcept(data, excluded.label, false);
   }
 
   Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     return await _secureDataManager.broadcastExcept(data, excluded.label, true);
   }
 
@@ -61,6 +79,7 @@ class TransferManager {
   Future<void> connect(AdHocDevice device) async {        
     if (_datalinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+
     await _datalinkManager.connect(1, device);
   }
 

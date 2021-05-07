@@ -1,0 +1,26 @@
+Galaxy A6 -> Galaxy A5 (2017)
+I/flutter (26192): Begin encryption
+I/flutter (26192): End encryption
+I/flutter (26192): Execution time: 17459660 µs
+I/flutter (26192): Execution time: 17459 ms
+
+Galaxy A6
+I/flutter (31831): Begin decryption
+I/flutter (31831): End decryption
+I/flutter (31831): Execution time: 189721053 µs
+I/flutter (31831): Execution time: 189721 ms
+
+Galaxy A5 (2017) -> Galaxy A6
+I/flutter (23651): Begin encryption
+I/flutter (23651): End encryption
+I/flutter (23651): Execution time: 10555308 µs
+I/flutter (23651): Execution time: 10555 ms
+
+Galaxy A5 (2017)
+I/flutter (18022): Begin decryption
+I/flutter (18022): End decryption
+I/flutter (18022): Execution time: 91213334 µs
+I/flutter (18022): Execution time: 91213 ms
+
+Observation:
+Everything freezes so requires a isolate or two

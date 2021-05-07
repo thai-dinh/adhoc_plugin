@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
@@ -49,12 +48,18 @@ class SecureDataManager {
 /*------------------------------Public methods--------------------------------*/
 
   void send(Object data, String destination, bool encrypted) {
-    if (_datalinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination);
-      Uint8List encryptedData = _engine.encrypt(Utf8Encoder().convert(data.toString()), certificate.key);
+      print('Begin encryption');
+      Stopwatch stopwatch = Stopwatch()..start();
+      Uint8List encryptedData = _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
+      stopwatch.stop();
+      print('End encryption');
+
+      String message = 'Execution time: ';
+      print(message + '${stopwatch.elapsedMicroseconds } µs');
+      print(message + '${stopwatch.elapsedMilliseconds} ms');
+
       _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encryptedData).toJson(), destination);
     } else {
       _aodvManager.sendMessageTo(Data(UNENCRYPTED_DATA, data).toJson(), destination);
@@ -62,9 +67,6 @@ class SecureDataManager {
   }
 
   Future<bool> broadcast(Object data, bool encrypted) async {
-    if (_datalinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-
     if (encrypted) {
       for (final neighbor in _datalinkManager.directNeighbors)
         send(data, neighbor.label, true);
@@ -75,9 +77,6 @@ class SecureDataManager {
   }
 
   Future<bool> broadcastExcept(Object data, String excluded, bool encrypted) async {
-    if (_datalinkManager.checkState() == 0)
-      throw DeviceFailureException('No wifi and bluetooth connectivity');
-
     if (encrypted) {
       for (final neighbor in _datalinkManager.directNeighbors)
         if (neighbor.label != excluded)
@@ -136,7 +135,19 @@ class SecureDataManager {
         break;
 
       case ENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, _engine.decrypt(pdu.payload as Uint8List)]));
+        List<int> received = (pdu.payload as List<dynamic>).cast<int>();
+
+        print('Begin decryption');
+        Stopwatch stopwatch = Stopwatch()..start();
+        Uint8List data = _engine.decrypt(Uint8List.fromList(received));
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
+        stopwatch.stop();
+        print('End decryption');
+
+        String message = 'Execution time: ';
+        print(message + '${stopwatch.elapsedMicroseconds } µs');
+        print(message + '${stopwatch.elapsedMilliseconds} ms');
+
         break;
 
       case UNENCRYPTED_DATA:

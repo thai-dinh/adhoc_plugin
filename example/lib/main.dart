@@ -27,6 +27,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   static const REQUEST = 1;
   static const REPLY = 2;
 
+  static const NONE = 'none';
+  static const LOCAL = 'local';
+
   final TransferManager _manager = TransferManager(true);
   final List<AdHocDevice> _discovered = List.empty(growable: true);
   final List<AdHocDevice> _peers = List.empty(growable: true);
@@ -37,13 +40,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   // bool _peerRequest = false;
   bool _requested = false;
   bool _display = false;
-  String _selected = 'None';
-  String _deviceName = 'local';
+  String _selected = NONE;
+  String _deviceName = LOCAL;
 
   @override
   void initState() {
     super.initState();
-    _manager.enableBle(3600);
+    // _manager.enableBle(3600);
     _manager.discoveryStream.listen(_processDiscoveryEvent);
     _manager.eventStream.listen(_processAdHocEvent);
   }
@@ -75,7 +78,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       );
 
                       if (_selected == null)
-                        _selected = 'None';
+                        _selected = NONE;
                       break;
 
                     case MenuOptions.display:
@@ -251,10 +254,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           if (peerName == peers[i]) {
             entry.putIfAbsent(songs[i], () => null);
           } else {
-            _globalPlaylist[peerName == _deviceName ? peer.label : peerName] = entry;
+            _globalPlaylist[peerName == LOCAL ? peer.label : peerName] = entry;
 
             peerName = peers[i];
-            entry = _globalPlaylist[peerName == _deviceName ? peer.label : peerName];
+            entry = _globalPlaylist[peerName == LOCAL ? peer.label : peerName];
             if (entry == null)
               entry = HashMap();
             entry.putIfAbsent(songs[i], () => null);
@@ -265,12 +268,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             _playlist.add(pair);
         }
 
-        _globalPlaylist[peerName == _deviceName ? peer.label : peerName] = entry;
+        _globalPlaylist[peerName == LOCAL ? peer.label : peerName] = entry;
 
         setState(() {});
         break;
 
       case REQUEST:
+        // TODO: if this node has the requested song, it can send instead of the originated node
         String name = data['name'];
         Uint8List bytes;
         // PlatformFile file;
@@ -302,7 +306,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         message.putIfAbsent('type', () => REPLY);
         message.putIfAbsent('name', () => name);
         message.putIfAbsent('song', () => bytes);
-        _manager.sendMessageTo(message, peer.label);
+        // _manager.sendMessageTo(message, peer.label);
+        _manager.sendEncryptedMessageTo(message, peer.label);
         break;
 
       case REPLY:
@@ -313,7 +318,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     }
   }
 
-  void _processReply(AdHocDevice peer, Map data) async { // Requester node should wait for multiple possible request so check with name of file
+  void _processReply(AdHocDevice peer, Map data) async {
+    // TODO: Requester node should wait for multiple possible request so check with name of file
     String name = data['name'];
     Uint8List song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
 
@@ -378,7 +384,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   }
 
   void _play() {
-    if (_selected.compareTo('None') == 0)
+    if (_selected.compareTo(NONE) == 0)
       return;
 
     PlatformFile file;
@@ -405,17 +411,17 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   }
 
   void _pause() {
-    if (_selected.compareTo('None') == 0)
+    if (_selected.compareTo(NONE) == 0)
       return;
 
     platform.invokeMethod('pause');
   }
 
   void _stop() {
-    if (_selected.compareTo('None') == 0)
+    if (_selected.compareTo(NONE) == 0)
       return;
 
-    _selected = 'None';
+    _selected = NONE;
     platform.invokeMethod('stop');
 
     setState(() {});
