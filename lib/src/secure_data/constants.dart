@@ -1,7 +1,8 @@
-const ENCRYPT = 0;
-const DECRYPT = 1;
-const SIGN = 2;
-const VERIFY = 3;
+const NB_ISOLATE = 2;
+
+const ENCRYPTION = 0;
+const DECRYPTION = 1;
+const INITIALISATION = 2;
 
 const CERT_XCHG_BEGIN = 30;
 const CERT_XCHG_END = 31;

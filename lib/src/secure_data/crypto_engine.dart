@@ -12,19 +12,23 @@ import 'package:pointycastle/export.dart';
 
 
 class CryptoEngine {
-  Isolate _isolate;
-  ReceivePort _receivePort;
-  SendPort _sendPort;
-  Stream<dynamic> _stream;
   RSAPublicKey _publicKey;
   RSAPrivateKey _privateKey;
+
+  ReceivePort _mainPort;
+  Stream<dynamic> _stream;
+  List<Isolate> _isolates;
+  List<SendPort> _sendPorts;
 
   CryptoEngine() {
     final keys = generateRSAkeyPair();
     this._publicKey = keys.publicKey;
     this._privateKey = keys.privateKey;
-    this._receivePort = ReceivePort();
-    this._stream = this._receivePort.asBroadcastStream();
+
+    this._mainPort = ReceivePort();
+    this._stream = this._mainPort.asBroadcastStream();
+    this._isolates = List.filled(NB_ISOLATE, null);
+    this._sendPorts = List.filled(NB_ISOLATE, null);
     this._initialize();
   }
 
@@ -48,13 +52,13 @@ class CryptoEngine {
     return AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(publicKey, privateKey);
   }
 
-  Future<Uint8List> encrypt(Uint8List data, RSAPublicKey key) {
+  Future<Uint8List> encrypt(Uint8List data, RSAPublicKey publicKey) {
     Completer completer = new Completer<Uint8List>();
 
-    _sendPort.send(Request(ENCRYPT, key, data));
+    _sendPorts[ENCRYPTION].send(Request(publicKey, data));
 
     _stream.listen((reply) {
-      if (reply is Reply && reply.rep == ENCRYPT) {
+      if (reply.rep == ENCRYPTION) {
         completer.complete(reply.data);
       }
     });
@@ -65,10 +69,10 @@ class CryptoEngine {
   Future<Uint8List> decrypt(Uint8List data) {
     Completer completer = new Completer<Uint8List>();
 
-    _sendPort.send(Request(DECRYPT, _privateKey, data));
+    _sendPorts[DECRYPTION].send(Request(_privateKey, data));
 
     _stream.listen((reply) {
-      if (reply is Reply && reply.rep == DECRYPT) {
+      if (reply.rep == DECRYPTION) {
         completer.complete(reply.data);
       }
     });
@@ -76,49 +80,41 @@ class CryptoEngine {
     return completer.future;
   }
 
-  Future<Uint8List> sign(Uint8List data) {
-    Completer completer = new Completer<Uint8List>();
-
-    _sendPort.send(Request(SIGN, _privateKey, data));
-
-    _stream.listen((reply) {
-      if (reply is Reply && reply.rep == SIGN) {
-        completer.complete(reply.data);
-      }
-    });
-
-    return completer.future;
+  Uint8List sign(Uint8List data) {
+    final signer = RSASigner(SHA256Digest(), '0609608648016503040201');
+    signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_privateKey));
+    return signer.generateSignature(data).bytes;
   }
 
-  Future<bool> verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
-    Completer completer = new Completer<bool>();
+  bool verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
+    final verifier = RSASigner(SHA256Digest(), '0609608648016503040201');
+    verifier.init(false, PublicKeyParameter<RSAPublicKey>(key));
+    certificate.signature = Uint8List(1);
 
-    _sendPort.send(Request(VERIFY, key, [certificate, signature]));
-
-    _stream.listen((reply) {
-      if (reply is Reply && reply.rep == VERIFY) {
-        completer.complete(reply.data);
-      }
-    });
-
-    return completer.future;
+    try {
+      return verifier.verifySignature(Utf8Encoder().convert(certificate.toString()), RSASignature(signature));
+    } on ArgumentError {
+      return false;
+    }
   }
 
   void stop() {
-    _receivePort.close();
-    _isolate.kill();
+    _mainPort.close();
+    _isolates[ENCRYPTION].kill();
+    _isolates[DECRYPTION].kill();
   }
 
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() async {
     _stream.listen((reply) {
-      if (reply is SendPort) {
-        _sendPort = reply;
+      if (reply.rep == INITIALISATION) {
+        _sendPorts[reply.data[0]] = reply.data[1];
       }
     });
 
-    _isolate = await Isolate.spawn(processCryptoTask, _receivePort.sendPort);
+    _isolates[ENCRYPTION] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
+    _isolates[DECRYPTION] = await Isolate.spawn(processDecryption, _mainPort.sendPort);
   }
 
   SecureRandom _random() {
@@ -132,59 +128,35 @@ class CryptoEngine {
   }
 }
 
-void processCryptoTask(SendPort port) {
+void processEncryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
-  port.send(_receivePort.sendPort);
+  port.send(Reply(INITIALISATION, [ENCRYPTION ,_receivePort.sendPort]));
 
-  _receivePort.listen((request) {
-    Request _request = request as Request;
-    switch (_request.req) {
-      case ENCRYPT:
-        final encryptor = OAEPEncoding(RSAEngine())
-          ..init(true, PublicKeyParameter<RSAPublicKey>(_request.key));
-        Uint8List data = _processData(encryptor, _request.data);
-        port.send(Reply(ENCRYPT, data));
-        break;
+  _receivePort.listen((params) {
+    final encryptor = OAEPEncoding(RSAEngine())
+      ..init(true, PublicKeyParameter<RSAPublicKey>(params.key));
+    Uint8List data = _processData(encryptor, params.data);
+    port.send(Reply(ENCRYPTION, data));
+  });
+}
 
-      case DECRYPT:
-        final decryptor = OAEPEncoding(RSAEngine())
-          ..init(false, PrivateKeyParameter<RSAPrivateKey>(_request.key));
-        Uint8List data = _processData(decryptor, _request.data);
-        port.send(Reply(DECRYPT, data));
-        break;
+void processDecryption(SendPort port) {
+  ReceivePort _receivePort = ReceivePort();
+  port.send(Reply(INITIALISATION, [DECRYPTION ,_receivePort.sendPort]));
 
-      case SIGN:
-        final signer = RSASigner(SHA256Digest(), '0609608648016503040201');
-        signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_request.key));
-        Uint8List result = signer.generateSignature(_request.data).bytes;
-        port.send(Reply(SIGN, result));
-        break;
-
-      case VERIFY:
-        final verifier = RSASigner(SHA256Digest(), '0609608648016503040201');
-        verifier.init(false, PublicKeyParameter<RSAPublicKey>(_request.key));
-        Certificate certificate = (_request.data as List)[0];
-        Uint8List signature = (_request.data as List)[1];
-        certificate.signature = Uint8List(1);
-
-        try {
-          bool result = verifier.verifySignature(Utf8Encoder().convert(certificate.toString()), RSASignature(signature));
-          port.send(Reply(VERIFY, result));
-        } on ArgumentError {
-          port.send(Reply(VERIFY, false));
-        }
-        break;
-
-      default:
-    }
+  _receivePort.listen((params) {
+    final decryptor = OAEPEncoding(RSAEngine())
+      ..init(false, PrivateKeyParameter<RSAPrivateKey>(params.key));
+    Uint8List data = _processData(decryptor, params.data);
+    port.send(Reply(DECRYPTION, data));
   });
 }
 
 Uint8List _processData(AsymmetricBlockCipher engine, Uint8List data) {
-  final numBlocks = data.length ~/ engine.inputBlockSize + ((data.length % engine.inputBlockSize != 0) ? 1 : 0);
-  final output = Uint8List(numBlocks * engine.outputBlockSize);
-  var inputOffset = 0;
-  var outputOffset = 0;
+  final int numBlocks = data.length ~/ engine.inputBlockSize + ((data.length % engine.inputBlockSize != 0) ? 1 : 0);
+  final Uint8List output = Uint8List(numBlocks * engine.outputBlockSize);
+  int inputOffset = 0;
+  int outputOffset = 0;
 
   while (inputOffset < data.length) {
     final chunkSize = (inputOffset + engine.inputBlockSize <= data.length) ? engine.inputBlockSize : data.length - inputOffset;
