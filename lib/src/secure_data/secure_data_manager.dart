@@ -47,12 +47,12 @@ class SecureDataManager {
 
 /*------------------------------Public methods--------------------------------*/
 
-  void send(Object data, String destination, bool encrypted) {
+  void send(Object data, String destination, bool encrypted) async {
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination);
       print('Begin encryption');
       Stopwatch stopwatch = Stopwatch()..start();
-      Uint8List encryptedData = _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
+      Uint8List encryptedData = await _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
       stopwatch.stop();
       print('End encryption');
 
@@ -116,7 +116,7 @@ class SecureDataManager {
     });
   }
 
-  void _processData(AdHocDevice sender, Data pdu) {
+  void _processData(AdHocDevice sender, Data pdu) async {
     switch (pdu.type) {
       case CERT_XCHG_BEGIN:
         List _pdu = pdu.payload;
@@ -139,7 +139,7 @@ class SecureDataManager {
 
         print('Begin decryption');
         Stopwatch stopwatch = Stopwatch()..start();
-        Uint8List data = _engine.decrypt(Uint8List.fromList(received));
+        Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
         _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
         stopwatch.stop();
         print('End decryption');
@@ -156,9 +156,9 @@ class SecureDataManager {
     }
   }
 
-  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
+  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) async {
     Certificate certificate = Certificate(neighbor.label, _aodvManager.label, key);
-    Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
+    Uint8List signature = await _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
     _repository.addCertificate(certificate);
   }

@@ -1,3 +1,4 @@
+One Isolate:
 Galaxy A6 -> Galaxy A5 (2017)
 I/flutter (26192): Begin encryption
 I/flutter (26192): End encryption
