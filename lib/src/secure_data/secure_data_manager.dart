@@ -30,7 +30,15 @@ class SecureDataManager {
     this._aodvManager = AodvManager(_verbose, config);
     this._datalinkManager = _aodvManager.dataLinkManager;
     this._repository = CertificateRepository();
+
+    print('Begin CryptoEngine');
+    Stopwatch stopwatch = Stopwatch()..start();
     this._engine = CryptoEngine();
+    stopwatch.stop();
+    print('End CryptoEngine');
+    String message = 'Execution time: ';
+    print(message + '${stopwatch.elapsedMilliseconds} ms');
+
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
@@ -50,16 +58,7 @@ class SecureDataManager {
   void send(Object data, String destination, bool encrypted) async {
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination);
-      print('Begin encryption');
-      Stopwatch stopwatch = Stopwatch()..start();
       Uint8List encryptedData = await _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
-      stopwatch.stop();
-      print('End encryption');
-
-      String message = 'Execution time: ';
-      print(message + '${stopwatch.elapsedMicroseconds } µs');
-      print(message + '${stopwatch.elapsedMilliseconds} ms');
-
       _aodvManager.sendMessageTo(Data(ENCRYPTED_DATA, encryptedData).toJson(), destination);
     } else {
       _aodvManager.sendMessageTo(Data(UNENCRYPTED_DATA, data).toJson(), destination);
@@ -137,17 +136,8 @@ class SecureDataManager {
       case ENCRYPTED_DATA:
         List<int> received = (pdu.payload as List<dynamic>).cast<int>();
 
-        print('Begin decryption');
-        Stopwatch stopwatch = Stopwatch()..start();
         Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
         _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
-        stopwatch.stop();
-        print('End decryption');
-
-        String message = 'Execution time: ';
-        print(message + '${stopwatch.elapsedMicroseconds } µs');
-        print(message + '${stopwatch.elapsedMilliseconds} ms');
-
         break;
 
       case UNENCRYPTED_DATA:
@@ -156,9 +146,9 @@ class SecureDataManager {
     }
   }
 
-  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) async {
+  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
     Certificate certificate = Certificate(neighbor.label, _aodvManager.label, key);
-    Uint8List signature = await _engine.sign(Utf8Encoder().convert(certificate.toString()));
+    Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
     _repository.addCertificate(certificate);
   }
