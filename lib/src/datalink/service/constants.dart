@@ -10,6 +10,8 @@ const MESSAGE_BEGIN = 1;
 
 const UINT8_SIZE = 256;
 
+const DISCOVERY_TIME = 10000;
+
 const LOW = 1500;
 const HIGH = 2500;
 

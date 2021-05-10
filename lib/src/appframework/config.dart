@@ -11,12 +11,17 @@ class Config {
   String label;
   bool connectionFlooding;
   int timeOut;
+  int expiryTime;
 
-  Config({String label = '', bool connectionFlooding = false, int serverPort = 52000}) {
+  Config(
+    {String label = '', bool connectionFlooding = false, int serverPort = 52000,
+    int expiryTime = 360}
+  ) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.connectionFlooding = connectionFlooding;
     this.serverPort = serverPort;
     this.timeOut = 5000;
+    this.expiryTime = expiryTime;
   }
 
   set serverPort(int serverPort) {

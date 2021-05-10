@@ -14,8 +14,6 @@ import 'package:pointycastle/export.dart';
 
 
 class CryptoEngine {
-  static const IDENTIFIER = '0609608648016503040201';
-  
   RSAPublicKey _publicKey;
   RSAPrivateKey _privateKey;
   ReceivePort _mainPort;
@@ -84,13 +82,13 @@ class CryptoEngine {
   }
 
   Uint8List sign(Uint8List data) {
-    final RSASigner signer = RSASigner(SHA256Digest(), IDENTIFIER);
+    final RSASigner signer = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_privateKey));
     return signer.generateSignature(data).bytes;
   }
 
   bool verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
-    final RSASigner verifier = RSASigner(SHA256Digest(), IDENTIFIER);
+    final RSASigner verifier = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
     verifier.init(false, PublicKeyParameter<RSAPublicKey>(key));
     certificate.signature = Uint8List(1);
 

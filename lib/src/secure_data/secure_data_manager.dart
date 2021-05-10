@@ -78,6 +78,18 @@ class SecureDataManager {
     }
   }
 
+  void createGroup(int groupId) {
+
+  }
+
+  void joinGroup() {
+    
+  }
+
+  void leaveGroup() {
+    
+  }
+
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
@@ -127,7 +139,6 @@ class SecureDataManager {
 
       case ENCRYPTED_DATA:
         List<int> received = (pdu.payload as List<dynamic>).cast<int>();
-
         Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
         _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
         break;
@@ -135,6 +146,8 @@ class SecureDataManager {
       case UNENCRYPTED_DATA:
         _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
         break;
+
+      default:
     }
   }
 

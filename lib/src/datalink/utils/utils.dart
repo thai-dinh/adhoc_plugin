@@ -3,12 +3,6 @@ import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
-/*---------------------------------Constants----------------------------------*/
-
-const DISCOVERY_TIME = 10000;
-
-/*-------------------------------Public methods-------------------------------*/
-
 String checkString(String string) => string == null ? '' : string;
 
 void log(final String tag, final String message) => print(tag + ': ' + message);
