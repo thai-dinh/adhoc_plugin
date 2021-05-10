@@ -1,8 +1,11 @@
-const NB_ISOLATE = 3;
+const NB_ISOLATE = 2;
 
+const INITIALISATION = -1;
 const ENCRYPTION = 0;
 const DECRYPTION = 1;
-const INITIALISATION = 5;
+
+const SECRET_KEY = 0;
+const SECRET_DATA = 1;
 
 const CERT_XCHG_BEGIN = 30;
 const CERT_XCHG_END = 31;

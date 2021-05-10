@@ -9,6 +9,7 @@ import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 import 'package:adhoc_plugin/src/secure_data/reply.dart';
 import 'package:adhoc_plugin/src/secure_data/request.dart';
 import 'package:archive/archive_io.dart';
+import 'package:cryptography/cryptography.dart' as Crypto;
 import 'package:pointycastle/export.dart';
 
 
@@ -54,16 +55,8 @@ class CryptoEngine {
   Future<Uint8List> encrypt(Uint8List data, RSAPublicKey publicKey) {
     Completer completer = new Completer<Uint8List>();
 
-    print('Begin compression');
-    Stopwatch stopwatch = Stopwatch()..start();
     List<int> compressed = ZLibEncoder().encode(data);
-    stopwatch.stop();
-    print('End compression');
-
-    String message = 'Execution time: ';
-    print(message + '${stopwatch.elapsedMilliseconds} ms');
-
-    _sendPorts[ENCRYPTION].send(Request(publicKey, compressed));
+    _sendPorts[ENCRYPTION].send(Request(compressed, publicKey: publicKey));
 
     _stream.listen((reply) {
       if (reply.rep == ENCRYPTION) {
@@ -76,32 +69,13 @@ class CryptoEngine {
 
   Future<Uint8List> decrypt(Uint8List data) {
     Completer completer = new Completer<Uint8List>();
-    int received = 0;
-    List<Uint8List> _data = List.filled(2, null);
 
-    _sendPorts[DECRYPTION].send(Request(_privateKey, data.sublist(0, data.length~/2)));
-    _sendPorts[DECRYPTION+1].send(Request(_privateKey, data.sublist(data.length~/2)));
+    _sendPorts[DECRYPTION].send(Request(data, privateKey: _privateKey));
 
     _stream.listen((reply) {
-      if (reply.rep == 1) {
-        _data[0] = reply.data;
-        received++;
-      } else if (reply.rep == 2) {
-        _data[1] = reply.data;
-        received++;
-      }
-
-      if (received == 2) {
-        print('Begin decompression');
-        Stopwatch stopwatch = Stopwatch()..start();
-        Uint8List compressed = Uint8List.fromList(_data[0] + _data[1]);
+      if (reply.rep == DECRYPTION) {
+        Uint8List compressed = Uint8List.fromList(reply.data);
         List<int> decompressed = ZLibDecoder().decodeBytes(compressed);
-        stopwatch.stop();
-        print('End decompression');
-
-        String message = 'Execution time: ';
-        print(message + '${stopwatch.elapsedMilliseconds} ms');
-
         completer.complete(Uint8List.fromList(decompressed));
       }
     });
@@ -142,9 +116,8 @@ class CryptoEngine {
       }
     });
 
-    _isolates[0] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
-    _isolates[1] = await Isolate.spawn(processDecryption1, _mainPort.sendPort);
-    _isolates[2] = await Isolate.spawn(processDecryption2, _mainPort.sendPort);
+    _isolates[ENCRYPTION] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
+    _isolates[DECRYPTION] = await Isolate.spawn(processDecryption, _mainPort.sendPort);
   }
 
   SecureRandom _random() {
@@ -160,61 +133,68 @@ class CryptoEngine {
 
 void processEncryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
-  port.send(Reply(INITIALISATION, [0, _receivePort.sendPort]));
+  port.send(Reply(INITIALISATION, [ENCRYPTION, _receivePort.sendPort]));
 
-  _receivePort.listen((params) {
+  _receivePort.listen((params) async {
     print('Begin encryption');
     Stopwatch stopwatch = Stopwatch()..start();
 
-    final encryptor = OAEPEncoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(params.key));
-    Uint8List data = _processData(encryptor, params.data);
+    final Crypto.AesCbc algorithm = Crypto.AesCbc.with128bits(macAlgorithm: Crypto.Hmac.sha256());
+    final Crypto.SecretKey secretKey = await algorithm.newSecretKey();
+    final Crypto.SecretBox secretBox = await algorithm.encrypt(
+      params.data,
+      secretKey: secretKey,
+    );
+
+    final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
+      ..init(true, PublicKeyParameter<RSAPublicKey>(params.publicKey));
+    Uint8List encryptedKey = _processData(encryptor, await secretKey.extractBytes());
 
     stopwatch.stop();
     print('End encryption');
     print('Execution time: ${stopwatch.elapsedMilliseconds} ms');
 
-    port.send(Reply(0, data));
+    List<List<int>> _secretBox = List.empty(growable: true);
+    _secretBox.add(secretBox.cipherText);
+    _secretBox.add(secretBox.nonce);
+    _secretBox.add(secretBox.mac.bytes);
+    List<dynamic> reply = List.filled(2, null);
+    reply[SECRET_KEY] = encryptedKey;
+    reply[SECRET_DATA] = _secretBox;
+    Uint8List encrypted = Utf8Encoder().convert(JsonCodec().encode(reply));
+
+    port.send(Reply(ENCRYPTION, encrypted));
   });
 }
 
-void processDecryption1(SendPort port) {
+void processDecryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
-  port.send(Reply(INITIALISATION, [1, _receivePort.sendPort]));
+  port.send(Reply(INITIALISATION, [DECRYPTION, _receivePort.sendPort]));
 
-  _receivePort.listen((params) {
-    print('Begin decryption 1');
+  _receivePort.listen((params) async {
+    print('Begin decryption');
     Stopwatch stopwatch = Stopwatch()..start();
 
-    final decryptor = OAEPEncoding(RSAEngine())
-      ..init(false, PrivateKeyParameter<RSAPrivateKey>(params.key));
-    Uint8List data = _processData(decryptor, params.data);
+    List<dynamic> reply = JsonCodec().decode(Utf8Decoder().convert(params.data));
+    final OAEPEncoding decryptor = OAEPEncoding(RSAEngine())
+      ..init(false, PrivateKeyParameter<RSAPrivateKey>(params.privateKey));
+    Uint8List secretKey = _processData(decryptor, Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>()));
+
+    final Crypto.AesCbc algorithm = Crypto.AesCbc.with128bits(macAlgorithm: Crypto.Hmac.sha256());
+    final Uint8List decrypted = await algorithm.decrypt(
+      Crypto.SecretBox(
+        (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
+        nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
+        mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
+      ),
+      secretKey: Crypto.SecretKey(secretKey),
+    );
 
     stopwatch.stop();
-    print('End decryption 1');
+    print('End decryption');
     print('Execution time: ${stopwatch.elapsedMilliseconds} ms');
 
-    port.send(Reply(1, data));
-  });
-}
-
-void processDecryption2(SendPort port) {
-  ReceivePort _receivePort = ReceivePort();
-  port.send(Reply(INITIALISATION, [2, _receivePort.sendPort]));
-
-  _receivePort.listen((params) {
-    print('Begin decryption 2');
-    Stopwatch stopwatch = Stopwatch()..start();
-
-    final decryptor = OAEPEncoding(RSAEngine())
-      ..init(false, PrivateKeyParameter<RSAPrivateKey>(params.key));
-    Uint8List data = _processData(decryptor, params.data);
-
-    stopwatch.stop();
-    print('End decryption 2');
-    print('Execution time: ${stopwatch.elapsedMilliseconds} ms');
-
-    port.send(Reply(2, data));
+    port.send(Reply(DECRYPTION, decrypted));
   });
 }
 

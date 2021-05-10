@@ -30,15 +30,7 @@ class SecureDataManager {
     this._aodvManager = AodvManager(_verbose, config);
     this._datalinkManager = _aodvManager.dataLinkManager;
     this._repository = CertificateRepository();
-
-    print('Begin CryptoEngine');
-    Stopwatch stopwatch = Stopwatch()..start();
     this._engine = CryptoEngine();
-    stopwatch.stop();
-    print('End CryptoEngine');
-    String message = 'Execution time: ';
-    print(message + '${stopwatch.elapsedMilliseconds} ms');
-
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
