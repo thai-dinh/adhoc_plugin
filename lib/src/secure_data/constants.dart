@@ -1,5 +1,3 @@
-const NB_ISOLATE = 2;
-
 const INITIALISATION = -1;
 const ENCRYPTION = 0;
 const DECRYPTION = 1;

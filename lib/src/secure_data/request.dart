@@ -6,7 +6,8 @@ class Request {
   RSAPublicKey publicKey;
   RSAPrivateKey privateKey;
   SecretKey sharedKey;
+  int req;
   Object data;
 
-  Request(this.data, {this.privateKey, this.publicKey});
+  Request(this.req, this.data, {this.privateKey, this.publicKey});
 }
