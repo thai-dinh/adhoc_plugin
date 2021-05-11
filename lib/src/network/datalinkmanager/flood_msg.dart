@@ -14,17 +14,16 @@ class FloodMsg {
 
   FloodMsg([this.id, this.adHocDevices]);
 
-  factory FloodMsg.fromJson(Map<String, dynamic> json) =>
-    _$FloodMsgFromJson(json);
+  factory FloodMsg.fromJson(Map<String, dynamic> json) => _$FloodMsgFromJson(json);
 
   Map<String, dynamic> toJson() => _$FloodMsgToJson(this);
 }
 
-class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>, Map<String, dynamic>> {
+class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>?, Map<String, dynamic>> {
   const _HashSetConverter();
 
   @override
-  HashSet<AdHocDevice> fromJson(Map<String, dynamic> json) {
+  HashSet<AdHocDevice>? fromJson(Map<String, dynamic> json) {
     List<AdHocDevice> adHocDevices = List.empty(growable: true);
     List<Map<String, dynamic>> list = 
       (json['devices'] as List<dynamic>).cast<Map<String, dynamic>>();
@@ -35,10 +34,10 @@ class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>, Map<Strin
   }
 
   @override
-  Map<String, dynamic> toJson(HashSet<AdHocDevice> devices) {
+  Map<String, dynamic> toJson(HashSet<AdHocDevice>? devices) {
     Map<String, dynamic> map = Map();
     List<Map<String, dynamic>> list = List.empty(growable: true);
-    devices.toList().forEach(
+    devices!.toList().forEach(
       (device) => list.add(device.toJson())
     );
 

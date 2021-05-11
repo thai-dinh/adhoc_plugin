@@ -57,7 +57,7 @@ class WrapperWifi extends WrapperNetwork {
   void init(bool verbose, Config config) async {
     _serverPort = config.serverPort;
 
-    if (await (WifiAdHocManager.isWifiEnabled() as FutureOr<bool>)) {
+    if (await (WifiAdHocManager.isWifiEnabled() as Future<bool>)) {
       this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();

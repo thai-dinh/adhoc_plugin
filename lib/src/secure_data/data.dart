@@ -15,5 +15,4 @@ class Data {
 /*-------------------------------Public methods-------------------------------*/
 
   Map<String, dynamic> toJson() => _$DataToJson(this);
-
 }

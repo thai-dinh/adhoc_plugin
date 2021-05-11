@@ -5,8 +5,8 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/adhoc_plugin.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart' as Utils;
 import 'package:adhoc_plugin/src/secure_data/certificate.dart';
-import 'package:adhoc_plugin/src/secure_data/group_controller.dart';
 import 'package:adhoc_plugin/src/secure_data/reply.dart';
 import 'package:adhoc_plugin/src/secure_data/request.dart';
 import 'package:archive/archive_io.dart';
@@ -152,6 +152,9 @@ Future<Uint8List> _encrypt(Request request) async {
     macAlgorithm: Crypto.Hmac.sha256()
   );
 
+  Stopwatch watch = Stopwatch()..start();
+  Utils.log('[CryptoEngine]', 'Start encryption');
+
   final Crypto.SecretKey secretKey = await algorithm.newSecretKey();
   final Crypto.SecretBox secretBox = await algorithm.encrypt(
     request.data as List<int>,
@@ -160,7 +163,10 @@ Future<Uint8List> _encrypt(Request request) async {
 
   final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
     ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
-  Uint8List encryptedKey = _processData(encryptor, await (secretKey.extractBytes() as FutureOr<Uint8List>));
+  Uint8List encryptedKey = _processData(encryptor, Uint8List.fromList(await secretKey.extractBytes()));
+
+  watch.stop();
+  Utils.log('[CryptoEngine]', 'End encryption ${watch.elapsedMilliseconds}');
 
   List<List<int>> encryptedData = List.empty(growable: true);
   encryptedData.add(secretBox.cipherText);
@@ -175,6 +181,9 @@ Future<Uint8List> _encrypt(Request request) async {
 }
 
 Future<Uint8List> _decrypt(Request request) async {
+  Stopwatch watch = Stopwatch()..start();
+  Utils.log('[CryptoEngine]', 'Start decryption');
+
   List<dynamic> reply = JsonCodec().decode(Utf8Decoder().convert(request.data as List<int>));
   final OAEPEncoding decryptor = OAEPEncoding(RSAEngine())
     ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
@@ -187,14 +196,19 @@ Future<Uint8List> _decrypt(Request request) async {
     macAlgorithm: Crypto.Hmac.sha256()
   );
 
-  final Uint8List decrypted = await (algorithm.decrypt(
-    Crypto.SecretBox(
-      (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
-      nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
-      mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
+  final Uint8List decrypted = Uint8List.fromList(
+    await algorithm.decrypt(
+      Crypto.SecretBox(
+        (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
+        nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
+        mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
+      ),
+      secretKey: Crypto.SecretKey(secretKey),
     ),
-    secretKey: Crypto.SecretKey(secretKey),
-  ) as FutureOr<Uint8List>);
+  );
+
+  watch.stop();
+  Utils.log('[CryptoEngine]', 'End decryption ${watch.elapsedMilliseconds}');
 
   return decrypted;
 }

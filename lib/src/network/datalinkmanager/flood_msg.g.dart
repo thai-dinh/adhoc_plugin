@@ -15,6 +15,6 @@ FloodMsg _$FloodMsgFromJson(Map<String, dynamic> json) {
 }
 
 Map<String, dynamic> _$FloodMsgToJson(FloodMsg instance) => <String, dynamic>{
-      'adHocDevices': const _HashSetConverter().toJson(instance.adHocDevices!),
+      'adHocDevices': const _HashSetConverter().toJson(instance.adHocDevices),
       'id': instance.id,
     };

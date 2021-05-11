@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 
 
-
 class CertificateRepository {
   late HashMap<String?, Certificate> _repository;
 

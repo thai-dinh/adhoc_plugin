@@ -175,7 +175,7 @@ class GroupController {
 
     switch (pdu.type) {
       case GROUP_REQUEST:
-        GroupData advertisement = pdu.payload as GroupData;
+        GroupData advertisement = GroupData.fromJson(pdu.payload as Map<String, dynamic>);
         List<dynamic> data = advertisement.data as List;
 
         P = data[0] as int;

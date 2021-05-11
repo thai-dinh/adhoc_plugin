@@ -45,7 +45,7 @@ class WrapperBle extends WrapperNetwork {
 
   @override
   Future<void> init(bool verbose, Config? config) async {
-    if (await (BleAdHocManager.isEnabled() as FutureOr<bool>)) {
+    if (await (BleAdHocManager.isEnabled() as Future<bool>)) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this.ownName = await BleAdHocManager.getCurrentName();
       this._listenServer();
@@ -111,7 +111,7 @@ class WrapperBle extends WrapperNetwork {
 
   @override
   Future<HashMap<String?, AdHocDevice>?> getPaired() async {
-    if (!(await (BleAdHocManager.isEnabled() as FutureOr<bool>)))
+    if (!(await (BleAdHocManager.isEnabled() as Future<bool>)))
       return null;
 
     HashMap<String?, BleAdHocDevice> paired = HashMap();

@@ -18,7 +18,7 @@ class WifiP2p {
 /*------------------------------Getters & Setters-----------------------------*/
 
   Stream<List<WifiP2pDevice>> get discoveryStream async* {
-    await for (List list in _chDiscovery.receiveBroadcastStream() as Stream<List<dynamic>>) {
+    await for (List list in _chDiscovery.receiveBroadcastStream()) {
       List<WifiP2pDevice> listPeers = List.empty(growable: true);
       list.forEach((map) => listPeers.add(WifiP2pDevice.fromMap(map)));
       yield listPeers;
@@ -26,25 +26,25 @@ class WifiP2p {
   }
 
   Stream<bool> get wifiStateStream async* {
-    await for (bool state in _chWifiState.receiveBroadcastStream() as Stream<bool>) {
+    await for (bool state in _chWifiState.receiveBroadcastStream()) {
       yield state;
     }
   }
 
   Stream<WifiP2pInfo> get wifiP2pConnectionStream async* {
-    await for (Map map in _chConnection.receiveBroadcastStream() as Stream<Map<dynamic, dynamic>>) {
+    await for (Map map in _chConnection.receiveBroadcastStream()) {
       yield WifiP2pInfo.fromMap(map);
     }
   }
 
   Stream<WifiP2pDevice> get thisDeviceChangeStream async* {
-    await for (Map map in _chChange.receiveBroadcastStream() as Stream<Map<dynamic, dynamic>>) {
+    await for (Map map in _chChange.receiveBroadcastStream()) {
       yield WifiP2pDevice.fromMap(map);
     }
   }
 
   Future<String> get mac async {
-    String _mac = await (_chMain.invokeMethod('getMacAddress') as FutureOr<String>);
+    String _mac = await (_chMain.invokeMethod('getMacAddress'));
     return _mac.toUpperCase();
   }
 

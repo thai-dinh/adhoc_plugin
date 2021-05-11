@@ -147,7 +147,7 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            if (!(await (BleAdHocManager.getBondState(_device.mac) as FutureOr<bool>))) {
+            if (!(await (BleAdHocManager.getBondState(_device.mac) as Future<bool>))) {
               _bondStream.listen((event) async {
                 if (_device.mac == event['macAddress']) {
                   listen();

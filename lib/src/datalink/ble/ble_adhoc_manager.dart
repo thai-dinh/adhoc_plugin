@@ -15,7 +15,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 /// Class managing the Bluetooth Low Energy discovery and pairing process with
 /// other BLE-capable devices.
 class BleAdHocManager {
-  static const String TAG = "[BleAdHocManager]";
+  static const String TAG = '[BleAdHocManager]';
   static const String _methodName = 'ad.hoc.lib/plugin.ble.channel';
   static const String _eventName = 'ad.hoc.lib/ble.bond';
   static const MethodChannel _methodChannel = const MethodChannel(_methodName);
@@ -110,7 +110,7 @@ class BleAdHocManager {
     if (_verbose) log(TAG, 'getPairedDevices()');
 
     HashMap<String?, BleAdHocDevice> pairedDevices = HashMap();
-    List<Map> btDevices = await (_methodChannel.invokeMethod('getPairedDevices') as FutureOr<List<Map<dynamic, dynamic>>>);
+    List<Map> btDevices = await (_methodChannel.invokeMethod('getPairedDevices') as Future<List<Map<dynamic, dynamic>>>);
 
     for (final device in btDevices)
       pairedDevices.putIfAbsent(device['macAddress'], () => BleAdHocDevice.fromMap(device));
