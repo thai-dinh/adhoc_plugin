@@ -5,7 +5,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// Class representing a remote BLE-capable device.
 class BleAdHocDevice extends AdHocDevice {
-  int mtu;
+  late int mtu;
 
   /// Initialize a newly created BleAdHocDevice representing a remote 
   /// BLE-capable device with information given by discovered [device].
@@ -28,7 +28,7 @@ class BleAdHocDevice extends AdHocDevice {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Return the UUID of the remote BLE-capable device.
-  String get uuid => address;
+  String? get uuid => address;
 
 /*------------------------------Override methods------------------------------*/
 

@@ -8,9 +8,9 @@ import 'package:adhoc_plugin/src/datalink/service/service.dart';
 abstract class ServiceClient extends Service {
   static const String TAG = "[ServiceClient]";
 
-  int _attempts;
-  int _backOffTime;
-  int _timeOut;
+  int? _attempts;
+  late int _backOffTime;
+  int? _timeOut;
 
   ServiceClient(
     bool verbose, this._attempts, this._timeOut,
@@ -20,11 +20,11 @@ abstract class ServiceClient extends Service {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  int get attempts => _attempts;
+  int? get attempts => _attempts;
 
   int get backOffTime => _backOffTime *= 2;
 
-  int get timeOut => _timeOut;
+  int? get timeOut => _timeOut;
 
 /*-------------------------------Public methods-------------------------------*/
 

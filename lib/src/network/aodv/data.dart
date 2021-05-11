@@ -5,8 +5,8 @@ part 'data.g.dart';
 
 @JsonSerializable()
 class Data {
-  String destAddress;
-  Object payload;
+  String? destAddress;
+  Object? payload;
 
   Data(this.destAddress, this.payload);
 

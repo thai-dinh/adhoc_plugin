@@ -8,7 +8,7 @@ part of 'data.dart';
 
 Data _$DataFromJson(Map<String, dynamic> json) {
   return Data(
-    json['destAddress'] as String,
+    json['destAddress'] as String?,
     json['payload'],
   );
 }

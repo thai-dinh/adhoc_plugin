@@ -10,9 +10,9 @@ class AodvHelper {
 
   final bool _verbose;
 
-  RoutingTable _routingTable;
-  HashSet<String> _entryBroadcast;
-  int _rreqId;
+  late RoutingTable _routingTable;
+  late HashSet<String> _entryBroadcast;
+  int? _rreqId;
 
   AodvHelper(this._verbose) {
     this._routingTable = RoutingTable(_verbose);
@@ -20,9 +20,9 @@ class AodvHelper {
     this._rreqId = 1;
   }
 
-  EntryRoutingTable addEntryRoutingTable(
-    String destAddress, String next, int hop, int seq, int lifetime, 
-    List<String> precursors
+  EntryRoutingTable? addEntryRoutingTable(
+    String? destAddress, String? next, int? hop, int? seq, int? lifetime, 
+    List<String?>? precursors
   ) {
     EntryRoutingTable entry = EntryRoutingTable(
       destAddress, next, hop, seq, lifetime, precursors
@@ -31,7 +31,7 @@ class AodvHelper {
     return _routingTable.addEntry(entry) ? entry : null;
   }
 
-  bool addBroadcastId(String sourceAddress, int rreqId) {
+  bool addBroadcastId(String sourceAddress, int? rreqId) {
     String entry = sourceAddress + rreqId.toString();
     if (!_entryBroadcast.contains(entry)) {
       _entryBroadcast.add(entry);
@@ -42,47 +42,47 @@ class AodvHelper {
     }
   }
 
-  EntryRoutingTable getNextfromDest(String destAddress) {
+  EntryRoutingTable? getNextfromDest(String? destAddress) {
     return _routingTable.getNextFromDest(destAddress);
   }
 
-  bool containsDest(String destAddress) {
+  bool containsDest(String? destAddress) {
     return _routingTable.containsDest(destAddress);
   }
 
-  int getIncrementRreqId() {
-    return _rreqId++;
+  int? getIncrementRreqId() {
+    return _rreqId = _rreqId! + 1;
   }
 
-  EntryRoutingTable getDestination(String destAddress) {
+  EntryRoutingTable? getDestination(String? destAddress) {
     return _routingTable.getDestination(destAddress);
   }
 
-  void removeEntry(String destAddress) {
+  void removeEntry(String? destAddress) {
     _routingTable.removeEntry(destAddress);
   }
 
   int sizeRoutingTable() {
-    return _routingTable.getRoutingTable().length;
+    return _routingTable.getRoutingTable()!.length;
   }
 
-  bool containsNext(String nextAddress) {
+  bool containsNext(String? nextAddress) {
     return _routingTable.containsNext(nextAddress);
   }
 
-  String getDestFromNext(String nextAddress) {
+  String? getDestFromNext(String? nextAddress) {
     return _routingTable.getDestFromNext(nextAddress);
   }
 
-  Set<MapEntry<String, EntryRoutingTable>> getEntrySet() {
-    return _routingTable.getRoutingTable().entries.toSet();
+  Set<MapEntry<String?, EntryRoutingTable>> getEntrySet() {
+    return _routingTable.getRoutingTable()!.entries.toSet();
   }
 
-  List<String> getPrecursorsFromDest(String destAddress) {
+  List<String?>? getPrecursorsFromDest(String? destAddress) {
     return _routingTable.getPrecursorsFromDest(destAddress);
   }
 
-  int getDataPathFromAddress(String address) {
+  int? getDataPathFromAddress(String? address) {
     return _routingTable.getDataPathFromAddress(address);
   }
 }

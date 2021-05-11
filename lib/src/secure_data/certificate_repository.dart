@@ -5,7 +5,7 @@ import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 
 
 class CertificateRepository {
-  HashMap<String, Certificate> _repository;
+  late HashMap<String?, Certificate> _repository;
 
   CertificateRepository() {
     this._repository = HashMap();
@@ -30,7 +30,7 @@ class CertificateRepository {
     _repository.remove(label);
   }
 
-  Certificate getCertificate(String label) {
+  Certificate? getCertificate(String? label) {
     return _repository[label];
   }
 

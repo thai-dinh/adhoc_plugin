@@ -15,12 +15,12 @@ import 'package:pointycastle/export.dart';
 
 
 class CryptoEngine {
-  RSAPublicKey _publicKey;
-  RSAPrivateKey _privateKey;
-  ReceivePort _mainPort;
-  Stream<dynamic> _stream;
-  Isolate _isolate;
-  SendPort _sendPort;
+  RSAPublicKey? _publicKey;
+  RSAPrivateKey? _privateKey;
+  late ReceivePort _mainPort;
+  late Stream<dynamic> _stream;
+  late Isolate _isolate;
+  SendPort? _sendPort;
 
   CryptoEngine() {
     final keys = generateRSAkeyPair();
@@ -33,7 +33,7 @@ class CryptoEngine {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  RSAPublicKey get publicKey => _publicKey;
+  RSAPublicKey? get publicKey => _publicKey;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -55,7 +55,7 @@ class CryptoEngine {
     Completer completer = new Completer<Uint8List>();
 
     List<int> compressed = ZLibEncoder().encode(data);
-    _sendPort.send(Request(ENCRYPTION, compressed, publicKey: publicKey));
+    _sendPort!.send(Request(ENCRYPTION, compressed, publicKey: publicKey));
 
     _stream.listen((reply) {
       if (reply.rep == ENCRYPTION) {
@@ -63,13 +63,13 @@ class CryptoEngine {
       }
     });
 
-    return completer.future;
+    return completer.future as Future<Uint8List>;
   }
 
   Future<Uint8List> decrypt(Uint8List data) {
     Completer completer = new Completer<Uint8List>();
 
-    _sendPort.send(Request(DECRYPTION, data, privateKey: _privateKey));
+    _sendPort!.send(Request(DECRYPTION, data, privateKey: _privateKey));
 
     _stream.listen((reply) {
       if (reply.rep == DECRYPTION) {
@@ -79,12 +79,12 @@ class CryptoEngine {
       }
     });
 
-    return completer.future;
+    return completer.future as Future<Uint8List>;
   }
 
   Uint8List sign(Uint8List data) {
     final RSASigner signer = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
-    signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_privateKey));
+    signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_privateKey!));
     return signer.generateSignature(data).bytes;
   }
 
@@ -154,13 +154,13 @@ Future<Uint8List> _encrypt(Request request) async {
 
   final Crypto.SecretKey secretKey = await algorithm.newSecretKey();
   final Crypto.SecretBox secretBox = await algorithm.encrypt(
-    request.data,
+    request.data as List<int>,
     secretKey: secretKey,
   );
 
   final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
-    ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey));
-  Uint8List encryptedKey = _processData(encryptor, await secretKey.extractBytes());
+    ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
+  Uint8List encryptedKey = _processData(encryptor, await (secretKey.extractBytes() as FutureOr<Uint8List>));
 
   List<List<int>> encryptedData = List.empty(growable: true);
   encryptedData.add(secretBox.cipherText);
@@ -175,9 +175,9 @@ Future<Uint8List> _encrypt(Request request) async {
 }
 
 Future<Uint8List> _decrypt(Request request) async {
-  List<dynamic> reply = JsonCodec().decode(Utf8Decoder().convert(request.data));
+  List<dynamic> reply = JsonCodec().decode(Utf8Decoder().convert(request.data as List<int>));
   final OAEPEncoding decryptor = OAEPEncoding(RSAEngine())
-    ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey));
+    ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
 
   Uint8List secretKey = _processData(
     decryptor, Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>())
@@ -187,14 +187,14 @@ Future<Uint8List> _decrypt(Request request) async {
     macAlgorithm: Crypto.Hmac.sha256()
   );
 
-  final Uint8List decrypted = await algorithm.decrypt(
+  final Uint8List decrypted = await (algorithm.decrypt(
     Crypto.SecretBox(
       (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
       nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
       mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
     ),
     secretKey: Crypto.SecretKey(secretKey),
-  );
+  ) as FutureOr<Uint8List>);
 
   return decrypted;
 }

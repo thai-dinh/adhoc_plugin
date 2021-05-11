@@ -5,9 +5,9 @@ part 'aodv_message.g.dart';
 
 @JsonSerializable()
 class AodvMessage {
-  int _type;
+  int? _type;
 
-  AodvMessage(int type) {
+  AodvMessage(int? type) {
     this._type = type;
   }
 
@@ -15,7 +15,7 @@ class AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  int get type => _type;
+  int? get type => _type;
 
 /*-------------------------------Public methods-------------------------------*/
 

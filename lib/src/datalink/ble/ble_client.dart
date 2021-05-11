@@ -17,16 +17,16 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   static int id = 0;
 
-  StreamSubscription<ConnectionStateUpdate> _connnectionSub;
-  StreamSubscription<List<int>> _messageSub;
-  FlutterReactiveBle _reactiveBle;
+  StreamSubscription<ConnectionStateUpdate>? _connnectionSub;
+  StreamSubscription<List<int>>? _messageSub;
+  late FlutterReactiveBle _reactiveBle;
   BleAdHocDevice _device;
   Stream<dynamic> _bondStream;
-  Uuid _serviceUuid;
-  Uuid _characteristicUuid;
+  late Uuid _serviceUuid;
+  late Uuid _characteristicUuid;
 
   BleClient(
-    bool verbose, this._device, int attempts, int timeOut, this._bondStream
+    bool verbose, this._device, int attempts, int? timeOut, this._bondStream
   ) : super(
     verbose, attempts, timeOut
   ) {
@@ -41,7 +41,7 @@ class BleClient extends ServiceClient {
     final qChar = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac
+      deviceId: _device.mac!
     );
 
     List<Uint8List> bytesData = List.empty(growable: true);
@@ -60,9 +60,9 @@ class BleClient extends ServiceClient {
     super.stopListening();
 
     if (_connnectionSub != null)
-      _connnectionSub.cancel();
+      _connnectionSub!.cancel();
     if (_messageSub != null)
-      _messageSub.cancel();
+      _messageSub!.cancel();
   }
 
   Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
@@ -83,7 +83,7 @@ class BleClient extends ServiceClient {
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
-      deviceId: _device.mac
+      deviceId: _device.mac!
     );
 
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
@@ -112,16 +112,16 @@ class BleClient extends ServiceClient {
 
   Future<void> _requestMtu() async {
     _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac, 
+      deviceId: _device.mac!, 
       mtu: MAX_MTU
     );
   }
 
-  Future<void> _connect(int attempts, Duration delay) async {
+  Future<void> _connect(int? attempts, Duration delay) async {
     try {
       await _connectionAttempt();
     } on NoConnectionException {
-      if (attempts > 0) {
+      if (attempts! > 0) {
         if (verbose)
           log(ServiceClient.TAG, 'Connection attempt $attempts failed');
         
@@ -138,16 +138,16 @@ class BleClient extends ServiceClient {
 
     if (state == Constants.STATE_NONE || state == Constants.STATE_CONNECTING) {
       _connnectionSub = _reactiveBle.connectToDevice(
-        id: _device.mac,
+        id: _device.mac!,
         servicesWithCharacteristicsToDiscover: {},
-        connectionTimeout: Duration(seconds: timeOut),
+        connectionTimeout: Duration(seconds: timeOut!),
       ).listen((event) async {
         switch (event.connectionState) {
           case DeviceConnectionState.connected:
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            if (!(await BleAdHocManager.getBondState(_device.mac))) {
+            if (!(await (BleAdHocManager.getBondState(_device.mac) as FutureOr<bool>))) {
               _bondStream.listen((event) async {
                 if (_device.mac == event['macAddress']) {
                   listen();

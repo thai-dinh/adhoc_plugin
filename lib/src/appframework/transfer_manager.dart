@@ -12,61 +12,75 @@ import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
 
 class TransferManager {
   bool _verbose;
-  SecureDataManager _secureDataManager;
-  DataLinkManager _datalinkManager;
+  late SecureDataManager _secureDataManager;
+  DataLinkManager? _datalinkManager;
 
-  TransferManager(this._verbose, {Config config}) {
+  TransferManager(this._verbose, {Config? config}) {
     this._secureDataManager = SecureDataManager(_verbose, config == null ? Config() : config);
     this._datalinkManager = _secureDataManager.datalinkManager;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  List<AdHocDevice> get directNeighbors => _secureDataManager.directNeighbors;
+  List<AdHocDevice?> get directNeighbors => _secureDataManager.directNeighbors;
 
   Stream<AdHocEvent> get eventStream => _secureDataManager.eventStream;
 
   Stream<DiscoveryEvent> get discoveryStream => _secureDataManager.discoveryStream;
 
+/*------------------------------Crypto methods------------------------------*/
+
+  void createGroup(int groupId) {
+    _secureDataManager.groupController!.createGroup(groupId);
+  }
+
+  void joinGroup(int groupId) {
+    _secureDataManager.groupController!.joinGroup(groupId);
+  }
+
+  void leaveGroup() {
+    _secureDataManager.groupController!.leaveGroup();
+  }
+
 /*------------------------------Network methods------------------------------*/
 
   void sendMessageTo(Object data, String destination) {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     _secureDataManager.send(data, destination, false);
   }
 
   void sendEncryptedMessageTo(Object data, String destination) {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     _secureDataManager.send(data, destination, true);
   }
 
   Future<bool> broadcast(Object data) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     return await _secureDataManager.broadcast(data, false);
   }
 
   Future<bool> encryptedBroadcast(Object data) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     return await _secureDataManager.broadcast(data, true);
   }
 
   Future<bool> broadcastExcept(Object data, AdHocDevice excluded) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     return await _secureDataManager.broadcastExcept(data, excluded.label, false);
   }
 
   Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
     return await _secureDataManager.broadcastExcept(data, excluded.label, true);
@@ -74,48 +88,48 @@ class TransferManager {
 
 /*------------------------------DataLink methods-----------------------------*/
 
-  void discovery() => _datalinkManager.discovery();
+  void discovery() => _datalinkManager!.discovery();
 
   Future<void> connect(AdHocDevice device) async {        
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager!.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
-    await _datalinkManager.connect(1, device);
+    await _datalinkManager!.connect(1, device);
   }
 
   void close() {
-    _datalinkManager.stopListening();
+    _datalinkManager!.stopListening();
   }
 
-  void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label);
+  void disconnect(AdHocDevice device) => _datalinkManager!.disconnect(device.label);
 
-  void disconnectAll() => _datalinkManager.disconnectAll();
+  void disconnectAll() => _datalinkManager!.disconnectAll();
 
   void enableBle(int duration) {
-    _datalinkManager.enable(duration, BLE);
+    _datalinkManager!.enable(duration, BLE);
   }
 
   void enableWifi(int duration) {
-    _datalinkManager.enable(duration, WIFI);
+    _datalinkManager!.enable(duration, WIFI);
   }
 
   void enable() {
-    _datalinkManager.enableAll();
+    _datalinkManager!.enableAll();
   }
 
-  Future<String> getAdapterName(int type) async {
-    return _datalinkManager.getAdapterName(type);
+  Future<String?> getAdapterName(int type) async {
+    return _datalinkManager!.getAdapterName(type);
   }
 
-  Future<HashMap<int, String>> getActifAdapterNames() async {
-    return _datalinkManager.getActifAdapterNames();
+  Future<HashMap<int?, String>> getActifAdapterNames() async {
+    return _datalinkManager!.getActifAdapterNames();
   }
 
-  Future<bool> updateAdapterName(int type, String newName) async {
-    return _datalinkManager.updateAdapterName(type, newName);
+  Future<bool?> updateAdapterName(int type, String newName) async {
+    return _datalinkManager!.updateAdapterName(type, newName);
   }
 
   void resetAdapterName(int type) {
-    _datalinkManager.resetAdapterName(type);
+    _datalinkManager!.resetAdapterName(type);
   }
 }

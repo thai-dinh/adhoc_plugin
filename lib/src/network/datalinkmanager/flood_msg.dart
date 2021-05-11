@@ -9,8 +9,8 @@ part 'flood_msg.g.dart';
 @JsonSerializable()
 class FloodMsg {
   @_HashSetConverter()
-  HashSet<AdHocDevice> adHocDevices;
-  String id;
+  HashSet<AdHocDevice>? adHocDevices;
+  String? id;
 
   FloodMsg([this.id, this.adHocDevices]);
 

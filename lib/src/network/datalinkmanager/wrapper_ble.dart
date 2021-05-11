@@ -25,14 +25,14 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 class WrapperBle extends WrapperNetwork {
   static const String TAG = "[WrapperBle]";
 
-  bool _isDiscovering;
-  bool _isInitialized;
-  BleAdHocManager _bleAdHocManager;
-  StreamSubscription<DiscoveryEvent> _discoverySub;
-  String _ownStringUUID;
+  late bool _isDiscovering;
+  late bool _isInitialized;
+  BleAdHocManager? _bleAdHocManager;
+  late StreamSubscription<DiscoveryEvent> _discoverySub;
+  String? _ownStringUUID;
 
   WrapperBle(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
+    bool verbose, Config config, HashMap<String, AdHocDevice>? mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isInitialized = false;
@@ -44,8 +44,8 @@ class WrapperBle extends WrapperNetwork {
 /*------------------------------Override methods------------------------------*/
 
   @override
-  Future<void> init(bool verbose, Config config) async {
-    if (await BleAdHocManager.isEnabled()) {
+  Future<void> init(bool verbose, Config? config) async {
+    if (await (BleAdHocManager.isEnabled() as FutureOr<bool>)) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this.ownName = await BleAdHocManager.getCurrentName();
       this._listenServer();
@@ -58,16 +58,16 @@ class WrapperBle extends WrapperNetwork {
 
   @override
   void enable(int duration) async {
-    if (!enabled) {
+    if (!enabled!) {
       this._bleAdHocManager = BleAdHocManager(verbose);
-      await _bleAdHocManager.enable();
-      this._bleAdHocManager.enableDiscovery(duration);
+      await _bleAdHocManager!.enable();
+      this._bleAdHocManager!.enableDiscovery(duration);
       this.ownName = await BleAdHocManager.getCurrentName();
       this._listenServer();
       this._initialize();
       this.enabled = true;
     } else {
-      this._bleAdHocManager.enableDiscovery(duration);
+      this._bleAdHocManager!.enableDiscovery(duration);
     }
   }
 
@@ -76,7 +76,7 @@ class WrapperBle extends WrapperNetwork {
     mapAddrNetwork.clear();
     neighbors.clear();
 
-    _bleAdHocManager.disable();
+    _bleAdHocManager!.disable();
     _bleAdHocManager = null;
 
     enabled = false;
@@ -88,34 +88,34 @@ class WrapperBle extends WrapperNetwork {
       return;
 
     _discoverySub.resume();
-    _bleAdHocManager.discovery();
+    _bleAdHocManager!.discovery();
     _isDiscovering = true;
   }
 
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
-    BleAdHocDevice bleAdHocDevice = mapMacDevices[device.mac];
+    BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
     if (bleAdHocDevice != null) {
-      if (!serviceServer.containConnection(bleAdHocDevice.mac)) {
+      if (!serviceServer!.containConnection(bleAdHocDevice.mac)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
-          device.name + "(" + device.mac + ") is already connected"
+          device.name! + "(" + device.mac! + ") is already connected"
         );
       }
     }
   }
 
   @override
-  void stopListening() => serviceServer.stopListening();
+  void stopListening() => serviceServer!.stopListening();
 
   @override
-  Future<HashMap<String, AdHocDevice>> getPaired() async {
-    if (!(await BleAdHocManager.isEnabled()))
+  Future<HashMap<String?, AdHocDevice>?> getPaired() async {
+    if (!(await (BleAdHocManager.isEnabled() as FutureOr<bool>)))
       return null;
 
-    HashMap<String, BleAdHocDevice> paired = HashMap();
-    Map pairedDevices = await _bleAdHocManager.getPairedDevices();
+    HashMap<String?, BleAdHocDevice> paired = HashMap();
+    Map pairedDevices = await _bleAdHocManager!.getPairedDevices();
     pairedDevices.forEach((macAddress, bleAdHocDevice) {
       paired.putIfAbsent(macAddress, () => bleAdHocDevice);
     });
@@ -124,18 +124,18 @@ class WrapperBle extends WrapperNetwork {
   }
 
   @override
-  Future<String> getAdapterName() async {
-    return await _bleAdHocManager.adapterName;
+  Future<String?> getAdapterName() async {
+    return await _bleAdHocManager!.adapterName;
   }
 
   @override
-  Future<bool> updateDeviceName(String name) async {
-    return await _bleAdHocManager.updateDeviceName(name);
+  Future<bool?> updateDeviceName(String name) async {
+    return await _bleAdHocManager!.updateDeviceName(name);
   }
 
   @override
-  Future<bool> resetDeviceName() async {
-    return await _bleAdHocManager.resetDeviceName();
+  Future<bool?> resetDeviceName() async {
+    return await _bleAdHocManager!.resetDeviceName();
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -146,14 +146,14 @@ class WrapperBle extends WrapperNetwork {
 
     _isInitialized = true;
 
-    _discoverySub = _bleAdHocManager.discoveryStream.listen((DiscoveryEvent event) {
+    _discoverySub = _bleAdHocManager!.discoveryStream.listen((DiscoveryEvent event) {
       discoveryCtrl.add(event);
 
       switch (event.type) {
         case DEVICE_DISCOVERED:
           BleAdHocDevice device = event.payload as BleAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
+            if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
             return device;
           });
           break;
@@ -196,7 +196,7 @@ class WrapperBle extends WrapperNetwork {
 
           mapAddrNetwork.putIfAbsent(
             uuid, () => NetworkManager(
-              (MessageAdHoc msg) async => (service as ServiceClient).send(msg), 
+              (MessageAdHoc? msg) async => (service as ServiceClient).send(msg!), 
               () => (service as ServiceClient).disconnect()
             )
           );
@@ -217,7 +217,7 @@ class WrapperBle extends WrapperNetwork {
           break;
 
         case CONNECTION_ABORTED:
-          connectionClosed(event.payload as String);
+          connectionClosed(event.payload as String?);
           break;
 
         case CONNECTION_EXCEPTION:
@@ -231,27 +231,27 @@ class WrapperBle extends WrapperNetwork {
 
   void _listenServer() {
     serviceServer = BleServer(verbose)..listen();
-    _bleAdHocManager.initialize();
-    _onEvent(serviceServer);
+    _bleAdHocManager!.initialize();
+    _onEvent(serviceServer!);
   }
 
   Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
-    final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager.bondStream);
+    final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager!.bondStream);
     _onEvent(bleClient);
     await bleClient.connect();
   }
 
   void _processMsgReceived(final MessageAdHoc message) {
-    switch (message.header.messageType) {
+    switch (message.header!.messageType) {
       case CONNECT_SERVER:
-        String mac = message.header.mac;
-        ownMac = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
-        _ownStringUUID = _ownStringUUID.toLowerCase();
+        String? mac = message.header!.mac;
+        ownMac = message.pdu as String?;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac!.replaceAll(new RegExp(':'), '');
+        _ownStringUUID = _ownStringUUID!.toLowerCase();
 
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
 
-        serviceServer.send(
+        serviceServer!.send(
           MessageAdHoc(
             Header(
               messageType: CONNECT_CLIENT, 
@@ -267,51 +267,51 @@ class WrapperBle extends WrapperNetwork {
         );
 
         receivedPeerMessage(
-          message.header,
+          message.header!,
           NetworkManager(
-            (MessageAdHoc msg) async => await serviceServer.send(msg, mac),
-            () => serviceServer.cancelConnection(mac)
+            (MessageAdHoc? msg) async => await serviceServer!.send(msg!, mac),
+            () => serviceServer!.cancelConnection(mac)
           )
         );
         break;
 
       case CONNECT_CLIENT:
-        ownMac = message.pdu as String;
-        _ownStringUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
+        ownMac = message.pdu as String?;
+        _ownStringUUID = BLUETOOTHLE_UUID + ownMac!.replaceAll(new RegExp(':'), '').toLowerCase();
 
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
 
         receivedPeerMessage(
-          message.header, mapAddrNetwork[message.header.address]
+          message.header!, mapAddrNetwork[message.header!.address]
         );
         break;
 
       case CONNECT_BROADCAST:
-        FloodMsg floodMsg = FloodMsg.fromJson(message.pdu as Map);
+        FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
-          broadcastExcept(message, message.header.label);
+          broadcastExcept(message, message.header!.label);
 
-          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
+          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices!;
           for (AdHocDevice device in hashSet) {
             if (device.label != ownLabel 
-              && !setRemoteDevices.contains(device)
+              && !setRemoteDevices!.contains(device)
               && !isDirectNeighbors(device.label)
             ) {
               device.directedConnected = false;
 
               eventCtrl.add(AdHocEvent(CONNECTION_EVENT, device));
 
-              setRemoteDevices.add(device);
+              setRemoteDevices!.add(device);
             }
           }
         }
         break;
 
       case DISCONNECT_BROADCAST:
-        if (checkFloodEvent(message.pdu as String)) {
-          broadcastExcept(message, message.header.label);
+        if (checkFloodEvent(message.pdu as String?)) {
+          broadcastExcept(message, message.header!.label);
 
-          Header header = message.header;
+          Header header = message.header!;
           AdHocDevice adHocDevice = AdHocDevice(
             label: header.label,
             name: header.name,
@@ -322,13 +322,13 @@ class WrapperBle extends WrapperNetwork {
 
           eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, adHocDevice));
 
-          if (setRemoteDevices.contains(adHocDevice))
-            setRemoteDevices.remove(adHocDevice);
+          if (setRemoteDevices!.contains(adHocDevice))
+            setRemoteDevices!.remove(adHocDevice);
         }
         break;
 
       case BROADCAST:
-        Header header = message.header;
+        Header header = message.header!;
         AdHocDevice adHocDevice = AdHocDevice(
           label: header.label,
           name: header.name,

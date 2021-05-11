@@ -13,7 +13,7 @@ import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(AdHocMusicClient());
 
-enum MenuOptions { add, search, display }
+enum MenuOptions { add, search, display, group }
 
 const platform = const MethodChannel('adhoc.music.player/main');
 
@@ -84,6 +84,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     case MenuOptions.display:
                       setState(() => _display = !_display);
                       break;
+
+                    case MenuOptions.group:
+                      _manager.createGroup(1);
+                      break;
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<MenuOptions>>[
@@ -106,6 +110,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     child: ListTile(
                       leading: const Icon(Icons.music_note),
                       title: const Text('Switch view'),
+                    ),
+                  ),
+                  const PopupMenuItem<MenuOptions>(
+                    value: MenuOptions.group,
+                    child: ListTile(
+                      leading: const Icon(Icons.create),
+                      title: const Text('Create a group'),
                     ),
                   ),
                 ],

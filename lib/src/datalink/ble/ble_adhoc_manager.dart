@@ -22,13 +22,13 @@ class BleAdHocManager {
   static const EventChannel _eventChannel = const EventChannel(_eventName);
 
   bool _verbose;
-  bool _isDiscovering;
-  FlutterReactiveBle _reactiveBle;
-  HashMap<String, BleAdHocDevice> _mapMacDevice;
-  StreamController<DiscoveryEvent> _discoveryCtrl;
-  StreamController<dynamic> _bondCtrl;
-  StreamSubscription<DiscoveredDevice> _discoverySub;
-  StreamSubscription<BleStatus> _statusSub;
+  late bool _isDiscovering;
+  late FlutterReactiveBle _reactiveBle;
+  HashMap<String?, BleAdHocDevice>? _mapMacDevice;
+  late StreamController<DiscoveryEvent> _discoveryCtrl;
+  late StreamController<dynamic> _bondCtrl;
+  StreamSubscription<DiscoveredDevice>? _discoverySub;
+  StreamSubscription<BleStatus>? _statusSub;
 
   /// Initialize a newly created BleAdHocManager with the operation being logged
   /// in the console if [_verbose] is true
@@ -42,7 +42,7 @@ class BleAdHocManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Future<String> get adapterName => _methodChannel.invokeMethod('getAdapterName');
+  Future<String?> get adapterName => _methodChannel.invokeMethod('getAdapterName');
 
   Stream<DiscoveryEvent> get discoveryStream => _discoveryCtrl.stream;
 
@@ -54,11 +54,11 @@ class BleAdHocManager {
     _eventChannel.receiveBroadcastStream().listen((event) => _bondCtrl.add(event));
   }
 
-  Future<bool> enable() async => await _methodChannel.invokeMethod('enable');
+  Future<bool?> enable() async => await _methodChannel.invokeMethod('enable');
 
-  Future<bool> disable() async {
+  Future<bool?> disable() async {
     if (_statusSub != null)
-      await _statusSub.cancel();
+      await _statusSub!.cancel();
     return await _methodChannel.invokeMethod('disable');
   }
 
@@ -81,7 +81,7 @@ class BleAdHocManager {
     if (_isDiscovering)
       _stopScan();
 
-    _mapMacDevice.clear();
+    _mapMacDevice!.clear();
 
     _discoverySub = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(SERVICE_UUID)],
@@ -89,7 +89,7 @@ class BleAdHocManager {
     ).listen(
       (device) {
         BleAdHocDevice bleDevice = BleAdHocDevice(device);
-        _mapMacDevice.putIfAbsent(bleDevice.mac, () {
+        _mapMacDevice!.putIfAbsent(bleDevice.mac, () {
           if (_verbose)
             log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
 
@@ -106,11 +106,11 @@ class BleAdHocManager {
   }
 
   /// Return all the paired BLE-capable devices.
-  Future<HashMap<String, BleAdHocDevice>> getPairedDevices() async {
+  Future<HashMap<String?, BleAdHocDevice>> getPairedDevices() async {
     if (_verbose) log(TAG, 'getPairedDevices()');
 
-    HashMap<String, BleAdHocDevice> pairedDevices = HashMap();
-    List<Map> btDevices = await _methodChannel.invokeMethod('getPairedDevices');
+    HashMap<String?, BleAdHocDevice> pairedDevices = HashMap();
+    List<Map> btDevices = await (_methodChannel.invokeMethod('getPairedDevices') as FutureOr<List<Map<dynamic, dynamic>>>);
 
     for (final device in btDevices)
       pairedDevices.putIfAbsent(device['macAddress'], () => BleAdHocDevice.fromMap(device));
@@ -120,10 +120,10 @@ class BleAdHocManager {
 
   /// Update the local adapter name of the device with [name] and return true
   /// if the name was successfully set, otherwise false.
-  Future<bool> updateDeviceName(String name) async => await _methodChannel.invokeMethod('updateDeviceName', name);
+  Future<bool?> updateDeviceName(String name) async => await _methodChannel.invokeMethod('updateDeviceName', name);
 
   /// Reset the local adapter name of the device
-  Future<bool> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
+  Future<bool?> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
 
   void onEnableBluetooth() { // TODO
     _statusSub = _reactiveBle.statusStream.listen((status) async {
@@ -143,7 +143,7 @@ class BleAdHocManager {
   void _stopScan() {
     if (_verbose) log(TAG, 'Discovery end');
 
-    _discoverySub.cancel();
+    _discoverySub!.cancel();
     _discoverySub = null;
 
     _isDiscovering = false;
@@ -155,24 +155,24 @@ class BleAdHocManager {
 
   static void setVerbose(bool verbose) => _methodChannel.invokeMethod('setVerbose', verbose);
 
-  static Future<bool> isEnabled() async => await _methodChannel.invokeMethod('isEnabled');
+  static Future<bool?> isEnabled() async => await _methodChannel.invokeMethod('isEnabled');
 
   static void openGattServer() => _methodChannel.invokeMethod('openGattServer');
 
   static void closeGattServer() => _methodChannel.invokeMethod('closeGattServer');
 
-  static Future<bool> gattServerSendMessage(MessageAdHoc message, String mac) async {
-    return await _methodChannel.invokeMethod('sendMessage', <String, String>{
+  static Future<bool?> gattServerSendMessage(MessageAdHoc message, String? mac) async {
+    return await _methodChannel.invokeMethod('sendMessage', <String, String?>{
       'mac': mac,
       'message': json.encode(message.toJson()),
     });
   }
 
-  static Future<void> cancelConnection(String mac) async => await _methodChannel.invokeMethod('cancelConnection', mac);
+  static Future<void> cancelConnection(String? mac) async => await _methodChannel.invokeMethod('cancelConnection', mac);
 
-  static Future<String> getCurrentName() async => await _methodChannel.invokeMethod('getCurrentName');
+  static Future<String?> getCurrentName() async => await _methodChannel.invokeMethod('getCurrentName');
 
-  static Future<bool> getBondState(String mac) async => await _methodChannel.invokeMethod('getBondState', mac);
+  static Future<bool?> getBondState(String? mac) async => await _methodChannel.invokeMethod('getBondState', mac);
 
-  static Future<bool> createBond(String mac) async => await _methodChannel.invokeMethod('createBond', mac);
+  static Future<bool?> createBond(String? mac) async => await _methodChannel.invokeMethod('createBond', mac);
 }

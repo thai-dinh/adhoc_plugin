@@ -18,8 +18,8 @@ class BleServer extends ServiceServer {
   static const EventChannel _chConnect = const EventChannel(_chConnectName);
   static const EventChannel _chMessage = const EventChannel(_chMessageName);
 
-  StreamSubscription<dynamic> _connectionSub;
-  StreamSubscription<dynamic> _messageSub;
+  StreamSubscription<dynamic>? _connectionSub;
+  StreamSubscription<dynamic>? _messageSub;
 
   BleServer(bool verbose) : super(verbose) {
     BleAdHocManager.setVerbose(verbose);
@@ -58,14 +58,14 @@ class BleServer extends ServiceServer {
       String strMessage = Utf8Decoder().convert(messageAsListByte);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
 
-      if (message.header.mac == null || message.header.mac.compareTo('') == 0) {
+      if (message.header!.mac == null || message.header!.mac!.compareTo('') == 0) {
         message.header = Header(
-          messageType: message.header.messageType,
-          label: message.header.label,
-          name: message.header.name,
-          address: message.header.address,
+          messageType: message.header!.messageType,
+          label: message.header!.label,
+          name: message.header!.name,
+          address: message.header!.address,
           mac: map['macAddress'],
-          deviceType: message.header.deviceType
+          deviceType: message.header!.deviceType
         );
       }
 
@@ -81,22 +81,22 @@ class BleServer extends ServiceServer {
 
     super.stopListening();
     if (_connectionSub != null)
-      _connectionSub.cancel();
+      _connectionSub!.cancel();
     if (_messageSub != null)
-      _messageSub.cancel();
+      _messageSub!.cancel();
 
     BleAdHocManager.closeGattServer();
 
     state = Constants.STATE_NONE;
   }
 
-  Future<void> cancelConnection(String mac) async {
+  Future<void> cancelConnection(String? mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
 
     await BleAdHocManager.cancelConnection(mac);
   }
 
-  Future<void> send(MessageAdHoc message, String mac) async {
+  Future<void> send(MessageAdHoc message, String? mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
     await BleAdHocManager.gattServerSendMessage(message, mac);

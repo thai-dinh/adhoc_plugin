@@ -8,12 +8,12 @@ part of 'msg_header.dart';
 
 Header _$HeaderFromJson(Map<String, dynamic> json) {
   return Header(
-    messageType: json['messageType'] as int,
-    label: json['label'] as String,
-    name: json['name'] as String,
-    address: json['address'] as String,
-    mac: json['mac'] as String,
-    deviceType: json['deviceType'] as int,
+    messageType: json['messageType'] as int?,
+    label: json['label'] as String?,
+    name: json['name'] as String?,
+    address: json['address'] as String?,
+    mac: json['mac'] as String?,
+    deviceType: json['deviceType'] as int?,
   );
 }
 

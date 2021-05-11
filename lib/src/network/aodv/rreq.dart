@@ -6,17 +6,17 @@ part 'rreq.g.dart';
 
 @JsonSerializable()
 class RREQ extends AodvMessage {
-  int _hopCount;
-  int _rreqId;
-  int destSequenceNum;
-  String _destAddress;
-  int _originSequenceNum;
-  String _originAddress;
+  int? _hopCount;
+  int? _rreqId;
+  int? destSequenceNum;
+  String? _destAddress;
+  int? _originSequenceNum;
+  String? _originAddress;
 
   RREQ({
-    int type = 0, int hopCount = 0, int rreqId = 0, 
-    this.destSequenceNum = 0, String destAddress = '', 
-    int originSequenceNum = 0, String originAddress = ''
+    int? type = 0, int? hopCount = 0, int? rreqId = 0, 
+    this.destSequenceNum = 0, String? destAddress = '', 
+    int? originSequenceNum = 0, String? originAddress = ''
   }) : super(type) {
     this._hopCount = hopCount;
     this._rreqId = rreqId;
@@ -29,19 +29,19 @@ class RREQ extends AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  int get hopCount => _hopCount;
+  int? get hopCount => _hopCount = _hopCount! + 1;
 
-  int get rreqId => _rreqId;
+  int? get rreqId => _rreqId;
 
-  String get destAddress => _destAddress;
+  String? get destAddress => _destAddress;
 
-  int get originSequenceNum => _originSequenceNum;
+  int? get originSequenceNum => _originSequenceNum;
 
-  String get originAddress => _originAddress;
+  String? get originAddress => _originAddress;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void incrementHopCount() => this._hopCount++;
+  void incrementHopCount() => this._hopCount;
 
   Map<String, dynamic> toJson() => _$RREQToJson(this);
 

@@ -15,7 +15,7 @@ abstract class Service {
   int _state;
 
   bool verbose;
-  StreamController<AdHocEvent> controller;
+  late StreamController<AdHocEvent> controller;
 
   Service(this.verbose, this._state) {
     controller = StreamController<AdHocEvent>.broadcast();

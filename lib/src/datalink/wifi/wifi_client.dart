@@ -11,12 +11,12 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  Socket _socket;
-  String _serverIp;
-  int _port;
+  late Socket _socket;
+  String? _serverIp;
+  int? _port;
 
   WifiClient(
-    bool verbose, this._port, this._serverIp, int attempts, int timeOut,
+    bool verbose, this._port, this._serverIp, int? attempts, int? timeOut,
   ) : super(verbose, attempts, timeOut);
 
 /*-------------------------------Public methods-------------------------------*/
@@ -76,11 +76,11 @@ class WifiClient extends ServiceClient {
 
 /*------------------------------Private methods-------------------------------*/
 
-  Future<void> _connect(int attempts, Duration delay) async {
+  Future<void> _connect(int? attempts, Duration delay) async {
     try {
       await _connectionAttempt();
     } on SocketException {
-      if (attempts > 0) {
+      if (attempts! > 0) {
         if (verbose)
           log(ServiceClient.TAG, 'Connection attempt $attempts failed');
 
@@ -99,7 +99,7 @@ class WifiClient extends ServiceClient {
       state = STATE_CONNECTING;
 
       _socket = await Socket.connect(
-        _serverIp, _port, timeout: Duration(milliseconds: timeOut)
+        _serverIp, _port!, timeout: Duration(milliseconds: timeOut!)
       );
 
       listen();

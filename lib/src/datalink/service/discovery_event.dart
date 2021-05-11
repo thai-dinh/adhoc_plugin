@@ -1,6 +1,6 @@
 class DiscoveryEvent {
   int _type;
-  Object _payload;
+  Object? _payload;
 
   DiscoveryEvent(this._type, this._payload);
 
@@ -8,5 +8,5 @@ class DiscoveryEvent {
 
   int get type => _type;
 
-  Object get payload => _payload;
+  Object? get payload => _payload;
 }

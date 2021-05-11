@@ -8,13 +8,13 @@ part of 'rreq.dart';
 
 RREQ _$RREQFromJson(Map<String, dynamic> json) {
   return RREQ(
-    type: json['type'] as int,
-    hopCount: json['hopCount'] as int,
-    rreqId: json['rreqId'] as int,
-    destSequenceNum: json['destSequenceNum'] as int,
-    destAddress: json['destAddress'] as String,
-    originSequenceNum: json['originSequenceNum'] as int,
-    originAddress: json['originAddress'] as String,
+    type: json['type'] as int?,
+    hopCount: json['hopCount'] as int?,
+    rreqId: json['rreqId'] as int?,
+    destSequenceNum: json['destSequenceNum'] as int?,
+    destAddress: json['destAddress'] as String?,
+    originSequenceNum: json['originSequenceNum'] as int?,
+    originAddress: json['originAddress'] as String?,
   );
 }
 

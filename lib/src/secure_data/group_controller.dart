@@ -16,22 +16,22 @@ import 'package:cryptography/cryptography.dart';
 
 
 class GroupController {
-  AodvManager _aodvManager;
-  DataLinkManager _datalinkManager;
+  AodvManager? _aodvManager;
+  DataLinkManager? _datalinkManager;
   Stream<AdHocEvent> _eventStream;
-  HashMap<String, int> _membersShare;
-  HashMap<String, int> _keyShare;
-  SecretKey _groupKey;
-  int _expiryTime;
+  late HashMap<String?, int> _membersShare;
+  late HashMap<String?, int> _keyShare;
+  SecretKey? _groupKey;
+  int? _expiryTime;
 
-  int _GK;
-  int _counter;
-  int _secret;
-  int _mij;
-  int P;
-  int G;
+  int? _GK;
+  int? _counter;
+  late int _secret;
+  int? _mij;
+  late int P;
+  late int G;
 
-  int groupId;
+  int? groupId;
 
   GroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
     this._membersShare = HashMap();
@@ -40,7 +40,6 @@ class GroupController {
     this._counter = 0;
     this.groupId = 1;
     this._initialize();
-    _solveBezoutIdentity(11, 21);
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -52,17 +51,17 @@ class GroupController {
     Data message = Data(
       GROUP_REQUEST, 
       GroupData(
-        _aodvManager.label, groupId, 
-        [primes[0], primes[1]]
+        _aodvManager!.label, groupId, 
+        [P = primes[0], G = primes[1]]
       ),
     );
 
-    _datalinkManager.broadcastObject(message);
+    _datalinkManager!.broadcastObject(message);
 
-    Timer(Duration(milliseconds: _expiryTime), _createGroupExpired);
+    Timer(Duration(milliseconds: _expiryTime!), _createGroupExpired);
   }
 
-  void joinGroup() {
+  void joinGroup(int groupId) {
     
   }
 
@@ -91,38 +90,38 @@ class GroupController {
 
   int _computeShare() {
     _secret = Random().nextInt(512);
-    return pow(G, _secret) % P;
+    return pow(G, _secret).toInt() % P;
   }
 
   void _createGroupExpired() {
-    _membersShare.putIfAbsent(_aodvManager.label, () => _computeShare());
+    _membersShare.putIfAbsent(_aodvManager!.label, () => _computeShare());
 
-    List<String> membersLabel = List.empty(growable: true);
-    for (final String label in _membersShare.keys)
+    List<String?> membersLabel = List.empty(growable: true);
+    for (final String? label in _membersShare.keys)
       membersLabel.add(label);
 
-    GroupData formation = GroupData(_aodvManager.label, groupId, [LEADER, membersLabel, _membersShare[_aodvManager.label]]);
-    _datalinkManager.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
+    GroupData formation = GroupData(_aodvManager!.label, groupId, [LEADER, membersLabel, _membersShare[_aodvManager!.label]]);
+    _datalinkManager!.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
   }
 
   void _computeGroupKey() {
     for (final int share in _membersShare.values)
-      _GK ^= share;
-    _groupKey = SecretKey(List<int>.filled(1, _GK));
+      _GK = _GK! ^ share;
+    _groupKey = SecretKey(List<int?>.filled(1, _GK) as List<int>);
   }
 
-  void _computeKeyShare(String label, int yj) {
-    int pij, ki, di;
+  void _computeKeyShare(String? label, int yj) {
+    int? pij, ki, di;
     int _min = 2147483647;
 
     /* Step 3 */
-    _mij = pow(yj, _secret) % P;
-    _mij = _mij > P/2 ? _mij : P - _mij;
+    _mij = pow(yj, _secret) % P as int?;
+    _mij = _mij! > P/2 ? _mij : P - _mij!;
 
     /* Step 4 */
     bool found = false;
     while (!found) {
-      if (_mij.gcd(pij = Random().nextInt(2048)) == 1) {
+      if (_mij!.gcd(pij = Random().nextInt(2048)) == 1) {
         found = true;
       }
     }
@@ -137,25 +136,25 @@ class GroupController {
     while (ki == di)
       di = Random().nextInt(2147483647);
 
-    List<int> coefficients = _solveBezoutIdentity(_mij, pij);
-    int solution = (ki * coefficients[1] * pij) + (di * coefficients[0] * _mij);
+    List<int?> coefficients = _solveBezoutIdentity(_mij, pij);
+    int solution = (ki * coefficients[1]! * pij!) + (di! * coefficients[0]! * _mij!);
     while (solution < 0)
-      solution += (_mij * pij); // CRTij
+      solution += (_mij! * pij); // CRTij
 
-    GroupData reply = GroupData(_aodvManager.label, groupId, solution);
-    _aodvManager.sendMessageTo(Data(GROUP_FORMATION_REP, reply), label);
+    GroupData reply = GroupData(_aodvManager!.label, groupId, solution);
+    _aodvManager!.sendMessageTo(Data(GROUP_FORMATION_REP, reply), label);
   }
 
-  List<int> _solveBezoutIdentity(int a, int b) {
-    int R = a, _R = b, U = 1, _U = 0, V = 0, _V = 1;
+  List<int?> _solveBezoutIdentity(int? a, int? b) {
+    int? R = a, _R = b, U = 1, _U = 0, V = 0, _V = 1;
 
     while (_R != 0) {
-      int Q = R~/_R;
-      int RS = R, US = U, VS = V;
+      int Q = R!~/_R!;
+      int? RS = R, US = U, VS = V;
       R = _R; U = _U; V = _V;
       _R = RS - Q*_R;
-      _U = US - Q*_U;
-      _V = VS - Q*_V;
+      _U = US! - Q*_U!;
+      _V = VS! - Q*_V!;
     }
 
     return List.empty(growable: true)..add(U)..add(V);
@@ -164,12 +163,14 @@ class GroupController {
   void _processData(AdHocEvent event) {
     List payload = event.payload as List;
     AdHocDevice sender = payload[0] as AdHocDevice;
-    Data pdu = Data.fromJson(payload[1] as Map);
+    Data pdu = Data.fromJson((payload[1] as Map) as Map<String, dynamic>);
 
-    GroupData data = pdu.payload as GroupData;
-    if (data.groupId != groupId) {
-      _datalinkManager.broadcastObjectExcept(pdu, sender.label);
-      return;
+    if (event.type >= GROUP_REQUEST) {
+      GroupData data = pdu.payload as GroupData;
+      if (data.groupId != groupId) {
+        _datalinkManager!.broadcastObjectExcept(pdu, sender.label);
+        return;
+      }
     }
 
     switch (pdu.type) {
@@ -180,13 +181,13 @@ class GroupController {
         P = data[0] as int;
         G = data[1] as int;
 
-        GroupData reply = GroupData(sender.label, groupId, _aodvManager.label);
-        _aodvManager.sendMessageTo(Data(GROUP_REPLY, reply), sender.label);
+        GroupData reply = GroupData(sender.label, groupId, _aodvManager!.label);
+        _aodvManager!.sendMessageTo(Data(GROUP_REPLY, reply), sender.label);
         break;
 
       case GROUP_REPLY:
         GroupData reply = pdu.payload as GroupData;
-        _membersShare.putIfAbsent(reply.data, () => 0);
+        _membersShare.putIfAbsent(reply.data as String?, () => 0);
         break;
 
       case GROUP_FORMATION_REQ:
@@ -196,19 +197,19 @@ class GroupController {
           for (String label in (reply.data as List)[1])
             _membersShare.putIfAbsent(label, () => 0);
 
-          _membersShare.putIfAbsent(_aodvManager.label, () => _computeShare());
-          GroupData formation = GroupData(_aodvManager.label, groupId, [MEMBER, _membersShare[_aodvManager.label]]);
-          _datalinkManager.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
+          _membersShare.putIfAbsent(_aodvManager!.label, () => _computeShare());
+          GroupData formation = GroupData(_aodvManager!.label, groupId, [MEMBER, _membersShare[_aodvManager!.label]]);
+          _datalinkManager!.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
         } else {
           _membersShare.update(sender.label, (value) => value = (reply.data as List)[1]);
-          _computeKeyShare(sender.label, _membersShare[sender.label]);
+          _computeKeyShare(sender.label, _membersShare[sender.label]!);
         }
         break;
 
       case GROUP_FORMATION_REP:
-        GroupData reply = pdu.payload as GroupData;
-        _keyShare.update(sender.label, (value) => value = ((reply.data as int) % _mij));
-        _counter++;
+        GroupData? reply = pdu.payload as GroupData?;
+        _keyShare.update(sender.label, (value) => value = ((reply!.data as int) % _mij!));
+        _counter = _counter! + 1;
 
         if (_counter == _membersShare.length)
           _computeGroupKey();

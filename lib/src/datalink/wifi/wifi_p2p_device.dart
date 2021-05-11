@@ -1,6 +1,6 @@
 class WifiP2pDevice {
-  String name;
-  String mac;
+  String? name;
+  String? mac;
 
   WifiP2pDevice();
 

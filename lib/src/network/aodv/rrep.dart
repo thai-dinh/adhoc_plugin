@@ -6,15 +6,15 @@ part 'rrep.g.dart';
 
 @JsonSerializable()
 class RREP extends AodvMessage {
-  int _hopCount;
-  int _sequenceNum;
-  int _lifetime;
-  String _destAddress;
-  String _originAddress;
+  int? _hopCount;
+  int? _sequenceNum;
+  int? _lifetime;
+  String? _destAddress;
+  String? _originAddress;
 
   RREP({
-    int type = 0, int hopCount = 0, String destAddress = '',
-    int sequenceNum = 0, String originAddress = '', int lifetime = 0
+    int? type = 0, int? hopCount = 0, String? destAddress = '',
+    int? sequenceNum = 0, String? originAddress = '', int? lifetime = 0
   }) :super(type) {
     this._hopCount = hopCount;
     this._destAddress = destAddress;
@@ -27,17 +27,20 @@ class RREP extends AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  int get hopCount => _hopCount;
+  int? get hopCount => _hopCount;
 
-  int get sequenceNum => _sequenceNum;
+  int? get sequenceNum => _sequenceNum;
 
-  int get lifetime => _lifetime;
+  int? get lifetime => _lifetime;
 
-  String get destAddress => _destAddress;
+  String? get destAddress => _destAddress;
 
-  String get originAddress => _originAddress;
+  String? get originAddress => _originAddress;
 
-  int incrementHopCount() => ++this._hopCount;
+  int incrementHopCount() {
+    _hopCount = _hopCount! + 1;
+    return _hopCount!;
+  }
 
   Map<String, dynamic> toJson() => _$RREPToJson(this);
 

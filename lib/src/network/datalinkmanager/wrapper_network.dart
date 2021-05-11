@@ -21,28 +21,28 @@ abstract class WrapperNetwork {
 
   final bool verbose;
 
-  bool enabled;
-  bool connectionFlooding;
-  bool discoveryCompleted;
-  int type;
-  int attempts;
-  int timeOut;
-  String ownLabel;
-  String ownName;
-  String ownMac;
-  Neighbors neighbors;
-  ServiceServer serviceServer;
-  HashMap<String, NetworkManager> mapAddrNetwork;
-  HashMap<String, AdHocDevice> mapMacDevices;
+  bool? enabled;
+  bool? connectionFlooding;
+  late bool discoveryCompleted;
+  int? type;
+  int? attempts;
+  int? timeOut;
+  String? ownLabel;
+  String? ownName;
+  String? ownMac;
+  late Neighbors neighbors;
+  ServiceServer? serviceServer;
+  late HashMap<String?, NetworkManager> mapAddrNetwork;
+  late HashMap<String?, AdHocDevice> mapMacDevices;
 
-  HashSet<AdHocDevice> setRemoteDevices;
-  Set<String> setFloodEvents;
+  HashSet<AdHocDevice>? setRemoteDevices;
+  late Set<String?> setFloodEvents;
 
-  StreamController<DiscoveryEvent> discoveryCtrl;
-  StreamController<AdHocEvent> eventCtrl;
+  late StreamController<DiscoveryEvent> discoveryCtrl;
+  late StreamController<AdHocEvent> eventCtrl;
 
   WrapperNetwork(
-    this.verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
+    this.verbose, Config config, HashMap<String, AdHocDevice>? mapMacDevices,
   ) {
     this.mapMacDevices = HashMap();
     this.mapAddrNetwork = HashMap();
@@ -61,9 +61,9 @@ abstract class WrapperNetwork {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  List<AdHocDevice> get directNeighbors {
-    List<AdHocDevice> devices = List.empty(growable: true);
-    for (String macAddress in neighbors.labelMac.values)
+  List<AdHocDevice?> get directNeighbors {
+    List<AdHocDevice?> devices = List.empty(growable: true);
+    for (String? macAddress in neighbors.labelMac!.values)
       devices.add(mapMacDevices[macAddress]);
 
     return devices;
@@ -85,13 +85,13 @@ abstract class WrapperNetwork {
 
   Future<void> connect(int attempts, AdHocDevice device);
 
-  Future<HashMap<String, AdHocDevice>> getPaired();
+  Future<HashMap<String?, AdHocDevice>?>? getPaired();
 
-  Future<String> getAdapterName();
+  Future<String?> getAdapterName();
 
-  Future<bool> updateDeviceName(String name);
+  Future<bool?> updateDeviceName(String name);
 
-  Future<bool> resetDeviceName();
+  Future<bool?> resetDeviceName();
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -100,7 +100,7 @@ abstract class WrapperNetwork {
     this.eventCtrl.close();
   }
 
-  bool checkFloodEvent(String id) {
+  bool checkFloodEvent(String? id) {
     if (!setFloodEvents.contains(id)) {
       setFloodEvents.add(id);
       return true;
@@ -109,19 +109,19 @@ abstract class WrapperNetwork {
     return false;
   }
 
-  bool isDirectNeighbors(String remoteLabel) {
-    return neighbors.neighbors.containsKey(remoteLabel);
+  bool isDirectNeighbors(String? remoteLabel) {
+    return neighbors.neighbors!.containsKey(remoteLabel);
   }
 
-  void sendMessage(MessageAdHoc message, String remoteLabel) {
-    NetworkManager network = neighbors.getNeighbor(remoteLabel);
+  void sendMessage(MessageAdHoc? message, String? remoteLabel) {
+    NetworkManager? network = neighbors.getNeighbor(remoteLabel);
     if (network != null)
       network.sendMessage(message);
   }
 
   bool broadcast(MessageAdHoc message) {
-    if (neighbors.neighbors.length > 0) {
-      neighbors.neighbors.values.forEach((network) async {
+    if (neighbors.neighbors!.length > 0) {
+      neighbors.neighbors!.values.forEach((network) async {
         if (network != null)
           await network.sendMessage(message);
       });
@@ -132,10 +132,10 @@ abstract class WrapperNetwork {
     return false;
   }
 
-  bool broadcastExcept(MessageAdHoc message, String excludedLabel) {
-    if (neighbors.neighbors.length > 0) {
-      neighbors.neighbors.forEach((remoteLabel, network) async {
-        if (excludedLabel.compareTo(remoteLabel) != 0 && network != null) {
+  bool broadcastExcept(MessageAdHoc message, String? excludedLabel) {
+    if (neighbors.neighbors!.length > 0) {
+      neighbors.neighbors!.forEach((remoteLabel, network) async {
+        if (excludedLabel!.compareTo(remoteLabel!) != 0 && network != null) {
           await network.sendMessage(message);
         }
       });
@@ -146,7 +146,7 @@ abstract class WrapperNetwork {
     return false;
   }
 
-  void receivedPeerMessage(Header header, NetworkManager network) {
+  void receivedPeerMessage(Header header, NetworkManager? network) {
     if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}');
 
     AdHocDevice device = AdHocDevice(
@@ -158,14 +158,14 @@ abstract class WrapperNetwork {
     );
 
     mapMacDevices.putIfAbsent(header.mac, () => device);
-    if (!neighbors.neighbors.containsKey(header.label)) {
+    if (!neighbors.neighbors!.containsKey(header.label)) {
       neighbors.addNeighbors(header.label, header.mac, network);
 
       eventCtrl.add(AdHocEvent(Constants.CONNECTION_EVENT, device));
 
-      setRemoteDevices.add(device);
-      if (connectionFlooding) {
-        String id = header.label + DateTime.now().millisecond.toString();
+      setRemoteDevices!.add(device);
+      if (connectionFlooding!) {
+        String id = header.label! + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
         header.messageType = Constants.CONNECT_BROADCAST;
         broadcast(
@@ -175,8 +175,8 @@ abstract class WrapperNetwork {
     }
   }
 
-  void disconnect(String remoteLabel) {
-    NetworkManager network = neighbors.getNeighbor(remoteLabel);
+  void disconnect(String? remoteLabel) {
+    NetworkManager? network = neighbors.getNeighbor(remoteLabel);
     if (network != null) {
       network.disconnect();
       neighbors.remove(remoteLabel);
@@ -184,20 +184,20 @@ abstract class WrapperNetwork {
   }
 
   void disconnectAll() {
-    if (neighbors.neighbors.length > 0) {
-      for (NetworkManager network in neighbors.neighbors.values)
-        network.disconnect();
+    if (neighbors.neighbors!.length > 0) {
+      for (NetworkManager? network in neighbors.neighbors!.values)
+        network!.disconnect();
       neighbors.clear();
     }
   }
 
-  void connectionClosed(String mac) {
+  void connectionClosed(String? mac) {
     if (mac == null || mac.compareTo('') == 0)
       return;
 
-    AdHocDevice device = mapMacDevices[mac];
+    AdHocDevice? device = mapMacDevices[mac];
     if (device != null) {
-      String label = device.label;
+      String? label = device.label;
 
       neighbors.remove(label);
       mapAddrNetwork.remove(device.address);
@@ -206,8 +206,8 @@ abstract class WrapperNetwork {
       eventCtrl.add(AdHocEvent(Constants.BROKEN_LINK, device.label));
       eventCtrl.add(AdHocEvent(Constants.DISCONNECTION_EVENT, device));
 
-      if (connectionFlooding) {
-        String id = label + DateTime.now().millisecond.toString();
+      if (connectionFlooding!) {
+        String id = label! + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
 
         Header header = Header(
@@ -221,8 +221,8 @@ abstract class WrapperNetwork {
 
         broadcastExcept(MessageAdHoc(header, id), label);
 
-        if (setRemoteDevices.contains(device))
-          setRemoteDevices.remove(device);
+        if (setRemoteDevices!.contains(device))
+          setRemoteDevices!.remove(device);
       }
     } else {
       throw NoConnectionException('Error while closing connection');

@@ -6,8 +6,8 @@ part 'msg_adhoc.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class MessageAdHoc {
-  Header _header;
-  Object _pdu;
+  Header? _header;
+  Object? _pdu;
 
   /// Constructor
   MessageAdHoc([this._header, this._pdu]);
@@ -21,15 +21,15 @@ class MessageAdHoc {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  set header(Header header) => this._header = header;
+  set header(Header? header) => this._header = header;
 
-  set pdu(Object pdu) => this._pdu = pdu;
+  set pdu(Object? pdu) => this._pdu = pdu;
 
   /// The header object representing the information of the message.
-  Header get header => _header;
+  Header? get header => _header;
 
   /// Generic object representing the PDU of the message.
-  Object get pdu => _pdu;
+  Object? get pdu => _pdu;
 
 /*-------------------------------Public methods-------------------------------*/
 

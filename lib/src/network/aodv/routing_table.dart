@@ -9,8 +9,8 @@ class RoutingTable {
 
   final bool _verbose;
 
-  HashMap<String, EntryRoutingTable> _routingTable;
-  HashMap<String, String> _nextDestMapping;
+  HashMap<String?, EntryRoutingTable>? _routingTable;
+  late HashMap<String?, String?> _nextDestMapping;
 
   RoutingTable(this._verbose) {
     this._routingTable = HashMap();
@@ -20,17 +20,17 @@ class RoutingTable {
 /*-------------------------------Public methods-------------------------------*/
 
   bool addEntry(EntryRoutingTable entry) {
-    if (!_routingTable.containsKey(entry.destAddress)) {
+    if (!_routingTable!.containsKey(entry.destAddress)) {
       if (_verbose) log(TAG, 'Add new entry in the RIB ${entry.destAddress}');
-      _routingTable.putIfAbsent(entry.destAddress, () => entry);
+      _routingTable!.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
       return true;
     }
 
-    EntryRoutingTable existingEntry = _routingTable[entry.destAddress];
+    EntryRoutingTable existingEntry = _routingTable![entry.destAddress]!;
 
-    if (existingEntry.hop >= entry.hop) {
-      _routingTable.putIfAbsent(entry.destAddress, () => entry);
+    if (existingEntry.hop! >= entry.hop!) {
+      _routingTable!.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
 
       if (_verbose) {
@@ -53,43 +53,43 @@ class RoutingTable {
     return false;
   }
 
-  void removeEntry(String destAddress) {
-    _routingTable.remove(destAddress);
+  void removeEntry(String? destAddress) {
+    _routingTable!.remove(destAddress);
   }
 
-  EntryRoutingTable getNextFromDest(String destAddress) {
-    return _routingTable[destAddress];
+  EntryRoutingTable? getNextFromDest(String? destAddress) {
+    return _routingTable![destAddress];
   }
 
-  bool containsDest(String destAddress) {
-    return _routingTable.containsKey(destAddress);
+  bool containsDest(String? destAddress) {
+    return _routingTable!.containsKey(destAddress);
   }
 
-  bool containsNext(String nextAddress) {
+  bool containsNext(String? nextAddress) {
     return _nextDestMapping.containsKey(nextAddress);
   }
 
-  String getDestFromNext(String nextAddress) {
+  String? getDestFromNext(String? nextAddress) {
     return _nextDestMapping[nextAddress];
   }
 
-  HashMap<String, EntryRoutingTable> getRoutingTable() {
+  HashMap<String?, EntryRoutingTable>? getRoutingTable() {
     return _routingTable;
   }
 
-  EntryRoutingTable getDestination(String destAddress) {
-    return _routingTable[destAddress];
+  EntryRoutingTable? getDestination(String? destAddress) {
+    return _routingTable![destAddress];
   }
 
-  List<String> getPrecursorsFromDest(String destAddress) {
-    EntryRoutingTable entry = _routingTable[destAddress];
+  List<String?>? getPrecursorsFromDest(String? destAddress) {
+    EntryRoutingTable? entry = _routingTable![destAddress];
     if (entry != null)
         return entry.precursors;
     return null;
   }
 
-  int getDataPathFromAddress(String address) {
-    EntryRoutingTable entry = _routingTable[address];
+  int? getDataPathFromAddress(String? address) {
+    EntryRoutingTable? entry = _routingTable![address];
     if (entry != null) {
         return entry.getActivesDataPath(address);
     }

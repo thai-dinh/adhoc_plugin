@@ -3,9 +3,9 @@ import 'package:pointycastle/pointycastle.dart';
 
 
 class Request {
-  RSAPublicKey publicKey;
-  RSAPrivateKey privateKey;
-  SecretKey sharedKey;
+  RSAPublicKey? publicKey;
+  RSAPrivateKey? privateKey;
+  SecretKey? sharedKey;
   int req;
   Object data;
 

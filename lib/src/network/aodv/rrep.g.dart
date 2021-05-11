@@ -8,12 +8,12 @@ part of 'rrep.dart';
 
 RREP _$RREPFromJson(Map<String, dynamic> json) {
   return RREP(
-    type: json['type'] as int,
-    hopCount: json['hopCount'] as int,
-    destAddress: json['destAddress'] as String,
-    sequenceNum: json['sequenceNum'] as int,
-    originAddress: json['originAddress'] as String,
-    lifetime: json['lifetime'] as int,
+    type: json['type'] as int?,
+    hopCount: json['hopCount'] as int?,
+    destAddress: json['destAddress'] as String?,
+    sequenceNum: json['sequenceNum'] as int?,
+    originAddress: json['originAddress'] as String?,
+    lifetime: json['lifetime'] as int?,
   );
 }
 

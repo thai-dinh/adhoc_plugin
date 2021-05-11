@@ -24,19 +24,19 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 class WrapperWifi extends WrapperNetwork {
   static const String TAG = "[WrapperWifi]";
 
-  int _serverPort;
-  String _ownIpAddress;
-  String _groupOwnerAddr;
-  bool _isDiscovering;
-  bool _isGroupOwner;
-  bool _isListening;
-  bool _isConnecting;
-  HashMap<String, String> _mapAddrMac;
-  StreamSubscription<DiscoveryEvent> _discoverySub;
-  WifiAdHocManager _wifiManager;
+  int? _serverPort;
+  String? _ownIpAddress;
+  String? _groupOwnerAddr;
+  late bool _isDiscovering;
+  bool? _isGroupOwner;
+  late bool _isListening;
+  late bool _isConnecting;
+  late HashMap<String?, String?> _mapAddrMac;
+  late StreamSubscription<DiscoveryEvent> _discoverySub;
+  WifiAdHocManager? _wifiManager;
 
   WrapperWifi(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
+    bool verbose, Config config, HashMap<String, AdHocDevice>? mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
     this._isDiscovering = false;
     this._isGroupOwner = false;
@@ -49,7 +49,7 @@ class WrapperWifi extends WrapperNetwork {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  bool get isGroupOwner => _isGroupOwner;
+  bool? get isGroupOwner => _isGroupOwner;
 
 /*------------------------------Override methods------------------------------*/
 
@@ -57,11 +57,11 @@ class WrapperWifi extends WrapperNetwork {
   void init(bool verbose, Config config) async {
     _serverPort = config.serverPort;
 
-    if (await WifiAdHocManager.isWifiEnabled()) {
+    if (await (WifiAdHocManager.isWifiEnabled() as FutureOr<bool>)) {
       this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
       this._isGroupOwner = false;
       this._mapAddrMac = HashMap();
-      this.ownName = await _wifiManager.adapterName;
+      this.ownName = await _wifiManager!.adapterName;
       this._initialize();
       this.enabled = true;
     } else {
@@ -92,74 +92,74 @@ class WrapperWifi extends WrapperNetwork {
       return;
 
     _discoverySub.resume();
-    _wifiManager.discovery();
+    _wifiManager!.discovery();
     _isDiscovering = true;
   }
 
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
-    WifiAdHocDevice wifiAdHocDevice = mapMacDevices[device.mac];
+    WifiAdHocDevice? wifiAdHocDevice = mapMacDevices[device.mac] as WifiAdHocDevice?;
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(device.mac);
+      await _wifiManager!.connect(device.mac);
     }
   }
 
   @override
   void stopListening() {
     if (serviceServer != null) {
-      serviceServer.stopListening();
+      serviceServer!.stopListening();
       _isListening = false;
     } 
   }
 
   @override // Not used in wifi context
-  Future<HashMap<String, AdHocDevice>> getPaired() => null;
+  Future<HashMap<String, AdHocDevice>>? getPaired() => null;
 
   @override
-  Future<String> getAdapterName() async {
-    return await _wifiManager.adapterName;
+  Future<String?> getAdapterName() async {
+    return await _wifiManager!.adapterName;
   }
 
   @override
-  Future<bool> updateDeviceName(final String name) async {
-    return await _wifiManager.updateDeviceName(name);
+  Future<bool?> updateDeviceName(final String name) async {
+    return await _wifiManager!.updateDeviceName(name);
   }
 
   @override
-  Future<bool> resetDeviceName() async {
-    return await _wifiManager.resetDeviceName();
+  Future<bool?> resetDeviceName() async {
+    return await _wifiManager!.resetDeviceName();
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void unregister() => _wifiManager.unregister();
+  void unregister() => _wifiManager!.unregister();
 
   void removeGroup() {
     if (serviceServer != null) {
       _mapAddrMac.forEach((address, mac) async {
-        await serviceServer.cancelConnection(mac);
+        await serviceServer!.cancelConnection(mac);
       });
 
-      serviceServer.activeConnections.clear();
+      serviceServer!.activeConnections!.clear();
     }
 
-    _wifiManager.removeGroup();
+    _wifiManager!.removeGroup();
   }
 
-  bool isWifiGroupOwner() => _isGroupOwner;
+  bool? isWifiGroupOwner() => _isGroupOwner;
 
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _discoverySub = _wifiManager.discoveryStream.listen((DiscoveryEvent event) {
+    _discoverySub = _wifiManager!.discoveryStream.listen((DiscoveryEvent event) {
       discoveryCtrl.add(event);
 
       switch (event.type) {
         case DEVICE_DISCOVERED:
           WifiAdHocDevice device = event.payload as WifiAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac + " into mapMacDevices");
+            if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
             return device;
           });
           break;
@@ -187,16 +187,16 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   void _registration(
-    bool isConnected, bool isGroupOwner, String groupOwnerAddress
+    bool? isConnected, bool? isGroupOwner, String? groupOwnerAddress
   ) {
     _isGroupOwner = isGroupOwner;
-    if (isConnected && _isGroupOwner) {
+    if (isConnected! && _isGroupOwner!) {
       _groupOwnerAddr = _ownIpAddress = groupOwnerAddress;
       if (!_isListening) {
         _listenServer();
         _isListening = true;
       }
-    } else if (isConnected && !_isGroupOwner) {
+    } else if (isConnected && !_isGroupOwner!) {
       _groupOwnerAddr = groupOwnerAddress;
       if (!_isConnecting) {
         _connect(_serverPort);
@@ -221,16 +221,16 @@ class WrapperWifi extends WrapperNetwork {
           if (_ownIpAddress == _groupOwnerAddr)
             break;
 
-          String remoteAddress = event.payload as String;
+          String? remoteAddress = event.payload as String?;
           mapAddrNetwork.putIfAbsent(
             remoteAddress,
             () => NetworkManager(
-              (MessageAdHoc msg) async => (service as ServiceClient).send(msg), 
+              (MessageAdHoc? msg) async => (service as ServiceClient).send(msg!), 
               () => (service as ServiceClient).disconnect()
             )
           );
 
-          ownName = await _wifiManager.adapterName;
+          ownName = await _wifiManager!.adapterName;
           eventCtrl.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
           (service as ServiceClient).send(
@@ -261,28 +261,28 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   void _listenServer() {
-    serviceServer = WifiServer(verbose)..listen(hostIp: _ownIpAddress, serverPort: _serverPort);
-    _onEvent(serviceServer);
+    serviceServer = WifiServer(verbose)..listen(_ownIpAddress, _serverPort!);
+    _onEvent(serviceServer!);
   }
 
-  void _connect(int remotePort) async {
+  void _connect(int? remotePort) async {
     final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
     _onEvent(wifiClient);
     await wifiClient.connect();
   }
 
   void _processMsgReceived(MessageAdHoc message) async {
-    switch (message.header.messageType) {
+    switch (message.header!.messageType) {
       case CONNECT_SERVER:
-        String remoteAddress = message.header.address;
+        String? remoteAddress = message.header!.address;
         _mapAddrMac.putIfAbsent(
-          remoteAddress, () => message.header.mac
+          remoteAddress, () => message.header!.mac
         );
 
-        ownName = await _wifiManager.adapterName;
+        ownName = await _wifiManager!.adapterName;
         eventCtrl.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
-        serviceServer.send(
+        serviceServer!.send(
           MessageAdHoc(Header(
             messageType: CONNECT_CLIENT,
             label: ownLabel,
@@ -295,49 +295,49 @@ class WrapperWifi extends WrapperNetwork {
         );
 
         receivedPeerMessage(
-          message.header,
+          message.header!,
           NetworkManager(
-            (MessageAdHoc msg) => serviceServer.send(msg, remoteAddress),
-            () => serviceServer.cancelConnection(remoteAddress)
+            (MessageAdHoc? msg) => serviceServer!.send(msg!, remoteAddress),
+            () => serviceServer!.cancelConnection(remoteAddress)
           )
         );
         break;
 
       case CONNECT_CLIENT:
         _mapAddrMac.putIfAbsent(
-          message.header.address, () => message.header.mac
+          message.header!.address, () => message.header!.mac
         );
 
-        NetworkManager network = mapAddrNetwork[message.header.address];
-        receivedPeerMessage(message.header, network);
+        NetworkManager? network = mapAddrNetwork[message.header!.address];
+        receivedPeerMessage(message.header!, network);
         break;
 
       case CONNECT_BROADCAST:
-        FloodMsg floodMsg = FloodMsg.fromJson(message.pdu as Map);
+        FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
-          broadcastExcept(message, message.header.label);
+          broadcastExcept(message, message.header!.label);
 
-          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices;
+          HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices!;
           for (AdHocDevice device in hashSet) {
             if (device.label != ownLabel 
-              && !setRemoteDevices.contains(device)
+              && !setRemoteDevices!.contains(device)
               && !isDirectNeighbors(device.label)
             ) {
               device.directedConnected = false;
 
               eventCtrl.add(AdHocEvent(CONNECTION_EVENT, device));
 
-              setRemoteDevices.add(device);
+              setRemoteDevices!.add(device);
             }
           }
         }
         break;
 
       case DISCONNECT_BROADCAST:
-        if (checkFloodEvent(message.pdu as String)) {
-          broadcastExcept(message, message.header.label);
+        if (checkFloodEvent(message.pdu as String?)) {
+          broadcastExcept(message, message.header!.label);
 
-          Header header = message.header;
+          Header header = message.header!;
           AdHocDevice device = AdHocDevice(
             label: header.label,
             name: header.name,
@@ -348,13 +348,13 @@ class WrapperWifi extends WrapperNetwork {
 
           eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, device));
 
-          if (setRemoteDevices.contains(device))
-            setRemoteDevices.remove(device);
+          if (setRemoteDevices!.contains(device))
+            setRemoteDevices!.remove(device);
         }
         break;
 
       case BROADCAST:
-        Header header = message.header;
+        Header header = message.header!;
         AdHocDevice device = AdHocDevice(
           label: header.label,
           name: header.name,

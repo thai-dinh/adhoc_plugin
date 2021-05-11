@@ -5,8 +5,8 @@ part 'data.g.dart';
 
 @JsonSerializable()
 class Data {
-  int type;
-  Object payload;
+  int? type;
+  Object? payload;
   
   Data(this.type, this.payload);
 

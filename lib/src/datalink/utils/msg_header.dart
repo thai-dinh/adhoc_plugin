@@ -7,16 +7,16 @@ part 'msg_header.g.dart';
 
 @JsonSerializable()
 class Header {
-  int _deviceType;
-  int _messageType;
-  String _label;
-  String _name;
-  String _address;
-  String _mac;
+  int? _deviceType;
+  int? _messageType;
+  String? _label;
+  String? _name;
+  String? _address;
+  String? _mac;
 
   Header({
-    @required int messageType, String label, String name, String address = '', 
-    String mac, int deviceType
+    required int? messageType, String? label, String? name, String? address = '', 
+    String? mac, int? deviceType
   }) {
     this._messageType = messageType;
     this._label = checkString(label);
@@ -30,19 +30,19 @@ class Header {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  set messageType(int messageType) => this._messageType = messageType;
+  set messageType(int? messageType) => this._messageType = messageType;
 
-  int get deviceType => _deviceType;
+  int? get deviceType => _deviceType;
 
-  int get messageType => _messageType;
+  int? get messageType => _messageType;
 
-  String get label => _label;
+  String? get label => _label;
 
-  String get name => _name;
+  String? get name => _name;
 
-  String get address => _address;
+  String? get address => _address;
 
-  String get mac => _mac;
+  String? get mac => _mac;
 
 /*-------------------------------Public methods-------------------------------*/
 

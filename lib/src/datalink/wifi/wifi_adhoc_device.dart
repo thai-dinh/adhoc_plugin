@@ -5,7 +5,7 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
 
 /// Class representing a remote Wifi-capable device.
 class WifiAdHocDevice extends AdHocDevice {
-  int port;
+  int? port;
 
   /// Initialize a newly created WifiAdHocDevice representing a remote 
   /// Wifi-capable device with information given by discovered [device].

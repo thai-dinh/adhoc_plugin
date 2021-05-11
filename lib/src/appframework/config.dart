@@ -6,16 +6,16 @@ class Config {
   static const int _MIN_PORT = 1023;
   static const int _MAX_PORT = 65535;
 
-  int _serverPort;
+  late int _serverPort;
 
-  String label;
-  bool connectionFlooding;
-  int timeOut;
-  int expiryTime;
+  String? label;
+  bool? connectionFlooding;
+  int? timeOut;
+  int? expiryTime;
 
   Config(
     {String label = '', bool connectionFlooding = false, int serverPort = 52000,
-    int expiryTime = 360}
+    int expiryTime = 360000}
   ) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.connectionFlooding = connectionFlooding;
