@@ -4,6 +4,9 @@ const INITIALISATION = -1;
 const ENCRYPTION = 0;
 const DECRYPTION = 1;
 
+const LEADER = 0;
+const MEMBER = 1;
+
 const SECRET_KEY = 0;
 const SECRET_DATA = 1;
 
@@ -14,6 +17,7 @@ const UNENCRYPTED_DATA = 33;
 
 const GROUP_REQUEST = 34;
 const GROUP_REPLY = 35;
-const GROUP_FORMATION = 36;
-const GROUP_JOIN = 37;
-const GROUP_LEAVE = 38;
+const GROUP_FORMATION_REQ = 36;
+const GROUP_FORMATION_REP = 37;
+const GROUP_JOIN = 38;
+const GROUP_LEAVE = 39;

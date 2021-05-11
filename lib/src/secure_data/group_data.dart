@@ -1,7 +1,7 @@
 class GroupData {
-  String sender;
+  String leader;
   int groupId;
   Object data;
 
-  GroupData(this.sender, this.groupId, this.data);
+  GroupData(this.leader, this.groupId, this.data);
 }

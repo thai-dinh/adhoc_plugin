@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:adhoc_plugin/adhoc_plugin.dart';
 import 'package:adhoc_plugin/src/secure_data/certificate.dart';
+import 'package:adhoc_plugin/src/secure_data/group_controller.dart';
 import 'package:adhoc_plugin/src/secure_data/reply.dart';
 import 'package:adhoc_plugin/src/secure_data/request.dart';
 import 'package:archive/archive_io.dart';
@@ -119,7 +120,7 @@ class CryptoEngine {
   }
 
   SecureRandom _random() {
-    const ROLL = 64;
+    const ROLL = 32;
 
     final FortunaRandom secureRandom = FortunaRandom();
     final Random seedSource = Random.secure();

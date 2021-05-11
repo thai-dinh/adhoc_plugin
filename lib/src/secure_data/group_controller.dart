@@ -11,32 +11,52 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/secure_data/constants.dart';
 import 'package:adhoc_plugin/src/secure_data/data.dart';
 import 'package:adhoc_plugin/src/secure_data/group_data.dart';
-import 'package:ninja_prime/ninja_prime.dart';
+import 'package:cryptography/cryptography.dart';
+// import 'package:ninja_prime/ninja_prime.dart';
 
 
 class GroupController {
   AodvManager _aodvManager;
   DataLinkManager _datalinkManager;
   Stream<AdHocEvent> _eventStream;
-  HashMap<String, BigInt> _membersShare;
-  List<BigInt> _primes;
+  HashMap<String, int> _membersShare;
+  HashMap<String, int> _keyShare;
+  SecretKey _groupKey;
   int _expiryTime;
+
+  int _GK;
+  int _counter;
+  int _secret;
+  int _mij;
+  int P;
+  int G;
 
   int groupId;
 
   GroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
     this._membersShare = HashMap();
+    this._keyShare = HashMap();
     this._expiryTime = config.expiryTime;
-    this._primes = _generatePrimeList();
+    this._counter = 0;
     this.groupId = 1;
     this._initialize();
+    _solveBezoutIdentity(11, 21);
   }
 
-  void createGroup(int groupId) {
+/*-------------------------------Public methods-------------------------------*/
+
+  void createGroup(int groupId) { // Step 1.
     this.groupId = groupId;
 
-    int P = 0, Q = 0;
-    Data message = Data(GROUP_REQUEST, GroupData(_aodvManager.label, groupId, [P, Q /* Timestamp */]));
+    List<int> primes = _generatePrimes();
+    Data message = Data(
+      GROUP_REQUEST, 
+      GroupData(
+        _aodvManager.label, groupId, 
+        [primes[0], primes[1]]
+      ),
+    );
+
     _datalinkManager.broadcastObject(message);
 
     Timer(Duration(milliseconds: _expiryTime), _createGroupExpired);
@@ -50,6 +70,8 @@ class GroupController {
     
   }
 
+/*------------------------------Private methods-------------------------------*/
+
   void _initialize() {
     _eventStream.listen((event) {
       if (event.type == DATA_RECEIVED) {
@@ -58,15 +80,85 @@ class GroupController {
     });
   }
 
+  List<int> _generatePrimes() {
+    List<int> primes = List.empty(growable: true);
+
+    int P = Random().nextInt(2048);
+    int Q = Random().nextInt(1024);
+
+    return primes..add(P)..add(Q);
+  }
+
+  int _computeShare() {
+    _secret = Random().nextInt(512);
+    return pow(G, _secret) % P;
+  }
+
   void _createGroupExpired() {
-    _membersShare.putIfAbsent(_aodvManager.label, () => 0) /* own y_i */;
+    _membersShare.putIfAbsent(_aodvManager.label, () => _computeShare());
 
     List<String> membersLabel = List.empty(growable: true);
     for (final String label in _membersShare.keys)
       membersLabel.add(label);
 
-    GroupData formation = GroupData(_aodvManager.label, groupId, [membersLabel, /* y_i */]);
-    _datalinkManager.broadcastObject(Data(GROUP_FORMATION, formation));
+    GroupData formation = GroupData(_aodvManager.label, groupId, [LEADER, membersLabel, _membersShare[_aodvManager.label]]);
+    _datalinkManager.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
+  }
+
+  void _computeGroupKey() {
+    for (final int share in _membersShare.values)
+      _GK ^= share;
+    _groupKey = SecretKey(List<int>.filled(1, _GK));
+  }
+
+  void _computeKeyShare(String label, int yj) {
+    int pij, ki, di;
+    int _min = 2147483647;
+
+    /* Step 3 */
+    _mij = pow(yj, _secret) % P;
+    _mij = _mij > P/2 ? _mij : P - _mij;
+
+    /* Step 4 */
+    bool found = false;
+    while (!found) {
+      if (_mij.gcd(pij = Random().nextInt(2048)) == 1) {
+        found = true;
+      }
+    }
+
+    /* Step 5 */
+    for (int value in _membersShare.values)
+      _min = min(_min, value);
+
+    ki = Random().nextInt(_min);
+    di = ki;
+
+    while (ki == di)
+      di = Random().nextInt(2147483647);
+
+    List<int> coefficients = _solveBezoutIdentity(_mij, pij);
+    int solution = (ki * coefficients[1] * pij) + (di * coefficients[0] * _mij);
+    while (solution < 0)
+      solution += (_mij * pij); // CRTij
+
+    GroupData reply = GroupData(_aodvManager.label, groupId, solution);
+    _aodvManager.sendMessageTo(Data(GROUP_FORMATION_REP, reply), label);
+  }
+
+  List<int> _solveBezoutIdentity(int a, int b) {
+    int R = a, _R = b, U = 1, _U = 0, V = 0, _V = 1;
+
+    while (_R != 0) {
+      int Q = R~/_R;
+      int RS = R, US = U, VS = V;
+      R = _R; U = _U; V = _V;
+      _R = RS - Q*_R;
+      _U = US - Q*_U;
+      _V = VS - Q*_V;
+    }
+
+    return List.empty(growable: true)..add(U)..add(V);
   }
 
   void _processData(AdHocEvent event) {
@@ -74,86 +166,63 @@ class GroupController {
     AdHocDevice sender = payload[0] as AdHocDevice;
     Data pdu = Data.fromJson(payload[1] as Map);
 
+    GroupData data = pdu.payload as GroupData;
+    if (data.groupId != groupId) {
+      _datalinkManager.broadcastObjectExcept(pdu, sender.label);
+      return;
+    }
+
     switch (pdu.type) {
       case GROUP_REQUEST:
         GroupData advertisement = pdu.payload as GroupData;
-        if (advertisement.groupId != groupId) {
-          _datalinkManager.broadcastObjectExcept(pdu, sender.label);
-          break;
-        }
+        List<dynamic> data = advertisement.data as List;
 
-        GroupData reply = GroupData(_aodvManager.label, groupId, [/* y_i */]);
+        P = data[0] as int;
+        G = data[1] as int;
+
+        GroupData reply = GroupData(sender.label, groupId, _aodvManager.label);
         _aodvManager.sendMessageTo(Data(GROUP_REPLY, reply), sender.label);
         break;
 
       case GROUP_REPLY:
         GroupData reply = pdu.payload as GroupData;
-        if (reply.groupId != groupId)
-          break;
-
-        _membersShare.putIfAbsent(reply.sender, () => BigInt.from(0)/* y_i */);
+        _membersShare.putIfAbsent(reply.data, () => 0);
         break;
 
-      case GROUP_FORMATION:
+      case GROUP_FORMATION_REQ:
         GroupData reply = pdu.payload as GroupData;
-        if (reply.groupId != groupId)
-          break;
+        if ((reply.data as List)[0] == LEADER) {
+          _membersShare.putIfAbsent(reply.leader, () => (reply.data as List)[2]);
+          for (String label in (reply.data as List)[1])
+            _membersShare.putIfAbsent(label, () => 0);
 
-        for (String label in (reply.data as List)[0]) {
-          _membersShare.putIfAbsent(label, () => BigInt.from(0));
-          
+          _membersShare.putIfAbsent(_aodvManager.label, () => _computeShare());
+          GroupData formation = GroupData(_aodvManager.label, groupId, [MEMBER, _membersShare[_aodvManager.label]]);
+          _datalinkManager.broadcastObject(Data(GROUP_FORMATION_REQ, formation));
+        } else {
+          _membersShare.update(sender.label, (value) => value = (reply.data as List)[1]);
+          _computeKeyShare(sender.label, _membersShare[sender.label]);
         }
+        break;
 
+      case GROUP_FORMATION_REP:
+        GroupData reply = pdu.payload as GroupData;
+        _keyShare.update(sender.label, (value) => value = ((reply.data as int) % _mij));
+        _counter++;
+
+        if (_counter == _membersShare.length)
+          _computeGroupKey();
         break;
 
       case GROUP_JOIN:
 
-        break; 
+        break;
 
       case GROUP_LEAVE:
 
         break;
 
       default:
-    }
-  }
-
-  List<BigInt> _generatePrimeList() {
-    const N = 100;
-
-    List<BigInt> result = List.filled(N, BigInt.zero);
-    int n = (1.4 * N * log(N)) as int;
-
-    List<bool> isPrimeArray = List.filled(n, true);
-    isPrimeArray[0] = isPrimeArray[1] = false;
-
-    for (int i = 2, primesLeft = N; i * i <= n && primesLeft > 0; i++) {
-      if (isPrimeArray[i]) {
-        result.add(BigInt.from(i));
-        primesLeft--;
-
-        for (int j = i; i * j <= n; j++) {
-          isPrimeArray[i * j] = false;
-        }
-      }
-    }
-
-    print(result);
-
-    return result;
-  }
-
-  BigInt _lowLevelPrimalityTest(int nBitsLength) {
-    while (true) {
-      BigInt primeCandidate = randomPrimeBigInt(nBitsLength);
-
-      for (final BigInt divisor in _primes) {
-        if ((primeCandidate % divisor) == BigInt.zero) {
-          break;
-        } else {
-          return primeCandidate;
-        }
-      }
     }
   }
 }

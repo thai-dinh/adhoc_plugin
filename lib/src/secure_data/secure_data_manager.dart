@@ -14,6 +14,7 @@ import 'package:adhoc_plugin/src/secure_data/certificate_repository.dart';
 import 'package:adhoc_plugin/src/secure_data/constants.dart';
 import 'package:adhoc_plugin/src/secure_data/crypto_engine.dart';
 import 'package:adhoc_plugin/src/secure_data/data.dart';
+import 'package:adhoc_plugin/src/secure_data/group_controller.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 
@@ -24,6 +25,7 @@ class SecureDataManager {
   DataLinkManager _datalinkManager;
   CertificateRepository _repository;
   CryptoEngine _engine;
+  GroupController _groupController;
   StreamController<AdHocEvent> _eventCtrl;
 
   SecureDataManager(this._verbose, Config config) {
@@ -31,6 +33,7 @@ class SecureDataManager {
     this._datalinkManager = _aodvManager.dataLinkManager;
     this._repository = CertificateRepository();
     this._engine = CryptoEngine();
+    this._groupController = GroupController(_aodvManager, _datalinkManager, _aodvManager.eventStream, config);
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
