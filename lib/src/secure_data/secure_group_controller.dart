@@ -20,6 +20,7 @@ class SecureGroupController {
   Stream<AdHocEvent> _eventStream;
   String? _ownLabel;
 
+  /// Time allowed for joining the group creation process
   int? _expiryTime;
   /// Order of the finite cyclic group
   int? _p;
@@ -49,7 +50,7 @@ class SecureGroupController {
   /// Initiates a secure group creation process
   void createSecureGroup() {
     SecureData message = SecureData(
-      GROUP_REQUEST, [_p = 7, _g = 3] // TODO: generate primes (BigInt)
+      GROUP_REQUEST, [_p = 17, _g = 7] // TODO: generate primes (BigInt)
     );
 
     _datalinkManager!.broadcastObject(message);
@@ -62,6 +63,7 @@ class SecureGroupController {
     
   }
 
+  /// Leave an existing secure group
   void leaveSecureGroup() {
     
   }
@@ -93,15 +95,18 @@ class SecureGroupController {
   }
 
   int _computeDHShare() {
+    print('_computeDHShare');
     return pow(_g!, Random().nextInt(512)).toInt() % _p!;
   }
 
-  int _computeCRTShare(int yj) {
-    int? pj, k, d;
+  int _computeCRTShare(String label, int yj) {
+    print('_computeCRTShare');
+    int? pj, keyShare, once;
 
     /* Step 3 */
     int mj = (pow(yj, _DHShares[_ownLabel]!) as int) % _p!;
     mj = mj > _p!/2 ? mj : _p! - mj;
+    _DHShares[label] = mj;
 
     /* Step 4 */
     while (true) {
@@ -110,25 +115,32 @@ class SecureGroupController {
     }
 
     /* Step 5 */
-    d = k = Random().nextInt(MAX_SINT_VAL);
-    while (k == d)
-      d = Random().nextInt(MAX_SINT_VAL);
+    keyShare = Random().nextInt(MAX_SINT_VAL);
+    _CRTShares[_ownLabel] = keyShare;
+
+    once = keyShare;
+    while (keyShare == once)
+      once = Random().nextInt(MAX_SINT_VAL);
 
     List<int?> coefficients = _solveBezoutIdentity(mj, pj);
-    int CRTSharej = (k * coefficients[1]! * pj) + (d! * coefficients[0]! * mj);
+    int CRTSharej = (keyShare * coefficients[1]! * pj) + (once! * coefficients[0]! * mj);
     while (CRTSharej < 0)
       CRTSharej += (mj * pj);
 
+    print('CRTSharej: $CRTSharej');
     return CRTSharej;
   }
 
-  void _computeGroupKey() {
+  void _computeGroupKey() async {
     print('_computeGroupKey');
     /* Step 6 */
-    int gk = 0;
-    for (final int share in _CRTShares.values)
-      gk = gk ^ share;
-    _groupKey = SecretKey([gk]);
+    List<int> gk = List.empty(growable: true)..add(_CRTShares[_ownLabel]!);
+    for (final String? label in _CRTShares.keys) {
+      if (label != _ownLabel)
+        gk.add(_CRTShares[label]! % _DHShares[label]!);
+    }
+    print('GroupKey: $gk');
+    _groupKey = SecretKey(gk);
   }
 
   List<int?> _solveBezoutIdentity(int? a, int? b) {
@@ -149,8 +161,8 @@ class SecureGroupController {
 
   void _processDataReceived(AdHocEvent event) {
     print('_processDataReceived');
-    AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     print(event.payload);
+    AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     SecureData pdu = SecureData.fromJson((event.payload as List<dynamic>)[1] as Map<String, dynamic>);
 
     switch (pdu.type) {
@@ -171,31 +183,44 @@ class SecureGroupController {
 
       case GROUP_FORMATION_REQ:
         List<dynamic> data = pdu.payload as List<dynamic>;
+
         /* Step 1. */
-        _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare());
+        _DHShares.update(sender.label, (value) => data[2] as int, ifAbsent: () => data[2] as int);
+        _DHShares.update(_ownLabel, (value) => _computeDHShare(), ifAbsent: () => _computeDHShare());
         if (data[0] == LEADER) {
+          _CRTShares.update(sender.label, (value) => _computeCRTShare(sender.label!, _DHShares[sender.label]!), ifAbsent:() => _computeCRTShare(sender.label!, _DHShares[sender.label]!));
+          SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
+          _aodvManager!.sendMessageTo(reply, sender.label);
+
           for (final String? label in data[1]) {
             if (label != _ownLabel) {
               /* Step 2. */
-              _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare());
               SecureData reply = SecureData(GROUP_FORMATION_REQ, [MEMBER, _DHShares[_ownLabel]]);
               _aodvManager!.sendMessageTo(reply, label);
             }
           }
         } else {
-          _DHShares.putIfAbsent(sender.label, () => data[1] as int);
-          _CRTShares.putIfAbsent(sender.label, () => _computeCRTShare(data[1]));
+          _DHShares.update(sender.label, (value) => value = data[1] as int, ifAbsent:() => data[1] as int);
+          _CRTShares.update(sender.label, (value) => value = _computeCRTShare(sender.label!, data[1]), ifAbsent:() => _computeCRTShare(sender.label!, data[1]));
           SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
           _aodvManager!.sendMessageTo(reply, sender.label);
         }
         break;
 
       case GROUP_FORMATION_REP:
-        _CRTShares.putIfAbsent(sender.label, () => pdu.payload as int);
+        _CRTShares.update(sender.label, (value) => pdu.payload as int, ifAbsent:() => pdu.payload as int);
         _received = _received! + 1;
         print('${_CRTShares.length} : $_received');
-        if (_received == _CRTShares.length)
+        if (_received == _CRTShares.length - 1) {
+          _DHShares.forEach((key, value) {
+            print('$key: DH $value');
+          });
+          print('\n');
+          _CRTShares.forEach((key, value) {
+            print('$key: CRT $value');
+          });
           _computeGroupKey();
+        }
         break;
 
       case GROUP_JOIN:

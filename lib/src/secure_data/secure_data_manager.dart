@@ -103,7 +103,6 @@ class SecureDataManager {
         case DATA_RECEIVED:
           List payload = event.payload as List;
           AdHocDevice sender = payload[0] as AdHocDevice;
-          print(payload);
           _processData(sender, SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>));
           break;
 
