@@ -1,19 +1,20 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'data.dart';
+part of 'secure_data.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Data _$DataFromJson(Map<String, dynamic> json) {
-  return Data(
+SecureData _$SecureDataFromJson(Map<String, dynamic> json) {
+  return SecureData(
     json['type'] as int?,
     json['payload'],
   );
 }
 
-Map<String, dynamic> _$DataToJson(Data instance) => <String, dynamic>{
+Map<String, dynamic> _$SecureDataToJson(SecureData instance) =>
+    <String, dynamic>{
       'type': instance.type,
       'payload': instance.payload,
     };

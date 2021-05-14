@@ -15,7 +15,7 @@ class Config {
 
   Config(
     {String label = '', bool connectionFlooding = false, int serverPort = 52000,
-    int expiryTime = 360000}
+    int expiryTime = 10}
   ) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.connectionFlooding = connectionFlooding;

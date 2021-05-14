@@ -12,7 +12,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  archive: ^3.1.2
   cryptography: ^2.0.1
   flutter_reactive_ble: ^3.1.0
   json_annotation: ^4.0.1

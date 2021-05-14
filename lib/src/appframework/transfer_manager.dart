@@ -31,15 +31,15 @@ class TransferManager {
 /*------------------------------Crypto methods------------------------------*/
 
   void createGroup(int groupId) {
-    _secureDataManager.groupController!.createGroup(groupId);
+    _secureDataManager.groupController!.createSecureGroup();
   }
 
   void joinGroup(int groupId) {
-    _secureDataManager.groupController!.joinGroup(groupId);
+    _secureDataManager.groupController!.joinSecureGroup();
   }
 
   void leaveGroup() {
-    _secureDataManager.groupController!.leaveGroup();
+    _secureDataManager.groupController!.leaveSecureGroup();
   }
 
 /*------------------------------Network methods------------------------------*/
