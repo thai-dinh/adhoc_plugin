@@ -27,7 +27,7 @@ class SecureGroupController {
   /// Generator of the finite cyclic group of order [_p]
   int? _g;
   /// Group member's CRT share received
-  int? _received;
+  int? _computed;
   /// Secret group key
   SecretKey? _groupKey;
   /// Map containing the Diffie-Hellman share of each member
@@ -39,7 +39,7 @@ class SecureGroupController {
   SecureGroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
     this._ownLabel = _aodvManager!.label;
     this._expiryTime = config.expiryTime;
-    this._received = 0;
+    this._computed = 0;
     this._DHShares = HashMap();
     this._CRTShares = HashMap();
     this._initialize();
@@ -117,6 +117,7 @@ class SecureGroupController {
     /* Step 5 */
     keyShare = Random().nextInt(MAX_SINT_VAL);
     _CRTShares[_ownLabel] = keyShare;
+    _computed = _computed! + 1;
 
     once = keyShare;
     while (keyShare == once)
@@ -185,9 +186,9 @@ class SecureGroupController {
         List<dynamic> data = pdu.payload as List<dynamic>;
 
         /* Step 1. */
-        _DHShares.update(sender.label, (value) => data[2] as int, ifAbsent: () => data[2] as int);
         _DHShares.update(_ownLabel, (value) => _computeDHShare(), ifAbsent: () => _computeDHShare());
         if (data[0] == LEADER) {
+          _DHShares.update(sender.label, (value) => data[2] as int, ifAbsent: () => data[2] as int);
           _CRTShares.update(sender.label, (value) => _computeCRTShare(sender.label!, _DHShares[sender.label]!), ifAbsent:() => _computeCRTShare(sender.label!, _DHShares[sender.label]!));
           SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
           _aodvManager!.sendMessageTo(reply, sender.label);
@@ -204,23 +205,17 @@ class SecureGroupController {
           _CRTShares.update(sender.label, (value) => value = _computeCRTShare(sender.label!, data[1]), ifAbsent:() => _computeCRTShare(sender.label!, data[1]));
           SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
           _aodvManager!.sendMessageTo(reply, sender.label);
+
+          if (_computed == _CRTShares.length - 1)
+            _computeGroupKey();
         }
         break;
 
       case GROUP_FORMATION_REP:
         _CRTShares.update(sender.label, (value) => pdu.payload as int, ifAbsent:() => pdu.payload as int);
-        _received = _received! + 1;
-        print('${_CRTShares.length} : $_received');
-        if (_received == _CRTShares.length - 1) {
-          _DHShares.forEach((key, value) {
-            print('$key: DH $value');
-          });
-          print('\n');
-          _CRTShares.forEach((key, value) {
-            print('$key: CRT $value');
-          });
+        _computed = _computed! + 1;
+        if (_computed == _CRTShares.length - 1)
           _computeGroupKey();
-        }
         break;
 
       case GROUP_JOIN:
