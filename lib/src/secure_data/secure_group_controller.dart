@@ -14,6 +14,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:ninja_prime/ninja_prime.dart';
 
 
+/// Class managing the creation and maintenance of a secure group
 class SecureGroupController {
   AodvManager? _aodvManager;
   DataLinkManager? _datalinkManager;
@@ -34,6 +35,8 @@ class SecureGroupController {
   late HashMap<String?, int> _DHShares;
   /// Map containing the Chinese Remainder Theorem solution of each member
   late HashMap<String?, int> _CRTShares;
+  /// List containing members label
+  late List<String?> _membersLabel;
 
   /// Default constructor
   SecureGroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
@@ -42,6 +45,7 @@ class SecureGroupController {
     this._computed = 0;
     this._DHShares = HashMap();
     this._CRTShares = HashMap();
+    this._membersLabel = List.empty(growable: true);
     this._initialize();
   }
 
@@ -54,6 +58,7 @@ class SecureGroupController {
     );
 
     _datalinkManager!.broadcastObject(message);
+    _membersLabel.add(_ownLabel);
 
     Timer(Duration(seconds: _expiryTime!), _createSecureGroupExpired);
   }
@@ -79,29 +84,26 @@ class SecureGroupController {
   }
 
   void _createSecureGroupExpired() {
-    print('_createGroupExpired');
+    _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare()); // DH_L
+    SecureData message = SecureData(GROUP_FORMATION_REQ, [LEADER, _membersLabel, _DHShares[_ownLabel]]);
 
-    List<String?> membersLabel = List.empty(growable: true);
-    for (final String? label in _DHShares.keys)
-      membersLabel.add(label);
-    membersLabel.add(_ownLabel);
-
-    _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare());
-    SecureData message = SecureData(GROUP_FORMATION_REQ, [LEADER, membersLabel, _DHShares[_ownLabel]]);
-
-    for (final String? label in membersLabel)
+    for (final String? label in _membersLabel)
       if (label != _ownLabel)
         _aodvManager!.sendMessageTo(message, label);
+
+    print('_createGroupExpired');
+    print(_DHShares);
+    print(_CRTShares);
   }
 
   int _computeDHShare() {
-    print('_computeDHShare');
     return pow(_g!, Random().nextInt(512)).toInt() % _p!;
   }
 
   int _computeCRTShare(String label, int yj) {
-    print('_computeCRTShare');
     int? pj, keyShare, once;
+
+    _computed = _computed! + 1;
 
     /* Step 3 */
     int mj = (pow(yj, _DHShares[_ownLabel]!) as int) % _p!;
@@ -117,7 +119,6 @@ class SecureGroupController {
     /* Step 5 */
     keyShare = Random().nextInt(MAX_SINT_VAL);
     _CRTShares[_ownLabel] = keyShare;
-    _computed = _computed! + 1;
 
     once = keyShare;
     while (keyShare == once)
@@ -128,7 +129,9 @@ class SecureGroupController {
     while (CRTSharej < 0)
       CRTSharej += (mj * pj);
 
-    print('CRTSharej: $CRTSharej');
+    print('_computeCRTShare');
+    print(_DHShares);
+    print(_CRTShares);
     return CRTSharej;
   }
 
@@ -145,7 +148,6 @@ class SecureGroupController {
   }
 
   List<int?> _solveBezoutIdentity(int? a, int? b) {
-    print('_solveBezoutIdentity');
     int? R = a, _R = b, U = 1, _U = 0, V = 0, _V = 1;
 
     while (_R != 0) {
@@ -178,50 +180,73 @@ class SecureGroupController {
         break;
 
       case GROUP_REPLY:
-        _DHShares.putIfAbsent(sender.label, () => 0);
-        _CRTShares.putIfAbsent(sender.label, () => 0);
+        _membersLabel.add(sender.label);
         break;
 
       case GROUP_FORMATION_REQ:
         List<dynamic> data = pdu.payload as List<dynamic>;
 
         /* Step 1. */
-        _DHShares.update(_ownLabel, (value) => _computeDHShare(), ifAbsent: () => _computeDHShare());
         if (data[0] == LEADER) {
-          _DHShares.update(sender.label, (value) => data[2] as int, ifAbsent: () => data[2] as int);
-          _CRTShares.update(sender.label, (value) => _computeCRTShare(sender.label!, _DHShares[sender.label]!), ifAbsent:() => _computeCRTShare(sender.label!, _DHShares[sender.label]!));
-          SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
-          _aodvManager!.sendMessageTo(reply, sender.label);
+          _membersLabel.addAll((data[1] as List<dynamic>).cast<String>());
+          print('Label');
+          print(_membersLabel);
+          print(data[1]);
 
-          for (final String? label in data[1]) {
+          _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare()); // DH_M
+          _DHShares.putIfAbsent(sender.label, () => data[2] as int); // DH_L
+          _CRTShares.putIfAbsent( // CRT_M->L
+            sender.label, 
+            () => _computeCRTShare(sender.label!, _DHShares[sender.label]!), 
+          );
+
+          for (final String? label in _membersLabel) {
             if (label != _ownLabel) {
               /* Step 2. */
               SecureData reply = SecureData(GROUP_FORMATION_REQ, [MEMBER, _DHShares[_ownLabel]]);
               _aodvManager!.sendMessageTo(reply, label);
             }
           }
-        } else {
-          _DHShares.update(sender.label, (value) => value = data[1] as int, ifAbsent:() => data[1] as int);
-          _CRTShares.update(sender.label, (value) => value = _computeCRTShare(sender.label!, data[1]), ifAbsent:() => _computeCRTShare(sender.label!, data[1]));
+
           SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
           _aodvManager!.sendMessageTo(reply, sender.label);
 
-          if (_computed == _CRTShares.length - 1)
-            _computeGroupKey();
+          print('GROUP_FORMATION_REQ: LEADER RESPONSE');
+          print(_DHShares);
+          print(_CRTShares);
+        } else {
+          _DHShares.putIfAbsent(sender.label, () => data[1] as int); // DH_M
+          _CRTShares.putIfAbsent(sender.label, () => _computeCRTShare(sender.label!, data[1])); // CRT_L->M
+
+          SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
+          _aodvManager!.sendMessageTo(reply, sender.label);
+
+          print('REQ: $_computed & ${_CRTShares.length}');
+          print('GROUP_FORMATION_REQ: MEMBER RESPONSE');
+          print(_DHShares);
+          print(_CRTShares);
         }
         break;
 
       case GROUP_FORMATION_REP:
-        _CRTShares.update(sender.label, (value) => pdu.payload as int, ifAbsent:() => pdu.payload as int);
+        // CRT_M->L
+        _CRTShares.putIfAbsent(sender.label, () => pdu.payload as int);
         _computed = _computed! + 1;
-        if (_computed == _CRTShares.length - 1)
-          _computeGroupKey();
+
+        print('REP: $_computed & ${_CRTShares.length}');
+        print('GROUP_FORMATION_REP');
+        print(_DHShares);
+        print(_CRTShares);
         break;
 
       case GROUP_JOIN:
+
+
         break;
 
       case GROUP_LEAVE:
+        
+
         break;
 
       default:

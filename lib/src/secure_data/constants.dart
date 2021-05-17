@@ -1,28 +1,34 @@
+// Constant for the message digest (hash) algorithm
 const DIGEST_IDENTIFIER = '0609608648016503040201';
 
-const MAX_SINT_VAL = 4294967296;
+// Constants for miscelleneous tasks
+const MAX_SINT_VAL = 4294967296;  // Max signed integer value
+const NB_ISOLATE   = 2;           // Number of isolates for encryption/decryption
 
-const NB_ISOLATE = 2;
+// Constants
+const INITIALISATION = -1;  // Isolates initialisation
+const ENCRYPTION     = 0;   // Encryption request and reply tag to send to an isolate
+const DECRYPTION     = 1;   // Decryption request and reply tag to send to an isolate
 
-const INITIALISATION = -1;
-const ENCRYPTION = 0;
-const DECRYPTION = 1;
+// Constants
+const SECRET_KEY  = 0;  // Secret key tag for cryptographic tasks
+const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 
-const LEADER = 0;
-const MEMBER = 1;
+// Constants
+const LEADER = 0;  // Leader tag for group formation
+const MEMBER = 1;  // Member tag for group formation
 
-const SECRET_KEY = 0;
-const SECRET_DATA = 1;
+// Constants
+const CERT_XCHG_BEGIN  = 300;     // Certificate exchange request
+const CERT_XCHG_END    = 301;     // Certificate exchange reply
+const ENCRYPTED_DATA   = 302;     // Data encrypted received or to send
+const UNENCRYPTED_DATA = 303;     // Data unencrypted received or to send
 
-const CERT_XCHG_BEGIN = 300;
-const CERT_XCHG_END = 301;
-const ENCRYPTED_DATA = 302;
-const UNENCRYPTED_DATA = 303;
-
-const GROUP_REQUEST = 310;
-const GROUP_REPLY = 311;
-const GROUP_FORMATION_REQ = 312;
-const GROUP_FORMATION_REP = 313;
-const GROUP_JOIN = 314;
-const GROUP_LEAVE = 315;
-const GROUP_ERROR = 316;
+// Constants for the secure group formation and management
+const GROUP_REQUEST       = 310;  // Group creation initiation
+const GROUP_REPLY         = 311;  // Group creation participation
+const GROUP_FORMATION_REQ = 312;  // Group creation information exchange request
+const GROUP_FORMATION_REP = 313;  // Group creation information exchange reply
+const GROUP_JOIN          = 314;  // Group join request
+const GROUP_LEAVE         = 315;  // Group leave request
+const GROUP_ERROR         = 316;  // Group processing error

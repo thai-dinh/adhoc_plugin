@@ -22,15 +22,21 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 
 
+/// Class inheriting the abstract class [WrapperNetwork] and manages all 
+/// communications related to Bluetooth Low Energy
 class WrapperBle extends WrapperNetwork {
   static const String TAG = "[WrapperBle]";
 
   late bool _isDiscovering;
   late bool _isInitialized;
-  BleAdHocManager? _bleAdHocManager;
   late StreamSubscription<DiscoveryEvent> _discoverySub;
+
+  BleAdHocManager? _bleAdHocManager;
   String? _ownStringUUID;
 
+  /// Default constructor
+  /// 
+  /// 
   WrapperBle(
     bool verbose, Config config, HashMap<String, AdHocDevice>? mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
@@ -43,6 +49,7 @@ class WrapperBle extends WrapperNetwork {
 
 /*------------------------------Override methods------------------------------*/
 
+  ///
   @override
   Future<void> init(bool verbose, Config? config) async {
     if (await (BleAdHocManager.isEnabled() as Future<bool>)) {
@@ -56,6 +63,7 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+  ///
   @override
   void enable(int duration) async {
     if (!enabled!) {
@@ -71,6 +79,7 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+  ///
   @override
   void disable() {
     mapAddrNetwork.clear();
@@ -82,6 +91,7 @@ class WrapperBle extends WrapperNetwork {
     enabled = false;
   }
 
+  ///
   @override
   void discovery() {
     if (_isDiscovering)
@@ -92,6 +102,7 @@ class WrapperBle extends WrapperNetwork {
     _isDiscovering = true;
   }
 
+  ///
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
     BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
@@ -106,9 +117,11 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+  ///
   @override
   void stopListening() => serviceServer!.stopListening();
 
+  ///
   @override
   Future<HashMap<String?, AdHocDevice>?> getPaired() async {
     if (!(await (BleAdHocManager.isEnabled() as Future<bool>)))
@@ -123,34 +136,40 @@ class WrapperBle extends WrapperNetwork {
     return paired;
   }
 
+  ///
   @override
   Future<String?> getAdapterName() async {
     return await _bleAdHocManager!.adapterName;
   }
 
+  ///
   @override
   Future<bool?> updateDeviceName(String name) async {
     return await _bleAdHocManager!.updateDeviceName(name);
   }
 
+  ///
   @override
   Future<bool?> resetDeviceName() async {
     return await _bleAdHocManager!.resetDeviceName();
   }
 
 /*------------------------------Private methods-------------------------------*/
-
+  
+  ///
   void _initialize() {
     if (_isInitialized)
       return;
 
     _isInitialized = true;
-
+    // Listen to stream of ad hoc events
     _discoverySub = _bleAdHocManager!.discoveryStream.listen((DiscoveryEvent event) {
+      // Notify upper layer of discovery event
       discoveryCtrl.add(event);
 
       switch (event.type) {
         case DEVICE_DISCOVERED:
+          // Process potential peer discovered
           BleAdHocDevice device = event.payload as BleAdHocDevice;
           mapMacDevices.putIfAbsent(device.mac, () {
             if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
@@ -159,6 +178,7 @@ class WrapperBle extends WrapperNetwork {
           break;
 
         case DISCOVERY_END:
+          // Process end of discovery process
           if (verbose) log(TAG, 'Discovery end');
           (event.payload as Map).forEach((mac, device) {
             mapMacDevices.putIfAbsent(mac, () {
@@ -173,27 +193,31 @@ class WrapperBle extends WrapperNetwork {
           break;
 
         default:
-          break;
       }
     });
 
     _discoverySub.pause();
   }
 
+  ///
   void _onEvent(Service service) {
+    // Listen to stream of ad hoc events
     service.adhocEvent.listen((event) async { 
       switch (event.type) {
         case MESSAGE_RECEIVED:
+          // Process message received
           _processMsgReceived(event.payload as MessageAdHoc);
           break;
 
         case CONNECTION_PERFORMED:
+          // Process connection establishment
           List<dynamic> data = event.payload as List<dynamic>;
           String mac = data[0];
           String uuid = data[1];
           if (data[2] == 0)
             break;
 
+          // Store remote node's NetworkManager
           mapAddrNetwork.putIfAbsent(
             uuid, () => NetworkManager(
               (MessageAdHoc? msg) async => (service as ServiceClient).send(msg!), 
@@ -201,6 +225,7 @@ class WrapperBle extends WrapperNetwork {
             )
           );
 
+          // Send message control containing MAC address of the remote node
           (service as ServiceClient).send(
             MessageAdHoc(
               Header(
@@ -217,10 +242,12 @@ class WrapperBle extends WrapperNetwork {
           break;
 
         case CONNECTION_ABORTED:
+          // Process remote connection closed
           connectionClosed(event.payload as String?);
           break;
 
         case CONNECTION_EXCEPTION:
+          // Notify upper layer of an exception occured at lower layer
           eventCtrl.add(AdHocEvent(INTERNAL_EXCEPTION, event.payload));
           break;
 
@@ -229,28 +256,39 @@ class WrapperBle extends WrapperNetwork {
     });
   }
 
+  ///
   void _listenServer() {
+    /// Start server listening 
     serviceServer = BleServer(verbose)..listen();
+    /// Initialize the underlayer server service
     _bleAdHocManager!.initialize();
+    // Listen to the ad hoc events of the network (msg received, ...)
     _onEvent(serviceServer!);
   }
 
+  /// 
   Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
     final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager!.bondStream);
+    // Listen to the ad hoc events of the network (msg received, ...)
     _onEvent(bleClient);
+    // Connect to the remote node
     await bleClient.connect();
   }
 
+  ///
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header!.messageType) {
       case CONNECT_SERVER:
+        // Recover this own node MAC and BLE address
         String? mac = message.header!.mac;
         ownMac = message.pdu as String?;
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac!.replaceAll(new RegExp(':'), '');
         _ownStringUUID = _ownStringUUID!.toLowerCase();
 
+        // Notify upper layer of the recovery of this node's information
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
 
+        // Respond to the control message received
         serviceServer!.send(
           MessageAdHoc(
             Header(
@@ -266,6 +304,7 @@ class WrapperBle extends WrapperNetwork {
           mac
         );
 
+        // Process received message from remote nodes
         receivedPeerMessage(
           message.header!,
           NetworkManager(
@@ -276,11 +315,14 @@ class WrapperBle extends WrapperNetwork {
         break;
 
       case CONNECT_CLIENT:
+        // Recover this own node MAC and BLE address
         ownMac = message.pdu as String?;
         _ownStringUUID = BLUETOOTHLE_UUID + ownMac!.replaceAll(new RegExp(':'), '').toLowerCase();
 
+        // Notify upper layer of the recovery of this node's information
         eventCtrl.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
 
+        // Process received message from remote nodes
         receivedPeerMessage(
           message.header!, mapAddrNetwork[message.header!.address]
         );
@@ -289,8 +331,9 @@ class WrapperBle extends WrapperNetwork {
       case CONNECT_BROADCAST:
         FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
+          // Rebroadcast the message to this node direct neighbours
           broadcastExcept(message, message.header!.label);
-
+          // Get message information
           HashSet<AdHocDevice> hashSet = floodMsg.adHocDevices!;
           for (AdHocDevice device in hashSet) {
             if (device.label != ownLabel 
@@ -298,7 +341,7 @@ class WrapperBle extends WrapperNetwork {
               && !isDirectNeighbors(device.label)
             ) {
               device.directedConnected = false;
-
+              // Notify upper layer of a new remote connection established
               eventCtrl.add(AdHocEvent(CONNECTION_EVENT, device));
 
               setRemoteDevices!.add(device);
@@ -309,10 +352,13 @@ class WrapperBle extends WrapperNetwork {
 
       case DISCONNECT_BROADCAST:
         if (checkFloodEvent(message.pdu as String?)) {
+          // Rebroadcast the message to this node direct neighbours
           broadcastExcept(message, message.header!.label);
 
+          // Get the header of the message received
           Header header = message.header!;
-          AdHocDevice adHocDevice = AdHocDevice(
+          // Get the sender information
+          AdHocDevice device = AdHocDevice(
             label: header.label,
             name: header.name,
             mac: header.mac,
@@ -320,26 +366,31 @@ class WrapperBle extends WrapperNetwork {
             directedConnected: false
           );
 
-          eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, adHocDevice));
+          // Notify upper layer of a remote connection closed
+          eventCtrl.add(AdHocEvent(DISCONNECTION_EVENT, device));
 
-          if (setRemoteDevices!.contains(adHocDevice))
-            setRemoteDevices!.remove(adHocDevice);
+          if (setRemoteDevices!.contains(device))
+            setRemoteDevices!.remove(device);
         }
         break;
 
       case BROADCAST:
+        // Get the header of the message received
         Header header = message.header!;
-        AdHocDevice adHocDevice = AdHocDevice(
+        // Get the sender information
+        AdHocDevice device = AdHocDevice(
           label: header.label,
           name: header.name,
           mac: header.mac,
           type: header.deviceType
         );
 
-        eventCtrl.add(AdHocEvent(DATA_RECEIVED, [adHocDevice, message.pdu]));
+        // Notify upper layer of a message received that contains data
+        eventCtrl.add(AdHocEvent(DATA_RECEIVED, [device, message.pdu]));
         break;
 
       default:
+        // Notify upper layer of a message received
         eventCtrl.add(AdHocEvent(MESSAGE_EVENT, message));
         break;
     }
