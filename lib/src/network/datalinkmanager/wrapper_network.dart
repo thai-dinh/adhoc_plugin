@@ -23,21 +23,20 @@ abstract class WrapperNetwork {
 
   bool? enabled;
   bool? connectionFlooding;
-  late bool discoveryCompleted;
   int? type;
   int? attempts;
   int? timeOut;
   String? ownLabel;
   String? ownName;
   String? ownMac;
-  late Neighbors neighbors;
   ServiceServer? serviceServer;
+  HashSet<AdHocDevice>? setRemoteDevices;
+
+  late bool discoveryCompleted;
+  late Neighbors neighbors;
   late HashMap<String?, NetworkManager> mapAddrNetwork;
   late HashMap<String?, AdHocDevice> mapMacDevices;
-
-  HashSet<AdHocDevice>? setRemoteDevices;
   late Set<String?> setFloodEvents;
-
   late StreamController<DiscoveryEvent> discoveryCtrl;
   late StreamController<AdHocEvent> eventCtrl;
 

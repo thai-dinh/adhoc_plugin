@@ -9,8 +9,8 @@ abstract class ServiceClient extends Service {
   static const String TAG = "[ServiceClient]";
 
   int? _attempts;
-  late int _backOffTime;
   int? _timeOut;
+  late int _backOffTime;
 
   ServiceClient(
     bool verbose, this._attempts, this._timeOut,

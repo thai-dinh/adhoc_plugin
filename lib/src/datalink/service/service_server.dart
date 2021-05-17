@@ -9,7 +9,7 @@ abstract class ServiceServer extends Service {
   List<String>? _activeConnections;
 
   ServiceServer(bool verbose) : super(verbose, STATE_NONE) {
-    _activeConnections = List.empty(growable: true);
+    this._activeConnections = List.empty(growable: true);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

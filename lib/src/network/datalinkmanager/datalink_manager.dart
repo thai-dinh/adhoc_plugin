@@ -16,8 +16,8 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {
-  late List<WrapperNetwork?> _wrappers;
   HashMap<String, AdHocDevice>? _mapAddressDevice;
+  late List<WrapperNetwork?> _wrappers;
   late StreamController<DiscoveryEvent> _discoveryCtrl;
   late StreamController<AdHocEvent> _eventCtrl;
 

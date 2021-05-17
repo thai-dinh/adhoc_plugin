@@ -10,9 +10,9 @@ class AodvHelper {
 
   final bool _verbose;
 
+  int? _rreqId;
   late RoutingTable _routingTable;
   late HashSet<String> _entryBroadcast;
-  int? _rreqId;
 
   AodvHelper(this._verbose) {
     this._routingTable = RoutingTable(_verbose);

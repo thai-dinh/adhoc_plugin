@@ -27,13 +27,13 @@ class WrapperWifi extends WrapperNetwork {
   int? _serverPort;
   String? _ownIpAddress;
   String? _groupOwnerAddr;
-  late bool _isDiscovering;
   bool? _isGroupOwner;
+  WifiAdHocManager? _wifiManager;
+  late bool _isDiscovering;
   late bool _isListening;
   late bool _isConnecting;
   late HashMap<String?, String?> _mapAddrMac;
   late StreamSubscription<DiscoveryEvent> _discoverySub;
-  WifiAdHocManager? _wifiManager;
 
   WrapperWifi(
     bool verbose, Config config, HashMap<String, AdHocDevice>? mapMacDevices

@@ -1,8 +1,7 @@
 // Constant for the message digest (hash) algorithm
 const DIGEST_IDENTIFIER = '0609608648016503040201';
 
-// Constants for miscelleneous tasks
-const MAX_SINT_VAL = 4294967296;  // Max signed integer value
+// Constant for isolates
 const NB_ISOLATE   = 2;           // Number of isolates for encryption/decryption
 
 // Constants
@@ -32,3 +31,4 @@ const GROUP_FORMATION_REP = 313;  // Group creation information exchange reply
 const GROUP_JOIN          = 314;  // Group join request
 const GROUP_LEAVE         = 315;  // Group leave request
 const GROUP_ERROR         = 316;  // Group processing error
+const GROUP_MESSAGE       = 317;  // Group message tag

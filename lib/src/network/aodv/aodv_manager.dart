@@ -27,16 +27,16 @@ class AodvManager {
 
   final bool _verbose;
 
-  late AodvHelper _aodvHelper;
-  late HashMap<String?, int?> _mapDestSequenceNumber;
-  late StreamController<AdHocEvent> _eventCtrl;
-
   String? _ownMac;
   String? _ownName;
   String? _ownLabel;
   int? _ownSequenceNum;
   DataLinkManager? _datalinkManager;
   MessageAdHoc? _dataMessage;
+
+  late AodvHelper _aodvHelper;
+  late HashMap<String?, int?> _mapDestSequenceNumber;
+  late StreamController<AdHocEvent> _eventCtrl;
 
   AodvManager(this._verbose, Config config) {
     this._aodvHelper = AodvHelper(_verbose);

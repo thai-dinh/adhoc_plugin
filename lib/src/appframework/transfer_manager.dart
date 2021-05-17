@@ -12,8 +12,8 @@ import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
 
 class TransferManager {
   bool _verbose;
-  late SecureDataManager _secureDataManager;
   DataLinkManager? _datalinkManager;
+  late SecureDataManager _secureDataManager;
 
   TransferManager(this._verbose, {Config? config}) {
     this._secureDataManager = SecureDataManager(_verbose, config == null ? Config() : config);

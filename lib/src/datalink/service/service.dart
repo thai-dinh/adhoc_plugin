@@ -18,7 +18,7 @@ abstract class Service {
   late StreamController<AdHocEvent> controller;
 
   Service(this.verbose, this._state) {
-    controller = StreamController<AdHocEvent>.broadcast();
+    this.controller = StreamController<AdHocEvent>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

@@ -11,9 +11,9 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
 
 
 class WifiClient extends ServiceClient {
-  late Socket _socket;
   String? _serverIp;
   int? _port;
+  late Socket _socket;
 
   WifiClient(
     bool verbose, this._port, this._serverIp, int? attempts, int? timeOut,

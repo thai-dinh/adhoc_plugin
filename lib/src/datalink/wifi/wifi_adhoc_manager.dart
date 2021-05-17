@@ -17,9 +17,9 @@ class WifiAdHocManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   bool _verbose;
+  HashMap<String?, WifiAdHocDevice>? _mapMacDevice;
   late bool _isDiscovering;
   late bool _isPaused;
-  HashMap<String?, WifiAdHocDevice>? _mapMacDevice;
   late StreamController<DiscoveryEvent> _discoveryCtrl;
   late StreamSubscription<List<WifiP2pDevice>> _discoverySub;
   late WifiP2p _wifiP2p;

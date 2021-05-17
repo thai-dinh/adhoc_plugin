@@ -6,6 +6,7 @@ import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
+import 'package:adhoc_plugin/src/network/aodv/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/secure_data/constants.dart';
@@ -73,6 +74,14 @@ class SecureGroupController {
     
   }
 
+  void sendMessageToGroup(Object? data) {
+    // Encrypt data
+    SecureData _data = SecureData(GROUP_MESSAGE, data);
+
+    for (final String? label in _membersLabel)
+      _aodvManager!.sendMessageTo(_data, label);
+  }
+
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
@@ -90,10 +99,6 @@ class SecureGroupController {
     for (final String? label in _membersLabel)
       if (label != _ownLabel)
         _aodvManager!.sendMessageTo(message, label);
-
-    print('_createGroupExpired');
-    print(_DHShares);
-    print(_CRTShares);
   }
 
   int _computeDHShare() {
@@ -129,21 +134,17 @@ class SecureGroupController {
     while (CRTSharej < 0)
       CRTSharej += (mj * pj);
 
-    print('_computeCRTShare');
-    print(_DHShares);
-    print(_CRTShares);
     return CRTSharej;
   }
 
   void _computeGroupKey() async {
-    print('_computeGroupKey');
     /* Step 6 */
     List<int> gk = List.empty(growable: true)..add(_CRTShares[_ownLabel]!);
     for (final String? label in _CRTShares.keys) {
       if (label != _ownLabel)
         gk.add(_CRTShares[label]! % _DHShares[label]!);
     }
-    print('GroupKey: $gk');
+
     _groupKey = SecretKey(gk);
   }
 
@@ -163,8 +164,6 @@ class SecureGroupController {
   }
 
   void _processDataReceived(AdHocEvent event) {
-    print('_processDataReceived');
-    print(event.payload);
     AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     SecureData pdu = SecureData.fromJson((event.payload as List<dynamic>)[1] as Map<String, dynamic>);
 
@@ -189,16 +188,9 @@ class SecureGroupController {
         /* Step 1. */
         if (data[0] == LEADER) {
           _membersLabel.addAll((data[1] as List<dynamic>).cast<String>());
-          print('Label');
-          print(_membersLabel);
-          print(data[1]);
 
           _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare()); // DH_M
           _DHShares.putIfAbsent(sender.label, () => data[2] as int); // DH_L
-          _CRTShares.putIfAbsent( // CRT_M->L
-            sender.label, 
-            () => _computeCRTShare(sender.label!, _DHShares[sender.label]!), 
-          );
 
           for (final String? label in _membersLabel) {
             if (label != _ownLabel) {
@@ -208,23 +200,14 @@ class SecureGroupController {
             }
           }
 
-          SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
+          // CRT_M->L
+          SecureData reply = SecureData(GROUP_FORMATION_REP, _computeCRTShare(sender.label!, _DHShares[sender.label]!));
           _aodvManager!.sendMessageTo(reply, sender.label);
-
-          print('GROUP_FORMATION_REQ: LEADER RESPONSE');
-          print(_DHShares);
-          print(_CRTShares);
         } else {
           _DHShares.putIfAbsent(sender.label, () => data[1] as int); // DH_M
-          _CRTShares.putIfAbsent(sender.label, () => _computeCRTShare(sender.label!, data[1])); // CRT_L->M
 
-          SecureData reply = SecureData(GROUP_FORMATION_REP, _CRTShares[sender.label]);
+          SecureData reply = SecureData(GROUP_FORMATION_REP, _computeCRTShare(sender.label!, data[1])); // CRT_L->M
           _aodvManager!.sendMessageTo(reply, sender.label);
-
-          print('REQ: $_computed & ${_CRTShares.length}');
-          print('GROUP_FORMATION_REQ: MEMBER RESPONSE');
-          print(_DHShares);
-          print(_CRTShares);
         }
         break;
 
@@ -233,10 +216,8 @@ class SecureGroupController {
         _CRTShares.putIfAbsent(sender.label, () => pdu.payload as int);
         _computed = _computed! + 1;
 
-        print('REP: $_computed & ${_CRTShares.length}');
-        print('GROUP_FORMATION_REP');
-        print(_DHShares);
-        print(_CRTShares);
+        if (_computed == _CRTShares.length) 
+          _computeGroupKey();
         break;
 
       case GROUP_JOIN:
@@ -246,6 +227,10 @@ class SecureGroupController {
 
       case GROUP_LEAVE:
         
+
+        break;
+
+      case GROUP_MESSAGE:
 
         break;
 
