@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
@@ -28,25 +30,34 @@ class SecureGroupController {
   int? _p;
   /// Generator of the finite cyclic group of order [_p]
   int? _g;
-  /// Group member's CRT share received
-  int? _computed;
+  /// Private Diffie-Hellman share
+  int? _x;
+  /// Private key share
+  int? _k;
+  /// Group member's key share recovered
+  int? _recovered;
+  /// Group key sum value
+  int? _groupKeySum;
   /// Secret group key
   SecretKey? _groupKey;
   /// Map containing the Diffie-Hellman share of each member
-  late HashMap<String?, int> _DHShares;
+  late HashMap<String, int> _DHShare;
+  /// Map containing the member share of each member
+  late HashMap<String, int> _memberShare;
   /// Map containing the Chinese Remainder Theorem solution of each member
-  late HashMap<String?, int> _CRTShares;
-  /// List containing members label
-  late List<String?> _membersLabel;
+  late HashMap<String, int> _CRTShare;
+  /// List containing the group member label
+  late List<String> _memberLabel;
 
   /// Default constructor
   SecureGroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
     this._ownLabel = _aodvManager!.label;
     this._expiryTime = config.expiryTime;
-    this._computed = 0;
-    this._DHShares = HashMap();
-    this._CRTShares = HashMap();
-    this._membersLabel = List.empty(growable: true);
+    this._recovered = 0;
+    this._DHShare = HashMap();
+    this._memberShare = HashMap();
+    this._CRTShare = HashMap();
+    this._memberLabel = List.empty(growable: true);
     this._initialize();
   }
 
@@ -59,7 +70,7 @@ class SecureGroupController {
     );
 
     _datalinkManager!.broadcastObject(message);
-    _membersLabel.add(_ownLabel);
+    _memberLabel.add(_ownLabel!);
 
     Timer(Duration(seconds: _expiryTime!), _createSecureGroupExpired);
   }
@@ -74,11 +85,25 @@ class SecureGroupController {
     
   }
 
-  void sendMessageToGroup(Object? data) {
+  void sendMessageToGroup(Object? data) async {
     // Encrypt data
-    SecureData _data = SecureData(GROUP_MESSAGE, data);
+    final AesCbc algorithm = AesCbc.with128bits(
+      macAlgorithm: Hmac.sha256()
+    );
 
-    for (final String? label in _membersLabel)
+    final SecretBox secretBox = await algorithm.encrypt(
+      Utf8Encoder().convert(JsonCodec().encode(data)), 
+      secretKey: _groupKey!,
+    );
+
+    List<List<int>> encryptedData = List.empty(growable: true);
+    encryptedData.add(secretBox.cipherText);
+    encryptedData.add(secretBox.nonce);
+    encryptedData.add(secretBox.mac.bytes);
+
+    SecureData _data = SecureData(GROUP_MESSAGE, encryptedData);
+
+    for (final String? label in _memberLabel)
       _aodvManager!.sendMessageTo(_data, label);
   }
 
@@ -92,60 +117,54 @@ class SecureGroupController {
     });
   }
 
-  void _createSecureGroupExpired() {
-    _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare()); // DH_L
-    SecureData message = SecureData(GROUP_FORMATION_REQ, [LEADER, _membersLabel, _DHShares[_ownLabel]]);
+  int _computeDHShare() {
+    _x = Random().nextInt(_p!);
+    return pow(_g!, _x!).toInt() % _p!;
+  }
 
-    for (final String? label in _membersLabel)
+  void _createSecureGroupExpired() {
+    _DHShare.putIfAbsent(_ownLabel!, () => _computeDHShare());
+    SecureData message = SecureData(GROUP_FORMATION_REQ, [LEADER, _memberLabel, _DHShare[_ownLabel]!]);
+    for (final String label in _memberLabel)
       if (label != _ownLabel)
         _aodvManager!.sendMessageTo(message, label);
   }
 
-  int _computeDHShare() {
-    return pow(_g!, Random().nextInt(512)).toInt() % _p!;
+  int _computeMemberShare(String label, int yj) {
+    /* Step 3 */
+    int mij = pow(yj, _x!).toInt() % _p!;
+    mij = mij > (_p!/2).ceil() ? mij : _p! - mij;
+    _memberShare.putIfAbsent(label, () => mij);
+    return mij;
   }
 
-  int _computeCRTShare(String label, int yj) {
-    int? pj, keyShare, once;
-
-    _computed = _computed! + 1;
-
-    /* Step 3 */
-    int mj = (pow(yj, _DHShares[_ownLabel]!) as int) % _p!;
-    mj = mj > _p!/2 ? mj : _p! - mj;
-    _DHShares[label] = mj;
+  int _computeCRTShare(String label, int yj, int mij) {
+    int? pij, di, _min = MAX_SINT_VAL;
 
     /* Step 4 */
     while (true) {
-      if (mj.gcd(pj = Random().nextInt(2048)) == 1)
+      pij = Random().nextInt(2048);
+      if (mij.gcd(pij) == 1)
         break;
     }
 
     /* Step 5 */
-    keyShare = Random().nextInt(MAX_SINT_VAL);
-    _CRTShares[_ownLabel] = keyShare;
+    for (final int value in _memberShare.values)
+      _min = min(_min!, value);
+    _min = max(_min!, 1);
 
-    once = keyShare;
-    while (keyShare == once)
-      once = Random().nextInt(MAX_SINT_VAL);
+    _k = Random().nextInt(_min);
 
-    List<int?> coefficients = _solveBezoutIdentity(mj, pj);
-    int CRTSharej = (keyShare * coefficients[1]! * pj) + (once! * coefficients[0]! * mj);
-    while (CRTSharej < 0)
-      CRTSharej += (mj * pj);
+    di = _k;
+    while (_k == di)
+      di = Random().nextInt(MAX_SINT_VAL);
 
-    return CRTSharej;
-  }
+    List<int?> coefficients = _solveBezoutIdentity(mij, pij);
+    int crtij = (_k! * coefficients[1]! * pij) + (di! * coefficients[0]! * mij);
+    while (crtij < 0)
+      crtij += (mij * pij);
 
-  void _computeGroupKey() async {
-    /* Step 6 */
-    List<int> gk = List.empty(growable: true)..add(_CRTShares[_ownLabel]!);
-    for (final String? label in _CRTShares.keys) {
-      if (label != _ownLabel)
-        gk.add(_CRTShares[label]! % _DHShares[label]!);
-    }
-
-    _groupKey = SecretKey(gk);
+    return crtij;
   }
 
   List<int?> _solveBezoutIdentity(int? a, int? b) {
@@ -163,7 +182,33 @@ class SecureGroupController {
     return List.empty(growable: true)..add(U)..add(V);
   }
 
-  void _processDataReceived(AdHocEvent event) {
+  void _computeGroupKey(int type, [int? kj]) async {
+    /* Step 6 */
+    _groupKeySum = _k!;
+    switch (type) {
+      case FORMATION:
+        for (final String? label in _CRTShare.keys)
+          _groupKeySum = _groupKeySum! + (_CRTShare[label]! % _memberShare[label]!);
+        break;
+
+      case JOIN:
+        final Sha256 algorithm = Sha256();
+        final Hash hash = await algorithm.hash([_groupKeySum!]);
+        _groupKeySum = _groupKeySum! + hash.bytes.reduce((a, b) => a + b);
+        break;
+
+      case LEAVE:
+        _groupKeySum = _groupKeySum! + kj!;
+        break;
+
+      default:
+    }
+
+    print('GroupKey: $_groupKeySum');
+    _groupKey = SecretKey([_groupKeySum!]);
+  }
+
+  void _processDataReceived(AdHocEvent event) async {
     AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     SecureData pdu = SecureData.fromJson((event.payload as List<dynamic>)[1] as Map<String, dynamic>);
 
@@ -179,7 +224,7 @@ class SecureGroupController {
         break;
 
       case GROUP_REPLY:
-        _membersLabel.add(sender.label);
+        _memberLabel.add(sender.label!);
         break;
 
       case GROUP_FORMATION_REQ:
@@ -187,51 +232,108 @@ class SecureGroupController {
 
         /* Step 1. */
         if (data[0] == LEADER) {
-          _membersLabel.addAll((data[1] as List<dynamic>).cast<String>());
+          _DHShare.putIfAbsent(_ownLabel!, () => _computeDHShare());
+          _DHShare.putIfAbsent(sender.label!, () => data[2] as int);
+          _memberLabel.addAll((data[1] as List<dynamic>).cast<String>());
 
-          _DHShares.putIfAbsent(_ownLabel, () => _computeDHShare()); // DH_M
-          _DHShares.putIfAbsent(sender.label, () => data[2] as int); // DH_L
-
-          for (final String? label in _membersLabel) {
+          for (final String label in _memberLabel) {
             if (label != _ownLabel) {
               /* Step 2. */
-              SecureData reply = SecureData(GROUP_FORMATION_REQ, [MEMBER, _DHShares[_ownLabel]]);
+              SecureData reply = SecureData(GROUP_FORMATION_REQ, [MEMBER, _DHShare[_ownLabel]]);
               _aodvManager!.sendMessageTo(reply, label);
             }
           }
 
-          // CRT_M->L
-          SecureData reply = SecureData(GROUP_FORMATION_REP, _computeCRTShare(sender.label!, _DHShares[sender.label]!));
+          SecureData reply = SecureData(
+            GROUP_FORMATION_REP, 
+            _computeCRTShare(
+              sender.label!, 
+              _DHShare[sender.label!]!, 
+              _computeMemberShare(sender.label!, _DHShare[sender.label!]!)
+            )
+          );
           _aodvManager!.sendMessageTo(reply, sender.label);
         } else {
-          _DHShares.putIfAbsent(sender.label, () => data[1] as int); // DH_M
-
-          SecureData reply = SecureData(GROUP_FORMATION_REP, _computeCRTShare(sender.label!, data[1])); // CRT_L->M
+          _DHShare.putIfAbsent(sender.label!, () => data[1] as int);
+          SecureData reply = SecureData(
+            GROUP_FORMATION_REP,
+            _computeCRTShare(sender.label!, data[1] as int, _computeMemberShare(sender.label!, data[1] as int))
+          );
           _aodvManager!.sendMessageTo(reply, sender.label);
         }
         break;
 
       case GROUP_FORMATION_REP:
-        // CRT_M->L
-        _CRTShares.putIfAbsent(sender.label, () => pdu.payload as int);
-        _computed = _computed! + 1;
-
-        if (_computed == _CRTShares.length) 
-          _computeGroupKey();
+        _CRTShare.putIfAbsent(sender.label!, () => pdu.payload as int);
+        _recovered = _recovered! + 1;
+        if (_recovered == _CRTShare.length) 
+          _computeGroupKey(FORMATION);
         break;
 
-      case GROUP_JOIN:
+      case GROUP_JOIN_REQ:
+        _memberLabel.add(sender.label!);
+        final Sha256 algorithm = Sha256();
+        final Hash hash = await algorithm.hash([_groupKeySum!]);
+        SecureData message = SecureData(
+          GROUP_JOIN_REP, [REQUEST, _memberLabel, hash.bytes.reduce((a, b) => a + b), _DHShare]
+        );
 
+        _aodvManager!.sendMessageTo(message, sender.label!);
+        break;
+
+      case GROUP_JOIN_REP:
+        List<dynamic> data = pdu.payload as List<dynamic>;
+
+        if (data[0] == REQUEST) {
+          _memberLabel.addAll(data[1]);
+          _groupKeySum = data[2];
+
+          (data[3] as Map<dynamic, dynamic>).cast<String, int>().forEach((key, value) {
+            _DHShare.putIfAbsent(key, () => value);
+          });
+
+          for (final String label in _memberLabel) {
+            if (label != _ownLabel) {
+              SecureData message = SecureData(GROUP_JOIN_REP, [REPLY, _computeDHShare()]);
+              _aodvManager!.sendMessageTo(message, label);
+              SecureData reply = SecureData(GROUP_FORMATION_REP, [MEMBER, _computeCRTShare(label, _DHShare[label]!, _computeMemberShare(label, _DHShare[label]!)), true]);
+              _aodvManager!.sendMessageTo(reply, label);
+            }
+          }
+        } else {
+          _memberShare.putIfAbsent(sender.label!, () => _computeMemberShare(sender.label!, data[1]));
+          // compute key when ?
+        }
+        break;
+
+      case GROUP_LEAVE_REQ:
 
         break;
 
-      case GROUP_LEAVE:
-        
+      case GROUP_LEAVE_REP:
 
         break;
 
       case GROUP_MESSAGE:
+        List<dynamic> data = pdu.payload as List<dynamic>;
 
+        final AesCbc algorithm = AesCbc.with128bits(
+          macAlgorithm: Hmac.sha256()
+        );
+
+        final Uint8List decrypted = Uint8List.fromList(
+          await algorithm.decrypt(
+            SecretBox(
+              (data[0] as List<dynamic>).cast<int>(),
+              nonce: (data[1] as List<dynamic>).cast<int>(), 
+              mac: Mac((data[2] as List<dynamic>).cast<int>()),
+            ),
+            secretKey: _groupKey!,
+          ),
+        );
+
+        dynamic _data = JsonCodec().decode(Utf8Decoder().convert(decrypted));
+        // Send through controller to application layer
         break;
 
       default:
