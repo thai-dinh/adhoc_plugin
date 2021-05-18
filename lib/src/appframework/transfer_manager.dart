@@ -28,7 +28,7 @@ class TransferManager {
 
   Stream<DiscoveryEvent> get discoveryStream => _secureDataManager.discoveryStream;
 
-/*------------------------------Crypto methods------------------------------*/
+/*-------------------------------Group methods--------------------------------*/
 
   void createGroup(int groupId) {
     _secureDataManager.groupController!.createSecureGroup();
@@ -40,6 +40,10 @@ class TransferManager {
 
   void leaveGroup() {
     _secureDataManager.groupController!.leaveSecureGroup();
+  }
+
+  void sendMessageToGroup(Object data) {
+    _secureDataManager.groupController!.sendMessageToGroup(data);
   }
 
 /*------------------------------Network methods------------------------------*/

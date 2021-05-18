@@ -87,6 +87,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
                     case MenuOptions.group:
                       _manager.createGroup(1);
+                      Future.delayed(Duration(seconds: 17), () => _manager.sendMessageToGroup('Hello'));
                       break;
                   }
                 },

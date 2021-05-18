@@ -23,6 +23,7 @@ class SecureGroupController {
   DataLinkManager? _datalinkManager;
   Stream<AdHocEvent> _eventStream;
   String? _ownLabel;
+  late StreamController<AdHocEvent> _eventCtrl;
 
   /// Time allowed for joining the group creation process
   int? _expiryTime;
@@ -52,6 +53,7 @@ class SecureGroupController {
   /// Default constructor
   SecureGroupController(this._aodvManager, this._datalinkManager, this._eventStream, Config config) {
     this._ownLabel = _aodvManager!.label;
+    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._expiryTime = config.expiryTime;
     this._recovered = 0;
     this._DHShare = HashMap();
@@ -60,6 +62,10 @@ class SecureGroupController {
     this._memberLabel = List.empty(growable: true);
     this._initialize();
   }
+
+/*------------------------------Getters & Setters-----------------------------*/
+
+  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -103,8 +109,9 @@ class SecureGroupController {
 
     SecureData _data = SecureData(GROUP_MESSAGE, encryptedData);
 
-    for (final String? label in _memberLabel)
-      _aodvManager!.sendMessageTo(_data, label);
+    for (final String label in _memberLabel)
+      if (label != _ownLabel)
+        _aodvManager!.sendMessageTo(_data, label);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -204,8 +211,12 @@ class SecureGroupController {
       default:
     }
 
+    List<int> key = List.empty(growable: true);
+    for (int i = 0; i < 16; i ++)
+      key.add(_groupKeySum!);
+
     print('GroupKey: $_groupKeySum');
-    _groupKey = SecretKey([_groupKeySum!]);
+    _groupKey = SecretKey(key);
   }
 
   void _processDataReceived(AdHocEvent event) async {
@@ -333,7 +344,8 @@ class SecureGroupController {
         );
 
         dynamic _data = JsonCodec().decode(Utf8Decoder().convert(decrypted));
-        // Send through controller to application layer
+        print(data);
+        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, _data]));
         break;
 
       default:
