@@ -22,13 +22,13 @@ class BleAdHocManager {
   static const EventChannel _eventChannel = const EventChannel(_eventName);
 
   bool _verbose;
-  late bool _isDiscovering;
-  late FlutterReactiveBle _reactiveBle;
   HashMap<String?, BleAdHocDevice>? _mapMacDevice;
-  late StreamController<DiscoveryEvent> _discoveryCtrl;
-  late StreamController<dynamic> _bondCtrl;
   StreamSubscription<DiscoveredDevice>? _discoverySub;
   StreamSubscription<BleStatus>? _statusSub;
+  late bool _isDiscovering;
+  late FlutterReactiveBle _reactiveBle;
+  late StreamController<DiscoveryEvent> _discoveryCtrl;
+  late StreamController<dynamic> _bondCtrl;
 
   /// Initialize a newly created BleAdHocManager with the operation being logged
   /// in the console if [_verbose] is true

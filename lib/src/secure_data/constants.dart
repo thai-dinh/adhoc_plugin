@@ -1,6 +1,4 @@
 // Constant for the message digest (hash) algorithm
-import 'package:adhoc_plugin/src/secure_data/request.dart';
-
 const DIGEST_IDENTIFIER = '0609608648016503040201';
 
 // Constant for isolates

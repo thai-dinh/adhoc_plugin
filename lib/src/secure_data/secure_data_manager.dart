@@ -33,7 +33,7 @@ class SecureDataManager {
     this._datalinkManager = _aodvManager!.dataLinkManager;
     this._repository = CertificateRepository();
     this._engine = CryptoEngine();
-    this._groupController = SecureGroupController(_aodvManager, _datalinkManager, _aodvManager!.eventStream, config);
+    this._groupController = SecureGroupController(_aodvManager!, _datalinkManager!, _aodvManager!.eventStream, config);
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
