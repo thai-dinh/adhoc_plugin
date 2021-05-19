@@ -116,18 +116,21 @@ class WrapperWifi extends WrapperNetwork {
   Future<HashMap<String, AdHocDevice>>? getPaired() => null;
 
   @override
-  Future<String?> getAdapterName() async {
-    return await _wifiManager!.adapterName;
+  Future<String> getAdapterName() async {
+    final String? name = await _wifiManager!.adapterName;
+    return name == null ? '' : name;
   }
 
   @override
-  Future<bool?> updateDeviceName(final String name) async {
-    return await _wifiManager!.updateDeviceName(name);
+  Future<bool> updateDeviceName(final String name) async {
+    final bool? result = await _wifiManager!.updateDeviceName(name);
+    return result == null ? false : result ;
   }
 
   @override
-  Future<bool?> resetDeviceName() async {
-    return await _wifiManager!.resetDeviceName();
+  Future<bool> resetDeviceName() async {
+    final bool? result = await _wifiManager!.resetDeviceName();
+    return result == null ? false : result ;
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -336,7 +339,7 @@ class WrapperWifi extends WrapperNetwork {
             label: header.label,
             name: header.name,
             mac: header.mac,
-            type: type!
+            type: type
           );
 
           controller.add(AdHocEvent(DISCONNECTION_EVENT, device));

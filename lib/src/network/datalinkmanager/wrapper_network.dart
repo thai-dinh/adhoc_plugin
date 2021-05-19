@@ -21,13 +21,13 @@ abstract class WrapperNetwork {
   final bool verbose;
 
   bool? flood;
-  int? type;
   int? timeOut;
   int? attempts;
   String? ownLabel;
   String? ownName;
   String? ownMac;
 
+  late int type;
   late bool enabled;
   late bool discoveryCompleted;
   late Neighbors neighbors;
@@ -50,6 +50,7 @@ abstract class WrapperNetwork {
     this.ownLabel = config.label;
     this.ownName = '';
     this.ownMac = '';
+    this.type = -1;
     this.enabled = false;
     this.discoveryCompleted = false;
     this.neighbors = Neighbors();
@@ -86,11 +87,11 @@ abstract class WrapperNetwork {
 
   Future<HashMap<String?, AdHocDevice>?>? getPaired();
 
-  Future<String?> getAdapterName();
+  Future<String> getAdapterName();
 
-  Future<bool?> updateDeviceName(String name);
+  Future<bool> updateDeviceName(String name);
 
-  Future<bool?> resetDeviceName();
+  Future<bool> resetDeviceName();
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -152,7 +153,7 @@ abstract class WrapperNetwork {
       address: header.address,
       name: header.name,
       mac: header.mac,
-      type: type!
+      type: type
     );
 
     mapMacDevices.putIfAbsent(header.mac!, () => device);

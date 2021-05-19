@@ -16,7 +16,9 @@ class AdHocDevice {
 
   late int _type;
 
-  /// Creates an [AdHocDevice] object.
+  /// Constructor
+  /// 
+  /// Creates an [AdHocDevice] object with the given parameters.
   ///
   /// If [label] is given, it is used to identify the remote device.
   /// 
@@ -32,6 +34,8 @@ class AdHocDevice {
     this._type = type;
   }
 
+  /// Constructor from map
+  /// 
   /// Creates an [AdHocDevice] object from a JSON representation.
   factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
 

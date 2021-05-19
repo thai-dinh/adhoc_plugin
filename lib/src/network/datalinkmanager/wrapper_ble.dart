@@ -137,20 +137,23 @@ class WrapperBle extends WrapperNetwork {
 
   ///
   @override
-  Future<String?> getAdapterName() async {
-    return await _bleAdHocManager!.adapterName;
+  Future<String> getAdapterName() async {
+    final String? name = await _bleAdHocManager!.adapterName;
+    return name == null ? '' : name;
   }
 
   ///
   @override
-  Future<bool?> updateDeviceName(String name) async {
-    return await _bleAdHocManager!.updateDeviceName(name);
+  Future<bool> updateDeviceName(String name) async {
+    final bool? result = await _bleAdHocManager!.updateDeviceName(name);
+    return result == null ? false : result;
   }
 
   ///
   @override
-  Future<bool?> resetDeviceName() async {
-    return await _bleAdHocManager!.resetDeviceName();
+  Future<bool> resetDeviceName() async {
+    final bool? result = await _bleAdHocManager!.resetDeviceName();
+    return result == null ? false : result;
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -358,7 +361,7 @@ class WrapperBle extends WrapperNetwork {
             label: header.label,
             name: header.name,
             mac: header.mac,
-            type: type!
+            type: type
           );
 
           // Notify upper layer of a remote connection closed

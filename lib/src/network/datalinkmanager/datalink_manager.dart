@@ -15,13 +15,14 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {
-  late String label;
+  late String _ownLabel;
   late List<WrapperNetwork?> _wrappers;
   late HashMap<String?, AdHocDevice?> _mapAddressDevice;
   late StreamController<AdHocEvent> _controller;
 
   DataLinkManager(bool verbose, Config config) {
-    this.label = config.label;
+    this._ownLabel = config.label;
+    this._mapAddressDevice = HashMap();
     this._wrappers = List.filled(NB_WRAPPERS, null);
     this._wrappers[BLE] = WrapperBle(verbose, config, _mapAddressDevice);
     this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddressDevice);
@@ -61,7 +62,7 @@ class DataLinkManager {
 
   void enableAll() {
     for (WrapperNetwork? wrapper in _wrappers)
-      enable(3600, wrapper!.type!);
+      enable(3600, wrapper!.type);
   }
 
   void disable(int type) {
@@ -74,7 +75,7 @@ class DataLinkManager {
   void disableAll() {
     for (WrapperNetwork? wrapper in _wrappers)
       if (wrapper!.enabled)
-        disable(wrapper.type!);
+        disable(wrapper.type);
   }
 
   void discovery() {
@@ -147,7 +148,7 @@ class DataLinkManager {
       if (wrapper!.enabled) {
         Header header = Header(
           messageType: BROADCAST,
-          label: label,
+          label: _ownLabel,
           name: await wrapper.getAdapterName(),
           deviceType: wrapper.type,
         );
@@ -172,7 +173,7 @@ class DataLinkManager {
       if (wrapper!.enabled) {
         Header header = Header(
           messageType: BROADCAST,
-          label: label,
+          label: _ownLabel,
           name: await wrapper.getAdapterName(),
           deviceType: wrapper.type,
         );
@@ -210,30 +211,27 @@ class DataLinkManager {
 
   bool? isEnabled(int type) => _wrappers[type]!.enabled;
 
-  Future<String?> getAdapterName(int type) async {
+  Future<String> getAdapterName(int type) async {
     if (_wrappers[type]!.enabled)
       return await _wrappers[type]!.getAdapterName();
-    return null;
+    return '';
   }
 
-  Future<HashMap<int?, String>> getActifAdapterNames() async {
-    HashMap<int?, String> adapterNames = HashMap();
+  Future<HashMap<int, String>> getActifAdapterNames() async {
+    HashMap<int, String> adapterNames = HashMap();
     for (WrapperNetwork? wrapper in _wrappers) {
-      String? name = await getAdapterName(wrapper!.type!);
-      if (name != null)
-        adapterNames.putIfAbsent(wrapper.type, () => name);
+      String name = await getAdapterName(wrapper!.type);
+      adapterNames.putIfAbsent(wrapper.type, () => name);
     }
 
     return adapterNames;
   }
 
-  Future<bool?> updateAdapterName(int type, String newName) async {
+  Future<bool> updateAdapterName(int type, String newName) async {
     if (_wrappers[type]!.enabled) {
       return await _wrappers[type]!.updateDeviceName(newName);
     } else {
-      throw DeviceFailureException(
-        _typeString(type) + ' adapter is not enabled'
-      );
+      throw DeviceFailureException('${_typeString(type)} adapter is not enabled');
     }
   }
 
@@ -241,7 +239,7 @@ class DataLinkManager {
     if (_wrappers[type]!.enabled) {
       _wrappers[type]!.resetDeviceName();
     } else {
-      throw DeviceFailureException(_typeString(type) + ' adapter is not enabled');
+      throw DeviceFailureException('${_typeString(type)} adapter is not enabled');
     }
   }
 

@@ -41,9 +41,9 @@ class SecureDataManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  SecureGroupController? get groupController => _groupController;
+  SecureGroupController get groupController => _groupController;
 
-  DataLinkManager? get datalinkManager => _datalinkManager;
+  DataLinkManager get datalinkManager => _datalinkManager;
 
   List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
 

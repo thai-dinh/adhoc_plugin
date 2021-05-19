@@ -10,13 +10,14 @@ import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
 
 
 class TransferManager {
-  bool _verbose;
+  final bool _verbose;
+
   late DataLinkManager _datalinkManager;
   late SecureDataManager _securityManager;
 
   TransferManager(this._verbose, {Config? config}) {
     this._securityManager = SecureDataManager(_verbose, config == null ? Config() : config);
-    this._datalinkManager = _securityManager.datalinkManager!;
+    this._datalinkManager = _securityManager.datalinkManager;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -28,19 +29,31 @@ class TransferManager {
 /*-------------------------------Group methods--------------------------------*/
 
   void createGroup(int groupId) {
-    _securityManager.groupController!.createSecureGroup();
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    _securityManager.groupController.createSecureGroup();
   }
 
   void joinGroup(int groupId) {
-    _securityManager.groupController!.joinSecureGroup();
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    _securityManager.groupController.joinSecureGroup();
   }
 
   void leaveGroup() {
-    _securityManager.groupController!.leaveSecureGroup();
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    _securityManager.groupController.leaveSecureGroup();
   }
 
   void sendMessageToGroup(Object data) {
-    _securityManager.groupController!.sendMessageToGroup(data);
+    if (_datalinkManager.checkState() == 0)
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+
+    _securityManager.groupController.sendMessageToGroup(data);
   }
 
 /*------------------------------Network methods------------------------------*/
@@ -118,15 +131,15 @@ class TransferManager {
     _datalinkManager.enableAll();
   }
 
-  Future<String?> getAdapterName(int type) async {
+  Future<String> getAdapterName(int type) async {
     return _datalinkManager.getAdapterName(type);
   }
 
-  Future<HashMap<int?, String>> getActifAdapterNames() async {
+  Future<HashMap<int, String>> getActifAdapterNames() async {
     return _datalinkManager.getActifAdapterNames();
   }
 
-  Future<bool?> updateAdapterName(int type, String newName) async {
+  Future<bool> updateAdapterName(int type, String newName) async {
     return _datalinkManager.updateAdapterName(type, newName);
   }
 
