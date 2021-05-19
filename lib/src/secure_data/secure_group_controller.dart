@@ -86,12 +86,24 @@ class SecureGroupController {
 
   /// Join an existing secure group
   void joinSecureGroup() {
-    // Send GROUP_JOIN message
+    SecureData message = SecureData(GROUP_JOIN_REQ, []);
+    _datalinkManager.broadcastObject(message);
   }
 
   /// Leave an existing secure group
   void leaveSecureGroup() {
-    // Send GROUP_LEAVE message
+    SecureData message = SecureData(GROUP_LEAVE_REQ, _memberLabel.first);
+    for (final String? label in _memberLabel) {
+      if (label! != _ownLabel)
+        _aodvManager.sendMessageTo(message, label);
+    }
+
+    _p = _g = _x = _k = _groupKeySum = BigInt.zero;
+    _groupKey = null;
+    _memberLabel.clear();
+    _memberShare.clear();
+    _DHShare.clear();
+    _CRTShare.clear();
   }
 
   void sendMessageToGroup(Object? data) async {
@@ -167,8 +179,6 @@ class SecureGroupController {
       if (mij!.gcd(pij) == BigInt.one)
         break;
     }
-    if (pij == BigInt.zero)
-      pij = BigInt.one;
 
     // Step 5.
     // Choose random k_i such that k_i < min(m_ij) , for all j (1 < j < n)
@@ -378,11 +388,26 @@ class SecureGroupController {
         break;
 
       case GROUP_LEAVE_REQ:
+        _memberLabel.remove(senderLabel);
+        _memberShare.remove(senderLabel);
+        _DHShare.remove(senderLabel);
+        _CRTShare.remove(senderLabel);
 
+        if (pdu.payload as String == _ownLabel) {
+          for (final String? label in _memberLabel) {
+            BigInt crtij = _computeCRTShare(label, _DHShare[label], _memberShare[label]);
+            SecureData reply = SecureData(GROUP_LEAVE_REP, crtij.toString());
+
+            _aodvManager.sendMessageTo(reply, label);
+          }
+
+          _computeGroupKey(LEAVE);
+        }
         break;
 
       case GROUP_LEAVE_REP:
-
+        _CRTShare.update(senderLabel, (value) => BigInt.parse(pdu.payload as String));
+        _computeGroupKey(LEAVE);
         break;
 
       case GROUP_MESSAGE:
