@@ -25,21 +25,25 @@ const HIGH = 2500;
 const WIFI = 0;
 const BLE  = 1;
 
+// Constants for notification with regards to the technology
+const WIFI_READY = WIFI;
+const BLE_READY = BLE;
+
 // Constants indicating the current connection state of the node
-const STATE_NONE       = 0;        // No connection
-const STATE_CONNECTED  = 1;        // Connected to a remote node
-const STATE_CONNECTING = 2;        // Initiating a connection to a remote node
-const STATE_LISTENING  = 3;        // Listening for incoming connections
+const STATE_NONE       = 100;        // No connection
+const STATE_CONNECTED  = 101;        // Connected to a remote node
+const STATE_CONNECTING = 102;        // Initiating a connection to a remote node
+const STATE_LISTENING  = 103;        // Listening for incoming connections
 
 // Constants for notifying discovery event
-const DISCOVERY_START   = 4;       // Start discovery process
-const DISCOVERY_END     = 5;       // End discovery process
-const DEVICE_DISCOVERED = 6;       // Remote device discovered
+const DISCOVERY_START   = 104;       // Start discovery process
+const DISCOVERY_END     = 105;       // End discovery process
+const DEVICE_DISCOVERED = 106;       // Remote device discovered
 
 // Constant for message event
-const MESSAGE_RECEIVED = 7;        // Message received from peers
+const MESSAGE_RECEIVED = 107;        // Message received from peers
 
 // Constants for connection event
-const CONNECTION_PERFORMED = 8;    // Connection performed
-const CONNECTION_ABORTED   = 9;    // Connection aborted
-const CONNECTION_EXCEPTION = 10;   // Connection exception raised
+const CONNECTION_PERFORMED = 108;    // Connection performed
+const CONNECTION_ABORTED   = 109;    // Connection aborted
+const CONNECTION_EXCEPTION = 110;    // Connection exception raised

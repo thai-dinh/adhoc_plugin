@@ -47,7 +47,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   void initState() {
     super.initState();
     // _manager.enableBle(3600);
-    _manager.discoveryStream.listen(_processDiscoveryEvent);
     _manager.eventStream.listen(_processAdHocEvent);
   }
 
@@ -217,18 +216,16 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     );
   }
 
-  void _processDiscoveryEvent(DiscoveryEvent event) {
-    if (event.type == DISCOVERY_END) {
-      setState(() {
-        (event.payload as Map).entries.forEach(
-          (element) => _discovered.add(element.value)
-        );
-      });
-    }
-  }
-
   void _processAdHocEvent(AdHocEvent event) {
     switch (event.type) {
+      case DISCOVERY_END:
+        setState(() {
+          (event.payload as Map).entries.forEach(
+            (element) => _discovered.add(element.value)
+          );
+        });
+        break;
+
       case CONNECTION_EVENT:
         _processConnection(event.payload as AdHocDevice);
         break;

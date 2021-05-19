@@ -8,9 +8,9 @@ part of 'rerr.dart';
 
 RERR _$RERRFromJson(Map<String, dynamic> json) {
   return RERR(
-    type: json['type'] as int?,
-    unreachableDestAddress: json['unreachableDestAddress'] as String?,
-    unreachableDestSeqNum: json['unreachableDestSeqNum'] as int?,
+    json['type'] as int,
+    json['unreachableDestAddress'] as String,
+    json['unreachableDestSeqNum'] as int,
   );
 }
 

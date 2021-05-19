@@ -6,13 +6,12 @@ part 'rerr.g.dart';
 
 @JsonSerializable()
 class RERR extends AodvMessage {
-  String? _unreachableDestAddress;
-  int? _unreachableDestSeqNum;
+  late String _unreachableDestAddress;
+  late int _unreachableDestSeqNum;
 
-  RERR({
-    int? type, String? unreachableDestAddress = '', 
-    int? unreachableDestSeqNum = 0
-  }) : super(type) {
+  RERR(
+    int type, String unreachableDestAddress, int unreachableDestSeqNum
+  ) : super(type) {
     this._unreachableDestAddress = unreachableDestAddress;
     this._unreachableDestSeqNum = unreachableDestSeqNum;
   }
@@ -21,9 +20,9 @@ class RERR extends AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  String? get unreachableDestAddress => _unreachableDestAddress;
+  String get unreachableDestAddress => _unreachableDestAddress;
 
-  int? get unreachableDestSeqNum => _unreachableDestSeqNum;
+  int get unreachableDestSeqNum => _unreachableDestSeqNum;
 
 /*-------------------------------Public methods-------------------------------*/
 

@@ -52,7 +52,7 @@ class SecureGroupController {
   SecureGroupController(
     this._aodvManager, this._datalinkManager, this._eventStream, Config config
   ) {
-    this._ownLabel = _aodvManager.label!;
+    this._ownLabel = _aodvManager.label;
     this._eventCtrl = StreamController<AdHocEvent>.broadcast();
     this._expiryTime = config.expiryTime;
     this._recovered = 0;
@@ -95,7 +95,7 @@ class SecureGroupController {
     SecureData message = SecureData(GROUP_LEAVE_REQ, _memberLabel.first);
     for (final String? label in _memberLabel) {
       if (label! != _ownLabel)
-        _aodvManager.sendMessageTo(message, label);
+        _aodvManager.sendMessageTo(label, message);
     }
 
     _p = _g = _x = _k = _groupKeySum = BigInt.zero;
@@ -126,7 +126,7 @@ class SecureGroupController {
 
     for (final String? label in _memberLabel)
       if (label != _ownLabel)
-        _aodvManager.sendMessageTo(_data, label);
+        _aodvManager.sendMessageTo(label!, _data);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -157,7 +157,7 @@ class SecureGroupController {
 
     for (final String? label in _memberLabel)
       if (label != _ownLabel)
-        _aodvManager.sendMessageTo(message, label);
+        _aodvManager.sendMessageTo(label!, message);
   }
 
   BigInt _computeMemberShare(String? label, BigInt? yj) {
@@ -281,7 +281,7 @@ class SecureGroupController {
         _g = BigInt.parse(data[1] as String);
 
         SecureData reply = SecureData(GROUP_REPLY, []);
-        _aodvManager.sendMessageTo(reply, senderLabel);
+        _aodvManager.sendMessageTo(senderLabel, reply);
         break;
 
       case GROUP_REPLY:
@@ -309,7 +309,7 @@ class SecureGroupController {
                 GROUP_FORMATION_REQ, [MEMBER, _DHShare[_ownLabel].toString()]
               );
 
-              _aodvManager.sendMessageTo(reply, label);
+              _aodvManager.sendMessageTo(label!, reply);
             }
           }
         } else {
@@ -327,7 +327,7 @@ class SecureGroupController {
 
         // Compute crt_ij of group member
         SecureData reply = SecureData(GROUP_FORMATION_REP, crtij.toString());
-        _aodvManager.sendMessageTo(reply, sender.label);
+        _aodvManager.sendMessageTo(sender.label!, reply);
         break;
 
       case GROUP_FORMATION_REP:
@@ -347,7 +347,7 @@ class SecureGroupController {
           GROUP_JOIN_REP, [REQUEST, _memberLabel, hash.bytes.reduce((a, b) => a + b), _DHShare]
         );
 
-        _aodvManager.sendMessageTo(message, senderLabel);
+        _aodvManager.sendMessageTo(senderLabel, message);
         break;
 
       case GROUP_JOIN_REP:
@@ -368,7 +368,7 @@ class SecureGroupController {
           for (final String? label in _memberLabel) {
             if (label != _ownLabel) {
               SecureData message = SecureData(GROUP_JOIN_REP, [REPLY, yi.toString()]);
-              _aodvManager.sendMessageTo(message, label);
+              _aodvManager.sendMessageTo(label!, message);
 
               BigInt mij = _computeMemberShare(label, _DHShare[label]!);
               BigInt crtij = _computeCRTShare(label, _DHShare[label], mij);
@@ -376,7 +376,7 @@ class SecureGroupController {
                 GROUP_FORMATION_REP, [MEMBER, crtij.toString(), true]
               );
 
-              _aodvManager.sendMessageTo(reply, label);
+              _aodvManager.sendMessageTo(label, reply);
             }
           }
         } else {
@@ -398,7 +398,7 @@ class SecureGroupController {
             BigInt crtij = _computeCRTShare(label, _DHShare[label], _memberShare[label]);
             SecureData reply = SecureData(GROUP_LEAVE_REP, crtij.toString());
 
-            _aodvManager.sendMessageTo(reply, label);
+            _aodvManager.sendMessageTo(label!, reply);
           }
 
           _computeGroupKey(LEAVE);

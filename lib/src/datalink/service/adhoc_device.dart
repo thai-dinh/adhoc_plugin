@@ -8,44 +8,42 @@ part 'adhoc_device.g.dart';
 /// Bluetooth Low Energy, or both enabled.
 @JsonSerializable()
 class AdHocDevice {
-  bool? directedConnected;
-  String? label;
   String? address;
+
+  String? _label;
   String? _name;
   String? _mac;
-  int? _type;
+
+  late int _type;
 
   /// Creates an [AdHocDevice] object.
   ///
-  /// If [directedConnected] is false, it means that this device is not
-  /// connected via Wifi P2P and Bluetooth Low Energy at the same time
-  /// 
   /// If [label] is given, it is used to identify the remote device.
   /// 
   /// If [address] is given, it is either an UUID in case of Bluetooth Low 
   /// Energy, or an IPv4 address in case of Wifi P2P.
   AdHocDevice({
-    this.directedConnected = false, this.label = '', String? address = '', 
-    String? name, String? mac, int? type = 2,
+    String? label, String? address, String? name, String? mac, int type = -1,
   }) {
-    this.label = checkString(label);
     this.address = checkString(address);
+    this._label = checkString(label);
     this._name = checkString(name);
     this._mac = mac;
     this._type = type;
   }
 
   /// Creates an [AdHocDevice] object from a JSON representation.
-  factory AdHocDevice.fromJson(Map<String, dynamic> json) 
-    => _$AdHocDeviceFromJson(json);
+  factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
+
+  String? get label => _label;
 
   String? get name => _name;
 
   String? get mac => _mac;
 
-  int? get type => _type;
+  int get type => _type;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -61,7 +59,7 @@ class AdHocDevice {
   String _typeAsString() {
     switch (type) {
       case BLE:
-        return "BluetoothLE";
+        return "Ble";
       case WIFI:
         return "Wifi";
       default:
@@ -75,12 +73,11 @@ class AdHocDevice {
   @override
   String toString() {
     return 'AdHocDevice{' +
-              'label=$label' +
+              'label=$_label' +
               ', name=$_name' +
-              ', mac=$mac' +
+              ', mac=$_mac' +
               ', address=$address' +
               ', type=${_typeAsString()}' +
-              ', directedConnected=$directedConnected' +
            '}';
   }
 }

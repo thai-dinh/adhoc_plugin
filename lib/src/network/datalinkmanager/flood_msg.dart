@@ -9,39 +9,37 @@ part 'flood_msg.g.dart';
 @JsonSerializable()
 class FloodMsg {
   @_HashSetConverter()
-  HashSet<AdHocDevice>? adHocDevices;
+  HashSet<AdHocDevice?> devices;
   String? id;
 
-  FloodMsg([this.id, this.adHocDevices]);
+  FloodMsg(this.id, this.devices);
 
   factory FloodMsg.fromJson(Map<String, dynamic> json) => _$FloodMsgFromJson(json);
+
+/*-------------------------------Public methods-------------------------------*/
 
   Map<String, dynamic> toJson() => _$FloodMsgToJson(this);
 }
 
-class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>?, Map<String, dynamic>> {
+class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice?>, Map<String, dynamic>> {
   const _HashSetConverter();
 
   @override
-  HashSet<AdHocDevice>? fromJson(Map<String, dynamic> json) {
-    List<AdHocDevice> adHocDevices = List.empty(growable: true);
+  HashSet<AdHocDevice?> fromJson(Map<String, dynamic> json) {
+    List<AdHocDevice> devices = List.empty(growable: true);
     List<Map<String, dynamic>> list = 
       (json['devices'] as List<dynamic>).cast<Map<String, dynamic>>();
 
-    list.forEach((device) => adHocDevices.add(AdHocDevice.fromJson(device)));
+    list.forEach((device) => devices.add(AdHocDevice.fromJson(device)));
 
-    return HashSet.from(adHocDevices);
+    return HashSet.from(devices);
   }
 
   @override
-  Map<String, dynamic> toJson(HashSet<AdHocDevice>? devices) {
+  Map<String, dynamic> toJson(HashSet<AdHocDevice?> devices) {
     Map<String, dynamic> map = Map();
-    List<Map<String, dynamic>> list = List.empty(growable: true);
-    devices!.toList().forEach(
-      (device) => list.add(device.toJson())
-    );
 
-    map['devices'] = list;
+    map['devices'] = List.empty(growable: true)..addAll(devices);
 
     return map;
   }

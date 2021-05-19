@@ -6,7 +6,6 @@ import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
@@ -16,29 +15,26 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_wifi.dart';
 
 
 class DataLinkManager {
-  HashMap<String, AdHocDevice>? _mapAddressDevice;
+  late String label;
   late List<WrapperNetwork?> _wrappers;
-  late StreamController<DiscoveryEvent> _discoveryCtrl;
-  late StreamController<AdHocEvent> _eventCtrl;
-
-  String? label;
+  late HashMap<String?, AdHocDevice?> _mapAddressDevice;
+  late StreamController<AdHocEvent> _controller;
 
   DataLinkManager(bool verbose, Config config) {
-    this._mapAddressDevice = HashMap();
+    this.label = config.label;
     this._wrappers = List.filled(NB_WRAPPERS, null);
-    this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddressDevice);
     this._wrappers[BLE] = WrapperBle(verbose, config, _mapAddressDevice);
-    this._discoveryCtrl = StreamController<DiscoveryEvent>.broadcast();
-    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
+    this._wrappers[WIFI] = WrapperWifi(verbose, config, _mapAddressDevice);
+    this._mapAddressDevice = HashMap();
+    this._controller = StreamController<AdHocEvent>.broadcast();
     this._initialize();
     this.checkState();
-    this.label = config.label;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  List<AdHocDevice?> get directNeighbors {
-    List<AdHocDevice?> neighbors = List.empty(growable: true);
+  List<AdHocDevice> get directNeighbors {
+    List<AdHocDevice> neighbors = List.empty(growable: true);
 
     for (int i = 0; i < NB_WRAPPERS; i++)
       neighbors.addAll(_wrappers[i]!.directNeighbors);
@@ -46,16 +42,14 @@ class DataLinkManager {
     return neighbors;
   }
 
-  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
-
-  Stream<DiscoveryEvent> get discoveryStream => _discoveryCtrl.stream;
+  Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
   int checkState() {
     int enabled = 0;
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         enabled++;
 
     return enabled;
@@ -71,7 +65,7 @@ class DataLinkManager {
   }
 
   void disable(int type) {
-    if (_wrappers[type]!.enabled!) {
+    if (_wrappers[type]!.enabled) {
       _wrappers[type]!.stopListening();
       _wrappers[type]!.disable();
     }
@@ -79,7 +73,7 @@ class DataLinkManager {
 
   void disableAll() {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         disable(wrapper.type!);
   }
 
@@ -92,7 +86,7 @@ class DataLinkManager {
       _discovery();
     } else {
       for (WrapperNetwork? wrapper in _wrappers) {
-        if (wrapper!.enabled!) {
+        if (wrapper!.enabled) {
           wrapper.discovery();
         }
       }
@@ -113,13 +107,13 @@ class DataLinkManager {
 
   void stopListening() {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.stopListening();
   }
 
   void removeGroup() {
     WrapperWifi wrapperWifi = _wrappers[WIFI] as WrapperWifi;
-    if (wrapperWifi.enabled!) {
+    if (wrapperWifi.enabled) {
       wrapperWifi.removeGroup();
     } else {
       throw DeviceFailureException("Wifi is not enabled");
@@ -128,7 +122,7 @@ class DataLinkManager {
 
   bool? isWifiGroupOwner() {
     WrapperWifi wrapperWifi = _wrappers[WIFI] as WrapperWifi;
-    if (wrapperWifi.enabled!) {
+    if (wrapperWifi.enabled) {
       return wrapperWifi.isWifiGroupOwner();
     } else {
       throw DeviceFailureException("Wifi is not enabled");
@@ -137,20 +131,20 @@ class DataLinkManager {
 
   void sendMessage(MessageAdHoc? message, String? address) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.sendMessage(message, address);
   }
 
   void broadcast(MessageAdHoc message) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.broadcast(message);
   }
 
   Future<bool> broadcastObject(Object object) async {
     bool sent = false;
     for (WrapperNetwork? wrapper in _wrappers) {
-      if (wrapper!.enabled!) {
+      if (wrapper!.enabled) {
         Header header = Header(
           messageType: BROADCAST,
           label: label,
@@ -168,14 +162,14 @@ class DataLinkManager {
 
   void broadcastExcept(MessageAdHoc message, String? excludedAddress) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.broadcastExcept(message, excludedAddress);
   }
 
   Future<bool> broadcastObjectExcept(Object object, String? excludedAddress) async {
     bool sent = false;
     for (WrapperNetwork? wrapper in _wrappers) {
-      if (wrapper!.enabled!) {
+      if (wrapper!.enabled) {
         Header header = Header(
           messageType: BROADCAST,
           label: label,
@@ -192,14 +186,14 @@ class DataLinkManager {
   }
 
   Future<HashMap<String?, AdHocDevice>?> getPaired() async {
-    if (_wrappers[BLE]!.enabled!)
+    if (_wrappers[BLE]!.enabled)
       return await _wrappers[BLE]!.getPaired();
-    return null;
+    return HashMap();
   }
 
   bool isDirectNeighbors(String? address) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled! && wrapper.isDirectNeighbors(address))
+      if (wrapper!.enabled && wrapper.isDirectNeighbors(address))
         return true;
     return false;
   }
@@ -208,7 +202,7 @@ class DataLinkManager {
     List<AdHocDevice?> devices = List.empty(growable: true);
 
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         devices.addAll(wrapper.directNeighbors);
 
     return devices;
@@ -217,7 +211,7 @@ class DataLinkManager {
   bool? isEnabled(int type) => _wrappers[type]!.enabled;
 
   Future<String?> getAdapterName(int type) async {
-    if (_wrappers[type]!.enabled!)
+    if (_wrappers[type]!.enabled)
       return await _wrappers[type]!.getAdapterName();
     return null;
   }
@@ -234,7 +228,7 @@ class DataLinkManager {
   }
 
   Future<bool?> updateAdapterName(int type, String newName) async {
-    if (_wrappers[type]!.enabled!) {
+    if (_wrappers[type]!.enabled) {
       return await _wrappers[type]!.updateDeviceName(newName);
     } else {
       throw DeviceFailureException(
@@ -244,7 +238,7 @@ class DataLinkManager {
   }
 
   void resetAdapterName(int type) {
-    if (_wrappers[type]!.enabled!) {
+    if (_wrappers[type]!.enabled) {
       _wrappers[type]!.resetDeviceName();
     } else {
       throw DeviceFailureException(_typeString(type) + ' adapter is not enabled');
@@ -253,23 +247,21 @@ class DataLinkManager {
 
   void disconnectAll() {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.disconnectAll();
   }
 
   void disconnect(String? remoteDest) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper!.enabled!)
+      if (wrapper!.enabled)
         wrapper.disconnect(remoteDest);
   }
 
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _wrappers[BLE]!.eventStream.listen((event) => _eventCtrl.add(event));
-    _wrappers[BLE]!.discoveryStream.listen((event) => _discoveryCtrl.add(event));
-    _wrappers[WIFI]!.eventStream.listen((event) => _eventCtrl.add(event));
-    _wrappers[WIFI]!.discoveryStream.listen((event) => _discoveryCtrl.add(event));
+    _wrappers[BLE]!.eventStream.listen((event) => _controller.add(event));
+    _wrappers[WIFI]!.eventStream.listen((event) => _controller.add(event));
   }
 
   void _discovery() {
@@ -299,7 +291,6 @@ class DataLinkManager {
         return "Ble";
       case WIFI:
         return "Wifi";
-
       default:
         return "Unknown";
     }

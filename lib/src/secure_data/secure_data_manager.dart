@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/discovery_event.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
@@ -21,20 +20,22 @@ import 'package:pointycastle/pointycastle.dart';
 class SecureDataManager {
   final bool _verbose;
 
-  AodvManager? _aodvManager;
-  DataLinkManager? _datalinkManager;
-  late CertificateRepository _repository;
+  late AodvManager _aodvManager;
+  late DataLinkManager _datalinkManager;
   late CryptoEngine _engine;
+  late CertificateRepository _repository;
   late SecureGroupController _groupController;
-  late StreamController<AdHocEvent> _eventCtrl;
+  late StreamController<AdHocEvent> _controller;
 
   SecureDataManager(this._verbose, Config config) {
     this._aodvManager = AodvManager(_verbose, config);
-    this._datalinkManager = _aodvManager!.dataLinkManager;
-    this._repository = CertificateRepository();
+    this._datalinkManager = _aodvManager.dataLinkManager;
+    this._repository = CertificateRepository(config);
     this._engine = CryptoEngine();
-    this._groupController = SecureGroupController(_aodvManager!, _datalinkManager!, _aodvManager!.eventStream, config);
-    this._eventCtrl = StreamController<AdHocEvent>.broadcast();
+    this._groupController = SecureGroupController(
+      _aodvManager, _datalinkManager, _aodvManager.eventStream, config
+    );
+    this._controller = StreamController<AdHocEvent>.broadcast();
     this._initialize();
   }
 
@@ -44,11 +45,9 @@ class SecureDataManager {
 
   DataLinkManager? get datalinkManager => _datalinkManager;
 
-  List<AdHocDevice?> get directNeighbors => _datalinkManager!.directNeighbors;
+  List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
 
-  Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
-
-  Stream<DiscoveryEvent> get discoveryStream => _aodvManager!.discoveryStream;
+  Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*------------------------------Public methods--------------------------------*/
 
@@ -56,40 +55,40 @@ class SecureDataManager {
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination)!;
       Uint8List encryptedData = await _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
-      _aodvManager!.sendMessageTo(SecureData(ENCRYPTED_DATA, encryptedData).toJson(), destination);
+      _aodvManager.sendMessageTo(destination!, SecureData(ENCRYPTED_DATA, encryptedData).toJson());
     } else {
-      _aodvManager!.sendMessageTo(SecureData(UNENCRYPTED_DATA, data).toJson(), destination);
+      _aodvManager.sendMessageTo(destination!, SecureData(UNENCRYPTED_DATA, data).toJson());
     }
   }
 
   Future<bool> broadcast(Object data, bool encrypted) async {
     if (encrypted) {
-      for (final neighbor in _datalinkManager!.directNeighbors)
-        send(data, neighbor!.label, true);
+      for (final neighbor in _datalinkManager.directNeighbors)
+        send(data, neighbor.label, true);
       return true;
     } else {
-      return await _datalinkManager!.broadcastObject(SecureData(UNENCRYPTED_DATA, data).toJson());
+      return await _datalinkManager.broadcastObject(SecureData(UNENCRYPTED_DATA, data).toJson());
     }
   }
 
   Future<bool> broadcastExcept(Object data, String? excluded, bool encrypted) async {
     if (encrypted) {
-      for (final neighbor in _datalinkManager!.directNeighbors)
-        if (neighbor!.label != excluded)
+      for (final neighbor in _datalinkManager.directNeighbors)
+        if (neighbor.label != excluded)
           send(data, neighbor.label, true);
       return true;
     } else {
-      return await _datalinkManager!.broadcastObjectExcept(SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
+      return await _datalinkManager.broadcastObjectExcept(SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
     }
   }
 
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _aodvManager!.eventStream.listen((event) {
+    _aodvManager.eventStream.listen((event) {
       switch (event.type) {
         case CONNECTION_EVENT:
-          _eventCtrl.add(event);
+          _controller.add(event);
 
           AdHocDevice neighbor = event.payload as AdHocDevice;
           Map data = SecureData(
@@ -97,7 +96,7 @@ class SecureDataManager {
             [_engine.publicKey!.modulus.toString(), _engine.publicKey!.exponent.toString()]
           ).toJson();
 
-          _aodvManager!.sendMessageTo(data, neighbor.label);
+          _aodvManager.sendMessageTo(neighbor.label!, data);
           break;
 
         case DATA_RECEIVED:
@@ -107,7 +106,7 @@ class SecureDataManager {
           break;
 
         default:
-          _eventCtrl.add(event);
+          _controller.add(event);
       }
     });
   }
@@ -122,7 +121,7 @@ class SecureDataManager {
           [ _engine.publicKey!.modulus.toString(), _engine.publicKey!.exponent.toString()]
         ).toJson();
 
-        _aodvManager!.sendMessageTo(data, sender.label);
+        _aodvManager.sendMessageTo(sender.label!, data);
         break;
 
       case CERT_XCHG_END:
@@ -133,11 +132,11 @@ class SecureDataManager {
       case ENCRYPTED_DATA:
         List<int> received = (pdu.payload as List<dynamic>).cast<int>();
         Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
+        _controller.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
         break;
 
       case UNENCRYPTED_DATA:
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
+        _controller.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
         break;
 
       default:
@@ -145,7 +144,7 @@ class SecureDataManager {
   }
 
   void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
-    Certificate certificate = Certificate(neighbor.label, _aodvManager!.label, key);
+    Certificate certificate = Certificate(neighbor.label, _aodvManager.label, key);
     Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
     _repository.addCertificate(certificate);

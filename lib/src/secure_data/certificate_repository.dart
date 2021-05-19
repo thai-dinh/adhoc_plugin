@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 
 
 class CertificateRepository {
   late HashMap<String?, Certificate> _repository;
+  int? _period;
 
-  CertificateRepository() {
+  CertificateRepository(Config config) {
     this._repository = HashMap();
-    this._manageCertificates();
+    this._period = config.validityPeriod;
+    this._checkCertificatesValidity();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -39,7 +43,10 @@ class CertificateRepository {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _manageCertificates() {
-    // Periodically check wether a certificate validity has expired or not
+  /// Periodically check wether a certificate validity has expired or not
+  void _checkCertificatesValidity() {
+    Timer.periodic(Duration(seconds: _period!), (timer) => _repository.removeWhere(
+      (label, certificate) => certificate.validity!.isBefore(DateTime.now())
+    ));
   }
 }
