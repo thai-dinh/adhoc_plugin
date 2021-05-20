@@ -4,46 +4,59 @@ import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
+
 /// Abstract superclass providing common interfaces for the services 
 /// 'ServiceClient' and 'ServiceServer' classes.
 abstract class Service {
   static const String TAG = "[Service]";
 
-  int _state;
-
   final bool verbose;
+
+  late int _state;
 
   late StreamController<AdHocEvent> controller;
 
   /// Creates a [Service] object.
   /// 
-  /// The 
-  /// 
   /// The debug/verbose mode is set if [verbose] is true.
-  Service(this.verbose, this._state) {
+  Service(this.verbose) {
+    this._state = STATE_NONE;
     this.controller = StreamController<AdHocEvent>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Sets the state of the connection to [state].
   set state(int state) {
     if (verbose)
       log(TAG, 'state: ${_stateToString(_state)} -> ${_stateToString(state)}');
     _state = state;
   }
 
+  /// Gets the state of the connection.
+  /// 
+  /// Returns an integer value representing the state of the connection.
   int get state => _state;
 
+  /// Gets the ad hoc event stream.
+  /// 
+  /// Returns an [AdHocEvent] stream.
   Stream<AdHocEvent> get adhocEvent => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
+  /// Start the listening process for ad hoc events.
   void listen();
 
+  /// Stop the listening process for ad hoc events.
   void stopListening() => controller.close();
 
 /*-----------------------------Private methods-------------------------------*/
 
+  /// Gets the state of the connection as a [String].
+  /// 
+  /// Returns the current state of the connection. The possible outcomes are
+  /// 'Connected', 'Connecting', 'Listening', and 'None'.
   String _stateToString(int state) {
     switch (state) {
       case STATE_CONNECTED:

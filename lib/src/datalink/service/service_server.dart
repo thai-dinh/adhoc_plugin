@@ -1,37 +1,51 @@
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 
+/// Abstract class defining the server's logic and methods. It aims to serve as 
+/// a common interface for the services 'BleServer' and 'WifiServer' classes.
 abstract class ServiceServer extends Service {
   static const String TAG = "[ServiceServer]";
 
-  List<String>? _activeConnections;
+  late List<String?> _activeConnections;
 
-  ServiceServer(bool verbose) : super(verbose, STATE_NONE) {
+  /// Creates a [ServiceServer] object.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
+  ServiceServer(bool verbose) : super(verbose) {
     this._activeConnections = List.empty(growable: true);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  List<String>? get activeConnections => _activeConnections;
+  /// Returns the list of active connections (MAC address).
+  List<String?> get activeConnections => _activeConnections;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void addActiveConnection(String mac) {
-    _activeConnections!.add(mac);
-  }
-
-  void removeInactiveConnection(String mac) {
-    if (containConnection(mac))
-      _activeConnections!.remove(mac);
-  }
-
-  bool containConnection(String? mac) {
-    return _activeConnections!.contains(mac);
-  }
-
-  Future<void> cancelConnection(String? mac);
-
+  /// Sends a [message] to the remote device of MAC address [mac].
   Future<void> send(MessageAdHoc message, String? mac);
+
+  /// Adds the MAC address [mac] of the active connection.
+  void addActiveConnection(String? mac) {
+    _activeConnections.add(mac);
+  }
+
+  /// Removes the MAC address [mac] of the active connection.
+  void removeInactiveConnection(String? mac) {
+    if (containConnection(mac))
+      _activeConnections.remove(mac);
+  }
+
+  /// Checks if the connection with the remote device of MAC address [mac].
+  /// is an active connection.
+  /// 
+  /// Returns true if there exists an active connection with the remote device,
+  /// otherwise false.
+  bool containConnection(String? mac) {
+    return _activeConnections.contains(mac);
+  }
+
+  /// Cancels an active connection with the remote device of MAC address [mac].
+  Future<void> cancelConnection(String? mac);
 }

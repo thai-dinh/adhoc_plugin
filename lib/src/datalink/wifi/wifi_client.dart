@@ -10,13 +10,14 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
 
 
+/// Class defining the client's logic for the Wi-Fi Direct implementation.
 class WifiClient extends ServiceClient {
-  String? _serverIp;
-  int? _port;
   late Socket _socket;
+  late String _serverIP;
+  late int _port;
 
   WifiClient(
-    bool verbose, this._port, this._serverIp, int? attempts, int? timeOut,
+    bool verbose, this._port, this._serverIP, int attempts, int timeOut,
   ) : super(verbose, attempts, timeOut);
 
 /*-------------------------------Public methods-------------------------------*/
@@ -26,7 +27,7 @@ class WifiClient extends ServiceClient {
 
     _socket.listen(
       (data) {
-        if (verbose) log(ServiceClient.TAG, 'received message from $_serverIp:${_socket.port}');
+        if (verbose) log(ServiceClient.TAG, 'received message from $_serverIP:${_socket.port}');
 
         String msg = Utf8Decoder().convert(data);
         if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
@@ -45,7 +46,7 @@ class WifiClient extends ServiceClient {
         controller.add(AdHocEvent(CONNECTION_EXCEPTION, error));
       },
       onDone: () {
-        controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIp));
+        controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
         this.stopListening();
       }
     );
@@ -65,11 +66,11 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     this.stopListening();
     await WifiP2p().removeGroup();
-    controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIp));
+    controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
   }
 
   void send(MessageAdHoc message) async {
-    if (verbose) log(ServiceClient.TAG, 'send() to $_serverIp:$_port');
+    if (verbose) log(ServiceClient.TAG, 'send() to $_serverIP:$_port');
 
     _socket.write(json.encode(message.toJson()));
   }
@@ -93,19 +94,19 @@ class WifiClient extends ServiceClient {
   }
 
   Future<void> _connectionAttempt() async {
-    if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIp : $_port');
+    if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIP : $_port');
 
     if (state == STATE_NONE || state == STATE_CONNECTING) {
       state = STATE_CONNECTING;
 
       _socket = await Socket.connect(
-        _serverIp, _port!, timeout: Duration(milliseconds: timeOut!)
+        _serverIP, _port, timeout: Duration(milliseconds: timeOut)
       );
 
       listen();
-      controller.add(AdHocEvent(CONNECTION_PERFORMED, _serverIp));
+      controller.add(AdHocEvent(CONNECTION_PERFORMED, _serverIP));
 
-      if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIp:$_port');
+      if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIP:$_port');
 
       state = STATE_CONNECTED;
     }

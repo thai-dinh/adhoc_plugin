@@ -12,6 +12,7 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
 
+/// Class defining the server's logic for the Bluetooth LE implementation.
 class BleServer extends ServiceServer {
   static const String _chConnectName = 'ad.hoc.lib/ble.connection';
   static const String _chMessageName = 'ad.hoc.lib/ble.message';
@@ -21,35 +22,50 @@ class BleServer extends ServiceServer {
   StreamSubscription<dynamic>? _connectionSub;
   StreamSubscription<dynamic>? _messageSub;
 
+  /// Creates a [BleServer] object.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
   BleServer(bool verbose) : super(verbose) {
     BleAdHocManager.setVerbose(verbose);
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
+  /// Start the listening process for ad hoc events.
+  /// 
+  /// In this case, an ad hoc event can be a message received from a remote 
+  /// host, or a connection with a remote host has been performed.
+  @override
   void listen() {
     if (verbose) log(ServiceServer.TAG, 'Server: listen()');
 
-    BleAdHocManager.openGattServer();
+    // Open the GATT server of the platform-specific side
+    BleAdHocManager.openGATTServer();
 
+    // Listen to state of connection events to other peers
     _connectionSub = _chConnect.receiveBroadcastStream()
       .listen((map) {
         String mac = map['macAddress'] as String;
         String uuid = (Constants.BLUETOOTHLE_UUID + mac.replaceAll(new RegExp(':'), '')).toLowerCase();
         switch (map['state']) {
+          // Connection performed
           case Constants.STATE_CONNECTED:
             addActiveConnection(mac);
+            // Notify upper layer of a connection performed
             controller.add(AdHocEvent(Constants.CONNECTION_PERFORMED, [mac, uuid, 0]));
             break;
 
+          // Disconnection performed
           case Constants.STATE_NONE:
             removeInactiveConnection(mac);
+            // Notify upper layer of a disconnection performed
             controller.add(AdHocEvent(Constants.CONNECTION_ABORTED, mac));
             break;
         }
       }, onDone: () => _connectionSub = null,
     );
 
+    // Listen to message received from peers
     _messageSub = _chMessage.receiveBroadcastStream().listen((map) {
       if (verbose) log(ServiceServer.TAG, 'Server: message received');
 
@@ -69,12 +85,15 @@ class BleServer extends ServiceServer {
         );
       }
 
+      // Notify upper layer of message received
       controller.add(AdHocEvent(Constants.MESSAGE_RECEIVED, message));
     }, onDone: () => _messageSub = null);
 
+    // Update state of the server
     state = Constants.STATE_LISTENING;
   }
 
+  /// Stop the listening process for ad hoc events.
   @override
   void stopListening() {
     if (verbose) log(ServiceServer.TAG, 'Server: stopListening');
@@ -90,15 +109,19 @@ class BleServer extends ServiceServer {
     state = Constants.STATE_NONE;
   }
 
-  Future<void> cancelConnection(String mac) async {
-    if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
-
-    await BleAdHocManager.cancelConnection(mac);
-  }
-
+  /// Sends a [message] to the remote device of MAC address [mac].
+  @override
   Future<void> send(MessageAdHoc message, String? mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
-    await BleAdHocManager.GATTSendMessage(message, mac);
+    await BleAdHocManager.GATTSendMessage(message, mac!);
+  }
+
+  /// Cancels an active connection with the remote device of MAC address [mac].
+  @override
+  Future<void> cancelConnection(String? mac) async {
+    if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
+
+    await BleAdHocManager.cancelConnection(mac!);
   }
 }
