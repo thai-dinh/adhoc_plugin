@@ -55,6 +55,7 @@ class SecureDataManager {
     if (encrypted) {
       Certificate certificate = _repository.getCertificate(destination)!;
       Uint8List encryptedData = await _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
+      print(encryptedData.length);
       _aodvManager.sendMessageTo(destination!, SecureData(ENCRYPTED_DATA, encryptedData).toJson());
     } else {
       _aodvManager.sendMessageTo(destination!, SecureData(UNENCRYPTED_DATA, data).toJson());

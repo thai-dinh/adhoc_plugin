@@ -79,9 +79,6 @@ public class WifiAdHocManager implements MethodCallHandler {
             final String currentName = call.arguments();
             currentAdapterName = currentName;
             break;
-        case "getAdapterName":
-            result.success(getAdapterName());
-            break;
         case "updateDeviceName":
             final String name = call.arguments();
             result.success(updateDeviceName(name));
@@ -92,20 +89,20 @@ public class WifiAdHocManager implements MethodCallHandler {
         case "getMacAddress":
             result.success(getMacAddress());
             break;
-          case "register":
+        case "register":
             register();
             break;
-          case "unregister":
+        case "unregister":
             unregister();
             break;
-          case "discovery":
+        case "discovery":
             startDiscovery();
             break;
-          case "connect":
+        case "connect":
             final String remoteAddress = call.arguments();
             connect(remoteAddress);
             break;
-          case "removeGroup":
+        case "removeGroup":
             removeGroup();
             break;
 
@@ -204,10 +201,6 @@ public class WifiAdHocManager implements MethodCallHandler {
             .getApplicationContext()
             .getSystemService(Context.WIFI_SERVICE);
         return wifiManager != null && wifiManager.isWifiEnabled();
-    }
-
-    private String getAdapterName() {
-        return currentAdapterName;
     }
 
     private boolean updateDeviceName(String name) {

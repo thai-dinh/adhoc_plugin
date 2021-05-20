@@ -62,7 +62,7 @@ class WrapperWifi extends WrapperNetwork {
     if (await (WifiAdHocManager.isWifiEnabled() as Future<bool>)) {
       this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
       this._isGroupOwner = false;
-      this.ownName = (await _wifiManager.adapterName)!;
+      this.ownName = _wifiManager.adapterName;
       this._initialize();
       this.enabled = true;
     } else {
@@ -115,7 +115,7 @@ class WrapperWifi extends WrapperNetwork {
 
   @override
   Future<String> getAdapterName() async {
-    final String? name = await _wifiManager.adapterName;
+    final String? name = _wifiManager.adapterName;
     return name == null ? '' : name;
   }
 
@@ -223,12 +223,16 @@ class WrapperWifi extends WrapperNetwork {
           mapAddrNetwork.putIfAbsent(
             remoteAddress,
             () => NetworkManager(
-              (MessageAdHoc? msg) async => (service as ServiceClient).send(msg!), 
+              (MessageAdHoc msg) async {
+                msg.header!.address = _ownIPAddress;
+                msg.header!.deviceType = WIFI;
+                (service as ServiceClient).send(msg);
+              }, 
               () => (service as ServiceClient).disconnect()
             )
           );
 
-          ownName = (await _wifiManager.adapterName)!;
+          ownName = _wifiManager.adapterName;
           controller.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
           (service as ServiceClient).send(
@@ -277,7 +281,7 @@ class WrapperWifi extends WrapperNetwork {
           remoteAddress, () => message.header!.mac
         );
 
-        ownName = (await _wifiManager.adapterName)!;
+        ownName = _wifiManager.adapterName;
         controller.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
         serviceServer.send(
@@ -295,7 +299,11 @@ class WrapperWifi extends WrapperNetwork {
         receivedPeerMessage(
           message.header!,
           NetworkManager(
-            (MessageAdHoc? msg) => serviceServer.send(msg!, remoteAddress),
+            (MessageAdHoc msg) async {
+              msg.header!.address = _ownIPAddress;
+              msg.header!.deviceType = WIFI;
+              serviceServer.send(msg, remoteAddress);
+            },
             () => serviceServer.cancelConnection(remoteAddress)
           )
         );

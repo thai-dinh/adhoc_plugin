@@ -130,7 +130,7 @@ class DataLinkManager {
     }
   }
 
-  void sendMessage(MessageAdHoc? message, String? address) {
+  void sendMessage(MessageAdHoc message, String address) {
     for (WrapperNetwork? wrapper in _wrappers)
       if (wrapper!.enabled)
         wrapper.sendMessage(message, address);

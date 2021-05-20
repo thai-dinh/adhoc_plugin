@@ -16,8 +16,6 @@ abstract class ServiceManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Future<String?> get adapterName;
-
   Stream<AdHocEvent> get eventStream => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/

@@ -309,7 +309,11 @@ class WrapperBle extends WrapperNetwork {
         receivedPeerMessage(
           message.header!,
           NetworkManager(
-            (MessageAdHoc? msg) async => await serviceServer.send(msg!, mac),
+            (MessageAdHoc msg) async {
+              msg.header!.address = _ownBleUUID;
+              msg.header!.deviceType = BLE;
+              await serviceServer.send(msg, mac);
+            },
             () => serviceServer.cancelConnection(mac)
           )
         );

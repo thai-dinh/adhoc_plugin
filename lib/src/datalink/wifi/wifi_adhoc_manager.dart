@@ -18,6 +18,7 @@ class WifiAdHocManager extends ServiceManager {
   static const MethodChannel _channel = const MethodChannel(_channelName);
 
   late bool _isPaused;
+  late String _adapterName;
   late WifiP2p _wifiP2p;
   late HashMap<String?, WifiAdHocDevice?> _mapMacDevice;
   late StreamSubscription<List<WifiP2pDevice>> _discoverySub;
@@ -26,6 +27,7 @@ class WifiAdHocManager extends ServiceManager {
 
   WifiAdHocManager(bool verbose, this._onWifiReady) : super(verbose) {
     this._isPaused = false;
+    this._adapterName = '';
     this._wifiP2p = WifiP2p();
     this._wifiP2p.verbose = verbose;
     this._mapMacDevice = HashMap();
@@ -33,7 +35,7 @@ class WifiAdHocManager extends ServiceManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  Future<String?> get adapterName => _channel.invokeMethod('getAdapterName');
+  String get adapterName => _adapterName;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -43,16 +45,19 @@ class WifiAdHocManager extends ServiceManager {
 
   Future<void> register(void Function(bool, bool, String) onConnection) async {
     _wifiP2p.wifiP2pConnectionStream.listen((info) {
-      onConnection(info.groupFormed!, info.isGroupOwner!, info.groupOwnerAddress!);
+      onConnection(
+        info.groupFormed!, info.isGroupOwner!, info.groupOwnerAddress!
+      );
     });
 
     _wifiP2p.thisDeviceChangeStream.listen(
-      (wifiP2pDevice) async {
+      (device) async {
+        _adapterName = device.name!.substring(device.name!.indexOf(' ') + 1);
+
+        print(_adapterName + ' | ' + device.name!);
+
         _onWifiReady(await _wifiP2p.ownIp, await _wifiP2p.mac);
-        _channel.invokeMethod(
-          'currentName', 
-          wifiP2pDevice.name!.substring(wifiP2pDevice.name!.indexOf(' ')+1)
-        );
+        _channel.invokeMethod('currentName', _adapterName);
       }
     );
 

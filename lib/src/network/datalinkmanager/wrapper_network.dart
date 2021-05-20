@@ -48,6 +48,7 @@ abstract class WrapperNetwork {
   ) {
     this.flood = config.flood;
     this.timeOut = config.timeOut;
+    this.attempts = 3;
     this.ownLabel = config.label;
     this.ownName = '';
     this.ownMac = '';
@@ -113,7 +114,7 @@ abstract class WrapperNetwork {
     return neighbors.neighbors.containsKey(remoteLabel);
   }
 
-  void sendMessage(MessageAdHoc? message, String? remoteLabel) {
+  void sendMessage(MessageAdHoc message, String remoteLabel) {
     NetworkManager? network = neighbors.getNeighbor(remoteLabel);
     if (network != null)
       network.sendMessage(message);

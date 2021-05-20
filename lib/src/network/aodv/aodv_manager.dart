@@ -47,7 +47,7 @@ class AodvManager {
   /// specific configurations.
   AodvManager(this._verbose, Config config) {
     this._ownMac = '';
-    this._ownName = '';
+    this._ownName = 'i';
     this._ownLabel = config.label;
     this._ownSequenceNum = AodvConstants.FIRST_SEQUENCE_NUMBER;
     this._aodvHelper = AodvHelper(_verbose);
@@ -61,15 +61,20 @@ class AodvManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns the label as [String] of the current node.
   String get label => _ownLabel;
 
+  /// Returns the [DataLinkManager] object used by this AODV manager.
   DataLinkManager get dataLinkManager => _datalinkManager;
 
+  /// Returns a [Stream] of [AdHocEvent] event of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*------------------------------Public methods-------------------------------*/
 
+  /// Sends a message with payload as [pdu] to a remote [address].
   void sendMessageTo(String address, Object pdu) {
+    // Create the header of the message
     Header header = Header(
       messageType: AodvConstants.DATA,
       label: _ownLabel,
@@ -82,6 +87,7 @@ class AodvManager {
 
 /*-----------------------------Private methods-------------------------------*/
 
+  /// Initializes the listening process of lower layer streams.
   void _initialize() {
     _datalinkManager.eventStream.listen((AdHocEvent event) {
       switch (event.type) {
@@ -106,12 +112,15 @@ class AodvManager {
           break;
 
         default:
+          // Notify upper layer of ad hoc events occuring in lower layers
           _controller.add(event);
           break;
       }
     });
   }
 
+  /// Display in the log console the routing table after a DELAY in ms and every
+  /// PERIOD times.
   void _initTimerDebugRIB() {
     Timer.periodic(
       Duration(milliseconds: AodvConstants.PERIOD), 
@@ -123,6 +132,7 @@ class AodvManager {
     );
   }
 
+  /// Display the routing table in the log console.
   void _displayRoutingTable() {
     bool display = false;
     StringBuffer buffer = new StringBuffer();
@@ -150,12 +160,15 @@ class AodvManager {
       print(buffer.toString());
   }
 
+  /// Detects broken links to remote node label [remoteNode].
   void _brokenLinkDetected(String? remoteNode) {
+    // Send RRER to precursors to notify that a remote node has disconnected
     if (_aodvHelper.sizeRoutingTable() > 0) {
       if (_verbose) log(TAG, 'Send RRER');
-      _sendRRER(remoteNode);
+      _sendRRER(remoteNode!);
     }
 
+    // Check if this node contains the remote node label
     if (_aodvHelper.containsDest(remoteNode)) {
       if (_verbose) log(TAG, 'Remove $remoteNode from RIB');
       _aodvHelper.removeEntry(remoteNode);
@@ -197,22 +210,31 @@ class AodvManager {
     }
   }
 
+  /// Sends an ad hoc [message] directly to a remote [address]
   void _sendDirect(MessageAdHoc message, String address) {
     if (_verbose) log(TAG, 'Send directly to $address');
 
     _datalinkManager.sendMessage(message, address);
   }
 
+  /// Adds a the name of a precursor [precursorName] to the list of 
+  /// precursor of a node.
+  /// 
+  /// Returns a list of [String] of precursors.
   List<String> _addPrecursors(String? precursorName) {
     return List<String>.empty(growable: true)..add(precursorName!);
   }
 
-  int? _getDestSequenceNumber(String? dest) {
+  /// Gets a destination sequence number from its destination [dest].
+  /// 
+  /// Returns the destination sequence number.
+  int _getDestSequenceNumber(String? dest) {
     if (_mapDestSeqNum.containsKey(dest))
-      return _mapDestSeqNum[dest];
+      return _mapDestSeqNum[dest]!;
     return AodvConstants.UNKNOWN_SEQUENCE_NUMBER;
   }
 
+  /// Increments the sequence number
   void _getNextSequenceNumber() {
     if (_ownSequenceNum < AodvConstants.MAX_VALID_SEQ_NUM) {
       _ownSequenceNum = _ownSequenceNum + 1;
@@ -221,15 +243,26 @@ class AodvManager {
     }
   }
 
-  void _saveDestSequenceNumber(String? dest, int? seqNum) {
+  /// Associates a destination sequence number [seqNum] with its destination
+  /// [dest].
+  void _saveDestSequenceNumber(String dest, int seqNum) {
     _mapDestSeqNum.putIfAbsent(dest, () => seqNum);
   }
 
 /*----------------------------------- RREQ -----------------------------------*/
 
+  /// Send a RREQ message to find a remote destination [destAddr]. A timer is
+  /// executed [retry] times every [time] ms.
+  /// 
+  /// First value of retry and time should be set respectively to RREQ_RETRIES 
+  /// and NET_TRANVERSAL_TIME.
+  /// 
+  /// Throws an [AodvMessageException] is the destination is not found
+  /// within the given attempts
   void _startTimerRREQ(String? destAddr, int retry, int time) {
     if (_verbose) log(TAG, 'No connection to $destAddr -> send RREQ message');
 
+    // Contruct the RREQ message
     MessageAdHoc message = MessageAdHoc(
       Header(messageType: AodvConstants.RREQ, 
         label: _ownLabel,
@@ -238,17 +271,20 @@ class AodvManager {
       ),
       RREQ(
         AodvConstants.RREQ, AodvConstants.INIT_HOP_COUNT, 
-        _aodvHelper.getIncrementRreqId(), _getDestSequenceNumber(destAddr)!, 
+        _aodvHelper.getIncrementRreqId(), _getDestSequenceNumber(destAddr), 
         destAddr!, _ownSequenceNum, _ownLabel
       )
     );
 
+    // Broadcast RREQ message to all directly connected devices
     _datalinkManager.broadcast(message);
 
+    // Start the timer
     Timer(Duration(milliseconds: time), () {
       EntryRoutingTable? entry = _aodvHelper.getNextfromDest(destAddr);
       if (entry == null) {
         if (retry == 0) {
+          // The destination has not been found after all the attempts
           _controller.add(AdHocEvent(
             DatalinkConstants.INTERNAL_EXCEPTION,
             AodvMessageException(
@@ -262,6 +298,7 @@ class AodvManager {
     });
   }
 
+  /// Processes an ad hoc [message] of type RREQ.
   void _processRREQ(MessageAdHoc message) {
     RREQ rreq = RREQ.fromJson((message.pdu as Map) as Map<String, dynamic>);
     int? hop = rreq.hopCount;
@@ -336,6 +373,7 @@ class AodvManager {
 
 /*----------------------------------- RREP -----------------------------------*/
 
+  /// Processes an ad hoc [message] of type RREP.
   void _processRREP(MessageAdHoc message) {
     RREP rrep = RREP.fromJson((message.pdu as Map) as Map<String, dynamic>);
     int? hopRcv = rrep.hopCount;
@@ -440,6 +478,7 @@ class AodvManager {
     if (_verbose) log(TAG, 'Send RREP to ${rreq.originAddress}');
   }
 
+  /// Processes an ad hoc [message] of type RREP_GRATUITOUS.
   void _processRREP_GRATUITOUS(MessageAdHoc message) {
     RREP rrep = RREP.fromJson((message.pdu as Map) as Map<String, dynamic>);
     int hopCount = rrep.incrementHopCount();
@@ -482,14 +521,18 @@ class AodvManager {
 
 /*----------------------------------- RERR -----------------------------------*/
 
-  void _sendRRER(String? brokenNodeAddress) {
+  /// Sends a RRER message when a connection closed from a remote node of label
+  /// [brokenNodeAddress] has been detected.
+  void _sendRRER(String brokenNodeAddress) {
     if (_aodvHelper.containsNext(brokenNodeAddress)) {
       String dest = _aodvHelper.getDestFromNext(brokenNodeAddress)!;
       if (dest.compareTo(_ownLabel) == 0) {
         if (_verbose) 
           log(TAG, 'RERR received on the destination (stop forward)');
-      } else {  
+      } else {
+        // Create the RERR message to send
         RERR rrer = RERR(AodvConstants.RERR, dest, _ownSequenceNum);
+        // Send the RERR message to all precursors
         List<String?> precursors = _aodvHelper.getPrecursorsFromDest(dest);
         if (precursors.isNotEmpty) {
           for (String? precursor in precursors) {
@@ -510,21 +553,29 @@ class AodvManager {
           }
         }
 
+        // Remove the destination from the routing table
         _aodvHelper.removeEntry(dest);
       }
     }
   }
 
+  /// Processes an ad hoc [message] of type RERR.
   void _processRERR(MessageAdHoc message) {
+    // Get the RERR message
     RERR rerr = RERR.fromJson((message.pdu as Map) as Map<String, dynamic>);
+    // Get previous source address
     String? originateAddr = message.header!.label;
 
     if (_verbose) 
-      log(TAG, 'Received RERR from $originateAddr -> Node ${rerr.unreachableDestAddress} is unreachable');
+      log(TAG, 
+        'Received RERR from $originateAddr ->' 
+        + 'Node ${rerr.unreachableDestAddress} is unreachable'
+      );
 
     if (rerr.unreachableDestAddress.compareTo(_ownLabel) == 0) {
       if (_verbose) log(TAG, 'RERR received on the destination (stop forward)');
     } else if (_aodvHelper.containsDest(rerr.unreachableDestAddress)) {
+      // Update header of the message
       message.header = Header(
         messageType: AodvConstants.RERR, 
         label: _ownLabel, 
@@ -532,8 +583,10 @@ class AodvManager {
         mac: _ownMac
       );
         
+      // Send to precursors
       List<String?> precursors = 
         _aodvHelper.getPrecursorsFromDest(rerr.unreachableDestAddress);
+
       if (precursors.isNotEmpty) {
         for (String? precursor in precursors) {
           if (_verbose) log(TAG, ' Precursor: $precursor');
@@ -543,6 +596,7 @@ class AodvManager {
         if (_verbose) log(TAG, 'No precursors');
       }
 
+      // Remove the entry
       _aodvHelper.removeEntry(rerr.unreachableDestAddress);
     } else {
       if (_verbose) 
@@ -552,7 +606,11 @@ class AodvManager {
 
 /*----------------------------------- DATA -----------------------------------*/
 
+  /// Processes an ad hoc [message] of type DATA.
+  /// 
+  /// Throws an [AodvUnknownDestException] if the destination is not found.
   void _processData(MessageAdHoc message) {
+    // Get the DATA message
     Data data = Data.fromJson((message.pdu as Map) as Map<String, dynamic>);
 
     if (_verbose) 
@@ -562,7 +620,11 @@ class AodvManager {
       if (_verbose) 
         log(TAG, _ownLabel + ' is the destination (stop DATA message)');
 
+      print(message);
+
+      // Get the header of the message
       Header header = message.header!;
+      // Get the AdHocDevice object of the sender
       AdHocDevice device = AdHocDevice(
         label: header.label,
         name: header.name,
@@ -570,10 +632,13 @@ class AodvManager {
         type: header.deviceType!
       );
 
+      // Notify upper layer of the data received
       _controller.add(
         AdHocEvent(DatalinkConstants.DATA_RECEIVED, [device, data.payload])
       );
     } else {
+      // Forward the DATA message to the destination with regards to the routing 
+      // table
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(data.destAddress);
       if (destNext == null) {
         throw AodvUnknownDestException(
@@ -581,8 +646,9 @@ class AodvManager {
         );
       } else {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
-
+        // Get the header of the message
         Header header = message.header!;
+        // Get the AdHocDevice object of the sender
         AdHocDevice device = AdHocDevice(
           label: header.label,
           name: header.name,
@@ -590,12 +656,14 @@ class AodvManager {
           type: header.deviceType!
         );
 
+        // Notify upper layer of the data to be forwarded
         _controller.add(
           AdHocEvent(DatalinkConstants.FORWARD_DATA, [device, data.payload])
         );
 
+        // Update the data path
         destNext.updateDataPath(data.destAddress!);
-
+        // Send the message to the next destination
         _send(message, destNext.next);
       }
     }

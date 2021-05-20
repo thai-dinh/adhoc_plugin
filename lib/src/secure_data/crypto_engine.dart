@@ -55,7 +55,7 @@ class CryptoEngine {
   Future<Uint8List> encrypt(Uint8List data, RSAPublicKey publicKey) {
     Completer completer = new Completer<Uint8List>();
 
-    _sendPorts[DECRYPTION]!.send(Request(data, publicKey: publicKey));
+    _sendPorts[ENCRYPTION]!.send(Request(data, publicKey: publicKey));
 
     _stream.listen((reply) {
       if (reply.rep == ENCRYPTION) {

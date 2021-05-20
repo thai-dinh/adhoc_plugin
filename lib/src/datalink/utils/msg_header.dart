@@ -6,23 +6,24 @@ part 'msg_header.g.dart';
 
 @JsonSerializable()
 class Header {
-  int? _deviceType;
-  int? _messageType;
   String? _label;
   String? _name;
-  String? _address;
   String? _mac;
+  int? _messageType;
+
+  String? address;
+  int? deviceType;
 
   Header({
-    required int? messageType, String? label, String? name, String? address = '', 
+    required int? messageType, String? label, String? name, String? address, 
     String? mac, int? deviceType
   }) {
     this._messageType = messageType;
     this._label = checkString(label);
     this._name = checkString(name);
-    this._address = checkString(address);
     this._mac = mac;
-    this._deviceType = deviceType;
+    this.address = address;
+    this.deviceType = deviceType;
   }
 
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
@@ -31,15 +32,11 @@ class Header {
 
   set messageType(int? messageType) => this._messageType = messageType;
 
-  int? get deviceType => _deviceType;
-
   int? get messageType => _messageType;
 
   String? get label => _label;
 
   String? get name => _name;
-
-  String? get address => _address;
 
   String? get mac => _mac;
 
@@ -55,9 +52,9 @@ class Header {
               'messageType=${_messageType.toString()}' +
               ', label=$_label' +
               ', name=$_name' +
-              ', address=$_address' +
+              ', address=$address' +
               ', mac=$_mac' +
-              ', deviceType=${_deviceType.toString()}' + 
+              ', deviceType=${deviceType.toString()}' + 
             '}';
   }
 }
