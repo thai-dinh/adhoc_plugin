@@ -36,7 +36,7 @@ class AdHocDevice {
 
   /// Constructor from map
   /// 
-  /// Creates an [AdHocDevice] object from a JSON representation.
+  /// Creates an [AdHocDevice] object from a map JSON representation ([json]).
   factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -51,7 +51,7 @@ class AdHocDevice {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Creates a JSON representation of this instance of [AdHocDevice].
+  /// Creates a JSON representation of this [AdHocDevice] instance.
   Map<String, dynamic> toJson() => _$AdHocDeviceToJson(this);
 
 /*------------------------------Private methods-------------------------------*/
@@ -73,7 +73,6 @@ class AdHocDevice {
 
 /*------------------------------Override methods------------------------------*/
 
-  /// Returns a string representation of this object.
   @override
   String toString() {
     return 'AdHocDevice{' +

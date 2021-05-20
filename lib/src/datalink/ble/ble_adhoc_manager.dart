@@ -14,21 +14,24 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 /// Class managing the Bluetooth Low Energy discovery and pairing process with
-/// other BLE-capable devices.
+/// other remote Ble-capable devices.
 class BleAdHocManager extends ServiceManager {
   static const String TAG = '[BleAdHocManager]';
+
   static const String _methodName = 'ad.hoc.lib/plugin.ble.channel';
   static const String _eventName = 'ad.hoc.lib/ble.bond';
   static const MethodChannel _methodChannel = const MethodChannel(_methodName);
   static const EventChannel _eventChannel = const EventChannel(_eventName);
 
-  HashMap<String?, BleAdHocDevice>? _mapMacDevice;
   StreamSubscription<DiscoveredDevice>? _discoverySub;
   StreamSubscription<BleStatus>? _statusSub;
-  late FlutterReactiveBle _reactiveBle;
 
-  /// Initialize a newly created BleAdHocManager with the operation being logged
-  /// in the console if [verbose] is true
+  late FlutterReactiveBle _reactiveBle;
+  late HashMap<String?, BleAdHocDevice?> _mapMacDevice;
+
+  /// Creates a [BleAdHocManager] object.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
   BleAdHocManager(bool verbose) : super(verbose) {
     this._reactiveBle = FlutterReactiveBle();
     this._mapMacDevice = HashMap();
@@ -36,53 +39,89 @@ class BleAdHocManager extends ServiceManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns the name of the Bluetooth adapter.
+  /// 
+  /// In case of error, a null value is returned.
   Future<String?> get adapterName => _methodChannel.invokeMethod('getAdapterName');
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void initialize() {
-    _eventChannel.receiveBroadcastStream().listen((event) => controller.add(event));
+  @override
+  void close() {
+    super.close();
+    _reactiveBle.deinitialize();
+    if (_discoverySub != null)
+      _discoverySub!.cancel();
+    if (_statusSub != null)
+      _statusSub!.cancel();
   }
 
-  Future<bool?> enable() async => await _methodChannel.invokeMethod('enable');
+  /// Initializes parameters.
+  void initialize() {
+    _eventChannel.receiveBroadcastStream().listen(
+      (event) => controller.add(event)
+    );
+  }
 
-  Future<bool?> disable() async {
+  /// Enables the Bluetooth adapter.
+  Future<void> enable() async => await _methodChannel.invokeMethod('enable');
+
+  /// Disables the Bluetooth adapter.
+  Future<void> disable() async {
     if (_statusSub != null)
       await _statusSub!.cancel();
-    return await _methodChannel.invokeMethod('disable');
+    await _methodChannel.invokeMethod('disable');
   }
 
-  /// Set the device into a discovery mode for [duration] seconds. This function
-  /// throws an [BadDurationException] if the given duration exceeds 3600 seconds
+  /// Sets this device into a discovery mode for [duration] seconds. 
+  /// 
+  /// Throws an [BadDurationException] if the given duration exceeds 3600 
+  /// seconds.
   void enableDiscovery(int duration) {
     if (verbose) log(TAG, 'enableDiscovery()');
 
-    if (duration < 0 || duration > 3600) 
-      throw BadDurationException('Duration must be between 0 and 3600 second(s)');
+    if (duration < 0 || duration > 3600) {
+      throw BadDurationException(
+        'Duration must be between 0 and 3600 second(s)'
+      );
+    }
 
     _methodChannel.invokeMethod('startAdvertise');
-    Timer(Duration(seconds: duration), () => _methodChannel.invokeMethod('stopAdvertise'));
+  
+    Timer(
+      Duration(seconds: duration), 
+      () => _methodChannel.invokeMethod('stopAdvertise')
+    );
   }
 
-  /// Trigger the discovery of other BLE-capable devices process.
+  /// Triggers the discovery of other Ble-capable devices process.
   void discovery()  {
     if (verbose) log(TAG, 'discovery()');
 
+    // If a discovery process is ongoing, then cancel the process
     if (isDiscovering)
       _stopScan();
 
-    _mapMacDevice!.clear();
+    // Clear the history of discovered devices
+    _mapMacDevice.clear();
 
+    // Start the discovery process
     _discoverySub = _reactiveBle.scanForDevices(
       withServices: [Uuid.parse(SERVICE_UUID)],
       scanMode: ScanMode.balanced,
     ).listen(
       (device) {
+        // Get a BleAdHocDevice object from device
         BleAdHocDevice bleDevice = BleAdHocDevice(device);
-        _mapMacDevice!.putIfAbsent(bleDevice.mac, () {
-          if (verbose)
-            log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
+        // Add the discovered device to the HashMap
+        _mapMacDevice.putIfAbsent(bleDevice.mac, () {
+          if (verbose) {
+            log(
+              TAG, 'Device found: Name: ${device.name} - Address: ${device.id}'
+            );
+          }
 
+          // Notify upper layer of a device discovered
           controller.add(AdHocEvent(DEVICE_DISCOVERED, bleDevice));
           return bleDevice;
         });
@@ -90,79 +129,130 @@ class BleAdHocManager extends ServiceManager {
     );
 
     isDiscovering = true;
+    // Notify upper layer of the discovery process' start
     controller.add(AdHocEvent(DISCOVERY_START, null));
-
+    // Stop the discovery process after DISCOVERY_TIME.
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
 
-  /// Return all the paired BLE-capable devices.
+  /// Returns all the paired Ble-capable devices.
   Future<HashMap<String?, BleAdHocDevice>> getPairedDevices() async {
     if (verbose) log(TAG, 'getPairedDevices()');
 
     HashMap<String?, BleAdHocDevice> pairedDevices = HashMap();
-    List<Map> btDevices = await (_methodChannel.invokeMethod('getPairedDevices') as Future<List<Map<dynamic, dynamic>>>);
+    // Request list of paired devices
+    List<Map> btDevices = await _methodChannel.invokeMethod('getPairedDevices');
 
-    for (final device in btDevices)
-      pairedDevices.putIfAbsent(device['macAddress'], () => BleAdHocDevice.fromMap(device));
+    for (final device in btDevices) {
+      pairedDevices.putIfAbsent(
+        device['macAddress'], () => BleAdHocDevice.fromMap(device)
+      );
+    }
 
     return pairedDevices;
   }
 
-  /// Update the local adapter name of the device with [name] and return true
-  /// if the name was successfully set, otherwise false.
-  Future<bool?> updateDeviceName(String name) async => await _methodChannel.invokeMethod('updateDeviceName', name);
+  /// Updates the local adapter name of the device with [name].
+  /// 
+  /// Returns true if the name is successfully set, otherwise false. In case
+  /// of error, a null value is returned.
+  Future<bool?> updateDeviceName(String name) async 
+    => await _methodChannel.invokeMethod('updateDeviceName', name);
 
-  /// Reset the local adapter name of the device
-  Future<bool?> resetDeviceName() async => await _methodChannel.invokeMethod('resetDeviceName');
+  /// Resets the local adapter name of the device.
+  /// 
+  /// Returns true if the name is successfully reset, otherwise false. In case
+  /// of error, a null value is returned.
+  Future<bool?> resetDeviceName() async 
+    => await _methodChannel.invokeMethod('resetDeviceName');
 
+  /// Listens to the status of the Bluetooth adapter.
   void onEnableBluetooth() {
     _statusSub = _reactiveBle.statusStream.listen((status) async {
-      switch (status) {
-        case BleStatus.ready:
-          controller.add(AdHocEvent(BLE_READY, true));
-          break;
-
-        default:
-          break;
+      if (status == BleStatus.ready) {
+        // Notify upper layer of Bluetooth being enabled and ready to be used
+        controller.add(AdHocEvent(BLE_READY, true));
       }
     });
   }
 
 /*------------------------------Private methods-------------------------------*/
 
+  /// Stops the discovery process.
   void _stopScan() {
     if (verbose) log(TAG, 'Discovery end');
 
+    // Unsubscribe to the discovery stream
     _discoverySub!.cancel();
     _discoverySub = null;
 
     isDiscovering = false;
-
+    // Notify upper layer of the discovery process' end
     controller.add(AdHocEvent(DISCOVERY_END, _mapMacDevice));
   }
 
 /*-------------------------------Static methods-------------------------------*/
 
-  static void setVerbose(bool verbose) => _methodChannel.invokeMethod('setVerbose', verbose);
+  /// Sets the debug/verbose mode is set to [verbose] on the platform-specific 
+  /// side.
+  static void setVerbose(bool verbose) 
+    => _methodChannel.invokeMethod('setVerbose', verbose);
 
-  static Future<bool?> isEnabled() async => await _methodChannel.invokeMethod('isEnabled');
+  /// Checks whether the Bluetooth adapter is enabled or not.
+  /// 
+  /// In case of error, a null value is returned.
+  static Future<bool?> isEnabled() async 
+    => await _methodChannel.invokeMethod('isEnabled');
 
-  static void openGattServer() => _methodChannel.invokeMethod('openGattServer');
+  /// Opens the GATT server on the platform-specific side.
+  static void openGATTServer() => _methodChannel.invokeMethod('openGattServer');
 
-  static void closeGattServer() => _methodChannel.invokeMethod('closeGattServer');
+  /// Closes the GATT server on the platform-specific side.
+  static void closeGATTServer() => _methodChannel.invokeMethod('closeGattServer');
 
-  static Future<bool?> gattServerSendMessage(MessageAdHoc message, String? mac) async {
-    return await _methodChannel.invokeMethod('sendMessage', <String, String?>{
+  /// Gets the GATT server of the platform-specific side to send [message] to 
+  /// the remote Ble-capable device of MAC addresss [mac].
+  /// 
+  /// Returns true if it has been successfully sent, otherwise false. 
+  /// 
+  /// In case of error, a null value is returned.
+  static Future<bool?> GATTSendMessage(MessageAdHoc message, String mac) async {
+    return await _methodChannel.invokeMethod('sendMessage', <String, String>{
       'mac': mac,
       'message': json.encode(message.toJson()),
     });
   }
 
-  static Future<void> cancelConnection(String? mac) async => await _methodChannel.invokeMethod('cancelConnection', mac);
+  /// Cancels a connection to the remote Ble-capable device of MAC addresss 
+  /// [mac].
+  static Future<void> cancelConnection(String mac) async 
+    => await _methodChannel.invokeMethod('cancelConnection', mac);
 
-  static Future<String?> getCurrentName() async => await _methodChannel.invokeMethod('getCurrentName');
+  /// Gets the current name of the Bluetooth adapter.
+  /// 
+  /// Returns the name of the Bluetooth adapter as a String.
+  /// 
+  /// In case of error, a null value is returned.
+  static Future<String?> getCurrentName() async 
+    => await _methodChannel.invokeMethod('getCurrentName');
 
-  static Future<bool?> getBondState(String? mac) async => await _methodChannel.invokeMethod('getBondState', mac);
+  /// Gets the state of bond with the remote Ble-capable device of MAC addresss
+  /// [mac].
+  /// 
+  /// Returns true if this device is bonded to the remote device, otherwise 
+  /// false.
+  /// 
+  /// In case of error, a null value is returned.
+  static Future<bool?> getBondState(String mac) async 
+    => await _methodChannel.invokeMethod('getBondState', mac);
 
-  static Future<bool?> createBond(String? mac) async => await _methodChannel.invokeMethod('createBond', mac);
+  /// Initiates a pairing request with the remote Ble-capable device of MAC 
+  /// addresss [mac].
+  /// 
+  /// Returns true if this device has been successfully bonded with the remote 
+  /// device, otherwise false.
+  /// 
+  /// In case of error, a null value is returned.
+  static Future<bool?> createBond(String mac) async 
+    => await _methodChannel.invokeMethod('createBond', mac);
 }

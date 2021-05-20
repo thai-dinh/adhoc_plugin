@@ -85,12 +85,12 @@ class BleServer extends ServiceServer {
     if (_messageSub != null)
       _messageSub!.cancel();
 
-    BleAdHocManager.closeGattServer();
+    BleAdHocManager.closeGATTServer();
 
     state = Constants.STATE_NONE;
   }
 
-  Future<void> cancelConnection(String? mac) async {
+  Future<void> cancelConnection(String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
 
     await BleAdHocManager.cancelConnection(mac);
@@ -99,6 +99,6 @@ class BleServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String? mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
-    await BleAdHocManager.gattServerSendMessage(message, mac);
+    await BleAdHocManager.GATTSendMessage(message, mac);
   }
 }
