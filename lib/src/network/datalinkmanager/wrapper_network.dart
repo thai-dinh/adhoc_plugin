@@ -20,12 +20,13 @@ abstract class WrapperNetwork {
 
   final bool verbose;
 
-  bool? flood;
-  int? timeOut;
-  int? attempts;
-  String? ownLabel;
-  String? ownName;
-  String? ownMac;
+  late String ownLabel;
+  late String ownName;
+  late String ownMac;
+
+  late bool flood;
+  late int timeOut;
+  late int attempts;
 
   late int type;
   late bool enabled;
@@ -163,7 +164,7 @@ abstract class WrapperNetwork {
       controller.add(AdHocEvent(Constants.CONNECTION_EVENT, device));
 
       setRemoteDevices.add(device);
-      if (flood!) {
+      if (flood) {
         String id = header.label! + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
         header.messageType = Constants.CONNECT_BROADCAST;
@@ -205,7 +206,7 @@ abstract class WrapperNetwork {
       controller.add(AdHocEvent(Constants.BROKEN_LINK, device.label));
       controller.add(AdHocEvent(Constants.DISCONNECTION_EVENT, device));
 
-      if (flood!) {
+      if (flood) {
         String id = label! + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
 

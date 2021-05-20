@@ -4,33 +4,37 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/entry_routing_table.dart';
 
 
+/// Class representing the routing table of the AODV protocol.
 class RoutingTable {
   static const String TAG = '[RoutingTable]';
 
   final bool _verbose;
 
-  HashMap<String?, EntryRoutingTable>? _routingTable;
   late HashMap<String?, String?> _nextDestMapping;
+  late HashMap<String?, EntryRoutingTable> _routingTable;
 
+  /// Creates a [RoutingTable] object.
+  /// 
+  /// The debug/verbose mode is set if [_verbose] is true.
   RoutingTable(this._verbose) {
-    this._routingTable = HashMap();
     this._nextDestMapping = HashMap();
+    this._routingTable = HashMap();
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
   bool addEntry(EntryRoutingTable entry) {
-    if (!_routingTable!.containsKey(entry.destAddress)) {
+    if (!_routingTable.containsKey(entry.destAddress)) {
       if (_verbose) log(TAG, 'Add new entry in the RIB ${entry.destAddress}');
-      _routingTable!.putIfAbsent(entry.destAddress, () => entry);
+      _routingTable.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
       return true;
     }
 
-    EntryRoutingTable existingEntry = _routingTable![entry.destAddress]!;
+    EntryRoutingTable existingEntry = _routingTable[entry.destAddress]!;
 
-    if (existingEntry.hop! >= entry.hop!) {
-      _routingTable!.putIfAbsent(entry.destAddress, () => entry);
+    if (existingEntry.hop >= entry.hop) {
+      _routingTable.putIfAbsent(entry.destAddress, () => entry);
       _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
 
       if (_verbose) {
@@ -54,15 +58,15 @@ class RoutingTable {
   }
 
   void removeEntry(String? destAddress) {
-    _routingTable!.remove(destAddress);
+    _routingTable.remove(destAddress);
   }
 
   EntryRoutingTable? getNextFromDest(String? destAddress) {
-    return _routingTable![destAddress];
+    return _routingTable[destAddress];
   }
 
   bool containsDest(String? destAddress) {
-    return _routingTable!.containsKey(destAddress);
+    return _routingTable.containsKey(destAddress);
   }
 
   bool containsNext(String? nextAddress) {
@@ -78,22 +82,20 @@ class RoutingTable {
   }
 
   EntryRoutingTable? getDestination(String? destAddress) {
-    return _routingTable![destAddress];
+    return _routingTable[destAddress];
   }
 
-  List<String?>? getPrecursorsFromDest(String? destAddress) {
-    EntryRoutingTable? entry = _routingTable![destAddress];
+  List<String?> getPrecursorsFromDest(String? destAddress) {
+    EntryRoutingTable? entry = _routingTable[destAddress];
     if (entry != null)
         return entry.precursors;
-    return null;
+    return List.empty(growable: true);
   }
 
-  int? getDataPathFromAddress(String? address) {
-    EntryRoutingTable? entry = _routingTable![address];
-    if (entry != null) {
-        return entry.getActivesDataPath(address);
-    }
-
+  int getDataPathFromAddress(String? address) {
+    EntryRoutingTable? entry = _routingTable[address];
+    if (entry != null)
+        return entry.getActivesDataPath(address!);
     return 0;
   }
 }

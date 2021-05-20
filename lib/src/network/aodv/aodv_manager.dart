@@ -21,6 +21,8 @@ import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_type.dart';
 
 
+/// Class representing the core of the AODV protocol. It manages all the 
+/// messages received and to send.
 class AodvManager {
   static const String TAG = '[AodvManager]';
 
@@ -37,6 +39,12 @@ class AodvManager {
   late HashMap<String?, int?> _mapDestSequenceNumber;
   late StreamController<AdHocEvent> _controller;
 
+  /// Creates a [AodvManager] object.
+  /// 
+  /// The debug/verbose mode is set if [_verbose] is true.
+  /// 
+  /// This object is configured with regards to [config], which contains
+  /// specific configurations.
   AodvManager(this._verbose, Config config) {
     this._ownMac = '';
     this._ownName = '';
@@ -47,7 +55,7 @@ class AodvManager {
     this._mapDestSequenceNumber = HashMap();
     this._controller = StreamController<AdHocEvent>.broadcast();
     this._initialize();
-    if (_verbose)
+    if (_verbose) // Periodical display of the routing table
       this._initTimerDebugRIB();
   }
 
@@ -152,11 +160,13 @@ class AodvManager {
     }
   }
 
-  void _send(MessageAdHoc? message, String? address) {
+  /// Sends a ad hoc message [message] to the remote destination [address].
+  void _send(MessageAdHoc message, String address) {
     if (_datalinkManager.isDirectNeighbors(address)) {
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
-      if (destNext != null && message!.header!.messageType == AodvConstants.DATA)
+      if (destNext != null && message.header!.messageType == AodvConstants.DATA)
         destNext.updateDataPath(address);
+
       _sendDirect(message, address);
     } else if (_aodvHelper.containsDest(address)) {
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
@@ -165,21 +175,23 @@ class AodvManager {
       } else {
         if (_verbose) log(TAG, 'Routing table contains ${destNext.next}');
 
-        if (message!.header!.messageType == AodvConstants.DATA)
+        if (message.header!.messageType == AodvConstants.DATA)
           destNext.updateDataPath(address);
 
-        _sendDirect(message, destNext.next);
+        _sendDirect(message, destNext.next!);
       }
-    } else if (message!.header!.messageType == AodvConstants.RERR) {
+    } else if (message.header!.messageType == AodvConstants.RERR) {
       if (_verbose) log(TAG, 'RERR sent');
     } else {
       _dataMessage = message;
+
       _getNextSequenceNumber();
+
       _startTimerRREQ(address, AodvConstants.RREQ_RETRIES, AodvConstants.NET_TRANVERSAL_TIME);
     }
   }
 
-  void _sendDirect(MessageAdHoc? message, String? address) {
+  void _sendDirect(MessageAdHoc message, String address) {
     if (_verbose) log(TAG, 'Send directly to $address');
 
     _datalinkManager.sendMessage(message, address);
@@ -277,7 +289,7 @@ class AodvManager {
             ),
             rrep
           ),
-          entry.next
+          entry.next!
         );
 
         // _timerFlushReverseRoute(rreq.originAddress, rreq.originSequenceNum);
@@ -322,7 +334,7 @@ class AodvManager {
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, null);
 
         Data data = _dataMessage!.pdu as Data;
-        _send(_dataMessage, data.destAddress);
+        _send(_dataMessage!, data.destAddress!);
 
         _timerFlushForwardRoute(rrep.originAddress, rrep.sequenceNum, rrep.lifetime);
     } else {
@@ -342,7 +354,7 @@ class AodvManager {
               mac: _ownMac
             ), 
             rrep),
-          destNext.next
+          destNext.next!
         );
 
         _aodvHelper.addEntryRoutingTable(rrep.originAddress, nextHop, hopRcv, rrep.sequenceNum, rrep.lifetime, _addPrecursors(destNext.next));
@@ -380,7 +392,7 @@ class AodvManager {
           mac: _ownMac
         );
 
-        _send(message, destNext.next);
+        _send(message, destNext.next!);
       }
     }
   }
@@ -405,7 +417,7 @@ class AodvManager {
       if (precursors != null) {
         for (String? precursor in precursors) {
           if (_verbose) log(TAG, ' Precursor: $precursor');
-            _send(message, precursor);
+            _send(message, precursor!);
         }
       } else {
         if (_verbose) log(TAG, 'No precursors');
@@ -453,7 +465,7 @@ class AodvManager {
 
         destNext.updateDataPath(data.destAddress);
 
-        _send(message, destNext.next);
+        _send(message, destNext.next!);
       }
     }
   }
@@ -479,7 +491,7 @@ class AodvManager {
                 ),
                 rrer
               ),
-              precursor
+              precursor!
             );
           }
         }
@@ -516,7 +528,7 @@ class AodvManager {
         ), 
         rrep
       ), 
-      entry.next
+      entry.next!
     );
 
     if (_verbose) log(TAG, 'Send Gratuitous RREP to ${entry.next}');

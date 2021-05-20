@@ -34,7 +34,7 @@ class BleClient extends ServiceClient {
   /// 
   /// This client service deals with the remote host [_device].
   /// 
-  /// Tries to connect to a remote device in [attempts] times.
+  /// Connection attempts to a remote device are done at most [attempts] times.
   /// 
   /// A connection attempt is said to be a failure if nothing happens after 
   /// [timeOut] ms.
@@ -53,7 +53,7 @@ class BleClient extends ServiceClient {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Start the listening process for ad hoc events.
+  /// Starts the listening process for ad hoc events.
   /// 
   /// In this case, an ad hoc event is a message received from the remote host
   /// [_device].
@@ -84,7 +84,7 @@ class BleClient extends ServiceClient {
     }, onDone: () => _messageSub = null);
   }
 
-  /// Stop the listening process for ad hoc events.
+  /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
     super.stopListening();
@@ -97,13 +97,18 @@ class BleClient extends ServiceClient {
 
   /// Initiates a connection with the remote device.
   @override
-  Future<void> connect() => _connect(attempts, Duration(milliseconds: backOffTime));
+  Future<void> connect() async {
+    await _connect(attempts, Duration(milliseconds: backOffTime));
+  }
 
   /// Cancels the connection with the remote device.
   @override
   void disconnect() {
     this.stopListening();
+    // Abort connection with the remote host
     BleAdHocManager.cancelConnection(_device.mac!);
+    // Notify upper layer of a connection aborted
+    controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac!));
   }
 
   /// Sends a [message] to the remote device.

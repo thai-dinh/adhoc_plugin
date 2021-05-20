@@ -27,13 +27,13 @@ class WrapperWifi extends WrapperNetwork {
 
   String? _ownIPAddress;
   String? _groupOwnerAddr;
-  WifiAdHocManager? _wifiManager;
 
+  late int _serverPort;
   late bool _isListening;
   late bool _isConnecting;
   late bool _isGroupOwner;
   late bool _isDiscovering;
-  late int _serverPort;
+  late WifiAdHocManager _wifiManager;
   late HashMap<String?, String?> _mapIPAddressMac;
   late StreamSubscription<AdHocEvent> _eventSub;
 
@@ -62,7 +62,7 @@ class WrapperWifi extends WrapperNetwork {
     if (await (WifiAdHocManager.isWifiEnabled() as Future<bool>)) {
       this._wifiManager = WifiAdHocManager(verbose, _onWifiReady)..register(_registration);
       this._isGroupOwner = false;
-      this.ownName = await _wifiManager!.adapterName;
+      this.ownName = (await _wifiManager.adapterName)!;
       this._initialize();
       this.enabled = true;
     } else {
@@ -82,8 +82,6 @@ class WrapperWifi extends WrapperNetwork {
     mapAddrNetwork.clear();
     neighbors.clear();
 
-    _wifiManager = null;
-
     enabled = false;
   }
 
@@ -93,7 +91,7 @@ class WrapperWifi extends WrapperNetwork {
       return;
 
     _eventSub.resume();
-    _wifiManager!.discovery();
+    _wifiManager.discovery();
     _isDiscovering = true;
   }
 
@@ -102,7 +100,7 @@ class WrapperWifi extends WrapperNetwork {
     WifiAdHocDevice? wifiAdHocDevice = mapMacDevices[device.mac] as WifiAdHocDevice?;
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager!.connect(device.mac);
+      await _wifiManager.connect(device.mac);
     }
   }
 
@@ -117,34 +115,34 @@ class WrapperWifi extends WrapperNetwork {
 
   @override
   Future<String> getAdapterName() async {
-    final String? name = await _wifiManager!.adapterName;
+    final String? name = await _wifiManager.adapterName;
     return name == null ? '' : name;
   }
 
   @override
   Future<bool> updateDeviceName(final String name) async {
-    final bool? result = await _wifiManager!.updateDeviceName(name);
+    final bool? result = await _wifiManager.updateDeviceName(name);
     return result == null ? false : result ;
   }
 
   @override
   Future<bool> resetDeviceName() async {
-    final bool? result = await _wifiManager!.resetDeviceName();
+    final bool? result = await _wifiManager.resetDeviceName();
     return result == null ? false : result ;
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void unregister() => _wifiManager!.unregister();
+  void unregister() => _wifiManager.unregister();
 
   void removeGroup() {
     _mapIPAddressMac.forEach((address, mac) async {
       await serviceServer.cancelConnection(mac);
     });
 
-    serviceServer.activeConnections!.clear();
+    serviceServer.activeConnections.clear();
 
-    _wifiManager!.removeGroup();
+    _wifiManager.removeGroup();
   }
 
   bool? isWifiGroupOwner() => _isGroupOwner;
@@ -152,7 +150,7 @@ class WrapperWifi extends WrapperNetwork {
 /*------------------------------Private methods-------------------------------*/
 
   void _initialize() {
-    _eventSub = _wifiManager!.eventStream.listen((AdHocEvent event) {
+    _eventSub = _wifiManager.eventStream.listen((AdHocEvent event) {
       controller.add(event);
 
       switch (event.type) {
@@ -230,7 +228,7 @@ class WrapperWifi extends WrapperNetwork {
             )
           );
 
-          ownName = await _wifiManager!.adapterName;
+          ownName = (await _wifiManager.adapterName)!;
           controller.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
           (service as ServiceClient).send(
@@ -265,8 +263,8 @@ class WrapperWifi extends WrapperNetwork {
     _onEvent(serviceServer);
   }
 
-  void _connect(int? remotePort) async {
-    final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr, attempts, timeOut);
+  void _connect(int remotePort) async {
+    final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr!, attempts, timeOut);
     _onEvent(wifiClient);
     await wifiClient.connect();
   }
@@ -279,7 +277,7 @@ class WrapperWifi extends WrapperNetwork {
           remoteAddress, () => message.header!.mac
         );
 
-        ownName = await _wifiManager!.adapterName;
+        ownName = (await _wifiManager.adapterName)!;
         controller.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac, ownName]));
 
         serviceServer.send(

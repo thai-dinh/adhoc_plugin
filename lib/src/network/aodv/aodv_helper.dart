@@ -10,19 +10,19 @@ class AodvHelper {
 
   final bool _verbose;
 
-  int? _rreqId;
+  late int _rreqId;
   late RoutingTable _routingTable;
   late HashSet<String> _entryBroadcast;
 
   AodvHelper(this._verbose) {
+    this._rreqId = 1;
     this._routingTable = RoutingTable(_verbose);
     this._entryBroadcast = HashSet();
-    this._rreqId = 1;
   }
 
   EntryRoutingTable? addEntryRoutingTable(
-    String? destAddress, String? next, int? hop, int? seq, int? lifetime, 
-    List<String?>? precursors
+    String destAddress, String next, int hop, int seq, int lifetime, 
+    List<String> precursors
   ) {
     EntryRoutingTable entry = EntryRoutingTable(
       destAddress, next, hop, seq, lifetime, precursors
@@ -50,8 +50,8 @@ class AodvHelper {
     return _routingTable.containsDest(destAddress);
   }
 
-  int? getIncrementRreqId() {
-    return _rreqId = _rreqId! + 1;
+  int getIncrementRreqId() {
+    return _rreqId += 1;
   }
 
   EntryRoutingTable? getDestination(String? destAddress) {

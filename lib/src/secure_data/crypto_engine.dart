@@ -15,6 +15,7 @@ import 'package:pointycastle/export.dart';
 class CryptoEngine {
   RSAPublicKey? _publicKey;
   RSAPrivateKey? _privateKey;
+
   late ReceivePort _mainPort;
   late Stream<dynamic> _stream;
   late List<Isolate?> _isolates;

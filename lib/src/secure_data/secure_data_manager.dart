@@ -144,7 +144,7 @@ class SecureDataManager {
   }
 
   void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
-    Certificate certificate = Certificate(neighbor.label, _aodvManager.label, key);
+    Certificate certificate = Certificate(neighbor.label!, _aodvManager.label, key);
     Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
     _repository.addCertificate(certificate);
