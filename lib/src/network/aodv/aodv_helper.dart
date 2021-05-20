@@ -31,10 +31,12 @@ class AodvHelper {
     return _routingTable.addEntry(entry) ? entry : null;
   }
 
-  bool addBroadcastId(String sourceAddress, int? rreqId) {
+  bool addBroadcastId(String sourceAddress, int rreqId) {
     String entry = sourceAddress + rreqId.toString();
+
     if (!_entryBroadcast.contains(entry)) {
       _entryBroadcast.add(entry);
+
       if (_verbose) log(TAG, 'Add $entry into broadcast set');
       return true;
     } else {
@@ -63,7 +65,7 @@ class AodvHelper {
   }
 
   int sizeRoutingTable() {
-    return _routingTable.getRoutingTable()!.length;
+    return _routingTable.getRoutingTable().length;
   }
 
   bool containsNext(String? nextAddress) {
@@ -74,15 +76,15 @@ class AodvHelper {
     return _routingTable.getDestFromNext(nextAddress);
   }
 
-  Set<MapEntry<String?, EntryRoutingTable>> getEntrySet() {
-    return _routingTable.getRoutingTable()!.entries.toSet();
+  Set<MapEntry<String?, EntryRoutingTable?>> getEntrySet() {
+    return _routingTable.getRoutingTable().entries.toSet();
   }
 
-  List<String?>? getPrecursorsFromDest(String? destAddress) {
+  List<String?> getPrecursorsFromDest(String? destAddress) {
     return _routingTable.getPrecursorsFromDest(destAddress);
   }
 
-  int? getDataPathFromAddress(String? address) {
+  int getDataPathFromAddress(String? address) {
     return _routingTable.getDataPathFromAddress(address);
   }
 }
