@@ -96,7 +96,7 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     this.stopListening();
     // Leave Wi-Fi Direct group
-    await WifiP2p().removeGroup();
+    await WifiP2P().removeGroup();
     // Notify upper layer of a connection aborted
     controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
   }

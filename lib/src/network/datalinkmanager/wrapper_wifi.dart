@@ -37,6 +37,9 @@ class WrapperWifi extends WrapperNetwork {
   late HashMap<String?, String?> _mapIPAddressMac;
   late StreamSubscription<AdHocEvent> _eventSub;
 
+  /// Creates a [WrapperWifi] object.
+  /// 
+  /// The debug/verbose mode is set if [_verbose] is true.
   WrapperWifi(
     bool verbose, Config config, HashMap<String?, AdHocDevice?> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
@@ -76,6 +79,7 @@ class WrapperWifi extends WrapperNetwork {
   void enable(int duration) {
     _wifiManager = WifiAdHocManager(verbose);
     _wifiManager.initialize();
+    _initialize();
     enabled = true;
   }
 
@@ -155,11 +159,11 @@ class WrapperWifi extends WrapperNetwork {
   void _initialize() {
     _eventSub = _wifiManager.eventStream.listen((AdHocEvent event) {
       controller.add(event);
+      print(event);
 
       switch (event.type) {
         case DEVICE_INFO_WIFI:
           List<String?> info = (event.payload as List<dynamic>).cast<String?>();
-          print(info);
           _ownIPAddress = info[0] == null ? '' : info[0]!;
           ownMac = info[1] == null ? '' : info[1]!;
           break;
@@ -187,12 +191,11 @@ class WrapperWifi extends WrapperNetwork {
           break;
 
         case CONNECTION_INFORMATION:
-          print('here');
           List<dynamic> info = event.payload as List<dynamic>;
           bool? isConnected = info[0];
           bool? isGroupOwner = info[1];
           String? groupOwnerAddress = info[2];
-
+          print('INFO3 : $isConnected $isGroupOwner $groupOwnerAddress');
           _isGroupOwner = isGroupOwner!;
           if (isConnected! && _isGroupOwner) {
             _groupOwnerAddr = _ownIPAddress = groupOwnerAddress;

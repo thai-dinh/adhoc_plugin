@@ -11,7 +11,7 @@ abstract class ServiceManager {
 
   ServiceManager(this.verbose) {
     this.isDiscovering = false;
-    this.controller =  StreamController<AdHocEvent>.broadcast();
+    this.controller = StreamController<AdHocEvent>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

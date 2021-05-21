@@ -22,12 +22,14 @@ import java.io.IOException;
 public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.ble.channel";
 
+  private MethodChannel methodChannel;
   private BinaryMessenger messenger;
+  private Context context;
+
   private BluetoothLowEnergyManager bleManager;
   private BluetoothManager bluetoothManager;
-  private Context context;
   private GattServerManager gattServerManager;
-  private MethodChannel methodChannel;
+
   private WifiAdHocManager wifiAdHocManager;
 
   @Override

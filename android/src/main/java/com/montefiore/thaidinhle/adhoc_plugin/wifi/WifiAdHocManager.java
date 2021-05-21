@@ -39,15 +39,16 @@ import static android.os.Looper.getMainLooper;
 
 public class WifiAdHocManager implements MethodCallHandler {
     private static final String TAG = "[AdhocPlugin][WifiManager]";
-    private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.wifi.channel";
+    private static final String METHOD_NAME = "ad.hoc.lib/wifi.method.channel";
+    private static final String EVENT_NAME = "ad.hoc.lib/wifi.event.channel";
 
     private boolean verbose;
     private boolean registered;
     private Channel channel;
     private Context context;
-    private HashMap<String, EventChannel> mapNameEventChannel;
-    private HashMap<String, EventSink> mapNameEventSink;
     private MethodChannel methodChannel;
+    private EventChannel eventChannel;
+    private EventSink eventSink;
     private String initialName;
     private String currentAdapterName;
     private WifiDirectBroadcastReceiver broadcastReceiver;
@@ -57,8 +58,6 @@ public class WifiAdHocManager implements MethodCallHandler {
         this.verbose = false;
         this.registered = false;
         this.context = context;
-        this.mapNameEventChannel = new HashMap<String, EventChannel>();
-        this.mapNameEventSink = new HashMap<String, EventSink>();
         this.wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         this.channel = wifiP2pManager.initialize(context, getMainLooper(), null);
     }
@@ -115,12 +114,29 @@ public class WifiAdHocManager implements MethodCallHandler {
 /*--------------------------------Public methods------------------------------*/   
 
     public void initMethodCallHandler(BinaryMessenger messenger) {
-        methodChannel = new MethodChannel(messenger, CHANNEL_NAME);
+        if (verbose) Log.d(TAG, "initMethodCallHandler()");
+
+        methodChannel = new MethodChannel(messenger, METHOD_NAME);
         methodChannel.setMethodCallHandler(this);
-        initChannels(messenger);
+        eventChannel = new EventChannel(messenger, EVENT_NAME);
+        eventChannel.setStreamHandler(new StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventSink events) {
+              eventSink = events;
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+              eventSink = null;
+              eventChannel.setStreamHandler(null);
+              eventChannel = null;
+            }
+          });
     }
 
     public void close() {
+        if (verbose) Log.d(TAG, "close()");
+
         unregister();
         methodChannel.setMethodCallHandler(null);
     }
@@ -130,41 +146,6 @@ public class WifiAdHocManager implements MethodCallHandler {
     private void setVerbose(boolean verbose) {
         if (verbose) Log.d(TAG, "setVerbose()");
         this.verbose = verbose;
-    }
-
-    private void initChannels(BinaryMessenger messenger) {
-        Log.d(TAG, "initChannels()");
-    
-        final String[] channelIdentifiers = new String[] { 
-          "STATE_CHANGED", "PEERS_CHANGED", "CONNECTION_CHANGED", "THIS_DEVICE_CHANGED"
-        };
-    
-        final String[] channelNames = new String[] { 
-          "wifi.p2p/state", "wifi.p2p/peers", "wifi.p2p/connection", "wifi.p2p/this.device"
-        };
-    
-        for (int i = 0; i < channelIdentifiers.length; i++) {
-          EventChannel channel = new EventChannel(messenger, channelNames[i]);
-          final int j = i;
-    
-          channel.setStreamHandler(new StreamHandler() {
-            @Override
-            public void onListen(Object arguments, EventSink events) {
-              mapNameEventSink.put(channelIdentifiers[j], events);
-            }
-    
-            @Override
-            public void onCancel(Object arguments) {
-              EventSink eventSink = mapNameEventSink.get(channelIdentifiers[j]);
-              EventChannel eventChannel = mapNameEventChannel.get(channelIdentifiers[j]);
-              eventSink = null;
-              eventChannel.setStreamHandler(null);
-              eventChannel = null;
-            }
-          });
-    
-          mapNameEventChannel.put(channelIdentifiers[i], channel);
-        }
     }
 
     private void register() {
@@ -177,7 +158,7 @@ public class WifiAdHocManager implements MethodCallHandler {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     
-        broadcastReceiver = new WifiDirectBroadcastReceiver(channel, mapNameEventSink, wifiP2pManager);
+        broadcastReceiver = new WifiDirectBroadcastReceiver(channel, eventSink, wifiP2pManager);
         broadcastReceiver.setVerbose(verbose);
 
         context.registerReceiver(broadcastReceiver, intentFilter);

@@ -1,10 +1,10 @@
-class WifiP2pDevice {
+class WifiP2PDevice {
   late String name;
   late String mac;
 
-  WifiP2pDevice();
+  WifiP2PDevice(this.name, this.mac);
 
-  WifiP2pDevice.fromMap(Map map) {
+  WifiP2PDevice.fromMap(Map map) {
     name = map['name'];
     mac = map['mac'];
   }

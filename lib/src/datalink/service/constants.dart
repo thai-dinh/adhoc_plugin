@@ -52,3 +52,9 @@ const CONNECTION_INFORMATION = 111;  // Connection information
 // Constants for device information event
 const DEVICE_INFO_BLE     = 112;     // Device info (MAC + BLE UUID) recovered
 const DEVICE_INFO_WIFI    = 113;     // Device info (MAC + Wi-Fi IP) recovered
+
+// Constant for dealing with platform-specific side
+const ANDROID_DISCOVERY  = 120;
+const ANDROID_STATE      = 121;
+const ANDROID_CONNECTION = 122;
+const ANDROID_CHANGES    = 123;

@@ -10,7 +10,7 @@ class WifiAdHocDevice extends AdHocDevice {
   /// Creates a [WifiAdHocDevice] object.
   /// 
   /// The instance is filled with information given by [device].
-  WifiAdHocDevice(WifiP2pDevice device) : super(
+  WifiAdHocDevice(WifiP2PDevice device) : super(
     label: '', address: '', name: device.name, mac: device.mac, type: WIFI
   ) {
     this.port = 0;
