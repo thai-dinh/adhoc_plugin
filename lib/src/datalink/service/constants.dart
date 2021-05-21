@@ -44,6 +44,11 @@ const DEVICE_DISCOVERED = 106;       // Remote device discovered
 const MESSAGE_RECEIVED = 107;        // Message received from peers
 
 // Constants for connection event
-const CONNECTION_PERFORMED = 108;    // Connection performed
-const CONNECTION_ABORTED   = 109;    // Connection aborted
-const CONNECTION_EXCEPTION = 110;    // Connection exception raised
+const CONNECTION_PERFORMED   = 108;  // Connection performed
+const CONNECTION_ABORTED     = 109;  // Connection aborted
+const CONNECTION_EXCEPTION   = 110;  // Connection exception raised
+const CONNECTION_INFORMATION = 111;  // Connection information
+
+// Constants for device information event
+const DEVICE_INFO_BLE     = 112;     // Device info (MAC + BLE UUID) recovered
+const DEVICE_INFO_WIFI    = 113;     // Device info (MAC + Wi-Fi IP) recovered

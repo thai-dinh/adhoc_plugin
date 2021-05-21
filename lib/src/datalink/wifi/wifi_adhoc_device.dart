@@ -5,12 +5,13 @@ import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
 
 /// Class representing a remote Wifi-capable device.
 class WifiAdHocDevice extends AdHocDevice {
-  int? port;
+  late int port;
 
-  /// Initialize a newly created WifiAdHocDevice representing a remote 
-  /// Wifi-capable device with information given by discovered [device].
+  /// Creates a [WifiAdHocDevice] object.
+  /// 
+  /// The instance is filled with information given by [device].
   WifiAdHocDevice(WifiP2pDevice device) : super(
-    name: device.name, mac: device.mac, type: WIFI
+    label: '', address: '', name: device.name, mac: device.mac, type: WIFI
   ) {
     this.port = 0;
   }
@@ -25,7 +26,7 @@ class WifiAdHocDevice extends AdHocDevice {
               ', label=$label' +
               ', name$name' +
               ', mac$mac' +
-              ', type$type' +
+              ', type${super.typeAsString()}' +
            '}';
   }
 }

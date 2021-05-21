@@ -12,7 +12,8 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter/services.dart';
 
 
-/// Class defining the server's logic for the Bluetooth LE implementation.
+/// Class defining the server's logic for the Bluetooth Low Energy 
+/// implementation.
 class BleServer extends ServiceServer {
   static const String _chConnectName = 'ad.hoc.lib/ble.connection';
   static const String _chMessageName = 'ad.hoc.lib/ble.message';
@@ -31,10 +32,10 @@ class BleServer extends ServiceServer {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Start the listening process for ad hoc events.
+  /// Starts the listening process for ad hoc events.
   /// 
   /// In this case, an ad hoc event can be a message received from a remote 
-  /// host, or a connection with a remote host has been performed.
+  /// host, or a connection establishment notification with a remote host.
   @override
   void listen() {
     if (verbose) log(ServiceServer.TAG, 'Server: listen()');
@@ -74,14 +75,14 @@ class BleServer extends ServiceServer {
       String strMessage = Utf8Decoder().convert(messageAsListByte);
       MessageAdHoc message = MessageAdHoc.fromJson(json.decode(strMessage));
 
-      if (message.header!.mac == null || message.header!.mac!.compareTo('') == 0) {
+      if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
         message.header = Header(
-          messageType: message.header!.messageType,
-          label: message.header!.label,
-          name: message.header!.name,
-          address: message.header!.address,
+          messageType: message.header.messageType,
+          label: message.header.label,
+          name: message.header.name,
+          address: message.header.address,
           mac: map['macAddress'],
-          deviceType: message.header!.deviceType
+          deviceType: message.header.deviceType
         );
       }
 
@@ -93,7 +94,7 @@ class BleServer extends ServiceServer {
     state = Constants.STATE_LISTENING;
   }
 
-  /// Stop the listening process for ad hoc events.
+  /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
     if (verbose) log(ServiceServer.TAG, 'Server: stopListening');

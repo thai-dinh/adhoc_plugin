@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
@@ -106,13 +107,13 @@ class AodvManager {
           _processAodvMsgReceived(event.payload as MessageAdHoc);
           break;
 
-        case DatalinkConstants.DEVICE_INFO_BLE:
+        case DEVICE_INFO_BLE:
           List<dynamic> info = event.payload as List<dynamic>;
           _ownMac = info[0] as String;
           _ownName = info[1] as String;
           break;
 
-        case DatalinkConstants.DEVICE_INFO_WIFI: // TODO: Always select this/identifier
+        case DEVICE_INFO_WIFI: // TODO: Always select this/identifier
           List<dynamic> info = event.payload as List<dynamic>;
           _ownMac = info[0] as String;
           _ownName = info[1] as String;
@@ -186,7 +187,7 @@ class AodvManager {
   void _send(MessageAdHoc message, String address) {
     if (_datalinkManager.isDirectNeighbors(address)) {
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
-      if (destNext != null && message.header!.messageType == AodvConstants.DATA)
+      if (destNext != null && message.header.messageType == AodvConstants.DATA)
         // Update the data path
         destNext.updateDataPath(address);
 
@@ -202,14 +203,14 @@ class AodvManager {
         if (_verbose) 
           log(TAG, 'Routing table contains ${destNext.next}');
 
-        if (message.header!.messageType == AodvConstants.DATA)
+        if (message.header.messageType == AodvConstants.DATA)
           // Update the data path
           destNext.updateDataPath(address);
 
         // Send to direct neighbor
         _sendDirect(message, destNext.next);
       }
-    } else if (message.header!.messageType == AodvConstants.RERR) {
+    } else if (message.header.messageType == AodvConstants.RERR) {
       if (_verbose) log(TAG, 'RERR sent');
     } else {
       _dataMessage = message;
@@ -318,7 +319,7 @@ class AodvManager {
     RREQ rreq = RREQ.fromJson((message.pdu as Map) as Map<String, dynamic>);
     // Get previous hop and previous address
     int hop = rreq.hopCount;
-    String? originateAddr = message.header!.label;
+    String? originateAddr = message.header.label;
 
     if (_verbose) log(TAG, 'Received RREQ from $originateAddr');
 
@@ -334,7 +335,7 @@ class AodvManager {
 
       // Update routing table
       EntryRoutingTable? entry = _aodvHelper.addEntryRoutingTable(
-        rreq.originAddress, originateAddr!, hop, rreq.originSequenceNum, 
+        rreq.originAddress, originateAddr, hop, rreq.originSequenceNum, 
         AodvConstants.NO_LIFE_TIME, List.empty(growable: true)
       );
 
@@ -372,7 +373,7 @@ class AodvManager {
       }
     } else if (_aodvHelper.containsDest(rreq.destAddress)) {
       // Send RREP GRATUITOUS to destination
-      _sendRREP_GRATUITOUS(message.header!.label!, rreq);
+      _sendRREP_GRATUITOUS(message.header.label, rreq);
     } else {
       if (rreq.originAddress.compareTo(_ownLabel) == 0) {
         if (_verbose) log(TAG, 'Reject own RREQ ${rreq.originAddress}');
@@ -389,7 +390,7 @@ class AodvManager {
         );
 
         // Broadcast RREQ to direct neighbors
-        _datalinkManager.broadcastExcept(message, originateAddr!);
+        _datalinkManager.broadcastExcept(message, originateAddr);
 
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
@@ -414,7 +415,7 @@ class AodvManager {
     RREP rrep = RREP.fromJson((message.pdu as Map) as Map<String, dynamic>);
     // Get previous hop and previous address
     int hopRcv = rrep.hopCount;
-    String nextHop = message.header!.label!;
+    String nextHop = message.header.label;
 
     if (_verbose) log(TAG, 'Received RREP from $nextHop');
 
@@ -449,7 +450,7 @@ class AodvManager {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
 
         // Add intermediate node certificate to the certificate chain
-        rrep.certChain.add(_repository.getCertificate(message.header!.label!)!);
+        rrep.certChain.add(_repository.getCertificate(message.header.label)!);
         rrep.incrementHopCount();
         _send(
           MessageAdHoc(
@@ -555,7 +556,7 @@ class AodvManager {
 
       // Update routing table
       _aodvHelper.addEntryRoutingTable(
-        rrep.originAddress, message.header!.label!, hopCount, rrep.sequenceNum, 
+        rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, 
         rrep.lifetime, []
       );
 
@@ -572,7 +573,7 @@ class AodvManager {
         
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
-          rrep.originAddress, message.header!.label!, hopCount, rrep.sequenceNum, 
+          rrep.originAddress, message.header.label, hopCount, rrep.sequenceNum, 
           rrep.lifetime, _addPrecursors(destNext.next)
         );
 
@@ -638,7 +639,7 @@ class AodvManager {
     // Get the RERR message
     RERR rerr = RERR.fromJson((message.pdu as Map) as Map<String, dynamic>);
     // Get previous source address
-    String? originateAddr = message.header!.label;
+    String? originateAddr = message.header.label;
 
     if (_verbose) 
       log(TAG, 
@@ -688,7 +689,7 @@ class AodvManager {
     Data data = Data.fromJson((message.pdu as Map) as Map<String, dynamic>);
 
     if (_verbose) 
-      log(TAG, 'Data message received from: ${message.header!.label}');
+      log(TAG, 'Data message received from: ${message.header.label}');
 
     if (data.destAddress!.compareTo(_ownLabel) == 0) {
       if (_verbose) 
@@ -697,7 +698,7 @@ class AodvManager {
       print(message);
 
       // Get the header of the message
-      Header header = message.header!;
+      Header header = message.header;
       // Get the AdHocDevice object of the sender
       AdHocDevice device = AdHocDevice(
         label: header.label,
@@ -721,7 +722,7 @@ class AodvManager {
       } else {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
         // Get the header of the message
-        Header header = message.header!;
+        Header header = message.header;
         // Get the AdHocDevice object of the sender
         AdHocDevice device = AdHocDevice(
           label: header.label,
@@ -827,7 +828,7 @@ class AodvManager {
   /// Throws an [AodvUnknownDestException] for unknown destination problem.
   /// Throws an [AodvUnknownTypeException] for unknown AODV message type.
   void _processAodvMsgReceived(MessageAdHoc message) {
-    switch (message.header!.messageType) {
+    switch (message.header.messageType) {
       case AodvConstants.RREQ:
         _processRREQ(message);
         _getNextSequenceNumber();

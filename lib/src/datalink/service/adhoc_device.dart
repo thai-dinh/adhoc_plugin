@@ -54,13 +54,11 @@ class AdHocDevice {
   /// Creates a JSON representation of this [AdHocDevice] instance.
   Map<String, dynamic> toJson() => _$AdHocDeviceToJson(this);
 
-/*------------------------------Private methods-------------------------------*/
-
   /// Returns a [String] representation of this remote device's type
   ///
   /// The type of this instance can be Bluetooth Low Energy (BluetoothLE),
   /// Wifi P2P (Wifi), or unknown (UNKNOWN) if the type is not specified.
-  String _typeAsString() {
+  String typeAsString() {
     switch (type) {
       case BLE:
         return "Ble";
@@ -80,7 +78,7 @@ class AdHocDevice {
               ', name=$_name' +
               ', mac=$_mac' +
               ', address=$address' +
-              ', type=${_typeAsString()}' +
+              ', type=${typeAsString()}' +
            '}';
   }
 }

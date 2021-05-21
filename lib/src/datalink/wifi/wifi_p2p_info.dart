@@ -1,7 +1,7 @@
 class WifiP2pInfo {
-  String? groupOwnerAddress;
-  bool? groupFormed;
-  bool? isGroupOwner;
+  late String groupOwnerAddress;
+  late bool groupFormed;
+  late bool isGroupOwner;
 
   WifiP2pInfo();
 

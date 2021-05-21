@@ -278,10 +278,10 @@ class WrapperBle extends WrapperNetwork {
 
   ///
   void _processMsgReceived(final MessageAdHoc message) {
-    switch (message.header!.messageType) {
+    switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Recover this own node MAC and BLE address
-        String? mac = message.header!.mac;
+        String? mac = message.header.mac;
         ownMac = message.pdu as String;
         _ownBleUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
         _ownBleUUID = _ownBleUUID!.toLowerCase();
@@ -307,11 +307,11 @@ class WrapperBle extends WrapperNetwork {
 
         // Process received message from remote nodes
         receivedPeerMessage(
-          message.header!,
+          message.header,
           NetworkManager(
             (MessageAdHoc msg) async {
-              msg.header!.address = _ownBleUUID;
-              msg.header!.deviceType = BLE;
+              msg.header.address = _ownBleUUID;
+              msg.header.deviceType = BLE;
               await serviceServer.send(msg, mac);
             },
             () => serviceServer.cancelConnection(mac)
@@ -329,7 +329,7 @@ class WrapperBle extends WrapperNetwork {
 
         // Process received message from remote nodes
         receivedPeerMessage(
-          message.header!, mapAddrNetwork[message.header!.address]
+          message.header, mapAddrNetwork[message.header.address]
         );
         break;
 
@@ -337,7 +337,7 @@ class WrapperBle extends WrapperNetwork {
         FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
           // Rebroadcast the message to this node direct neighbors
-          broadcastExcept(message, message.header!.label!);
+          broadcastExcept(message, message.header.label);
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (AdHocDevice? device in hashSet) {
@@ -355,10 +355,10 @@ class WrapperBle extends WrapperNetwork {
       case DISCONNECT_BROADCAST:
         if (checkFloodEvent(message.pdu as String?)) {
           // Rebroadcast the message to this node direct neighbors
-          broadcastExcept(message, message.header!.label!);
+          broadcastExcept(message, message.header.label);
 
           // Get the header of the message received
-          Header header = message.header!;
+          Header header = message.header;
           // Get the sender information
           AdHocDevice device = AdHocDevice(
             label: header.label,
@@ -377,7 +377,7 @@ class WrapperBle extends WrapperNetwork {
 
       case BROADCAST:
         // Get the header of the message received
-        Header header = message.header!;
+        Header header = message.header;
         // Get the sender information
         AdHocDevice device = AdHocDevice(
           label: header.label,

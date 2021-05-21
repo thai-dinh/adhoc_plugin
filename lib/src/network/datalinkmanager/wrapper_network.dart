@@ -166,7 +166,7 @@ abstract class WrapperNetwork {
 
       setRemoteDevices.add(device);
       if (flood) {
-        String id = header.label! + DateTime.now().millisecond.toString();
+        String id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
         header.messageType = Constants.CONNECT_BROADCAST;
         broadcast(

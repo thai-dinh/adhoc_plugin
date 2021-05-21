@@ -56,7 +56,7 @@ class BleAdHocManager extends ServiceManager {
       _statusSub!.cancel();
   }
 
-  /// Initializes parameters.
+  /// Initializes the listening process of platform-side streams.
   void initialize() {
     _eventChannel.receiveBroadcastStream().listen(
       (event) => controller.add(event)
@@ -94,7 +94,7 @@ class BleAdHocManager extends ServiceManager {
     );
   }
 
-  /// Triggers the discovery of other Ble-capable devices process.
+  /// Triggers the discovery of other Ble-capable devices.
   void discovery()  {
     if (verbose) log(TAG, 'discovery()');
 
@@ -131,7 +131,7 @@ class BleAdHocManager extends ServiceManager {
     isDiscovering = true;
     // Notify upper layer of the discovery process' start
     controller.add(AdHocEvent(DISCOVERY_START, null));
-    // Stop the discovery process after DISCOVERY_TIME.
+    // Stop the discovery process after DISCOVERY_TIME
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }
 

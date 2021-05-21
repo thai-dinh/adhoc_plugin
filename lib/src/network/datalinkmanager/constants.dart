@@ -19,5 +19,3 @@ const DATA_RECEIVED       = 209; // Data received
 const FORWARD_DATA        = 210; // Data to be forwarded to next hop
 const MESSAGE_EVENT       = 211; // Message received
 const BROKEN_LINK         = 212; // Broken link detected
-const DEVICE_INFO_BLE     = 213; // Device info (MAC + BLE UUID) recovered
-const DEVICE_INFO_WIFI    = 214; // Device info (MAC + Wi-Fi IP) recovered
