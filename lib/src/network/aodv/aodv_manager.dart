@@ -19,6 +19,7 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_message.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_type.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate_repository.dart';
 
 
 /// Class representing the core of the AODV protocol. It manages all the 
@@ -36,6 +37,7 @@ class AodvManager {
   late int _ownSequenceNum;
   late AodvHelper _aodvHelper;
   late DataLinkManager _datalinkManager;
+  late CertificateRepository _repository;
   late HashMap<String?, int?> _mapDestSeqNum;
   late StreamController<AdHocEvent> _controller;
 
@@ -43,9 +45,13 @@ class AodvManager {
   /// 
   /// The debug/verbose mode is set if [_verbose] is true.
   /// 
-  /// This object is configured with regards to [config], which contains
-  /// specific configurations.
-  AodvManager(this._verbose, Config config) {
+  /// A certificate repository [_repository] is used to manage certificates
+  /// of source node to destination node including the intermediate nodes. It is
+  /// used for the chain discovery process.
+  /// 
+  /// This object is configured according to [config], which contains specific 
+  /// configurations.
+  AodvManager(this._verbose, this._repository, Config config) {
     this._ownMac = '';
     this._ownName = 'i';
     this._ownLabel = config.label;
@@ -64,10 +70,10 @@ class AodvManager {
   /// Returns the label as [String] of the current node.
   String get label => _ownLabel;
 
-  /// Returns the [DataLinkManager] object used by this AODV manager.
+  /// Returns the [DataLinkManager] instance used by this AODV manager.
   DataLinkManager get dataLinkManager => _datalinkManager;
 
-  /// Returns a [Stream] of [AdHocEvent] event of lower layers.
+  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*------------------------------Public methods-------------------------------*/
@@ -180,10 +186,13 @@ class AodvManager {
     if (_datalinkManager.isDirectNeighbors(address)) {
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
       if (destNext != null && message.header!.messageType == AodvConstants.DATA)
+        // Update the data path
         destNext.updateDataPath(address);
 
       _sendDirect(message, address);
     } else if (_aodvHelper.containsDest(address)) {
+      // Destination learned from neighbors so send to next by checking routing 
+      // table
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
       if (destNext == null) {
         if (_verbose) 
@@ -193,8 +202,10 @@ class AodvManager {
           log(TAG, 'Routing table contains ${destNext.next}');
 
         if (message.header!.messageType == AodvConstants.DATA)
+          // Update the data path
           destNext.updateDataPath(address);
 
+        // Send to direct neighbor
         _sendDirect(message, destNext.next);
       }
     } else if (message.header!.messageType == AodvConstants.RERR) {
@@ -202,6 +213,7 @@ class AodvManager {
     } else {
       _dataMessage = message;
 
+      // Increment sequence number prior to insertion in RREQ
       _getNextSequenceNumber();
 
       _startTimerRREQ(
@@ -214,7 +226,7 @@ class AodvManager {
   void _sendDirect(MessageAdHoc message, String address) {
     if (_verbose) log(TAG, 'Send directly to $address');
 
-    _datalinkManager.sendMessage(message, address);
+    _datalinkManager.sendMessage(address, message);
   }
 
   /// Adds a the name of a precursor [precursorName] to the list of 
@@ -264,7 +276,8 @@ class AodvManager {
 
     // Contruct the RREQ message
     MessageAdHoc message = MessageAdHoc(
-      Header(messageType: AodvConstants.RREQ, 
+      Header(
+        messageType: AodvConstants.RREQ, 
         label: _ownLabel,
         name: _ownName,
         mac: _ownMac
@@ -300,17 +313,22 @@ class AodvManager {
 
   /// Processes an ad hoc [message] of type RREQ.
   void _processRREQ(MessageAdHoc message) {
+    // Get the RREQ message
     RREQ rreq = RREQ.fromJson((message.pdu as Map) as Map<String, dynamic>);
+    // Get previous hop
     int? hop = rreq.hopCount;
+    // Get previous source address
     String? originateAddr = message.header!.label;
     if (_verbose) log(TAG, 'Received RREQ from $originateAddr');
 
     if (rreq.destAddress.compareTo(_ownLabel) == 0) {
+      // Save the destination sequence number
       _saveDestSequenceNumber(rreq.originAddress, rreq.originSequenceNum);
 
       if (_verbose) 
         log(TAG, '$_ownLabel is the destination (stop RREQ broadcast)');
 
+      // Update routing table
       EntryRoutingTable? entry = _aodvHelper.addEntryRoutingTable(
         rreq.originAddress, originateAddr!, hop, rreq.originSequenceNum, 
         AodvConstants.NO_LIFE_TIME, []
@@ -318,8 +336,11 @@ class AodvManager {
 
       if (entry != null) {
         if (rreq.destSequenceNum > _ownSequenceNum)
+          // Destination node increments its sequence number when the 
+          // sequence number in RREQ is equal to its stored number
           _getNextSequenceNumber();
 
+        // Generate RREP to be sent
         RREP rrep = RREP(
           AodvConstants.RREP, AodvConstants.INIT_HOP_COUNT, rreq.originAddress, 
           _ownSequenceNum, _ownLabel, AodvConstants.LIFE_TIME
@@ -327,6 +348,7 @@ class AodvManager {
 
         if (_verbose) log(TAG, 'Destination reachable via ${entry.next}');
 
+        // Send RREP to next destination
         _send(
           MessageAdHoc(
             Header(
@@ -340,30 +362,37 @@ class AodvManager {
           entry.next
         );
 
+        // Trigger timer for this reverse route
         _timerFlushReverseRoute(rreq.originAddress, rreq.originSequenceNum);
       }
     } else if (_aodvHelper.containsDest(rreq.destAddress)) {
+      // Send RREP GRATUITOUS to destination
       _sendRREP_GRATUITOUS(message.header!.label, rreq);
     } else {
       if (rreq.originAddress.compareTo(_ownLabel) == 0) {
         if (_verbose) log(TAG, 'Reject own RREQ ${rreq.originAddress}');
       } else if (_aodvHelper.addBroadcastId(rreq.originAddress, rreq.rreqId)) {
+
+        // Update PDU and header
         rreq.incrementHopCount();
+        message.pdu = rreq;
         message.header = Header(
           messageType: AodvConstants.RREQ, 
           label: _ownLabel,
           name: _ownName,
           mac: _ownMac
         );
-        message.pdu = rreq;
 
-        _datalinkManager.broadcastExcept(message, originateAddr);
+        // Broadcast RREQ to direct neighbours
+        _datalinkManager.broadcastExcept(message, originateAddr!);
 
+        // Update routing table
         _aodvHelper.addEntryRoutingTable(
-          rreq.originAddress, originateAddr!, hop, rreq.originSequenceNum, 
+          rreq.originAddress, originateAddr, hop, rreq.originSequenceNum, 
           AodvConstants.NO_LIFE_TIME, []
         );
 
+        // Trigger timer for this reverse route
         _timerFlushReverseRoute(rreq.originAddress, rreq.originSequenceNum);
       } else {
         if (_verbose) log(TAG, 'Already received this RREQ from ${rreq.originAddress}');

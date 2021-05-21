@@ -2,7 +2,7 @@
 const DIGEST_IDENTIFIER = '0609608648016503040201';
 
 // Constant for isolates
-const NB_ISOLATE   = 2;           // Number of isolates for encryption/decryption
+const NB_ISOLATE = 2; // Number of isolates for encryption/decryption
 
 // Constants
 const INITIALISATION = -1;  // Isolates initialisation
@@ -17,18 +17,21 @@ const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 const LEADER = 0;  // Leader tag for group formation
 const MEMBER = 1;  // Member tag for group formation
 
-// Constants
-const FORMATION = 10;
-const JOIN      = 11;
-const LEAVE     = 12;
-const REQUEST   = 13;
-const REPLY     = 14;
+// Constants for the group key agreement protocol
+const FORMATION = 30;
+const JOIN      = 31;
+const LEAVE     = 32;
+const REQUEST   = 33;
+const REPLY     = 34;
 
-// Constants
-const CERT_XCHG_BEGIN  = 300;     // Certificate exchange request
-const CERT_XCHG_END    = 301;     // Certificate exchange reply
-const ENCRYPTED_DATA   = 302;     // Data encrypted received or to send
-const UNENCRYPTED_DATA = 303;     // Data unencrypted received or to send
+// Constants for the certificate management
+const ENCRYPTED_DATA   = 300;     // Data encrypted received or to send
+const UNENCRYPTED_DATA = 301;     // Data unencrypted received or to send
+const CERT_XCHG_REQ    = 302;     // Certificate exchange request
+const CERT_XCHG_REP    = 303;     // Certificate exchange reply
+const CERT_REQ         = 304;     // Request certificate
+const CERT_REP         = 305;     // Reply to certificate request
+const CERT_REVOCATION  = 306;     // Certificate revocation notification
 
 // Constants for the secure group formation and management
 const GROUP_REQUEST       = 310;  // Group creation initiation

@@ -130,10 +130,10 @@ class DataLinkManager {
     }
   }
 
-  void sendMessage(MessageAdHoc message, String address) {
+  void sendMessage(String address, MessageAdHoc message) {
     for (WrapperNetwork? wrapper in _wrappers)
       if (wrapper!.enabled)
-        wrapper.sendMessage(message, address);
+        wrapper.sendMessage(address, message);
   }
 
   void broadcast(MessageAdHoc message) {
@@ -161,13 +161,13 @@ class DataLinkManager {
     return sent;
   }
 
-  void broadcastExcept(MessageAdHoc message, String? excludedAddress) {
+  void broadcastExcept(MessageAdHoc message, String excludedAddress) {
     for (WrapperNetwork? wrapper in _wrappers)
       if (wrapper!.enabled)
         wrapper.broadcastExcept(message, excludedAddress);
   }
 
-  Future<bool> broadcastObjectExcept(Object object, String? excludedAddress) async {
+  Future<bool> broadcastObjectExcept(Object object, String excludedAddress) async {
     bool sent = false;
     for (WrapperNetwork? wrapper in _wrappers) {
       if (wrapper!.enabled) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -12,142 +13,360 @@ import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 import 'package:adhoc_plugin/src/secure_data/certificate_repository.dart';
 import 'package:adhoc_plugin/src/secure_data/constants.dart';
 import 'package:adhoc_plugin/src/secure_data/crypto_engine.dart';
+import 'package:adhoc_plugin/src/secure_data/exceptions/verification_failed.dart';
 import 'package:adhoc_plugin/src/secure_data/secure_data.dart';
 import 'package:adhoc_plugin/src/secure_data/secure_group_controller.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 
+/// Class representing the core of the secure data layer. It performs 
+/// certificates management as well as encryption and decryption tasks.  
 class SecureDataManager {
   final bool _verbose;
 
+  late CryptoEngine _engine;
   late AodvManager _aodvManager;
   late DataLinkManager _datalinkManager;
-  late CryptoEngine _engine;
   late CertificateRepository _repository;
   late SecureGroupController _groupController;
   late StreamController<AdHocEvent> _controller;
+  
+  late HashMap<String, List<Object>> _buffer;
+  late Set<String> _setFloodEvents;
 
+  /// Creates a [SecureDataManager] object.
+  /// 
+  /// The debug/verbose mode is set if [_verbose] is true.
+  /// 
+  /// This object is configured according to [config], which contains specific 
+  /// configurations.
   SecureDataManager(this._verbose, Config config) {
-    this._aodvManager = AodvManager(_verbose, config);
-    this._datalinkManager = _aodvManager.dataLinkManager;
     this._repository = CertificateRepository(config);
-    this._engine = CryptoEngine();
+    this._aodvManager = AodvManager(_verbose, _repository, config);
+    this._datalinkManager = _aodvManager.dataLinkManager;
     this._groupController = SecureGroupController(
       _aodvManager, _datalinkManager, _aodvManager.eventStream, config
     );
+    this._engine = CryptoEngine();
     this._controller = StreamController<AdHocEvent>.broadcast();
+    this._buffer = HashMap();
+    this._setFloodEvents = Set();
     this._initialize();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns the [SecureGroupController] engine used by this instance.
   SecureGroupController get groupController => _groupController;
 
+  /// Returns the [DataLinkManager] instance used by the AODV manager.
   DataLinkManager get datalinkManager => _datalinkManager;
 
+  /// Returns the list of direct neighbors
   List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
 
+  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*------------------------------Public methods--------------------------------*/
 
-  void send(Object data, String? destination, bool encrypted) async {
+  /// Sends an encrypted or unencrypted data message to a remote node.
+  /// 
+  /// The [data] of the message is encryped if [encrypted] is true, otherwise
+  /// it is sent to node [destination] unencryped.
+  void send(Object data, String destination, bool encrypted) async {
     if (encrypted) {
-      Certificate certificate = _repository.getCertificate(destination)!;
-      Uint8List encryptedData = await _engine.encrypt(Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key);
-      print(encryptedData.length);
-      _aodvManager.sendMessageTo(destination!, SecureData(ENCRYPTED_DATA, encryptedData).toJson());
+      // Get the public certificate of the destination node
+      Certificate? certificate = _repository.getCertificate(destination);
+      if (certificate == null) {
+        // Request certificate as it is not in the certificate repository
+        _aodvManager.sendMessageTo(
+          destination, SecureData(CERT_REQ, []).toJson()
+        );
+
+        // Buffer the encrypted message to send
+        _buffer.update(
+          destination, (msg) => msg..add(data), 
+          ifAbsent: () => List.empty(growable: true)..add(data)
+        );
+        return;
+      }
+
+      // Encrypt data
+      Uint8List encryptedData = await _engine.encrypt(
+        Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key
+      );
+
+      // Send encrypted data
+      _aodvManager.sendMessageTo(
+        destination, SecureData(ENCRYPTED_DATA, encryptedData).toJson()
+      );
     } else {
-      _aodvManager.sendMessageTo(destination!, SecureData(UNENCRYPTED_DATA, data).toJson());
+      // Send unencrypted data
+      _aodvManager.sendMessageTo(
+        destination, SecureData(UNENCRYPTED_DATA, data).toJson()
+      );
     }
   }
 
+  /// Broadcasts a message to all directly connected nodes.
+  /// 
+  /// Broadcasts a message with [data] as payload and it is encrypted if 
+  /// [encrypted] is set to true.
+  /// 
+  /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcast(Object data, bool encrypted) async {
     if (encrypted) {
+      // Broadcast encrypted data
       for (final neighbor in _datalinkManager.directNeighbors)
-        send(data, neighbor.label, true);
+        send(data, neighbor.label!, true);
       return true;
     } else {
-      return await _datalinkManager.broadcastObject(SecureData(UNENCRYPTED_DATA, data).toJson());
+      // Broadcast unencrypted data
+      return await _datalinkManager.broadcastObject(
+        SecureData(UNENCRYPTED_DATA, data).toJson()
+      );
     }
   }
 
-  Future<bool> broadcastExcept(Object data, String? excluded, bool encrypted) async {
+  /// Broadcasts a message to all directly connected nodes except the one
+  /// specified.
+  /// 
+  /// Broadcasts to all directly connected node except for [excluded] a message 
+  /// with [data] as payload and it is encrypted if [encrypted] is set to true.
+  ///
+  /// Returns true upon successful broadcast, otherwise false.
+  Future<bool> broadcastExcept(
+    Object data, String excluded, bool encrypted
+  ) async {
     if (encrypted) {
+      // Encrypt and send encrypted data to direct neighbors except excluded
       for (final neighbor in _datalinkManager.directNeighbors)
         if (neighbor.label != excluded)
-          send(data, neighbor.label, true);
+          send(data, neighbor.label!, true);
       return true;
     } else {
-      return await _datalinkManager.broadcastObjectExcept(SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
+      // Encrypt and send unencrypted data to direct neighbors except excluded
+      return await _datalinkManager.broadcastObjectExcept(
+        SecureData(UNENCRYPTED_DATA, data).toJson(), excluded
+      );
     }
+  }
+
+  /// Revokes this node certificate.
+  /// 
+  /// Calling this method will send a certificate revocation notification to the
+  /// directly trusted neighbors.
+  void revokeCertificate() {
+    // Generate a new pair of public and private key
+    _engine.generateRSAkeyPair();
+
+    // Unique timestamp to avoid infinite flooding in the network
+    String timestamp = 
+      _aodvManager.label + DateTime.now().millisecond.toString();
+    _setFloodEvents.add(timestamp);
+
+    // Construct a SecureData message for certificate notification
+    SecureData msg = SecureData(
+      CERT_REVOCATION,
+      List.empty(growable: true)
+        ..add(timestamp)..add(_aodvManager.label)
+        ..add(_engine.publicKey!.modulus.toString())
+        ..add(_engine.publicKey!.exponent.toString())
+    );
+
+    // Broadcast certificate revocation notification to directly trusted 
+    // neighbours
+    _datalinkManager.broadcastObject(msg.toJson());
   }
 
 /*------------------------------Private methods-------------------------------*/
 
+  /// Initializes the listening process of lower layer streams.
   void _initialize() {
     _aodvManager.eventStream.listen((event) {
       switch (event.type) {
         case CONNECTION_EVENT:
+          // Forward notification to upper layer
           _controller.add(event);
 
+          // Process connection performed with a directly trusted neighbor
           AdHocDevice neighbor = event.payload as AdHocDevice;
-          Map data = SecureData(
-            CERT_XCHG_BEGIN, 
-            [_engine.publicKey!.modulus.toString(), _engine.publicKey!.exponent.toString()]
-          ).toJson();
 
-          _aodvManager.sendMessageTo(neighbor.label!, data);
+          // Generate a message for certificate exchange process
+          SecureData msg = SecureData(
+            CERT_XCHG_REQ,
+            [_engine.publicKey!.modulus.toString(), 
+             _engine.publicKey!.exponent.toString()]
+          );
+
+          _aodvManager.sendMessageTo(neighbor.label!, msg.toJson());
           break;
 
         case DATA_RECEIVED:
+          // Process data received
           List payload = event.payload as List;
           AdHocDevice sender = payload[0] as AdHocDevice;
-          _processData(sender, SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>));
+          _processData(
+            sender, 
+            SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>)
+          );
           break;
 
         default:
+          // Forward notification to upper layer
           _controller.add(event);
+          break;
       }
     });
   }
 
+  /// Processes certificate reply message.
+  /// 
+  /// This method performs a certificate chain verification on the list 
+  /// [certificateChain].
+  /// 
+  /// Throws a [VerificationFailedException] upon failure, i.e., a certificate
+  /// is not valid.
+  void _processCertificateReply(List<Certificate> certificateChain) {
+    // Chain verification
+    for (final Certificate cert in certificateChain) {
+      if (cert.validity.isBefore(DateTime.now()))
+        throw VerificationFailedException();
+    }
+
+    // Add intermediate nodes' certificates to repository
+    for (final Certificate cert in certificateChain)
+      _repository.addCertificate(cert);
+
+    // Check if encrypted message needs to be sent to destination node
+    Certificate cert = certificateChain.last;
+    List<Object>? toSend = _buffer[cert.owner];
+    if (toSend == null)
+      return;
+
+    // Send encrypted messages
+    for (final Object data in toSend)
+      send(data, cert.owner, true);
+  }
+
+  /// Processes the data received.
+  /// 
+  /// The data payload [pdu] sent by [sender] is processed according to its type.
   void _processData(AdHocDevice sender, SecureData pdu) async {
+    String senderLabel = sender.label!;
+    List _pdu = pdu.payload as List<dynamic>;
     switch (pdu.type) {
-      case CERT_XCHG_BEGIN:
-        List _pdu = pdu.payload as List<dynamic>;
-        _issueCertificate(sender, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
-        Map data = SecureData(
-          CERT_XCHG_END,
-          [ _engine.publicKey!.modulus.toString(), _engine.publicKey!.exponent.toString()]
-        ).toJson();
-
-        _aodvManager.sendMessageTo(sender.label!, data);
-        break;
-
-      case CERT_XCHG_END:
-        List _pdu = pdu.payload as List<dynamic>;
-        _issueCertificate(sender, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
-        break;
-
       case ENCRYPTED_DATA:
-        List<int> received = (pdu.payload as List<dynamic>).cast<int>();
+        // Retrieve the data received
+        List<int> received = _pdu.cast<int>();
+
+        // Decrypt the data received
         Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
-        _controller.add(AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
+
+        // Notify upper layer of data received
+        _controller.add(AdHocEvent(
+          DATA_RECEIVED, 
+          [sender, JsonCodec().decode(Utf8Decoder().convert(data))])
+        );
         break;
 
       case UNENCRYPTED_DATA:
+        // Notify upper layer of data received
         _controller.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
         break;
 
+      case CERT_XCHG_REQ:
+        // Issue a certificate
+        _issueCertificate(
+          senderLabel, 
+          RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last))
+        );
+
+        // Construct a SecureData message for certificate exchange process
+        Map data = SecureData(
+          CERT_XCHG_REP,
+          [_engine.publicKey!.modulus.toString(), 
+           _engine.publicKey!.exponent.toString()]
+        ).toJson();
+
+        // Send this node's public key the directly trusted neighbour
+        _aodvManager.sendMessageTo(senderLabel, data);
+        break;
+
+      case CERT_XCHG_REP:
+        // Issue a certificate
+        _issueCertificate(
+          senderLabel,
+          RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last))
+        );
+        break;
+
+      case CERT_REQ:
+        break;
+
+      case CERT_REP:
+        try {
+          _processCertificateReply(_pdu.cast<Certificate>());
+        } catch (exception) {
+          print(exception);
+          _controller.add(AdHocEvent(INTERNAL_EXCEPTION, exception));
+        }
+        break;
+
+      case CERT_REVOCATION:
+        String timestamp = _pdu[0] as String;
+        String label = _pdu[1] as String;
+        String modulus = _pdu[2] as String;
+        String exponent = _pdu[3] as String;
+
+        // Remove the revoked certificate
+        _repository.removeCertificate(label);
+
+        // Get list of direct neighbors
+        List<AdHocDevice> directNeighbors = _datalinkManager.directNeighbors;
+
+        // Check if the sender is a directly trusted neighbor, if it is, then
+        // generate a new certificate
+        if (directNeighbors.where((neighbor) => neighbor.label! == label).isNotEmpty) {
+          _issueCertificate(
+            label,
+            RSAPublicKey(BigInt.parse(modulus), BigInt.parse(exponent))
+          );
+        }
+
+        // Flood control
+        if (!_setFloodEvents.contains(timestamp)) {
+          // Add the timestamp to the set to avoid rebroadcasting
+          _setFloodEvents.add(timestamp);
+
+          // Construct a SecureData message for certificate notification
+          SecureData msg = SecureData(CERT_REVOCATION, [timestamp, label]);
+
+          // Broadcast to directly trusted neighbours
+          _datalinkManager.broadcastObjectExcept(msg, senderLabel);
+        }
+        break;
+
       default:
+        break;
     }
   }
 
-  void _issueCertificate(AdHocDevice neighbor, RSAPublicKey key) {
-    Certificate certificate = Certificate(neighbor.label!, _aodvManager.label, key);
-    Uint8List signature = _engine.sign(Utf8Encoder().convert(certificate.toString()));
+  /// Issues a certificate.
+  /// 
+  /// Generates a certificate for the binding of the public key [key] and the 
+  /// identity of the directly trusted neighbour [label].
+  void _issueCertificate(String label, RSAPublicKey key) {
+    // Issue the certificate
+    Certificate certificate = Certificate(label, _aodvManager.label, key);
+
+    // Sign the certificate
+    Uint8List signature = 
+      _engine.sign(Utf8Encoder().convert(certificate.toString()));
     certificate.signature = signature;
+
+    // Add the certificate into the repository
     _repository.addCertificate(certificate);
   }
 }

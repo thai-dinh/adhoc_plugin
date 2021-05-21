@@ -337,7 +337,7 @@ class WrapperBle extends WrapperNetwork {
         FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
           // Rebroadcast the message to this node direct neighbours
-          broadcastExcept(message, message.header!.label);
+          broadcastExcept(message, message.header!.label!);
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (AdHocDevice? device in hashSet) {
@@ -355,7 +355,7 @@ class WrapperBle extends WrapperNetwork {
       case DISCONNECT_BROADCAST:
         if (checkFloodEvent(message.pdu as String?)) {
           // Rebroadcast the message to this node direct neighbours
-          broadcastExcept(message, message.header!.label);
+          broadcastExcept(message, message.header!.label!);
 
           // Get the header of the message received
           Header header = message.header!;

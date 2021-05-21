@@ -6,8 +6,8 @@ import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 
 
 class CertificateRepository {
-  late int _period;
   late HashMap<String, Certificate> _repository;
+  late int _period;
 
   CertificateRepository(Config config) {
     this._repository = HashMap();
@@ -26,14 +26,16 @@ class CertificateRepository {
 /*------------------------------Public methods--------------------------------*/
 
   void addCertificate(Certificate certificate) {
-    _repository.putIfAbsent(certificate.owner, () => certificate);
+    _repository.update(
+      certificate.owner, (value) => certificate, ifAbsent: () => certificate,
+    );
   }
 
   void removeCertificate(String label) {
     _repository.remove(label);
   }
 
-  Certificate? getCertificate(String? label) {
+  Certificate? getCertificate(String label) {
     return _repository[label];
   }
 
@@ -47,8 +49,11 @@ class CertificateRepository {
   /// 
   /// If a certificate has expired, then it is simply removed.
   void _checkCertificatesValidity() {
-    Timer.periodic(Duration(seconds: _period), (timer) => _repository.removeWhere(
-      (label, certificate) => certificate.validity.isBefore(DateTime.now())
+    Timer.periodic(
+      Duration(seconds: _period),
+      (timer) => _repository.removeWhere(
+        (label, certificate) => certificate.validity.isBefore(DateTime.now()
+      ),
     ));
   }
 }

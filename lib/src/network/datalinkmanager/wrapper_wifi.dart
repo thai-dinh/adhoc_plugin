@@ -321,7 +321,7 @@ class WrapperWifi extends WrapperNetwork {
       case CONNECT_BROADCAST:
         FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         if (checkFloodEvent(floodMsg.id)) {
-          broadcastExcept(message, message.header!.label);
+          broadcastExcept(message, message.header!.label!);
 
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (AdHocDevice? device in hashSet) {
@@ -338,7 +338,7 @@ class WrapperWifi extends WrapperNetwork {
 
       case DISCONNECT_BROADCAST:
         if (checkFloodEvent(message.pdu as String?)) {
-          broadcastExcept(message, message.header!.label);
+          broadcastExcept(message, message.header!.label!);
 
           Header header = message.header!;
           AdHocDevice device = AdHocDevice(

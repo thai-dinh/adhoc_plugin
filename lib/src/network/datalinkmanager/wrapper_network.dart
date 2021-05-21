@@ -114,7 +114,7 @@ abstract class WrapperNetwork {
     return neighbors.neighbors.containsKey(remoteLabel);
   }
 
-  void sendMessage(MessageAdHoc message, String remoteLabel) {
+  void sendMessage(String remoteLabel, MessageAdHoc message, ) {
     NetworkManager? network = neighbors.getNeighbor(remoteLabel);
     if (network != null)
       network.sendMessage(message);
@@ -133,10 +133,10 @@ abstract class WrapperNetwork {
     return false;
   }
 
-  bool broadcastExcept(MessageAdHoc message, String? excludedLabel) {
+  bool broadcastExcept(MessageAdHoc message, String excludedLabel) {
     if (neighbors.neighbors.length > 0) {
       neighbors.neighbors.forEach((remoteLabel, network) async {
-        if (excludedLabel!.compareTo(remoteLabel!) != 0 && network != null) {
+        if (excludedLabel.compareTo(remoteLabel!) != 0 && network != null) {
           await network.sendMessage(message);
         }
       });
