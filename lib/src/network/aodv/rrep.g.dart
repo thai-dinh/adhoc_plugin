@@ -14,11 +14,15 @@ RREP _$RREPFromJson(Map<String, dynamic> json) {
     json['sequenceNum'] as int,
     json['originAddress'] as String,
     json['lifetime'] as int,
+    (json['certChain'] as List<dynamic>)
+        .map((e) => Certificate.fromJson(e as Map<String, dynamic>))
+        .toList(),
   );
 }
 
 Map<String, dynamic> _$RREPToJson(RREP instance) => <String, dynamic>{
       'type': instance.type,
+      'certChain': instance.certChain,
       'hopCount': instance.hopCount,
       'sequenceNum': instance.sequenceNum,
       'lifetime': instance.lifetime,

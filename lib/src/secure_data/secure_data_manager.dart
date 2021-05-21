@@ -33,6 +33,7 @@ class SecureDataManager {
   
   late HashMap<String, List<Object>> _buffer;
   late Set<String> _setFloodEvents;
+  late int _validityPeriod;
 
   /// Creates a [SecureDataManager] object.
   /// 
@@ -51,6 +52,7 @@ class SecureDataManager {
     this._controller = StreamController<AdHocEvent>.broadcast();
     this._buffer = HashMap();
     this._setFloodEvents = Set();
+    this._validityPeriod = config.validityPeriod;
     this._initialize();
   }
 
@@ -62,7 +64,7 @@ class SecureDataManager {
   /// Returns the [DataLinkManager] instance used by the AODV manager.
   DataLinkManager get datalinkManager => _datalinkManager;
 
-  /// Returns the list of direct neighbors
+  /// Returns the list of direct neighbors.
   List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
 
   /// Returns a [Stream] of [AdHocEvent] events of lower layers.
@@ -80,6 +82,7 @@ class SecureDataManager {
       Certificate? certificate = _repository.getCertificate(destination);
       if (certificate == null) {
         // Request certificate as it is not in the certificate repository
+        // (Certificate Chain Discovery)
         _aodvManager.sendMessageTo(
           destination, SecureData(CERT_REQ, []).toJson()
         );
@@ -175,8 +178,7 @@ class SecureDataManager {
         ..add(_engine.publicKey!.exponent.toString())
     );
 
-    // Broadcast certificate revocation notification to directly trusted 
-    // neighbours
+    // Broadcast certificate revocation notification to direct neighbors
     _datalinkManager.broadcastObject(msg.toJson());
   }
 
@@ -190,7 +192,7 @@ class SecureDataManager {
           // Forward notification to upper layer
           _controller.add(event);
 
-          // Process connection performed with a directly trusted neighbor
+          // Process connection performed with a directly neighbor
           AdHocDevice neighbor = event.payload as AdHocDevice;
 
           // Generate a message for certificate exchange process
@@ -290,7 +292,7 @@ class SecureDataManager {
            _engine.publicKey!.exponent.toString()]
         ).toJson();
 
-        // Send this node's public key the directly trusted neighbour
+        // Send this node's public key the directly trusted neighbor
         _aodvManager.sendMessageTo(senderLabel, data);
         break;
 
@@ -303,9 +305,11 @@ class SecureDataManager {
         break;
 
       case CERT_REQ:
+        // Nothing to do
         break;
 
       case CERT_REP:
+        // Process the certificate chain
         try {
           _processCertificateReply(_pdu.cast<Certificate>());
         } catch (exception) {
@@ -343,7 +347,7 @@ class SecureDataManager {
           // Construct a SecureData message for certificate notification
           SecureData msg = SecureData(CERT_REVOCATION, [timestamp, label]);
 
-          // Broadcast to directly trusted neighbours
+          // Broadcast to directly trusted neighbors
           _datalinkManager.broadcastObjectExcept(msg, senderLabel);
         }
         break;
@@ -356,10 +360,12 @@ class SecureDataManager {
   /// Issues a certificate.
   /// 
   /// Generates a certificate for the binding of the public key [key] and the 
-  /// identity of the directly trusted neighbour [label].
+  /// identity of the directly trusted neighbor [label].
   void _issueCertificate(String label, RSAPublicKey key) {
     // Issue the certificate
-    Certificate certificate = Certificate(label, _aodvManager.label, key);
+    DateTime validity = DateTime.now().add(Duration(seconds: _validityPeriod));
+    Certificate certificate = 
+      Certificate(label, _aodvManager.label, validity, key);
 
     // Sign the certificate
     Uint8List signature = 

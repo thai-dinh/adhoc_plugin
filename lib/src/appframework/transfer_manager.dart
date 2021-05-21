@@ -90,14 +90,14 @@ class TransferManager {
     if (_datalinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
-    return await _securityManager.broadcastExcept(data, excluded.label, false);
+    return await _securityManager.broadcastExcept(data, excluded.label!, false);
   }
 
   Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
     if (_datalinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
-    return await _securityManager.broadcastExcept(data, excluded.label, true);
+    return await _securityManager.broadcastExcept(data, excluded.label!, true);
   }
 
 /*------------------------------DataLink methods-----------------------------*/

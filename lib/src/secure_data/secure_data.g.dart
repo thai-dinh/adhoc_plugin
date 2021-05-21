@@ -8,13 +8,13 @@ part of 'secure_data.dart';
 
 SecureData _$SecureDataFromJson(Map<String, dynamic> json) {
   return SecureData(
-    json['type'] as int?,
+    json['type'] as int,
     json['payload'],
   );
 }
 
 Map<String, dynamic> _$SecureDataToJson(SecureData instance) =>
     <String, dynamic>{
-      'type': instance.type,
       'payload': instance.payload,
+      'type': instance.type,
     };

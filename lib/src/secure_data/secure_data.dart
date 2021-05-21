@@ -5,12 +5,14 @@ part 'secure_data.g.dart';
 
 @JsonSerializable()
 class SecureData {
-  int? type;
   Object? payload;
-  
+
+  late int type;
+
   SecureData(this.type, this.payload);
 
-  factory SecureData.fromJson(Map<String, dynamic> json) => _$SecureDataFromJson(json);
+  factory SecureData.fromJson(Map<String, dynamic> json) 
+    => _$SecureDataFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

@@ -1,4 +1,5 @@
 import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'rreq.g.dart';
@@ -13,15 +14,19 @@ class RREQ extends AodvMessage {
   late int _originSequenceNum;
   late String _originAddress;
 
+  late List<Certificate> certChain;
+
   RREQ(
     int type, int hopCount, int rreqId, this.destSequenceNum, 
-    String destAddress, int originSequenceNum, String originAddress
+    String destAddress, int originSequenceNum, String originAddress,
+    List<Certificate> certChain
   ) : super(type) {
     this._hopCount = hopCount;
     this._rreqId = rreqId;
     this._destAddress = destAddress;
     this._originSequenceNum = originSequenceNum;
     this._originAddress = originAddress;
+    this.certChain = certChain;
   }
 
   factory RREQ.fromJson(Map<String, dynamic> json) => _$RREQFromJson(json);

@@ -1,4 +1,5 @@
 import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
+import 'package:adhoc_plugin/src/secure_data/certificate.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'rrep.g.dart';
@@ -6,21 +7,24 @@ part 'rrep.g.dart';
 
 @JsonSerializable()
 class RREP extends AodvMessage {
-  late int _hopCount;
   late int _sequenceNum;
+  late int _hopCount;
   late int _lifetime;
   late String _destAddress;
   late String _originAddress;
 
+  late List<Certificate> certChain;
+
   RREP(
     int type, int hopCount, String destAddress, int sequenceNum, 
-    String originAddress, int lifetime
+    String originAddress, int lifetime, List<Certificate> certChain
   ) : super(type) {
-    this._hopCount = hopCount;
-    this._destAddress = destAddress;
     this._sequenceNum = sequenceNum;
-    this._originAddress = originAddress;
+    this._hopCount = hopCount;
     this._lifetime = lifetime;
+    this._destAddress = destAddress;
+    this._originAddress = originAddress;
+    this.certChain = certChain;
   }
 
   factory RREP.fromJson(Map<String, dynamic> json) => _$RREPFromJson(json);
@@ -38,6 +42,8 @@ class RREP extends AodvMessage {
   String get originAddress => _originAddress;
 
   int incrementHopCount() => _hopCount = _hopCount + 1;
+
+/*-------------------------------Public methods-------------------------------*/
 
   Map<String, dynamic> toJson() => _$RREPToJson(this);
 

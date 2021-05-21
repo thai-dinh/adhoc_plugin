@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
-/// Class managing the direct neighbours of a node
+/// Class managing the direct neighbors of a node
 class Neighbors {
   late HashMap<String?, NetworkManager?> _neighbors;
   late HashMap<String?, String?> _mapLabelMac;
@@ -24,7 +24,7 @@ class Neighbors {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Add a direct neighbours whose label is [label], MAC address is [mac], and
+  /// Add a direct neighbors whose label is [label], MAC address is [mac], and
   /// NetworkManager as [network]
   void addNeighbors(String? label, String? mac, NetworkManager? network) {
     _neighbors.putIfAbsent(label, () => network);

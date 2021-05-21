@@ -11,10 +11,11 @@ class Config {
   late int timeOut;
   late int expiryTime;
   late int validityPeriod;
+  late int validityCheck;
 
   Config({
     String label = '', bool flood = false, int serverPort = 52000,
-    int expiryTime = 10, int validityPeriod = 7200
+    int expiryTime = 10, int validityPeriod = 7200, int validityCheck = 7200
   }) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.flood = flood;
@@ -22,6 +23,7 @@ class Config {
     this.timeOut = 5000;
     this.expiryTime = expiryTime;
     this.validityPeriod = validityPeriod;
+    this.validityCheck = validityCheck;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

@@ -18,10 +18,10 @@ Header _$HeaderFromJson(Map<String, dynamic> json) {
 }
 
 Map<String, dynamic> _$HeaderToJson(Header instance) => <String, dynamic>{
+      'address': instance.address,
       'deviceType': instance.deviceType,
       'messageType': instance.messageType,
       'label': instance.label,
       'name': instance.name,
-      'address': instance.address,
       'mac': instance.mac,
     };
