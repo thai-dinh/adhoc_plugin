@@ -62,8 +62,9 @@ class BleServer extends ServiceServer {
           break;
 
         case ANDROID_DATA:
-          Uint8List bytes = Uint8List.fromList((map['message'] as List<dynamic>).cast<Uint8List>().expand((x) => List<int>.from(x)..removeAt(0)..removeAt(0)).toList());
-          MessageAdHoc message = MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
+          Uint8List bytes = Uint8List.fromList(map['data']);
+          MessageAdHoc message = 
+            MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
 
           if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
             message.header = Header(

@@ -41,6 +41,7 @@ public class GattServerManager {
     private static final byte ANDROID_CONNECTION = 122;
     private static final byte ANDROID_CHANGES    = 123;
     private static final byte ANDROID_BOND       = 124;
+    private static final byte ANDROID_DATA       = 125;
 
     private boolean verbose;
     private Context context;
@@ -49,7 +50,7 @@ public class GattServerManager {
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
 
-    private HashMap<String, HashMap<Integer, ArrayList<byte[]>>> data;
+    private HashMap<String, HashMap<Integer, ByteArrayOutputStream>> data;
     private HashMap<String, BluetoothDevice> mapMacDevice;
     private HashMap<String, Short> mapMacMtu;
 
@@ -130,35 +131,27 @@ public class GattServerManager {
 
         BluetoothDevice device = mapMacDevice.get(mac);
         byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        int length = bytesMsg.length, mtu = mapMacMtu.get(mac).intValue() - 5;
-        int start = 0, end = mtu;
-        byte cnt = 0;
+        int mtu = mapMacMtu.get(mac).intValue(), i = 0, seq = 0, end;
+        ByteArrayOutputStream bytesBuffer = new ByteArrayOutputStream();
+        boolean notification;
 
-        while (length > mtu) {
-            outputStream.write(1);
-            outputStream.write(Arrays.copyOfRange(bytesMsg, start, end));
-            characteristic.setValue(outputStream.toByteArray());
-            gattServer.notifyCharacteristicChanged(device, characteristic, false);
+        do {
+            end = (i += mtu) > bytesMsg.length ? bytesMsg.length : (i += mtu);
+            bytesBuffer.write(seq);
+            bytesBuffer.write(bytesMsg, i, mtu);
 
-            cnt++;
-            start = end;
-            end += mtu;
-            length -= mtu;
-            outputStream.reset();
-
-            if (cnt == 10) {
-                // notifyCharacteristicChanged can only send 10 consecutives in a burst
-                SystemClock.sleep(100);
-                cnt = 0;
+            byte[] chunk = bytesBuffer.toByteArray();
+            boolean result = characteristic.setValue(chunk);
+            while (result == false) {
+                Thread.sleep(256);
+                result = characteristic.setValue(chunk);
             }
-        }
 
-        outputStream.reset();
-        outputStream.write(0);
-        outputStream.write(Arrays.copyOfRange(bytesMsg, start, bytesMsg.length));
-        characteristic.setValue(outputStream.toByteArray());
-        return gattServer.notifyCharacteristicChanged(device, characteristic, false);
+            notification = gattServer.notifyCharacteristicChanged(device, characteristic, false);
+            seq++;
+        } while(i < bytesMsg.length);
+
+        return notification;
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {
@@ -170,8 +163,10 @@ public class GattServerManager {
         listBtDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
         for(BluetoothDevice device : listBtDevices) {
             HashMap<String, Object> mapDeviceInfo = new HashMap<>();
+
             mapDeviceInfo.put("deviceName", device.getName());
             mapDeviceInfo.put("mac", device.getAddress());
+
             btDevices.add(mapDeviceInfo);
         }
 
@@ -268,6 +263,33 @@ public class GattServerManager {
             if(responseNeeded) {
                 gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
             }
+
+            String mac = device.getAddress();
+            Integer id = new Integer(value[0]);
+            byte seq = value[1];
+
+            HashMap<Integer, ByteArrayOutputStream> buffer = data.get(mac);
+            ByteArrayOutputStream byteBuffer = buffer.get(id);
+            if (byteBuffer == null) {
+                byteBuffer = new ByteArrayOutputStream();
+            }
+
+            byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
+
+            if (seq == END_MESSAGE) {
+                HashMap<String, Object> mapInfoValue = new HashMap<>();
+
+                mapInfoValue.put("type", ANDROID_DATA);
+                mapInfoValue.put("data", byteBuffer.toByteArray());
+
+                eventSink.success(mapInfoValue);
+
+                buffer.put(id, null);
+            } else {
+                buffer.put(id, byteBuffer);
+            }
+
+            data.put(mac, buffer);
         }
 
         @Override
@@ -281,8 +303,12 @@ public class GattServerManager {
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mapInfoValue.put("state", true);
+
+                data.put(device.getAddress(), new HashMap<>());
             } else {
                 mapInfoValue.put("state", false);
+
+                data.remove(device.getAddress());
             }
 
             eventSink.success(mapInfoValue);

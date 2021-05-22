@@ -31,13 +31,8 @@ class BleClient extends ServiceClient {
   /// 
   /// This client service deals with the remote host [_device].
   /// 
-  /// Connection attempts to a remote device are done at most [attempts] times.
-  /// 
-  /// A connection attempt is said to be a failure if nothing happens after 
-  /// [timeOut] ms.
-  /// 
-  /// The stream [_bondStream] allows this client to check whether it is paired
-  /// with the remote device or not.
+  /// Connection attempts to a remote device are done at most [attempts] times. 
+  /// A connection attempt waiting time is set to [timeOut] ms.
   BleClient(
     bool verbose, this._device, int attempts, int timeOut, this._bondStream
   ) : super(
@@ -64,17 +59,23 @@ class BleClient extends ServiceClient {
     );
 
     // Listen to the change made to the qualified characteristic
-    List<Uint8List> buffer = List.empty(growable: true);
-    _reactiveBle.subscribeToCharacteristic(qChar).listen((bytes) {
-      buffer.add(Uint8List.fromList(bytes));
+    List<int> buffer = List.empty(growable: true);
+
+    _reactiveBle.subscribeToCharacteristic(qChar).listen((chunk) {
+      // Add chunk to buffer
+      buffer.addAll(chunk);
+
       // End of fragmentation
-      if (bytes[0] == MESSAGE_END) {
+      if (chunk[0] == MESSAGE_END) {
+        String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
+        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage));
+
         if (verbose)
           log(ServiceClient.TAG, 'Client: message received: ${_device.mac}');
+
         // Notify upper layer of a message received
-        controller.add(
-          AdHocEvent(MESSAGE_RECEIVED, processMessage(buffer))
-        );
+        controller.add(AdHocEvent(MESSAGE_RECEIVED, msg));
+
         // Reset buffer
         buffer.clear();
       }
@@ -116,35 +117,24 @@ class BleClient extends ServiceClient {
     if (state == STATE_NONE)
       throw NoConnectionException('No remote connection');
 
-    int _id = id++;
-
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
       deviceId: _device.mac!
     );
 
-    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson())), chunk;
-    int mtu = _device.mtu - 5, length = msg.length, start = 0, end = mtu;
+    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
+    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, seq = 0, end;
 
-    // Begin fragmentation of the message into smaller chunk of bytes
-    while (length > mtu) {
-      chunk = msg.sublist(start, end);
-      List<int> tmp = [1, _id % UINT8_SIZE] + chunk.toList();
-      await _reactiveBle.writeCharacteristicWithoutResponse(
-        characteristic, value: tmp
+    do {
+      end = (i += mtu) > msg.length ? msg.length : (i += mtu);
+      List<int> _chunk = [_id, seq] + List.from(msg.getRange(i, end));
+      await _reactiveBle.writeCharacteristicWithResponse(
+        characteristic, value: _chunk
       );
 
-      start = end;
-      end += mtu;
-      length -= mtu;
-    }
-
-    chunk = msg.sublist(start, msg.length);
-    List<int> tmp = [0, _id % UINT8_SIZE] + chunk.toList();
-    await _reactiveBle.writeCharacteristicWithoutResponse(
-      characteristic, value: tmp
-    );
+      seq++;
+    } while (i < msg.length);
   }
 
 /*------------------------------Private methods-------------------------------*/
