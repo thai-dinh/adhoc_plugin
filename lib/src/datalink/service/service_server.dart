@@ -7,7 +7,7 @@ import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 abstract class ServiceServer extends Service {
   static const String TAG = "[ServiceServer]";
 
-  late List<String?> _activeConnections;
+  late List<String> _activeConnections;
 
   /// Creates a [ServiceServer] object.
   /// 
@@ -19,20 +19,20 @@ abstract class ServiceServer extends Service {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Returns the list of active connections (MAC address).
-  List<String?> get activeConnections => _activeConnections;
+  List<String> get activeConnections => _activeConnections;
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Sends a [message] to the remote device of MAC address [mac].
-  Future<void> send(MessageAdHoc message, String? mac);
+  Future<void> send(MessageAdHoc message, String mac);
 
   /// Adds the MAC address [mac] of the active connection.
-  void addActiveConnection(String? mac) {
+  void addActiveConnection(String mac) {
     _activeConnections.add(mac);
   }
 
   /// Removes the MAC address [mac] of the active connection.
-  void removeInactiveConnection(String? mac) {
+  void removeInactiveConnection(String mac) {
     if (containConnection(mac))
       _activeConnections.remove(mac);
   }
@@ -40,12 +40,12 @@ abstract class ServiceServer extends Service {
   /// Checks if the connection with the remote device of MAC address [mac].
   /// is an active connection.
   /// 
-  /// Returns true if there exists an active connection with the remote device,
-  /// otherwise false.
-  bool containConnection(String? mac) {
+  /// Returns true if there exists an active connection with the remote device
+  /// of MAC address [mac], otherwise false.
+  bool containConnection(String mac) {
     return _activeConnections.contains(mac);
   }
 
   /// Cancels an active connection with the remote device of MAC address [mac].
-  Future<void> cancelConnection(String? mac);
+  Future<void> cancelConnection(String mac);
 }

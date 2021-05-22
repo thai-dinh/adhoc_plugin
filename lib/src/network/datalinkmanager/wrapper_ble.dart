@@ -105,7 +105,7 @@ class WrapperBle extends WrapperNetwork {
   Future<void> connect(int attempts, AdHocDevice device) async {
     BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
     if (bleAdHocDevice != null) {
-      if (!serviceServer.containConnection(bleAdHocDevice.mac)) {
+      if (!serviceServer.containConnection(bleAdHocDevice.mac!)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
@@ -302,7 +302,7 @@ class WrapperBle extends WrapperNetwork {
             ),
             mac
           ),
-          mac
+          mac!
         );
 
         // Process received message from remote nodes
@@ -393,7 +393,6 @@ class WrapperBle extends WrapperNetwork {
       default:
         // Notify upper layer of a message received
         controller.add(AdHocEvent(MESSAGE_EVENT, message));
-        break;
     }
   }
 }

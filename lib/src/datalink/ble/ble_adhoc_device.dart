@@ -10,7 +10,7 @@ class BleAdHocDevice extends AdHocDevice {
   /// Creates an [BleAdHocDevice] object with the information of a discovered 
   /// device [device].
   BleAdHocDevice(DiscoveredDevice device) : super(
-    name: device.name, mac: device.id, type: BLE,
+    label: '', address: '', name: device.name, mac: device.id, type: BLE,
   ) {
     this.mtu = MIN_MTU;
     this.address = 
@@ -23,18 +23,14 @@ class BleAdHocDevice extends AdHocDevice {
   /// 
   /// The map should contain a key 'deviceName' and 'macAddress'.
   BleAdHocDevice.fromMap(Map map) : super(
-    name: map['deviceName'], mac: map['macAddress'], type: BLE
+    label: '', address: '', name: map['deviceName'], mac: map['macAddress'], 
+    type: BLE
   ) {
     this.mtu = MIN_MTU;
     this.address = 
       (BLUETOOTHLE_UUID + map['macAddress'].replaceAll(new RegExp(':'), ''))
         .toLowerCase();
   }
-
-/*------------------------------Getters & Setters-----------------------------*/
-
-  /// Return the UUID address as a string of this remote Ble-capable device.
-  String? get uuid => address;
 
 /*------------------------------Override methods------------------------------*/
 

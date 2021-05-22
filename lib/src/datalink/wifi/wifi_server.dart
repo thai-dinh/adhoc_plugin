@@ -9,7 +9,6 @@ import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
 
 
 class WifiServer extends ServiceServer {
@@ -21,7 +20,6 @@ class WifiServer extends ServiceServer {
   late ServerSocket _serverSocket;
 
   WifiServer(bool verbose) : super(verbose) {
-    WifiAdHocManager.setVerbose(verbose);
     this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
     this._mapIpSocket = HashMap();
@@ -41,7 +39,12 @@ class WifiServer extends ServiceServer {
         _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
           (data) async {
-            if (verbose) log(ServiceServer.TAG, 'received message from $remoteAddress:${socket.remotePort}');
+            if (verbose) {
+              log(
+                ServiceServer.TAG, 
+                'received message from $remoteAddress:${socket.remotePort}'
+              );
+            }
 
             _mapNameData.putIfAbsent(remoteAddress, () => HashMap());
             _mapIpBuffer.putIfAbsent(remoteAddress, () => StringBuffer());
@@ -100,7 +103,7 @@ class WifiServer extends ServiceServer {
     _mapIpSocket[remoteAddress!]!.write(json.encode(message.toJson()));
   }
 
-  Future<void> cancelConnection(String? remoteAddress) async {
+  Future<void> cancelConnection(String remoteAddress) async {
     if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
     _closeSocket(remoteAddress);
@@ -109,8 +112,8 @@ class WifiServer extends ServiceServer {
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _closeSocket(String? remoteAddress) {
-    _mapIpStream[remoteAddress!]!.cancel();
+  void _closeSocket(String remoteAddress) {
+    _mapIpStream[remoteAddress]!.cancel();
     _mapIpStream.remove(remoteAddress);
     _mapIpSocket[remoteAddress]!.close();
     _mapIpSocket.remove(remoteAddress);

@@ -11,7 +11,7 @@ import android.util.Log;
 import java.util.UUID;
 
 public class BluetoothLowEnergyManager {
-    private static final String TAG = "[AdhocPlugin][BleManager]";
+    private static final String TAG = "[AdHocPlugin][BleManager]";
 
     private final BluetoothAdapter bluetoothAdapter;
 
@@ -29,13 +29,15 @@ public class BluetoothLowEnergyManager {
     private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure (int errorCode) {
-            if (verbose) Log.d(TAG, "Start advertise failure: " + Integer.toString(errorCode));
+            if (verbose) 
+                Log.d(TAG, "Start advertise failure: " + Integer.toString(errorCode));
             super.onStartFailure(errorCode);
         }
 
         @Override
         public void onStartSuccess (AdvertiseSettings settingsInEffect) {
-            if (verbose) Log.d(TAG, "Start advertise success");
+            if (verbose) 
+                Log.d(TAG, "Start advertise success");
             super.onStartSuccess(settingsInEffect);
         }
     };
@@ -53,7 +55,6 @@ public class BluetoothLowEnergyManager {
             .setConnectable(true)
             .setTimeout(0) // 0 = no time limit
             .build();
-
 
         if (bluetoothLeAdvertiser == null) {
             bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();

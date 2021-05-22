@@ -20,7 +20,7 @@ abstract class ServiceManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void close() {
+  void release() {
     controller.close();
   }
 

@@ -7,7 +7,7 @@ import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
 
 
 /// Class defining the client's logic for the Wi-Fi Direct implementation.
@@ -96,7 +96,7 @@ class WifiClient extends ServiceClient {
   Future<void> disconnect() async {
     this.stopListening();
     // Leave Wi-Fi Direct group
-    await WifiP2P().removeGroup();
+    await WifiAdHocManager.removeGroup();
     // Notify upper layer of a connection aborted
     controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
   }

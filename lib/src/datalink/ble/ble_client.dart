@@ -6,12 +6,12 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart' as Constants;
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
 
 /// Class defining the client's logic for the Bluetooth LE implementation.
 class BleClient extends ServiceClient {
@@ -76,7 +76,7 @@ class BleClient extends ServiceClient {
           log(ServiceClient.TAG, 'Client: message received: ${_device.mac}');
         // Notify upper layer of a message received
         controller.add(
-          AdHocEvent(Constants.MESSAGE_RECEIVED, processMessage(buffer))
+          AdHocEvent(MESSAGE_RECEIVED, processMessage(buffer))
         );
         // Reset buffer
         buffer.clear();
@@ -117,7 +117,7 @@ class BleClient extends ServiceClient {
     if (verbose) 
       log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac}');
 
-    if (state == Constants.STATE_NONE)
+    if (state == STATE_NONE)
       throw NoConnectionException('No remote connection');
 
     int _id = id++;
@@ -183,7 +183,7 @@ class BleClient extends ServiceClient {
   Future<void> _connectionAttempt() async {
     if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac}');
 
-    if (state == Constants.STATE_NONE || state == Constants.STATE_CONNECTING) {
+    if (state == STATE_NONE || state == STATE_CONNECTING) {
       // Start the connection
       _connnectionSub = _reactiveBle.connectToDevice(
         id: _device.mac!,
@@ -213,12 +213,12 @@ class BleClient extends ServiceClient {
 
           case DeviceConnectionState.connecting:
             // Update state of the connection
-            state = Constants.STATE_CONNECTING;
+            state = STATE_CONNECTING;
             break;
 
           default:
             // Update state of the connection
-            state = Constants.STATE_NONE;
+            state = STATE_NONE;
         }
       });
     }
@@ -226,8 +226,7 @@ class BleClient extends ServiceClient {
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _connectionInitialization() async {
-    // Start the listening process for ad hoc events. In this case, ad hoc
-    // events are messages received.
+    // Start listening process for ad hoc events (messages)
     listen();
 
     // Request maximum MTU
@@ -235,10 +234,10 @@ class BleClient extends ServiceClient {
 
     // Notify upper layer of a successfull connection performed
     controller.add(AdHocEvent(
-      Constants.CONNECTION_PERFORMED, [_device.mac, _device.uuid, 1]
+      CONNECTION_PERFORMED, [_device.mac, _device.address, 1]
     ));
 
     // Update state of the connection
-    state = Constants.STATE_CONNECTED;
+    state = STATE_CONNECTED;
   }
 }

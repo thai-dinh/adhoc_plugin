@@ -122,7 +122,6 @@ class AodvManager {
         default:
           // Notify upper layer of ad hoc events occuring in lower layers
           _controller.add(event);
-          break;
       }
     });
   }

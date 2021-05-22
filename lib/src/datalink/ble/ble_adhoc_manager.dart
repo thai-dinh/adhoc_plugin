@@ -47,8 +47,8 @@ class BleAdHocManager extends ServiceManager {
 /*-------------------------------Public methods-------------------------------*/
 
   @override
-  void close() {
-    super.close();
+  void release() {
+    super.release();
     _reactiveBle.deinitialize();
     if (_discoverySub != null)
       _discoverySub!.cancel();
@@ -57,6 +57,7 @@ class BleAdHocManager extends ServiceManager {
   }
 
   /// Initializes the listening process of platform-side streams.
+  @override
   void initialize() {
     _eventChannel.receiveBroadcastStream().listen(
       (event) => controller.add(event)

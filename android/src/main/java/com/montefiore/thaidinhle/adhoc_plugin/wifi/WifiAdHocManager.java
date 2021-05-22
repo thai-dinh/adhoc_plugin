@@ -38,7 +38,7 @@ import static android.os.Looper.getMainLooper;
 
 
 public class WifiAdHocManager implements MethodCallHandler {
-    private static final String TAG = "[AdhocPlugin][WifiManager]";
+    private static final String TAG = "[AdHocPlugin][WifiManager]";
     private static final String METHOD_NAME = "ad.hoc.lib/wifi.method.channel";
     private static final String EVENT_NAME = "ad.hoc.lib/wifi.event.channel";
 
@@ -58,7 +58,8 @@ public class WifiAdHocManager implements MethodCallHandler {
         this.verbose = false;
         this.registered = false;
         this.context = context;
-        this.wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
+        this.wifiP2pManager = 
+            (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         this.channel = wifiP2pManager.initialize(context, getMainLooper(), null);
     }
 
@@ -131,12 +132,11 @@ public class WifiAdHocManager implements MethodCallHandler {
               eventChannel.setStreamHandler(null);
               eventChannel = null;
             }
-          });
+        });
     }
 
     public void close() {
         if (verbose) Log.d(TAG, "close()");
-
         unregister();
         methodChannel.setMethodCallHandler(null);
     }
@@ -158,7 +158,8 @@ public class WifiAdHocManager implements MethodCallHandler {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     
-        broadcastReceiver = new WifiDirectBroadcastReceiver(channel, eventSink, wifiP2pManager);
+        broadcastReceiver = 
+            new WifiDirectBroadcastReceiver(channel, eventSink, wifiP2pManager);
         broadcastReceiver.setVerbose(verbose);
 
         context.registerReceiver(broadcastReceiver, intentFilter);
@@ -181,6 +182,7 @@ public class WifiAdHocManager implements MethodCallHandler {
         WifiManager wifiManager = (WifiManager) context
             .getApplicationContext()
             .getSystemService(Context.WIFI_SERVICE);
+
         return wifiManager != null && wifiManager.isWifiEnabled();
     }
 
@@ -214,7 +216,9 @@ public class WifiAdHocManager implements MethodCallHandler {
 
     private String getMacAddress() {
         try {
-            ArrayList<NetworkInterface> networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            ArrayList<NetworkInterface> networkInterfaces = 
+                Collections.list(NetworkInterface.getNetworkInterfaces());
+
             for (NetworkInterface networkInterface : networkInterfaces) {
                if (networkInterface.getName().compareTo("p2p-wlan0-0") == 0) {
                 byte[] mac = networkInterface.getHardwareAddress();
@@ -233,7 +237,8 @@ public class WifiAdHocManager implements MethodCallHandler {
                }
             }
         } catch (SocketException exception) {
-            if (verbose) Log.d(TAG, "Error while fetching MAC address" + exception.toString());
+            if (verbose) 
+                Log.d(TAG, "Error while fetching MAC address" + exception.toString());
         }
 
         return "";
@@ -258,12 +263,14 @@ public class WifiAdHocManager implements MethodCallHandler {
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                if (verbose) Log.d(TAG, "startDiscovery(): success");
+                if (verbose) 
+                    Log.d(TAG, "startDiscovery(): success");
             }
 
             @Override
             public void onFailure(int reasonCode) {
-                if (verbose) Log.d(TAG, "startDiscovery(): failure -> " + errorCode(reasonCode));
+                if (verbose) 
+                    Log.d(TAG, "startDiscovery(): failure -> " + errorCode(reasonCode));
             }
         });
     }
@@ -276,12 +283,14 @@ public class WifiAdHocManager implements MethodCallHandler {
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                if (verbose) Log.d(TAG, "connect(): success");
+                if (verbose) 
+                    Log.d(TAG, "connect(): success");
             }
 
             @Override
             public void onFailure(int reasonCode) {
-                if (verbose) Log.e(TAG, "connect(): failure -> " + errorCode(reasonCode));
+                if (verbose) 
+                    Log.e(TAG, "connect(): failure -> " + errorCode(reasonCode));
             }
         });
     }
@@ -294,12 +303,14 @@ public class WifiAdHocManager implements MethodCallHandler {
                     wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
                         @Override
                         public void onSuccess() {
-                            if (verbose) Log.d(TAG, "removeGroup(): success");
+                            if (verbose) 
+                                Log.d(TAG, "removeGroup(): success");
                         }
 
                         @Override
                         public void onFailure(int reason) {
-                            if (verbose) Log.e(TAG, "removeGroup(): failure -> " + errorCode(reason));
+                            if (verbose) 
+                                Log.e(TAG, "removeGroup(): failure -> " + errorCode(reason));
                         }
                     });
                 }

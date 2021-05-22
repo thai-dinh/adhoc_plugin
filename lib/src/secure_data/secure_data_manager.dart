@@ -218,7 +218,6 @@ class SecureDataManager {
         default:
           // Forward notification to upper layer
           _controller.add(event);
-          break;
       }
     });
   }
@@ -254,14 +253,13 @@ class SecureDataManager {
 
   /// Processes the data received.
   /// 
-  /// The data payload [pdu] sent by [sender] is processed according to its type.
+  /// The data [pdu] sent by [sender] is processed according to its type.
   void _processData(AdHocDevice sender, SecureData pdu) async {
     String senderLabel = sender.label!;
-    List _pdu = pdu.payload as List<dynamic>;
     switch (pdu.type) {
       case ENCRYPTED_DATA:
         // Retrieve the data received
-        List<int> received = _pdu.cast<int>();
+        List<int> received = (pdu.payload as List<dynamic>).cast<int>();
 
         // Decrypt the data received
         Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
@@ -279,6 +277,7 @@ class SecureDataManager {
         break;
 
       case CERT_XCHG_REQ:
+        List<String> _pdu = (pdu.payload as List<dynamic>).cast<String>();
         // Issue a certificate
         _issueCertificate(
           senderLabel, 
@@ -286,17 +285,18 @@ class SecureDataManager {
         );
 
         // Construct a SecureData message for certificate exchange process
-        Map data = SecureData(
+        SecureData data = SecureData(
           CERT_XCHG_REP,
           [_engine.publicKey!.modulus.toString(), 
            _engine.publicKey!.exponent.toString()]
-        ).toJson();
+        );
 
         // Send this node's public key the directly trusted neighbor
-        _aodvManager.sendMessageTo(senderLabel, data);
+        _aodvManager.sendMessageTo(senderLabel, data.toJson());
         break;
 
       case CERT_XCHG_REP:
+        List<String> _pdu = (pdu.payload as List<dynamic>).cast<String>();
         // Issue a certificate
         _issueCertificate(
           senderLabel,
@@ -309,9 +309,11 @@ class SecureDataManager {
         break;
 
       case CERT_REP:
+        List<Certificate> _pdu = 
+          (pdu.payload as List<dynamic>).cast<Certificate>();
         // Process the certificate chain
         try {
-          _processCertificateReply(_pdu.cast<Certificate>());
+          _processCertificateReply(_pdu);
         } catch (exception) {
           print(exception);
           _controller.add(AdHocEvent(INTERNAL_EXCEPTION, exception));
@@ -319,10 +321,13 @@ class SecureDataManager {
         break;
 
       case CERT_REVOCATION:
-        String timestamp = _pdu[0] as String;
-        String label = _pdu[1] as String;
-        String modulus = _pdu[2] as String;
-        String exponent = _pdu[3] as String;
+        List<String> _pdu = 
+          (pdu.payload as List<dynamic>).cast<String>();
+
+        String timestamp = _pdu[0];
+        String label = _pdu[1];
+        String modulus = _pdu[2];
+        String exponent = _pdu[3];
 
         // Remove the revoked certificate
         _repository.removeCertificate(label);
@@ -348,18 +353,17 @@ class SecureDataManager {
           SecureData msg = SecureData(CERT_REVOCATION, [timestamp, label]);
 
           // Broadcast to directly trusted neighbors
-          _datalinkManager.broadcastObjectExcept(msg, senderLabel);
+          _datalinkManager.broadcastObjectExcept(msg.toJson(), senderLabel);
         }
         break;
 
       default:
-        break;
     }
   }
 
   /// Issues a certificate.
   /// 
-  /// Generates a certificate for the binding of the public key [key] and the 
+  /// Generates a [Certificate] for the binding of the public key [key] and the 
   /// identity of the directly trusted neighbor [label].
   void _issueCertificate(String label, RSAPublicKey key) {
     // Issue the certificate

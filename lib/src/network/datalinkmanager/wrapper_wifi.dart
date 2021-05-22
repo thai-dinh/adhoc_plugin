@@ -35,7 +35,6 @@ class WrapperWifi extends WrapperNetwork {
   late bool _isDiscovering;
   late WifiAdHocManager _wifiManager;
   late HashMap<String?, String?> _mapIPAddressMac;
-  late StreamSubscription<AdHocEvent> _eventSub;
 
   /// Creates a [WrapperWifi] object.
   /// 
@@ -63,7 +62,7 @@ class WrapperWifi extends WrapperNetwork {
   void init(bool verbose, Config config) async {
     _serverPort = config.serverPort;
 
-    if (await (WifiAdHocManager.isWifiEnabled() as Future<bool>)) {
+    if (await WifiAdHocManager.isWifiEnabled()) {
       this._wifiManager = WifiAdHocManager(verbose);
       this._wifiManager.initialize();
       this._isGroupOwner = false;
@@ -96,7 +95,6 @@ class WrapperWifi extends WrapperNetwork {
     if (_isDiscovering)
       return;
 
-    _eventSub.resume();
     _wifiManager.discovery();
     _isDiscovering = true;
   }
@@ -106,7 +104,7 @@ class WrapperWifi extends WrapperNetwork {
     WifiAdHocDevice? wifiAdHocDevice = mapMacDevices[device.mac] as WifiAdHocDevice?;
     if (wifiAdHocDevice != null) {
       this.attempts = attempts;
-      await _wifiManager.connect(device.mac);
+      await _wifiManager.connect(device.mac!);
     }
   }
 
@@ -139,16 +137,14 @@ class WrapperWifi extends WrapperNetwork {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void unregister() => _wifiManager.unregister();
-
   void removeGroup() {
     _mapIPAddressMac.forEach((address, mac) async {
-      await serviceServer.cancelConnection(mac);
+      await serviceServer.cancelConnection(mac!);
     });
 
     serviceServer.activeConnections.clear();
 
-    _wifiManager.removeGroup();
+    WifiAdHocManager.removeGroup();
   }
 
   bool? isWifiGroupOwner() => _isGroupOwner;
@@ -157,10 +153,7 @@ class WrapperWifi extends WrapperNetwork {
 
   /// Initializes the listening process of lower layer notification streams.
   void _initialize() {
-    _eventSub = _wifiManager.eventStream.listen((AdHocEvent event) {
-      controller.add(event);
-      print(event);
-
+    _wifiManager.eventStream.listen((AdHocEvent event) {
       switch (event.type) {
         case DEVICE_INFO_WIFI:
           List<String?> info = (event.payload as List<dynamic>).cast<String?>();
@@ -174,6 +167,8 @@ class WrapperWifi extends WrapperNetwork {
             if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
             return device;
           });
+
+          controller.add(event);
           break;
 
         case DISCOVERY_END:
@@ -187,7 +182,8 @@ class WrapperWifi extends WrapperNetwork {
 
           discoveryCompleted = true;
           _isDiscovering = false;
-          _eventSub.pause();
+
+          controller.add(event);
           break;
 
         case CONNECTION_INFORMATION:
@@ -195,7 +191,7 @@ class WrapperWifi extends WrapperNetwork {
           bool? isConnected = info[0];
           bool? isGroupOwner = info[1];
           String? groupOwnerAddress = info[2];
-          print('INFO3 : $isConnected $isGroupOwner $groupOwnerAddress');
+
           _isGroupOwner = isGroupOwner!;
           if (isConnected! && _isGroupOwner) {
             _groupOwnerAddr = _ownIPAddress = groupOwnerAddress;
@@ -213,11 +209,9 @@ class WrapperWifi extends WrapperNetwork {
           break;
 
         default:
-          break;
+          controller.add(event);
       }
     });
-
-    _eventSub.pause();
   }
 
   void _onEvent(Service service) {
@@ -281,7 +275,8 @@ class WrapperWifi extends WrapperNetwork {
   }
 
   void _connect(int remotePort) async {
-    final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr!, attempts, timeOut);
+    final wifiClient = 
+      WifiClient(verbose, remotePort, _groupOwnerAddr!, attempts, timeOut);
     _onEvent(wifiClient);
     await wifiClient.connect();
   }
@@ -309,7 +304,7 @@ class WrapperWifi extends WrapperNetwork {
             ),
             null,
           ),
-          remoteAddress
+          remoteAddress!
         );
 
         receivedPeerMessage(
@@ -385,7 +380,6 @@ class WrapperWifi extends WrapperNetwork {
 
       default:
         controller.add(AdHocEvent(MESSAGE_EVENT, message));
-        break;
     }
   }
 }

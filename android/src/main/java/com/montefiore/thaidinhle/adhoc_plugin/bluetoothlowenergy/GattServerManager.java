@@ -33,7 +33,7 @@ import java.util.UUID;
 import java.util.Map;
 
 public class GattServerManager {
-    private static final String TAG = "[AdhocPlugin][GattServer]";
+    private static final String TAG = "[AdHocPlugin][GattServer]";
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
     private static final String STREAM_BOND = "ad.hoc.lib/ble.bond";

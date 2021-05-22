@@ -23,7 +23,12 @@ import java.util.List;
 
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
-    private static final String TAG = "[AdhocPlugin][BroadcastReceiver]";
+    private static final String TAG = "[AdHocPlugin][BroadcastReceiver]";
+
+    private static final byte ANDROID_DISCOVERY  = 120;
+    private static final byte ANDROID_STATE      = 121;
+    private static final byte ANDROID_CONNECTION = 122;
+    private static final byte ANDROID_CHANGES    = 123;
 
     private boolean verbose;
     private Channel channel;
@@ -54,7 +59,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                 if (verbose) Log.d(TAG, "onReceive(): STATE_CHANGED");
     
                 int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
-                mapInfoValue.put("type", 121);
+                mapInfoValue.put("type", ANDROID_STATE);
                 if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                     mapInfoValue.put("state", true);
                 } else {
@@ -84,7 +89,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                 WifiP2pDevice wifiP2pDevice = 
                     (WifiP2pDevice) intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
                 
-                mapInfoValue.put("type", 123);
+                mapInfoValue.put("type", ANDROID_CHANGES);
                 mapInfoValue.put("name", wifiP2pDevice.deviceName);
                 mapInfoValue.put("mac", wifiP2pDevice.deviceAddress.toUpperCase());
     
@@ -103,7 +108,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             if (verbose) Log.d(TAG, "onPeersAvailable()");
             
             HashMap<String, Object> mapInfoValue = new HashMap<>();
-            mapInfoValue.put("type", 120);
+            mapInfoValue.put("type", ANDROID_DISCOVERY);
 
             List<WifiP2pDevice> refreshedPeers = new ArrayList<>(peerList.getDeviceList());
             List<HashMap<String, Object>> listPeers = new ArrayList<>();
@@ -117,6 +122,8 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             mapInfoValue.put("peers", listPeers);
 
             eventSink.success(mapInfoValue);
+            Log.d(TAG, "There()");
+
         }
     };
 
@@ -127,7 +134,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
             HashMap<String, Object> mapInfoValue = new HashMap<>();
             HashMap<String, Object> mapConnectionInfoValue = new HashMap<>();
-            mapInfoValue.put("type", 122);
+            mapInfoValue.put("type", ANDROID_CONNECTION);
             
             
             mapConnectionInfoValue.put("groupFormed", info.groupFormed);

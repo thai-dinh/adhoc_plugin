@@ -120,9 +120,9 @@ class BleServer extends ServiceServer {
 
   /// Cancels an active connection with the remote device of MAC address [mac].
   @override
-  Future<void> cancelConnection(String? mac) async {
+  Future<void> cancelConnection(String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
 
-    await BleAdHocManager.cancelConnection(mac!);
+    await BleAdHocManager.cancelConnection(mac);
   }
 }
