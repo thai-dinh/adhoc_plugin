@@ -34,14 +34,6 @@ class BleServer extends ServiceServer {
 
     BleServices.platformEventStream.listen((map) async {
       switch (map['type']) {
-        // case ANDROID_BOND:
-        //   String mac = map['mac'] as String;
-        //   bool state = map['state'] as bool;
-
-        //   // Notify upper layer of bond state with a remote device
-        //   controller.add(AdHocEvent(ANDROID_BOND, [mac, state]));
-        //   break;
-
         case ANDROID_CONNECTION:
           String mac = map['mac'] as String;
           bool state = map['state'] as bool;
@@ -52,7 +44,7 @@ class BleServer extends ServiceServer {
             addActiveConnection(mac);
 
             // Notify upper layer of a connection performed
-            controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, 0]));
+            controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
           } else {
             removeInactiveConnection(mac);
 

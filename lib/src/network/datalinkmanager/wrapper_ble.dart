@@ -64,6 +64,7 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+
   ///
   @override
   void enable(int duration) async {
@@ -80,6 +81,7 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+
   ///
   @override
   void disable() {
@@ -91,6 +93,7 @@ class WrapperBle extends WrapperNetwork {
     enabled = false;
   }
 
+
   ///
   @override
   void discovery() {
@@ -101,6 +104,7 @@ class WrapperBle extends WrapperNetwork {
     _bleAdHocManager.discovery();
     _isDiscovering = true;
   }
+
 
   ///
   @override
@@ -117,9 +121,11 @@ class WrapperBle extends WrapperNetwork {
     }
   }
 
+
   ///
   @override
   void stopListening() => serviceServer.stopListening();
+
 
   ///
   @override
@@ -136,6 +142,7 @@ class WrapperBle extends WrapperNetwork {
     return paired;
   }
 
+
   ///
   @override
   Future<String> getAdapterName() async {
@@ -143,12 +150,14 @@ class WrapperBle extends WrapperNetwork {
     return name == null ? '' : name;
   }
 
+
   ///
   @override
   Future<bool> updateDeviceName(String name) async {
     final bool? result = await _bleAdHocManager.updateDeviceName(name);
     return result == null ? false : result;
   }
+
 
   ///
   @override
@@ -202,6 +211,7 @@ class WrapperBle extends WrapperNetwork {
     _eventSub.pause();
   }
 
+
   ///
   void _onEvent(Service service) {
     // Listen to stream of ad hoc events
@@ -215,9 +225,10 @@ class WrapperBle extends WrapperNetwork {
         case CONNECTION_PERFORMED:
           // Process connection establishment
           List<dynamic> data = event.payload as List<dynamic>;
-          String mac = data[0];
-          String uuid = data[1];
-          if (data[2] == 0)
+          String mac = data[0] as String;
+          String uuid = data[1] as String;
+          int service = data[2] as int;
+          if (service == SERVER)
             break;
 
           // Store remote node's NetworkManager
@@ -259,6 +270,7 @@ class WrapperBle extends WrapperNetwork {
     });
   }
 
+
   ///
   void _listenServer() {
     /// Start server listening 
@@ -269,6 +281,7 @@ class WrapperBle extends WrapperNetwork {
     _onEvent(serviceServer);
   }
 
+
   /// 
   Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
     final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager.eventStream);
@@ -277,6 +290,7 @@ class WrapperBle extends WrapperNetwork {
     // Connect to the remote node
     await bleClient.connect();
   }
+
 
   ///
   void _processMsgReceived(final MessageAdHoc message) {

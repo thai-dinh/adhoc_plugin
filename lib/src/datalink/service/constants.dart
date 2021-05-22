@@ -29,6 +29,10 @@ const BLE  = 1;
 const WIFI_READY = WIFI;
 const BLE_READY = BLE;
 
+// Constatns for the type of service
+const SERVER = WIFI;
+const CLIENT = BLE;
+
 // Constants indicating the current connection state of the node
 const STATE_NONE       = 100;        // No connection
 const STATE_CONNECTED  = 101;        // Connected to a remote node

@@ -80,6 +80,20 @@ class BleClient extends ServiceClient {
         buffer.clear();
       }
     });
+
+    BleServices.platformEventStream.listen((map) async {
+      if (map['type'] == ANDROID_BOND) {
+        String mac = map['mac'] as String;
+        bool state = map['state'] as bool;
+
+        if (mac == _device.mac!) {
+          await _connectionInitialization();
+        }
+
+        // Notify upper layer of bond state with a remote device
+        controller.add(AdHocEvent(ANDROID_BOND, [mac, state]));
+      }
+    });
   }
 
 
@@ -187,11 +201,6 @@ class BleClient extends ServiceClient {
             // Check whether it is bonded to the remote host, if not, then
             // initiate a pairing process
             if (!(await BleServices.getBondState(_device.mac!))) {
-              _bondStream.listen((event) async {
-                if (_device.mac == event['macAddress'])
-                  await _connectionInitialization();
-              });
-
               // Pairing request
               BleServices.createBond(_device.mac!);
             } else {
@@ -223,7 +232,7 @@ class BleClient extends ServiceClient {
 
     // Notify upper layer of a successfull connection performed
     controller.add(AdHocEvent(
-      CONNECTION_PERFORMED, [_device.mac, _device.address, 1]
+      CONNECTION_PERFORMED, [_device.mac, _device.address, CLIENT]
     ));
 
     // Update state of the connection
