@@ -51,7 +51,7 @@ public class WifiAdHocManager implements MethodCallHandler {
     private EventSink eventSink;
     private String initialName;
     private String currentAdapterName;
-    private WifiBroadcastReceiver broadcastReceiver;
+    private WifiBroadcastReceiver receiver;
     private WifiP2pManager wifiP2pManager;
 
     public WifiAdHocManager(Context context) {
@@ -112,7 +112,7 @@ public class WifiAdHocManager implements MethodCallHandler {
       }
     }
 
-/*--------------------------------Public methods------------------------------*/   
+/*--------------------------------Public methods------------------------------*/
 
     public void initMethodCallHandler(BinaryMessenger messenger) {
         if (verbose) Log.d(TAG, "initMethodCallHandler()");
@@ -151,18 +151,17 @@ public class WifiAdHocManager implements MethodCallHandler {
     private void register() {
         if (verbose) Log.d(TAG, "register()");
 
-        final IntentFilter intentFilter = new IntentFilter();
+        final IntentFilter filter = new IntentFilter();
 
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        filter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     
-        broadcastReceiver = 
-            new WifiBroadcastReceiver(channel, eventSink, wifiP2pManager);
-        broadcastReceiver.setVerbose(verbose);
+        receiver = new WifiBroadcastReceiver(channel, eventSink, wifiP2pManager);
+        receiver.setVerbose(verbose);
 
-        context.registerReceiver(broadcastReceiver, intentFilter);
+        context.registerReceiver(receiver, filter);
 
         registered = true;
     }
@@ -171,7 +170,7 @@ public class WifiAdHocManager implements MethodCallHandler {
         if (verbose) Log.d(TAG, "unregister()");
 
         if (registered) {
-            context.unregisterReceiver(broadcastReceiver);
+            context.unregisterReceiver(receiver);
             registered = false;
         }
     }

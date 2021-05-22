@@ -20,7 +20,7 @@ import java.io.IOException;
 
 
 public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
-  private static final String CHANNEL_NAME = "ad.hoc.lib/plugin.ble.channel";
+  private static final String METHOD_NAME = "ad.hoc.lib/ble.method.channel";
 
   private MethodChannel methodChannel;
   private BinaryMessenger messenger;
@@ -39,11 +39,12 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
     this.bluetoothManager = 
       (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
-    methodChannel = new MethodChannel(messenger, CHANNEL_NAME);
+    methodChannel = new MethodChannel(messenger, METHOD_NAME);
     methodChannel.setMethodCallHandler(this);
 
     gattServerManager = new GattServerManager(context);
     bleManager = new BleManager();
+
     WifiAdHocManager = new WifiAdHocManager(context);
     WifiAdHocManager.initMethodCallHandler(messenger);
   }
@@ -61,7 +62,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "openGattServer":
         gattServerManager.openGattServer(bluetoothManager, context);
-        gattServerManager.initEventChannels(messenger);
+        gattServerManager.setupEventChannel(messenger);
         break;
       case "closeGattServer":
         gattServerManager.closeGattServer();

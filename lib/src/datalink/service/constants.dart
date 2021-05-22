@@ -58,3 +58,5 @@ const ANDROID_DISCOVERY  = 120;
 const ANDROID_STATE      = 121;
 const ANDROID_CONNECTION = 122;
 const ANDROID_CHANGES    = 123;
+const ANDROID_BOND       = 124;
+const ANDROID_DATA       = 125;

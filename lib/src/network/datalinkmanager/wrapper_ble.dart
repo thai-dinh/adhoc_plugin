@@ -6,6 +6,7 @@ import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_client.dart';
 import 'package:adhoc_plugin/src/datalink/ble/ble_server.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
@@ -51,10 +52,10 @@ class WrapperBle extends WrapperNetwork {
   ///
   @override
   Future<void> init(bool verbose, Config? config) async {
-    if (await (BleAdHocManager.isEnabled() as Future<bool>)) {
+    if (await BleServices.isBleAdapterEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
       this._bleAdHocManager.enableDiscovery(3600); // TODO
-      this.ownName = (await BleAdHocManager.getCurrentName())!;
+      this.ownName = await BleServices.bleAdapterName;
       this._listenServer();
       this._initialize();
       this.enabled = true;
@@ -70,7 +71,7 @@ class WrapperBle extends WrapperNetwork {
       this._bleAdHocManager = BleAdHocManager(verbose);
       await _bleAdHocManager.enable();
       this._bleAdHocManager.enableDiscovery(duration);
-      this.ownName = (await BleAdHocManager.getCurrentName())!;
+      this.ownName = await BleServices.bleAdapterName;
       this._listenServer();
       this._initialize();
       this.enabled = true;
@@ -123,7 +124,7 @@ class WrapperBle extends WrapperNetwork {
   ///
   @override
   Future<HashMap<String?, AdHocDevice>?> getPaired() async {
-    if (!(await (BleAdHocManager.isEnabled() as Future<bool>)))
+    if (!await BleServices.isBleAdapterEnabled())
       return null;
 
     HashMap<String?, BleAdHocDevice> paired = HashMap();

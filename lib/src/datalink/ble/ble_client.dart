@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
@@ -20,9 +20,6 @@ class BleClient extends ServiceClient {
   /// Remote device
   BleAdHocDevice _device;
   Stream<dynamic> _bondStream;
-
-  StreamSubscription<List<int>>? _messageSub;
-  StreamSubscription<ConnectionStateUpdate>? _connnectionSub;
 
   late FlutterReactiveBle _reactiveBle;
   late Uuid _characteristicUuid;
@@ -68,7 +65,7 @@ class BleClient extends ServiceClient {
 
     // Listen to the change made to the qualified characteristic
     List<Uint8List> buffer = List.empty(growable: true);
-    _messageSub = _reactiveBle.subscribeToCharacteristic(qChar).listen((bytes) {
+    _reactiveBle.subscribeToCharacteristic(qChar).listen((bytes) {
       buffer.add(Uint8List.fromList(bytes));
       // End of fragmentation
       if (bytes[0] == MESSAGE_END) {
@@ -81,19 +78,16 @@ class BleClient extends ServiceClient {
         // Reset buffer
         buffer.clear();
       }
-    }, onDone: () => _messageSub = null);
+    });
   }
+
 
   /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
     super.stopListening();
-
-    if (_connnectionSub != null)
-      _connnectionSub!.cancel();
-    if (_messageSub != null)
-      _messageSub!.cancel();
   }
+
 
   /// Initiates a connection with the remote device.
   @override
@@ -101,15 +95,17 @@ class BleClient extends ServiceClient {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
 
+
   /// Cancels the connection with the remote device.
   @override
   void disconnect() {
     this.stopListening();
     // Abort connection with the remote host
-    BleAdHocManager.cancelConnection(_device.mac!);
+    BleServices.cancelConnection(_device.mac!);
     // Notify upper layer of a connection aborted
     controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac!));
   }
+
 
   /// Sends a [message] to the remote device.
   @override
@@ -161,6 +157,7 @@ class BleClient extends ServiceClient {
     );
   }
 
+
   /// Initiates a connection attempts with [attempts] times and with a [delay]
   /// (ms) between each try.
   Future<void> _connect(int attempts, Duration delay) async {
@@ -179,13 +176,14 @@ class BleClient extends ServiceClient {
     }
   }
 
+
   /// Initiates a connection attempt.
   Future<void> _connectionAttempt() async {
     if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac}');
 
     if (state == STATE_NONE || state == STATE_CONNECTING) {
       // Start the connection
-      _connnectionSub = _reactiveBle.connectToDevice(
+      _reactiveBle.connectToDevice(
         id: _device.mac!,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
@@ -198,14 +196,14 @@ class BleClient extends ServiceClient {
 
             // Check whether it is bonded to the remote host, if not, then
             // initiate a pairing process
-            if (!(await (BleAdHocManager.getBondState(_device.mac!) as Future<bool>))) {
+            if (!(await BleServices.getBondState(_device.mac!))) {
               _bondStream.listen((event) async {
                 if (_device.mac == event['macAddress'])
                   await _connectionInitialization();
               });
 
               // Pairing request
-              BleAdHocManager.createBond(_device.mac!);
+              BleServices.createBond(_device.mac!);
             } else {
               await _connectionInitialization();
             }
@@ -223,6 +221,7 @@ class BleClient extends ServiceClient {
       });
     }
   }
+
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _connectionInitialization() async {
