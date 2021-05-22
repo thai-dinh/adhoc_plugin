@@ -38,7 +38,7 @@ import static android.os.Looper.getMainLooper;
 
 
 public class WifiAdHocManager implements MethodCallHandler {
-    private static final String TAG = "[AdHocPlugin][WifiManager]";
+    private static final String TAG = "[AdHocPlugin][WifiAdHocManager]";
     private static final String METHOD_NAME = "ad.hoc.lib/wifi.method.channel";
     private static final String EVENT_NAME = "ad.hoc.lib/wifi.event.channel";
 
@@ -51,7 +51,7 @@ public class WifiAdHocManager implements MethodCallHandler {
     private EventSink eventSink;
     private String initialName;
     private String currentAdapterName;
-    private WifiDirectBroadcastReceiver broadcastReceiver;
+    private WifiBroadcastReceiver broadcastReceiver;
     private WifiP2pManager wifiP2pManager;
 
     public WifiAdHocManager(Context context) {
@@ -159,7 +159,7 @@ public class WifiAdHocManager implements MethodCallHandler {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     
         broadcastReceiver = 
-            new WifiDirectBroadcastReceiver(channel, eventSink, wifiP2pManager);
+            new WifiBroadcastReceiver(channel, eventSink, wifiP2pManager);
         broadcastReceiver.setVerbose(verbose);
 
         context.registerReceiver(broadcastReceiver, intentFilter);

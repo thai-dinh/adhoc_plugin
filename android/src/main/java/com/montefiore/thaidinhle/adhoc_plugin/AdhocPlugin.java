@@ -4,9 +4,9 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import androidx.annotation.NonNull;
 
-import com.montefiore.thaidinhle.adhoc_plugin.bluetoothlowenergy.BluetoothLowEnergyManager;
-import com.montefiore.thaidinhle.adhoc_plugin.bluetoothlowenergy.BluetoothLowEnergyUtils;
-import com.montefiore.thaidinhle.adhoc_plugin.bluetoothlowenergy.GattServerManager;
+import com.montefiore.thaidinhle.adhoc_plugin.ble.BleManager;
+import com.montefiore.thaidinhle.adhoc_plugin.ble.BleUtils;
+import com.montefiore.thaidinhle.adhoc_plugin.ble.GattServerManager;
 import com.montefiore.thaidinhle.adhoc_plugin.wifi.WifiAdHocManager;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -26,11 +26,11 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   private BinaryMessenger messenger;
   private Context context;
 
-  private BluetoothLowEnergyManager bleManager;
+  private BleManager bleManager;
   private BluetoothManager bluetoothManager;
   private GattServerManager gattServerManager;
 
-  private WifiAdHocManager wifiAdHocManager;
+  private WifiAdHocManager WifiAdHocManager;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
@@ -43,9 +43,9 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
     methodChannel.setMethodCallHandler(this);
 
     gattServerManager = new GattServerManager(context);
-    bleManager = new BluetoothLowEnergyManager();
-    wifiAdHocManager = new WifiAdHocManager(context);
-    wifiAdHocManager.initMethodCallHandler(messenger);
+    bleManager = new BleManager();
+    WifiAdHocManager = new WifiAdHocManager(context);
+    WifiAdHocManager.initMethodCallHandler(messenger);
   }
 
   @Override
@@ -57,7 +57,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         gattServerManager.setVerbose(verbose);
         break;
       case "isEnabled":
-        result.success(BluetoothLowEnergyUtils.isEnabled());
+        result.success(BleUtils.isEnabled());
         break;
       case "openGattServer":
         gattServerManager.openGattServer(bluetoothManager, context);
@@ -79,7 +79,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         final String macAddress = call.arguments();
         gattServerManager.cancelConnection(macAddress);
       case "getCurrentName":
-        result.success(BluetoothLowEnergyUtils.getCurrentName());
+        result.success(BleUtils.getCurrentName());
         break;
 
       case "disable":
@@ -126,7 +126,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     bleManager.stopAdvertise();
     gattServerManager.closeGattServer();
-    wifiAdHocManager.close();
+    WifiAdHocManager.close();
     methodChannel.setMethodCallHandler(null);
   }
 }

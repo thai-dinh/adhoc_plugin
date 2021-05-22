@@ -43,22 +43,31 @@ class WifiClient extends ServiceClient {
     // Listen to messages sent by the server
     _socket.listen(
       (data) {
-        if (verbose) {
-          log(ServiceClient.TAG, 
-            'received message from $_serverIP:${_socket.port}'
-          );
-        }
+        if (verbose)
+          log(ServiceClient.TAG, 'bytes received from $_serverIP:${_socket.port}');
 
         // Convert bytes to string
         String msg = Utf8Decoder().convert(data);
 
         if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          for (MessageAdHoc _msg in splitMessages(msg))
+          for (MessageAdHoc _msg in splitMessages(msg)) {
             controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+            if (verbose) {
+              log(ServiceClient.TAG, 
+                'received message from $_serverIP:${_socket.port}'
+              );
+            }
+          }
         } else if (msg[msg.length-1].compareTo('}') == 0) {
           buffer.write(msg);
-          for (MessageAdHoc _msg in splitMessages(buffer.toString()))
+          for (MessageAdHoc _msg in splitMessages(buffer.toString())) {
             controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+            if (verbose) {
+              log(ServiceClient.TAG, 
+                'received message from $_serverIP:${_socket.port}'
+              );
+            }
+          }
           buffer.clear();
         } else {
           buffer.write(msg);

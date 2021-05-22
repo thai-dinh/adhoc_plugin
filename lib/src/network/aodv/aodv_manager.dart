@@ -694,8 +694,6 @@ class AodvManager {
       if (_verbose) 
         log(TAG, _ownLabel + ' is the destination (stop DATA message)');
 
-      print(message);
-
       // Get the header of the message
       Header header = message.header;
       // Get the AdHocDevice object of the sender

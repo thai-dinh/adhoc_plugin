@@ -79,7 +79,6 @@ class WifiAdHocManager extends ServiceManager {
 
       switch (map['type']) {
         case ANDROID_DISCOVERY: // Discovery process
-          print('Yes here: $map');
           List<dynamic> list = map['peers'] as List<dynamic>;
           List<WifiP2PDevice> peers = List.empty(growable: true);
           list.forEach((map) => peers.add(WifiP2PDevice.fromMap(map)));

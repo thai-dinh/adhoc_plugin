@@ -42,7 +42,7 @@ class WifiServer extends ServiceServer {
             if (verbose) {
               log(
                 ServiceServer.TAG, 
-                'received message from $remoteAddress:${socket.remotePort}'
+                'bytes received from $remoteAddress:${socket.remotePort}'
               );
             }
 
@@ -51,12 +51,24 @@ class WifiServer extends ServiceServer {
 
             String msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-              for (MessageAdHoc _msg in splitMessages(msg))
+              for (MessageAdHoc _msg in splitMessages(msg)) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+                if (verbose) {
+                  log(ServiceServer.TAG, 
+                    'received message from $remoteAddress:${socket.remotePort}'
+                  );
+                }
+              }
             } else if (msg[msg.length-1].compareTo('}') == 0) {
               _mapIpBuffer[remoteAddress]!.write(msg);
-              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString()))
+              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString())) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+                if (verbose) {
+                  log(ServiceServer.TAG, 
+                    'received message from $remoteAddress:${socket.remotePort}'
+                  );
+                }
+              }
               _mapIpBuffer[remoteAddress]!.clear();
             } else {
               _mapIpBuffer[remoteAddress]!.write(msg);

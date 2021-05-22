@@ -1,4 +1,4 @@
-package com.montefiore.thaidinhle.adhoc_plugin.bluetoothlowenergy;
+package com.montefiore.thaidinhle.adhoc_plugin.ble;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
@@ -10,7 +10,7 @@ import android.util.Log;
 
 import java.util.UUID;
 
-public class BluetoothLowEnergyManager {
+public class BleManager {
     private static final String TAG = "[AdHocPlugin][BleManager]";
 
     private final BluetoothAdapter bluetoothAdapter;
@@ -19,7 +19,7 @@ public class BluetoothLowEnergyManager {
     private boolean verbose;
     private String initialName;
 
-    public BluetoothLowEnergyManager() {
+    public BleManager() {
         this.verbose = false;
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
@@ -46,7 +46,7 @@ public class BluetoothLowEnergyManager {
         if (verbose) Log.d(TAG, "startAdvertise()");
 
         AdvertiseData data = new AdvertiseData.Builder()
-            .addServiceUuid(new ParcelUuid(UUID.fromString(BluetoothLowEnergyUtils.SERVICE_UUID)))
+            .addServiceUuid(new ParcelUuid(UUID.fromString(BleUtils.SERVICE_UUID)))
             .setIncludeDeviceName(true)
             .build();
 

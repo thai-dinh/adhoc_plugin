@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
+public class WifiBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "[AdHocPlugin][BroadcastReceiver]";
 
     private static final byte ANDROID_DISCOVERY  = 120;
@@ -35,7 +35,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private EventSink eventSink;
     private WifiP2pManager wifiP2pManager;
 
-    public WifiDirectBroadcastReceiver(
+    public WifiBroadcastReceiver(
         Channel channel, EventSink eventSink, WifiP2pManager wifiP2pManager
     ) {
         this.verbose = false;
@@ -45,7 +45,6 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     }
 
     public void setVerbose(boolean verbose) {
-        if (verbose) Log.d(TAG, "setVerbose()");
         this.verbose = verbose;
     }
 
@@ -122,8 +121,6 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             mapInfoValue.put("peers", listPeers);
 
             eventSink.success(mapInfoValue);
-            Log.d(TAG, "There()");
-
         }
     };
 

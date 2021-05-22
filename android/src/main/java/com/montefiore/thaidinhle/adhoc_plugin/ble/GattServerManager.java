@@ -1,4 +1,4 @@
-package com.montefiore.thaidinhle.adhoc_plugin.bluetoothlowenergy;
+package com.montefiore.thaidinhle.adhoc_plugin.ble;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -34,6 +34,9 @@ import java.util.Map;
 
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
+
+    private static final String EVENT_NAME = "ad.hoc.lib/ble.event.channel";
+
     private static final String STREAM_CONNECTION = "ad.hoc.lib/ble.connection";
     private static final String STREAM_MESSAGE = "ad.hoc.lib/ble.message";
     private static final String STREAM_BOND = "ad.hoc.lib/ble.bond";
@@ -151,14 +154,14 @@ public class GattServerManager {
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
         characteristic = new BluetoothGattCharacteristic(
-            UUID.fromString(BluetoothLowEnergyUtils.CHARACTERISTIC_UUID),
+            UUID.fromString(BleUtils.CHARACTERISTIC_UUID),
             BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | 
             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE
         );
 
         BluetoothGattService service = new BluetoothGattService(
-            UUID.fromString(BluetoothLowEnergyUtils.SERVICE_UUID),
+            UUID.fromString(BleUtils.SERVICE_UUID),
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         );
 
@@ -197,7 +200,7 @@ public class GattServerManager {
             buffer.put(id, bytes);
             data.put(address, buffer);
 
-            if (value[0] == BluetoothLowEnergyUtils.END_MESSAGE) {
+            if (value[0] == BleUtils.END_MESSAGE) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
                 mapInfoValue.put("message", data.get(address).get(id));
                 mapInfoValue.put("macAddress", address);
@@ -224,11 +227,11 @@ public class GattServerManager {
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gattServer.connect(device, false);
-                state = BluetoothLowEnergyUtils.STATE_CONNECTED;
-                mapMacMtu.put(device.getAddress(), new Short(BluetoothLowEnergyUtils.MIN_MTU));
+                state = BleUtils.STATE_CONNECTED;
+                mapMacMtu.put(device.getAddress(), new Short(BleUtils.MIN_MTU));
             } else {
                 gattServer.cancelConnection(device);
-                state = BluetoothLowEnergyUtils.STATE_DISCONNECTED;
+                state = BleUtils.STATE_DISCONNECTED;
                 mapMacDevice.remove(device.getAddress());
                 mapMacMtu.remove(device.getAddress());
                 data.remove(device.getAddress());

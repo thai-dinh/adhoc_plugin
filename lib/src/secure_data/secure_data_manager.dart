@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
@@ -22,6 +23,8 @@ import 'package:pointycastle/pointycastle.dart';
 /// Class representing the core of the secure data layer. It performs 
 /// certificates management as well as encryption and decryption tasks.  
 class SecureDataManager {
+  static const String TAG = '[SecureDataManager]';
+
   final bool _verbose;
 
   late CryptoEngine _engine;
@@ -77,6 +80,8 @@ class SecureDataManager {
   /// The [data] of the message is encryped if [encrypted] is true, otherwise
   /// it is sent to node [destination] unencryped.
   void send(Object data, String destination, bool encrypted) async {
+    if (_verbose) log(TAG, 'send() - encrypted: $encrypted');
+
     if (encrypted) {
       // Get the public certificate of the destination node
       Certificate? certificate = _repository.getCertificate(destination);
@@ -96,9 +101,12 @@ class SecureDataManager {
       }
 
       // Encrypt data
+      if (_verbose) log(TAG, 'send(): begin encryption');
       Uint8List encryptedData = await _engine.encrypt(
         Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key
       );
+
+      if (_verbose) log(TAG, 'send(): end encryption ${encryptedData.length}');
 
       // Send encrypted data
       _aodvManager.sendMessageTo(
@@ -119,6 +127,8 @@ class SecureDataManager {
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcast(Object data, bool encrypted) async {
+    if (_verbose) log(TAG, 'broadcast() - encrypted: $encrypted');
+
     if (encrypted) {
       // Broadcast encrypted data
       for (final neighbor in _datalinkManager.directNeighbors)
@@ -142,6 +152,8 @@ class SecureDataManager {
   Future<bool> broadcastExcept(
     Object data, String excluded, bool encrypted
   ) async {
+    if (_verbose) log(TAG, 'broadcastExcept() - encrypted: $encrypted');
+
     if (encrypted) {
       // Encrypt and send encrypted data to direct neighbors except excluded
       for (final neighbor in _datalinkManager.directNeighbors)
@@ -161,6 +173,8 @@ class SecureDataManager {
   /// Calling this method will send a certificate revocation notification to the
   /// directly trusted neighbors.
   void revokeCertificate() {
+    if (_verbose) log(TAG, 'revokeCertificate()');
+
     // Generate a new pair of public and private key
     _engine.generateRSAkeyPair();
 
@@ -186,6 +200,7 @@ class SecureDataManager {
 
   /// Initializes the listening process of lower layer streams.
   void _initialize() {
+    if (_verbose) log(TAG, '_initialize()');
     _aodvManager.eventStream.listen((event) {
       switch (event.type) {
         case CONNECTION_EVENT:
@@ -230,6 +245,8 @@ class SecureDataManager {
   /// Throws a [VerificationFailedException] upon failure, i.e., a certificate
   /// is not valid.
   void _processCertificateReply(List<Certificate> certificateChain) {
+    if (_verbose) log(TAG, '_processCertificateReply()');
+
     // Chain verification
     for (final Certificate cert in certificateChain) {
       if (cert.validity.isBefore(DateTime.now()))
@@ -315,7 +332,6 @@ class SecureDataManager {
         try {
           _processCertificateReply(_pdu);
         } catch (exception) {
-          print(exception);
           _controller.add(AdHocEvent(INTERNAL_EXCEPTION, exception));
         }
         break;
@@ -366,6 +382,8 @@ class SecureDataManager {
   /// Generates a [Certificate] for the binding of the public key [key] and the 
   /// identity of the directly trusted neighbor [label].
   void _issueCertificate(String label, RSAPublicKey key) {
+    if (_verbose) log(TAG, '_issueCertificate()');
+
     // Issue the certificate
     DateTime validity = DateTime.now().add(Duration(seconds: _validityPeriod));
     Certificate certificate = 
