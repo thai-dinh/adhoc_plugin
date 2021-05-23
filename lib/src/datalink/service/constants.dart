@@ -9,7 +9,7 @@ const MAX_MTU = 500;
 
 // Constants for the message fragmentation
 const MESSAGE_END   = 0;
-const MESSAGE_BEGIN = 1;
+const MESSAGE_FRAG = 1;
 
 // Constant for the size of a byte
 const UINT8_SIZE = 256;

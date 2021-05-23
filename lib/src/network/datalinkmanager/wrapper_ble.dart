@@ -272,7 +272,6 @@ class WrapperBle extends WrapperNetwork {
           String mac = data[0] as String;
           String uuid = data[1] as String;
           int type = data[2] as int;
-          print('here ${data[2]} $SERVER $CLIENT');
           if (type == SERVER)
             break;
 

@@ -41,12 +41,16 @@ class AdHocDevice {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns the label of this remote node instance.
   String? get label => _label;
 
+  /// Returns the name of this remote node instance.
   String? get name => _name;
 
+  /// Returns the MAC address of this remote node instance.
   String? get mac => _mac;
 
+  /// Returns the type of this remote node instance.
   int get type => _type;
 
 /*-------------------------------Public methods-------------------------------*/
@@ -56,7 +60,7 @@ class AdHocDevice {
 
   /// Returns a [String] representation of this remote device's type
   ///
-  /// The type of this instance can be Bluetooth Low Energy (BluetoothLE),
+  /// The type of this instance can be Bluetooth Low Energy (Ble),
   /// Wifi P2P (Wifi), or unknown (UNKNOWN) if the type is not specified.
   String typeAsString() {
     switch (type) {

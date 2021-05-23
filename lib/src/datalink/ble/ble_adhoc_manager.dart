@@ -130,8 +130,7 @@ class BleAdHocManager extends ServiceManager {
 
   /// Updates the local adapter name of the device with [name].
   /// 
-  /// Returns true if the name is successfully set, otherwise false. In case
-  /// of error, a null value is returned.
+  /// Returns true if the name is successfully set, otherwise false.
   @override
   Future<bool> updateDeviceName(String name) async {
     return await BleServices.updateDeviceName(name);
@@ -140,15 +139,17 @@ class BleAdHocManager extends ServiceManager {
 
   /// Resets the local adapter name of the device.
   /// 
-  /// Returns true if the name is successfully reset, otherwise false. In case
-  /// of error, a null value is returned.
+  /// Returns true if the name is successfully reset, otherwise false.
   @override
   Future<bool> resetDeviceName() async {
     return BleServices.resetDeviceName();
   }
 
 
-  /// Returns all the paired Ble-capable devices.
+  /// Gets all the paired Ble-capable devices.
+  /// 
+  /// Returns a hash map (<[String], [BleAdHocDevice]>) containing all the 
+  /// paired devices.
   Future<HashMap<String?, BleAdHocDevice>> getPairedDevices() async {
     if (verbose) log(TAG, 'getPairedDevices()');
 

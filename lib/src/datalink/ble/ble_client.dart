@@ -60,17 +60,19 @@ class BleClient extends ServiceClient {
 
     // Listen to the changes of the characteristic
     _reactiveBle.subscribeToCharacteristic(qChar).listen((chunk) {
+      // Recover the flag value
+      int flag = chunk[0];
       // Add chunk to buffer
-      buffer.addAll(chunk);
+      buffer.addAll(chunk.sublist(MESSAGE_FRAG));
 
       // End of fragmentation
-      if (chunk[0] == MESSAGE_END) {
+      if (flag == MESSAGE_END) {
         // Reconstruct the message
         String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
-        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage));
+        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage + '}'));
 
         if (verbose)
-          log(ServiceClient.TAG, 'Client: message received: ${_device.mac}');
+          log(ServiceClient.TAG, 'Client: message received from ${_device.mac}');
 
         // Notify upper layer of a message received
         controller.add(AdHocEvent(MESSAGE_RECEIVED, msg));
@@ -82,15 +84,13 @@ class BleClient extends ServiceClient {
 
     // Listen to event from the platform-specific side for pairing event
     BleServices.platformEventStream.listen((map) async {
-      print(map);
-      print(_device.mac!);
       if (map['type'] == ANDROID_BOND) {
         String mac = map['mac'] as String;
         bool state = map['state'] as bool;
 
         // If pairing request has succeded, then proceed with the connection
         if (mac == _device.mac!)
-          await _connectionInitialization();
+          await _initEnvironment();
 
         // Notify upper layer of bond state with a remote device
         controller.add(AdHocEvent(ANDROID_BOND, [mac, state]));
@@ -142,32 +142,34 @@ class BleClient extends ServiceClient {
 
     // Convert the MessageAdHoc into bytes
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, seq, end;
+    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, flag, end;
 
     /* Fragment the message bytes into smaller chunk of bytes */
 
-    // First byte indicates the message ID and second byte the sequence number
-    // The sequence number '0' determines the end of the fragmentation
-    if (i + mtu > msg.length) {
-      seq = MESSAGE_END;
-      end = msg.length;
+    // First byte indicates the message ID and second byte the flag value
+    // The flag value '0' determines the end of the fragmentation
+    if (i + mtu >= msg.length) {
+      flag = MESSAGE_END;
+      end = msg.length - 1;
     } else {
-      seq = MESSAGE_BEGIN;
+      flag = MESSAGE_FRAG;
       end = i + mtu;
     }
 
     do {
-      List<int> _chunk = [_id, seq] + List.from(msg.getRange(i, end));
-      await _reactiveBle.writeCharacteristicWithResponse(
+      List<int> _chunk = [_id, flag] + List.from(msg.getRange(i, end));
+      await _reactiveBle.writeCharacteristicWithoutResponse(
         characteristic, value: _chunk
       );
 
-      seq++;
+      Future.delayed(Duration(microseconds: UINT8_SIZE));
+
+      flag++;
       i += mtu;
 
-      if (i + mtu > msg.length) {
-        seq = MESSAGE_END;
-        end = msg.length;
+      if (i + mtu >= msg.length) {
+        flag = MESSAGE_END;
+        end = msg.length - 1;
       } else {
         end = i + mtu;
       }
@@ -221,14 +223,14 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            // Check whether it is bonded to the remote host, if not, then
-            // initiate a pairing process
-            if (!(await BleServices.getBondState(_device.mac!))) {
-              // Pairing request
-              BleServices.createBond(_device.mac!);
-            } else {
-              await _connectionInitialization();
-            }
+            // // Check whether it is bonded to the remote host, if not, then
+            // // initiate a pairing process
+            // if (!(await BleServices.getBondState(_device.mac!))) {
+            //   // Pairing request
+            //   BleServices.createBond(_device.mac!);
+            // } else {
+              await _initEnvironment();
+            // }
             break;
 
           case DeviceConnectionState.connecting:
@@ -246,12 +248,9 @@ class BleClient extends ServiceClient {
 
 
   /// Initializes the environment upon a successful connection performed.
-  Future<void> _connectionInitialization() async {
+  Future<void> _initEnvironment() async {
     if (_isInitialized)
       return;
-
-    print('_connectionInitialization');
-    print(await _reactiveBle.discoverServices(_device.mac!));
 
     // Start listening process for ad hoc events (messages)
     listen();

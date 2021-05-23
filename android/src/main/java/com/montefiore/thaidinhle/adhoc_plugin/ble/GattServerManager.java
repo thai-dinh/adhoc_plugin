@@ -132,29 +132,50 @@ public class GattServerManager {
 
         BluetoothDevice device = mapMacDevice.get(mac);
         byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
-        int mtu = mapMacMtu.get(mac).intValue(), i = 0, seq = 0, end;
+        int mtu = mapMacMtu.get(mac).intValue(), i = 0, flag = 0, end;
         ByteArrayOutputStream bytesBuffer = new ByteArrayOutputStream();
         boolean notification;
 
+        /* Fragment the message bytes into smaller chunk of bytes */
+
+        // First byte indicates the flag
+        // The flag value '0' determines the end of the fragmentation
+        if (i + mtu >= bytesMsg.length) {
+            flag = BleUtils.MESSAGE_END;
+            end = bytesMsg.length - 1;
+        } else {
+            flag = BleUtils.MESSAGE_FRAG;
+            end = i + mtu;
+        }
+
         do {
-            end = (i += mtu) > bytesMsg.length ? bytesMsg.length : (i += mtu);
-            bytesBuffer.write(seq);
-            bytesBuffer.write(bytesMsg, i, mtu);
+            bytesBuffer.write(flag);
+            bytesBuffer.write(bytesMsg, i, end);
 
             byte[] chunk = bytesBuffer.toByteArray();
             boolean result = characteristic.setValue(chunk);
             while (result == false) {
                 try {
-                    Thread.sleep(256);
+                    Thread.sleep(128);
                 } catch (InterruptedException exception) {
-                    //TODO: handle exception
+
                 }
 
                 result = characteristic.setValue(chunk);
             }
 
-            notification = gattServer.notifyCharacteristicChanged(device, characteristic, false);
-            seq++;
+            notification = 
+                gattServer.notifyCharacteristicChanged(device, characteristic, false);
+
+            flag++;
+            i += mtu;
+
+            if (i + mtu >= bytesMsg.length) {
+                flag = BleUtils.MESSAGE_END;
+                end = bytesMsg.length - 1 - i;
+            } else {
+                end = i + mtu;
+            }
         } while(i < bytesMsg.length);
 
         return notification;
@@ -216,7 +237,8 @@ public class GattServerManager {
     private void register() {
         if (verbose) Log.d(TAG, "register()");
 
-        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        final IntentFilter filter = 
+            new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         context.registerReceiver(receiver, filter);
     }
 
@@ -227,7 +249,8 @@ public class GattServerManager {
             String action = intent.getAction();
 
             if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                BluetoothDevice device = 
+                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
                 mapInfoValue.put("type", ANDROID_BOND);
                 mapInfoValue.put("mac", device.getAddress());
@@ -256,7 +279,9 @@ public class GattServerManager {
         ) {
             if (verbose) Log.d(TAG, "onCharacteristicReadRequest()");
 
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
+            gattServer.sendResponse(
+                device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue()
+            );
         }
 
         @Override
@@ -267,12 +292,14 @@ public class GattServerManager {
             if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
 
             if(responseNeeded) {
-                gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
+                gattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]
+                );
             }
 
             String mac = device.getAddress();
             Integer id = new Integer(value[0]);
-            byte seq = value[1];
+            byte flag = value[1];
 
             HashMap<Integer, ByteArrayOutputStream> buffer = data.get(mac);
             ByteArrayOutputStream byteBuffer = buffer.get(id);
@@ -283,14 +310,15 @@ public class GattServerManager {
             try {
                 byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
             } catch (IOException exception) {
-                //TODO: handle exception
+
             }
 
-            if (seq == BleUtils.END_MESSAGE) {
+            if (flag == BleUtils.MESSAGE_END) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
 
                 mapInfoValue.put("type", ANDROID_DATA);
                 mapInfoValue.put("data", byteBuffer.toByteArray());
+                mapInfoValue.put("mac", mac);
 
                 eventSink.success(mapInfoValue);
 
@@ -303,7 +331,9 @@ public class GattServerManager {
         }
 
         @Override
-        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+        public void onConnectionStateChange(
+            BluetoothDevice device, int status, int newState
+        ) {
             if (verbose) Log.d(TAG, "onConnectionStateChange()");
 
             final String mac = device.getAddress();
@@ -331,7 +361,9 @@ public class GattServerManager {
 
         @Override
         public void onMtuChanged(BluetoothDevice device, int mtu) {
-            if (verbose) Log.d(TAG, "onMtuChanged(): " + device.getAddress() + ", " + mtu);
+            if (verbose) 
+                Log.d(TAG, "onMtuChanged(): " + device.getAddress() + ", " + mtu);
+
             mapMacMtu.put(device.getAddress(), new Short((short) mtu));
         }
 
@@ -365,7 +397,9 @@ public class GattServerManager {
         }
 
         @Override
-        public void error(final String errorCode, final String errorMessage, final Object errorDetails) {
+        public void error(
+            final String errorCode, final String errorMessage, final Object errorDetails
+        ) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {

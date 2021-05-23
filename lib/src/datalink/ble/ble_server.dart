@@ -60,19 +60,28 @@ class BleServer extends ServiceServer {
           Uint8List bytes = Uint8List.fromList(map['data']);
           // Reconstruct the message
           MessageAdHoc message = 
-            MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
+            MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes) + '}'));
+
+          print(message);
 
           // Update the header of the message
           if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
+            String uuid = 
+              map['mac'].replaceAll(new RegExp(':'), '').toLowerCase();
+            uuid = BLUETOOTHLE_UUID + uuid;
+
             message.header = Header(
               messageType: message.header.messageType,
               label: message.header.label,
               name: message.header.name,
-              address: message.header.address,
-              mac: map['macAddress'],
+              address: uuid,
+              mac: map['mac'],
               deviceType: message.header.deviceType
             );
           }
+
+          if (verbose)
+            log(ServiceServer.TAG, 'Server: message received from ${map['mac']}');
 
           // Notify upper layer of message received
           controller.add(AdHocEvent(MESSAGE_RECEIVED, message));

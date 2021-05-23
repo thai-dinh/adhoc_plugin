@@ -8,7 +8,8 @@ public class BleUtils {
 
     public static final byte MIN_MTU = 20;
 
-    public static final byte END_MESSAGE = 0;
+    public static final byte MESSAGE_END = 0;
+    public static final byte MESSAGE_FRAG = 1;
 
     public static final byte STATE_DISCONNECTED = 0;
     public static final byte STATE_CONNECTED = 1;
