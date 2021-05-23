@@ -149,6 +149,7 @@ public class GattServerManager {
         }
 
         do {
+            bytesBuffer.reset();
             bytesBuffer.write(flag);
             bytesBuffer.write(bytesMsg, i, end);
 
@@ -167,12 +168,12 @@ public class GattServerManager {
             notification = 
                 gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
-            flag++;
+            flag = BleUtils.MESSAGE_FRAG;
             i += mtu;
 
             if (i + mtu >= bytesMsg.length) {
                 flag = BleUtils.MESSAGE_END;
-                end = bytesMsg.length - 1 - i;
+                end = (bytesMsg.length - 1) - i;
             } else {
                 end = i + mtu;
             }

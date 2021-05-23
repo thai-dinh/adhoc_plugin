@@ -62,8 +62,6 @@ class BleServer extends ServiceServer {
           MessageAdHoc message = 
             MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes) + '}'));
 
-          print(message);
-
           // Update the header of the message
           if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
             String uuid = 

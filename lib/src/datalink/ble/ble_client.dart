@@ -70,15 +70,14 @@ class BleClient extends ServiceClient {
         // Reconstruct the message
         String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
         MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage + '}'));
+        // Reset buffer
+        buffer.clear();
 
         if (verbose)
           log(ServiceClient.TAG, 'Client: message received from ${_device.mac}');
 
         // Notify upper layer of a message received
         controller.add(AdHocEvent(MESSAGE_RECEIVED, msg));
-
-        // Reset buffer
-        buffer.clear();
       }
     });
 
@@ -164,7 +163,7 @@ class BleClient extends ServiceClient {
 
       Future.delayed(Duration(microseconds: UINT8_SIZE));
 
-      flag++;
+      flag = MESSAGE_FRAG;
       i += mtu;
 
       if (i + mtu >= msg.length) {

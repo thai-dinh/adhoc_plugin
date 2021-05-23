@@ -271,14 +271,18 @@ class WrapperBle extends WrapperNetwork {
           List<dynamic> data = event.payload as List<dynamic>;
           String mac = data[0] as String;
           String uuid = data[1] as String;
-          int type = data[2] as int;
-          if (type == SERVER)
+          int serviceType = data[2] as int;
+          if (serviceType == SERVER)
             break;
 
           // Store remote node's NetworkManager
           mapAddrNetwork.putIfAbsent(
             uuid, () => NetworkManager(
-              (MessageAdHoc? msg) async => (service as ServiceClient).send(msg!), 
+              (MessageAdHoc msg) async {
+                msg.header.address = _ownBleUUID;
+                msg.header.deviceType = BLE;
+                (service as ServiceClient).send(msg);
+              },
               () => (service as ServiceClient).disconnect()
             )
           );
@@ -429,7 +433,7 @@ class WrapperBle extends WrapperNetwork {
             label: header.label,
             name: header.name,
             mac: header.mac,
-            type: type
+            type: header.deviceType!
           );
 
           // Notify upper layer of a remote connection closed

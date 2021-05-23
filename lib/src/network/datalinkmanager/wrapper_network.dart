@@ -43,6 +43,15 @@ abstract class WrapperNetwork {
   late Set<String?> setFloodEvents;
   late HashSet<AdHocDevice?> setRemoteDevices;
 
+  /// Creates a [WrapperNetwork] object.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
+  /// 
+  /// This object is configured according to [config], which contains specific 
+  /// configurations.
+  /// 
+  /// This object maps a MAC address entry ([String]) to an [AdHocDevice] object 
+  /// into [mapMacDevices].
   WrapperNetwork(
     this.verbose, Config config, HashMap<String?, AdHocDevice?> mapMacDevices,
   ) {
@@ -65,6 +74,9 @@ abstract class WrapperNetwork {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Gets the direct neighbours of this node.
+  /// 
+  /// Returns a list of [AdHocDevice], which are direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
     for (String? macAddress in neighbors.labelMac.values)
@@ -73,6 +85,7 @@ abstract class WrapperNetwork {
     return devices;
   }
 
+  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
   Stream<AdHocEvent> get eventStream => controller.stream;
 
 /*------------------------------Abstract methods------------------------------*/
@@ -155,7 +168,7 @@ abstract class WrapperNetwork {
       address: header.address,
       name: header.name,
       mac: header.mac,
-      type: type
+      type: header.deviceType!
     );
 
     mapMacDevices.putIfAbsent(header.mac!, () => device);
