@@ -69,7 +69,7 @@ class BleClient extends ServiceClient {
       if (flag == MESSAGE_END) {
         // Reconstruct the message
         String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
-        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage + '}'));
+        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage));
         // Reset buffer
         buffer.clear();
 
@@ -149,7 +149,7 @@ class BleClient extends ServiceClient {
     // The flag value '0' determines the end of the fragmentation
     if (i + mtu >= msg.length) {
       flag = MESSAGE_END;
-      end = msg.length - 1;
+      end = msg.length;
     } else {
       flag = MESSAGE_FRAG;
       end = i + mtu;
@@ -168,7 +168,7 @@ class BleClient extends ServiceClient {
 
       if (i + mtu >= msg.length) {
         flag = MESSAGE_END;
-        end = msg.length - 1;
+        end = msg.length;
       } else {
         end = i + mtu;
       }

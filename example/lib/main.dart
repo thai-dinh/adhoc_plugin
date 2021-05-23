@@ -46,7 +46,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
-    // _manager.enableBle(3600);
     _manager.eventStream.listen(_processAdHocEvent);
   }
 
@@ -315,8 +314,8 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         message.putIfAbsent('type', () => REPLY);
         message.putIfAbsent('name', () => name);
         message.putIfAbsent('song', () => bytes);
-        // _manager.sendMessageTo(message, peer.label);
-        _manager.sendEncryptedMessageTo(message, peer.label);
+        _manager.sendMessageTo(message, peer.label);
+        // _manager.sendEncryptedMessageTo(message, peer.label);
         break;
 
       case REPLY:

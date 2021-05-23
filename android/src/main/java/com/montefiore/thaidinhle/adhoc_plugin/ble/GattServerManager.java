@@ -142,7 +142,7 @@ public class GattServerManager {
         // The flag value '0' determines the end of the fragmentation
         if (i + mtu >= bytesMsg.length) {
             flag = BleUtils.MESSAGE_END;
-            end = bytesMsg.length - 1;
+            end = bytesMsg.length;
         } else {
             flag = BleUtils.MESSAGE_FRAG;
             end = i + mtu;
@@ -173,7 +173,7 @@ public class GattServerManager {
 
             if (i + mtu >= bytesMsg.length) {
                 flag = BleUtils.MESSAGE_END;
-                end = (bytesMsg.length - 1) - i;
+                end = bytesMsg.length - i;
             } else {
                 end = i + mtu;
             }
