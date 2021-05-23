@@ -17,13 +17,11 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleClient extends ServiceClient {
   static int id = 0;
 
-  /// Remote device
-  BleAdHocDevice _device;
-  Stream<dynamic> _bondStream;
-
+  late BleAdHocDevice _device;
   late FlutterReactiveBle _reactiveBle;
   late Uuid _characteristicUuid;
   late Uuid _serviceUuid;
+  late bool _isInitialized;
 
   /// Creates a [BleClient] object.
   /// 
@@ -34,39 +32,40 @@ class BleClient extends ServiceClient {
   /// Connection attempts to a remote device are done at most [attempts] times. 
   /// A connection attempt waiting time is set to [timeOut] ms.
   BleClient(
-    bool verbose, this._device, int attempts, int timeOut, this._bondStream
+    bool verbose, this._device, int attempts, int timeOut
   ) : super(
     verbose, attempts, timeOut
   ) {
     this._reactiveBle = FlutterReactiveBle();
     this._characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
     this._serviceUuid = Uuid.parse(SERVICE_UUID);
+    this._isInitialized = false;
   }
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Starts the listening process for ad hoc events.
   /// 
-  /// In this case, an ad hoc event is a message received from the remote host
-  /// [_device].
+  /// In this case, an ad hoc event is a message received from the remote host.
   @override
   void listen() {
-    // Get the qualified characteristic of the remote host GATT server
+    // Get the characteristic of the remote host GATT server
     final qChar = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
       deviceId: _device.mac!
     );
 
-    // Listen to the change made to the qualified characteristic
     List<int> buffer = List.empty(growable: true);
 
+    // Listen to the changes of the characteristic
     _reactiveBle.subscribeToCharacteristic(qChar).listen((chunk) {
       // Add chunk to buffer
       buffer.addAll(chunk);
 
       // End of fragmentation
       if (chunk[0] == MESSAGE_END) {
+        // Reconstruct the message
         String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
         MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage));
 
@@ -81,14 +80,17 @@ class BleClient extends ServiceClient {
       }
     });
 
+    // Listen to event from the platform-specific side for pairing event
     BleServices.platformEventStream.listen((map) async {
+      print(map);
+      print(_device.mac!);
       if (map['type'] == ANDROID_BOND) {
         String mac = map['mac'] as String;
         bool state = map['state'] as bool;
 
-        if (mac == _device.mac!) {
+        // If pairing request has succeded, then proceed with the connection
+        if (mac == _device.mac!)
           await _connectionInitialization();
-        }
 
         // Notify upper layer of bond state with a remote device
         controller.add(AdHocEvent(ANDROID_BOND, [mac, state]));
@@ -131,23 +133,44 @@ class BleClient extends ServiceClient {
     if (state == STATE_NONE)
       throw NoConnectionException('No remote connection');
 
+    // Get the characteristic of the remote host GATT server
     final characteristic = QualifiedCharacteristic(
       serviceId: _serviceUuid,
       characteristicId: _characteristicUuid,
       deviceId: _device.mac!
     );
 
+    // Convert the MessageAdHoc into bytes
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, seq = 0, end;
+    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, seq, end;
+
+    /* Fragment the message bytes into smaller chunk of bytes */
+
+    // First byte indicates the message ID and second byte the sequence number
+    // The sequence number '0' determines the end of the fragmentation
+    if (i + mtu > msg.length) {
+      seq = MESSAGE_END;
+      end = msg.length;
+    } else {
+      seq = MESSAGE_BEGIN;
+      end = i + mtu;
+    }
 
     do {
-      end = (i += mtu) > msg.length ? msg.length : (i += mtu);
       List<int> _chunk = [_id, seq] + List.from(msg.getRange(i, end));
       await _reactiveBle.writeCharacteristicWithResponse(
         characteristic, value: _chunk
       );
 
       seq++;
+      i += mtu;
+
+      if (i + mtu > msg.length) {
+        seq = MESSAGE_END;
+        end = msg.length;
+      } else {
+        end = i + mtu;
+      }
     } while (i < msg.length);
   }
 
@@ -224,6 +247,12 @@ class BleClient extends ServiceClient {
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _connectionInitialization() async {
+    if (_isInitialized)
+      return;
+
+    print('_connectionInitialization');
+    print(await _reactiveBle.discoverServices(_device.mac!));
+
     // Start listening process for ad hoc events (messages)
     listen();
 
@@ -237,5 +266,7 @@ class BleClient extends ServiceClient {
 
     // Update state of the connection
     state = STATE_CONNECTED;
+
+    _isInitialized = true;
   }
 }

@@ -111,7 +111,8 @@ public class GattServerManager {
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         );
 
-        service.addCharacteristic(characteristic);
+        boolean result = service.addCharacteristic(characteristic);
+        if (verbose) Log.d(TAG, Boolean.toString(result));
 
         gattServer.addService(service);
     }
@@ -143,7 +144,12 @@ public class GattServerManager {
             byte[] chunk = bytesBuffer.toByteArray();
             boolean result = characteristic.setValue(chunk);
             while (result == false) {
-                Thread.sleep(256);
+                try {
+                    Thread.sleep(256);
+                } catch (InterruptedException exception) {
+                    //TODO: handle exception
+                }
+
                 result = characteristic.setValue(chunk);
             }
 
@@ -274,9 +280,13 @@ public class GattServerManager {
                 byteBuffer = new ByteArrayOutputStream();
             }
 
-            byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
+            try {
+                byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
+            } catch (IOException exception) {
+                //TODO: handle exception
+            }
 
-            if (seq == END_MESSAGE) {
+            if (seq == BleUtils.END_MESSAGE) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
 
                 mapInfoValue.put("type", ANDROID_DATA);
@@ -296,19 +306,24 @@ public class GattServerManager {
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             if (verbose) Log.d(TAG, "onConnectionStateChange()");
 
+            final String mac = device.getAddress();
+
             HashMap<String, Object> mapInfoValue = new HashMap<>();
 
             mapInfoValue.put("type", ANDROID_CONNECTION);
-            mapInfoValue.put("mac", device.getAddress());
+            mapInfoValue.put("mac", mac);
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mapInfoValue.put("state", true);
-
-                data.put(device.getAddress(), new HashMap<>());
+                
+                HashMap<Integer, ByteArrayOutputStream> map = new HashMap<>();
+                data.put(mac, map);
+                mapMacDevice.put(mac, device);
             } else {
                 mapInfoValue.put("state", false);
 
-                data.remove(device.getAddress());
+                data.remove(mac);
+                mapMacDevice.remove(mac);
             }
 
             eventSink.success(mapInfoValue);

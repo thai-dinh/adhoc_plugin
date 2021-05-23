@@ -32,6 +32,8 @@ class BleServer extends ServiceServer {
     // Open the GATT server of the platform-specific side
     BleServices.openGATTServer();
 
+    // Listen to event from the platform-specific side for connections 
+    // information, and data received.
     BleServices.platformEventStream.listen((map) async {
       switch (map['type']) {
         case ANDROID_CONNECTION:
@@ -54,10 +56,13 @@ class BleServer extends ServiceServer {
           break;
 
         case ANDROID_DATA:
+          // Message received as bytes
           Uint8List bytes = Uint8List.fromList(map['data']);
+          // Reconstruct the message
           MessageAdHoc message = 
             MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
 
+          // Update the header of the message
           if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
             message.header = Header(
               messageType: message.header.messageType,
@@ -81,6 +86,7 @@ class BleServer extends ServiceServer {
     state = STATE_LISTENING;
   }
 
+
   /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
@@ -95,6 +101,7 @@ class BleServer extends ServiceServer {
     state = STATE_NONE;
   }
 
+
   /// Sends a [message] to the remote device of MAC address [mac].
   @override
   Future<void> send(MessageAdHoc message, String mac) async {
@@ -102,6 +109,7 @@ class BleServer extends ServiceServer {
 
     await BleServices.GATTSendMessage(message, mac);
   }
+
 
   /// Cancels an active connection with the remote device of MAC address [mac].
   @override

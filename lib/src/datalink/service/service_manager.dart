@@ -28,7 +28,7 @@ abstract class ServiceManager {
 
   void discovery();
 
-  Future<bool?> resetDeviceName();
+  Future<bool> resetDeviceName();
 
-  Future<bool?> updateDeviceName(final String newName);
+  Future<bool> updateDeviceName(final String newName);
 }

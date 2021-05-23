@@ -36,7 +36,7 @@ class BleAdHocManager extends ServiceManager {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  ///
+  /// Releases the ressources used by this and others plugins.
   @override
   void release() {
     super.release();
@@ -54,6 +54,7 @@ class BleAdHocManager extends ServiceManager {
       }
     });
   }
+
 
   /// Enables the Bluetooth adapter.
   Future<void> enable() async => BleServices.enableBleAdapter();
@@ -76,13 +77,16 @@ class BleAdHocManager extends ServiceManager {
       );
     }
 
+    // Start discovery mode
     BleServices.startAdvertise();
   
+    // Start timer to stop discovery mode after 'duration' seconds
     Timer(Duration(seconds: duration), () => BleServices.stopAdvertise());
   }
 
 
   /// Triggers the discovery of other Ble-capable devices.
+  @override
   void discovery()  {
     if (verbose) log(TAG, 'discovery()');
 
@@ -124,6 +128,26 @@ class BleAdHocManager extends ServiceManager {
   }
 
 
+  /// Updates the local adapter name of the device with [name].
+  /// 
+  /// Returns true if the name is successfully set, otherwise false. In case
+  /// of error, a null value is returned.
+  @override
+  Future<bool> updateDeviceName(String name) async {
+    return await BleServices.updateDeviceName(name);
+  }
+
+
+  /// Resets the local adapter name of the device.
+  /// 
+  /// Returns true if the name is successfully reset, otherwise false. In case
+  /// of error, a null value is returned.
+  @override
+  Future<bool> resetDeviceName() async {
+    return BleServices.resetDeviceName();
+  }
+
+
   /// Returns all the paired Ble-capable devices.
   Future<HashMap<String?, BleAdHocDevice>> getPairedDevices() async {
     if (verbose) log(TAG, 'getPairedDevices()');
@@ -139,24 +163,6 @@ class BleAdHocManager extends ServiceManager {
     }
 
     return pairedDevices;
-  }
-
-
-  /// Updates the local adapter name of the device with [name].
-  /// 
-  /// Returns true if the name is successfully set, otherwise false. In case
-  /// of error, a null value is returned.
-  Future<bool> updateDeviceName(String name) async {
-    return await BleServices.updateDeviceName(name);
-  }
-
-
-  /// Resets the local adapter name of the device.
-  /// 
-  /// Returns true if the name is successfully reset, otherwise false. In case
-  /// of error, a null value is returned.
-  Future<bool> resetDeviceName() async {
-    return BleServices.resetDeviceName();
   }
 
 /*------------------------------Private methods-------------------------------*/

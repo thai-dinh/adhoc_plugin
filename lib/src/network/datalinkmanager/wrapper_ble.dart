@@ -22,21 +22,24 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 
 
-/// Class inheriting the abstract class [WrapperNetwork] and manages all 
-/// communications related to Bluetooth Low Energy
+/// Class inheriting the abstract wrapper class [WrapperNetwork] and managing 
+/// all communications related to Bluetooth Low Energy.
 class WrapperBle extends WrapperNetwork {
   static const String TAG = "[WrapperBle]";
 
   String? _ownBleUUID;
+  StreamSubscription<AdHocEvent>? _eventSub;
 
   late bool _isDiscovering;
   late bool _isInitialized;
   late BleAdHocManager _bleAdHocManager;
-  late StreamSubscription<AdHocEvent> _eventSub;
 
-  /// Default constructor
+  /// Creates a [WrapperBle] object.
   /// 
+  /// The debug/verbose mode is set if [verbose] is true.
   /// 
+  /// The given hash map [mapMacDevices] is used to map a UUID address entry to 
+  /// an AdHocDevice object.
   WrapperBle(
     bool verbose, Config config, HashMap<String?, AdHocDevice?> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
@@ -49,7 +52,12 @@ class WrapperBle extends WrapperNetwork {
 
 /*------------------------------Override methods------------------------------*/
 
-  ///
+  /// Initializes internal parameters.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
+  /// 
+  /// This object is configured according to the parameters in [config] if it
+  /// is given, otherwise the default settings are used.
   @override
   Future<void> init(bool verbose, Config? config) async {
     if (await BleServices.isBleAdapterEnabled()) {
@@ -65,7 +73,9 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Enables the Bluetooth of the device as well as sets it in discovery mode.
+  /// 
+  /// The discovery mode lasts for [duration] ms.
   @override
   void enable(int duration) async {
     if (!enabled) {
@@ -82,7 +92,7 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Disables the Bluetooth of the device.
   @override
   void disable() {
     mapAddrNetwork.clear();
@@ -90,23 +100,41 @@ class WrapperBle extends WrapperNetwork {
 
     _bleAdHocManager.disable();
 
+    if (_eventSub != null) {
+      _eventSub!.cancel();
+      _eventSub = null;
+    }
+
+    _isInitialized = false;
+    _isDiscovering = false;
+
     enabled = false;
   }
 
 
-  ///
+  /// Performs a Bluetooth Low Energy discovery process. 
+  /// 
+  /// If the Bluetooth Low Energy and Wi-Fi are enabled, the two discoveries are 
+  /// performed in parallel. A discovery process lasts for at least 10-12 
+  /// seconds.
   @override
   void discovery() {
     if (_isDiscovering)
       return;
 
-    _eventSub.resume();
+    _eventSub!.resume();
     _bleAdHocManager.discovery();
     _isDiscovering = true;
   }
 
 
-  ///
+  /// Connects to a remote peer.
+  /// 
+  /// The remote peer is specified by [device] and the connection attempts is 
+  /// set to [attempts].
+  /// 
+  /// Throws a [DeviceFailureException] if this device is alreay connected to
+  /// the remote peer.
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
     BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
@@ -122,18 +150,21 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Stops the listening process of incoming connections.
   @override
   void stopListening() => serviceServer.stopListening();
 
 
-  ///
+  /// Gets all the Bluetooth devices which are already paired.
+  /// 
+  /// Returns a hash map (<[String], [AdHocDevice]>) containing the paired 
+  /// devices.
   @override
-  Future<HashMap<String?, AdHocDevice>?> getPaired() async {
+  Future<HashMap<String, AdHocDevice>> getPaired() async {
     if (!await BleServices.isBleAdapterEnabled())
-      return null;
+      return HashMap();
 
-    HashMap<String?, BleAdHocDevice> paired = HashMap();
+    HashMap<String, BleAdHocDevice> paired = HashMap();
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
     pairedDevices.forEach((macAddress, bleAdHocDevice) {
       paired.putIfAbsent(macAddress, () => bleAdHocDevice);
@@ -143,7 +174,9 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Gets the Bluetooth adapter name.
+  /// 
+  /// Returns a [String] representing the adapter name.
   @override
   Future<String> getAdapterName() async {
     final String? name = await _bleAdHocManager.adapterName;
@@ -151,7 +184,9 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Updates the Bluetooth adapter name of the device with [name].
+  /// 
+  /// Returns true if the name is successfully set, otherwise false.
   @override
   Future<bool> updateDeviceName(String name) async {
     final bool? result = await _bleAdHocManager.updateDeviceName(name);
@@ -159,7 +194,9 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Resets the Bluetooth adapter name of the device.
+  /// 
+  /// Returns true if the name is successfully reset, otherwise false.
   @override
   Future<bool> resetDeviceName() async {
     final bool? result = await _bleAdHocManager.resetDeviceName();
@@ -168,7 +205,10 @@ class WrapperBle extends WrapperNetwork {
 
 /*------------------------------Private methods-------------------------------*/
   
-  ///
+  /// Initializes the listening process of the under layer streams.
+  /// 
+  /// In this case, the streams contains [AdHocEvent] object related to the BLE
+  /// discovery process.
   void _initialize() {
     if (_isInitialized)
       return;
@@ -181,8 +221,9 @@ class WrapperBle extends WrapperNetwork {
 
       switch (event.type) {
         case DEVICE_DISCOVERED:
-          // Process potential peer discovered
+          // Process discovered potential peer
           BleAdHocDevice device = event.payload as BleAdHocDevice;
+          // Add device to hash map
           mapMacDevices.putIfAbsent(device.mac!, () {
             if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
             return device;
@@ -193,6 +234,7 @@ class WrapperBle extends WrapperNetwork {
           // Process end of discovery process
           if (verbose) log(TAG, 'Discovery end');
           (event.payload as Map).forEach((mac, device) {
+            // Add device to hash map
             mapMacDevices.putIfAbsent(mac, () {
               if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
               return device;
@@ -201,18 +243,20 @@ class WrapperBle extends WrapperNetwork {
 
           discoveryCompleted = true;
           _isDiscovering = false;
-          _eventSub.pause();
+          _eventSub!.pause();
           break;
 
         default:
       }
     });
 
-    _eventSub.pause();
+    _eventSub!.pause();
   }
 
 
-  ///
+  /// Processes the [AdHocEvent] according to the given service.
+  /// 
+  /// A service can be of type [ServiceClient] or [ServiceServer].
   void _onEvent(Service service) {
     // Listen to stream of ad hoc events
     service.adhocEvent.listen((event) async { 
@@ -227,8 +271,9 @@ class WrapperBle extends WrapperNetwork {
           List<dynamic> data = event.payload as List<dynamic>;
           String mac = data[0] as String;
           String uuid = data[1] as String;
-          int service = data[2] as int;
-          if (service == SERVER)
+          int type = data[2] as int;
+          print('here ${data[2]} $SERVER $CLIENT');
+          if (type == SERVER)
             break;
 
           // Store remote node's NetworkManager
@@ -271,7 +316,8 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Starts the server listening process of incoming connections or messages
+  /// received.
   void _listenServer() {
     /// Start server listening 
     serviceServer = BleServer(verbose)..listen();
@@ -282,9 +328,11 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
+  /// Connects to a remote Ble-capable peer.
   /// 
-  Future<void> _connect(int attempts, final BleAdHocDevice bleAdHocDevice) async {
-    final bleClient = BleClient(verbose, bleAdHocDevice, attempts, timeOut, _bleAdHocManager.eventStream);
+  /// The remote peer is specified by [device] and it is tried [attempts] times.
+  Future<void> _connect(int attempts, final BleAdHocDevice device) async {
+    final bleClient = BleClient(verbose, device, attempts, timeOut);
     // Listen to the ad hoc events of the network (msg received, ...)
     _onEvent(bleClient);
     // Connect to the remote node
@@ -292,7 +340,9 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  ///
+  /// Processes messages received from remote nodes.
+  /// 
+  /// The [message] represents a message send through the network.
   void _processMsgReceived(final MessageAdHoc message) {
     switch (message.header.messageType) {
       case CONNECT_SERVER:
