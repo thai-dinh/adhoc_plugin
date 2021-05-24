@@ -5,3 +5,7 @@
 ## 1.1.0
 
 * Reformat code & minor public API changes
+
+## 1.2.0
+
+* Add documentations

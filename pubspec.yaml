@@ -1,6 +1,6 @@
 name: adhoc_plugin
 description: Flutter plugin that allows creating and managing a mobile (Android only) ad hoc network
-version: 1.0.1
+version: 1.2.1
 author: Thai Dinh Le <Thai.Dinh.Le.pro@gmail.com>
 homepage: https://github.com/thai-dinh/adhoc_plugin
 
@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
 
   cryptography: ^2.0.1
-  flutter_reactive_ble: ^3.1.0
+  flutter_reactive_ble: ^3.1.1
   json_annotation: ^4.0.1
   ninja_prime: ^2.0.0
   pointycastle: ^3.0.1

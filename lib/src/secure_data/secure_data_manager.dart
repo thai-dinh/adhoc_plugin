@@ -3,20 +3,21 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/secure_data/certificate.dart';
-import 'package:adhoc_plugin/src/secure_data/certificate_repository.dart';
-import 'package:adhoc_plugin/src/secure_data/constants.dart';
-import 'package:adhoc_plugin/src/secure_data/crypto_engine.dart';
-import 'package:adhoc_plugin/src/secure_data/exceptions/verification_failed.dart';
-import 'package:adhoc_plugin/src/secure_data/secure_data.dart';
-import 'package:adhoc_plugin/src/secure_data/secure_group_controller.dart';
+import 'certificate.dart';
+import 'certificate_repository.dart';
+import 'constants.dart';
+import 'crypto_engine.dart';
+import 'exceptions/verification_failed.dart';
+import 'secure_data.dart';
+import 'secure_group_controller.dart';
+import '../appframework/config.dart';
+import '../datalink/service/adhoc_device.dart';
+import '../datalink/service/adhoc_event.dart';
+import '../datalink/utils/utils.dart';
+import '../network/aodv/aodv_manager.dart';
+import '../network/datalinkmanager/constants.dart';
+import '../network/datalinkmanager/datalink_manager.dart';
+
 import 'package:pointycastle/pointycastle.dart';
 
 
@@ -120,6 +121,7 @@ class SecureDataManager {
     }
   }
 
+
   /// Broadcasts a message to all directly connected nodes.
   /// 
   /// Broadcasts a message with [data] as payload and it is encrypted if 
@@ -168,6 +170,7 @@ class SecureDataManager {
     }
   }
 
+
   /// Revokes this node certificate.
   /// 
   /// Calling this method will send a certificate revocation notification to the
@@ -188,8 +191,8 @@ class SecureDataManager {
       CERT_REVOCATION,
       List.empty(growable: true)
         ..add(timestamp)..add(_aodvManager.label)
-        ..add(_engine.publicKey!.modulus.toString())
-        ..add(_engine.publicKey!.exponent.toString())
+        ..add(_engine.publicKey.modulus.toString())
+        ..add(_engine.publicKey.exponent.toString())
     );
 
     // Broadcast certificate revocation notification to direct neighbors
@@ -213,8 +216,8 @@ class SecureDataManager {
           // Generate a message for certificate exchange process
           SecureData msg = SecureData(
             CERT_XCHG_REQ,
-            [_engine.publicKey!.modulus.toString(), 
-             _engine.publicKey!.exponent.toString()]
+            [_engine.publicKey.modulus.toString(), 
+             _engine.publicKey.exponent.toString()]
           );
 
           _aodvManager.sendMessageTo(neighbor.label!, msg.toJson());
@@ -236,6 +239,7 @@ class SecureDataManager {
       }
     });
   }
+
 
   /// Processes certificate reply message.
   /// 
@@ -267,6 +271,7 @@ class SecureDataManager {
     for (final Object data in toSend)
       send(data, cert.owner, true);
   }
+
 
   /// Processes the data received.
   /// 
@@ -304,8 +309,8 @@ class SecureDataManager {
         // Construct a SecureData message for certificate exchange process
         SecureData data = SecureData(
           CERT_XCHG_REP,
-          [_engine.publicKey!.modulus.toString(), 
-           _engine.publicKey!.exponent.toString()]
+          [_engine.publicKey.modulus.toString(), 
+           _engine.publicKey.exponent.toString()]
         );
 
         // Send this node's public key the directly trusted neighbor
@@ -376,6 +381,7 @@ class SecureDataManager {
       default:
     }
   }
+
 
   /// Issues a certificate.
   /// 

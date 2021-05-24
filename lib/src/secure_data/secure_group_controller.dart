@@ -3,14 +3,15 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/secure_data/constants.dart';
-import 'package:adhoc_plugin/src/secure_data/secure_data.dart';
+import 'constants.dart';
+import 'secure_data.dart';
+import '../appframework/config.dart';
+import '../datalink/service/adhoc_device.dart';
+import '../datalink/service/adhoc_event.dart';
+import '../network/aodv/aodv_manager.dart';
+import '../network/datalinkmanager/constants.dart';
+import '../network/datalinkmanager/datalink_manager.dart';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:ninja_prime/ninja_prime.dart';
 
@@ -48,7 +49,9 @@ class SecureGroupController {
   /// List containing the group member label
   late List<String?> _memberLabel;
 
-  /// Default constructor
+  /// Creates a [SecureGroupController] object.
+  /// 
+  /// 
   SecureGroupController(
     this._aodvManager, this._datalinkManager, this._eventStream, Config config
   ) {
@@ -65,6 +68,7 @@ class SecureGroupController {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/
@@ -84,13 +88,15 @@ class SecureGroupController {
     Timer(Duration(seconds: _expiryTime!), _createSecureGroupExpired);
   }
 
-  /// Join an existing secure group
+
+  /// Joins an existing secure group
   void joinSecureGroup() {
     SecureData message = SecureData(GROUP_JOIN_REQ, []);
     _datalinkManager.broadcastObject(message);
   }
 
-  /// Leave an existing secure group
+
+  /// Leaves an existing secure group
   void leaveSecureGroup() {
     SecureData message = SecureData(GROUP_LEAVE_REQ, _memberLabel.first);
     for (final String? label in _memberLabel) {
@@ -106,6 +112,10 @@ class SecureGroupController {
     _CRTShare.clear();
   }
 
+
+  /// Sends a encrypted message to the secure group.
+  /// 
+  /// The message payload is set to [data] and is encrypted using the group key.
   void sendMessageToGroup(Object? data) async {
     // Encrypt data
     final AesCbc algorithm = AesCbc.with128bits(
@@ -131,6 +141,7 @@ class SecureGroupController {
 
 /*------------------------------Private methods-------------------------------*/
 
+  /// Initializes the listening process of lower layer streams.
   void _initialize() {
     _eventStream.listen((event) {
       if (event.type == DATA_RECEIVED) {
@@ -139,6 +150,8 @@ class SecureGroupController {
     });
   }
 
+
+  ///
   BigInt _computeDHShare() {
     // Step 1.
     // Select the Diffie-Hellman private share x_i and compute public share y_i
@@ -146,6 +159,8 @@ class SecureGroupController {
     return _g!.modPow(_x!, _p!);
   }
 
+  
+  ///
   void _createSecureGroupExpired() {
     // Step 2.
     // Broadcast y_i to group members
@@ -160,6 +175,8 @@ class SecureGroupController {
         _aodvManager.sendMessageTo(label!, message);
   }
 
+  
+  ///
   BigInt _computeMemberShare(String? label, BigInt? yj) {
     // Step 3.
     // Compute the Diffie-Hellman key shared of peers
@@ -169,6 +186,8 @@ class SecureGroupController {
     return mij;
   }
 
+  
+  ///
   BigInt _computeCRTShare(String? label, BigInt? yj, BigInt? mij) {
     BigInt pij, di, _min = _memberShare.values.first!;
 
@@ -206,6 +225,8 @@ class SecureGroupController {
     return crtij;
   }
 
+  
+  ///
   List<BigInt> _solveBezoutIdentity(BigInt? a, BigInt? b) {
     BigInt R = a!, _R = b!, U = BigInt.one, _U = BigInt.zero;
     BigInt V = BigInt.zero, _V = BigInt.one;
@@ -222,6 +243,8 @@ class SecureGroupController {
     return List.empty(growable: true)..add(U)..add(V);
   }
 
+  
+  ///
   Uint8List _toBytes(BigInt bigInt) {
     const BYTE_SIZE = 8;
 
@@ -239,6 +262,8 @@ class SecureGroupController {
     return byteData.buffer.asUint8List();
   }
 
+  
+  ///
   void _computeGroupKey(int type, [BigInt? kj]) async {
     // Step 6.
     // Compute the group key
@@ -265,6 +290,8 @@ class SecureGroupController {
     _groupKey = SecretKey(_toBytes(_groupKeySum!));
   }
 
+  
+  ///
   void _processDataReceived(AdHocEvent event) async {
     AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     String senderLabel = sender.label!;
