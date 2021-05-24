@@ -1,66 +1,87 @@
-// Constants for the GATT service of Bluetooth Low Energy
-const SERVICE_UUID        = '00000001-0000-1000-8000-00805f9b34fb'; // Service UUID
-const CHARACTERISTIC_UUID = '00000002-0000-1000-8000-00805f9b34fb'; // Characteristic UUID
-const BLUETOOTHLE_UUID    = 'e0917680-d427-11e4-8830-';             // Prefix of BLE UUID
+// GATT service of Bluetooth Low Energy
+/// Ad hoc service UUID
+const SERVICE_UUID        = '00000001-0000-1000-8000-00805f9b34fb';
+/// Ad hoc characteristic UUID
+const CHARACTERISTIC_UUID = '00000002-0000-1000-8000-00805f9b34fb';
+/// Prefix of BLE UUID
+const BLUETOOTHLE_UUID    = 'e0917680-d427-11e4-8830-';
 
-// Constants for the maximum transmission unit (Bluetooth Low Energy)
+
+// Maximum Transmission Unit (Bluetooth Low Energy)
+/// Minimum MTU allowed (BLE)
 const MIN_MTU = 20;
+/// Maximum MTU allowed (BLE)
 const MAX_MTU = 500;
 
-// Constants for the message fragmentation
-const MESSAGE_END   = 0;
+
+// Data fragmentation
+/// TAG indicating the end of fragmentation
+const MESSAGE_END  = 0;
+/// TAG indicating data part of fragmentation
 const MESSAGE_FRAG = 1;
 
-// Constant for the size of a byte
+
+// Miscellaneous constants
+/// Maximum value of a integer (8 bytes)
 const UINT8_SIZE = 256;
-
-// Constant setting the time of the discovery process in milliseconds
+/// Discovery duration (milliseconds)
 const DISCOVERY_TIME = 10000;
-
-// Constants for computing the back off time
+/// Back off time constant (lower bound)
 const LOW  = 1500;
+/// Back off time constant (higher bound)
 const HIGH = 2500;
-
-// Constants for type of technology
+/// Wi-Fi type
 const WIFI = 0;
+/// Bluetooth Low Energy type
 const BLE  = 1;
-
-// Constants for notification with regards to the technology
+/// Wi-Fi technology ready
 const WIFI_READY = WIFI;
+/// Bluetooth Low Energy technology ready
 const BLE_READY = BLE;
-
-// Constatns for the type of service
+/// Server TAG
 const SERVER = WIFI;
+/// Client TAG
 const CLIENT = BLE;
 
+
 // Constants indicating the current connection state of the node
-const STATE_NONE       = 100;        // No connection
-const STATE_CONNECTED  = 101;        // Connected to a remote node
-const STATE_CONNECTING = 102;        // Initiating a connection to a remote node
-const STATE_LISTENING  = 103;        // Listening for incoming connections
-
-// Constants for notifying discovery event
-const DISCOVERY_START   = 104;       // Start discovery process
-const DISCOVERY_END     = 105;       // End discovery process
-const DEVICE_DISCOVERED = 106;       // Remote device discovered
-
-// Constant for message event
-const MESSAGE_RECEIVED = 107;        // Message received from peers
-
-// Constants for connection event
-const CONNECTION_PERFORMED   = 108;  // Connection performed
-const CONNECTION_ABORTED     = 109;  // Connection aborted
-const CONNECTION_EXCEPTION   = 110;  // Connection exception raised
-const CONNECTION_INFORMATION = 111;  // Connection information
-
-// Constants for device information event
-const DEVICE_INFO_BLE     = 112;     // Device info (MAC + BLE UUID) recovered
-const DEVICE_INFO_WIFI    = 113;     // Device info (MAC + Wi-Fi IP) recovered
-
-// Constant for dealing with platform-specific side
-const ANDROID_DISCOVERY  = 120;      // Discovery process finished
-const ANDROID_STATE      = 121;      // Local adapter state (on/off)
-const ANDROID_CONNECTION = 122;      // Wi-Fi Direct connection information
-const ANDROID_CHANGES    = 123;      // Device name and/or MAC address changes
-const ANDROID_BOND       = 124;      // Ble pairing request
-const ANDROID_DATA       = 125;      // Data written or read from characteristic
+/// No connection state
+const STATE_NONE              = 100;
+/// Connected to a remote node
+const STATE_CONNECTED         = 101;
+/// Initiating a connection to a remote node
+const STATE_CONNECTING        = 102;
+/// Listening for incoming connections
+const STATE_LISTENING         = 103;
+/// Start discovery process
+const DISCOVERY_START         = 104;
+/// End discovery process
+const DISCOVERY_END           = 105;
+/// Remote device discovered
+const DEVICE_DISCOVERED       = 106;
+/// Message received from peers
+const MESSAGE_RECEIVED        = 107;
+/// Connection performed
+const CONNECTION_PERFORMED    = 108;
+/// Connection aborted
+const CONNECTION_ABORTED      = 109;
+/// Connection exception raised
+const CONNECTION_EXCEPTION    = 110;
+/// Connection information
+const CONNECTION_INFORMATION  = 111;
+/// Device info (MAC + BLE UUID) recovered
+const DEVICE_INFO_BLE         = 112;
+/// Device info (MAC + Wi-Fi IP) recovered
+const DEVICE_INFO_WIFI        = 113;
+/// Discovery process finished
+const ANDROID_DISCOVERY       = 120;
+/// Local adapter state (on/off)
+const ANDROID_STATE           = 121;
+/// Wi-Fi Direct connection information
+const ANDROID_CONNECTION      = 122;
+/// Device name and/or MAC address changes
+const ANDROID_CHANGES         = 123;
+/// Ble pairing request
+const ANDROID_BOND            = 124;
+/// Data written or read from characteristic
+const ANDROID_DATA            = 125;

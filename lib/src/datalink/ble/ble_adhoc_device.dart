@@ -8,8 +8,10 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BleAdHocDevice extends AdHocDevice {
   late int mtu;
 
-  /// Creates an [BleAdHocDevice] object with the information of a discovered 
-  /// device [device].
+  /// Creates a [BleAdHocDevice] object. 
+  /// 
+  /// The information of the created object is filled according to the 
+  /// information given by [device].
   BleAdHocDevice(DiscoveredDevice device) : super(
     label: '', address: '', name: device.name, mac: device.id, type: BLE,
   ) {
@@ -19,17 +21,19 @@ class BleAdHocDevice extends AdHocDevice {
         .toLowerCase();
   }
 
-  /// Creates an [BleAdHocDevice] object with the information given by [map], 
-  /// which contains the name of the device and its MAC address.
+  /// Creates an [BleAdHocDevice] object.
   /// 
-  /// The map should contain a key 'deviceName' and 'macAddress'.
+  /// The information of the created object is filled according to the 
+  /// information given by [map].
+  /// 
+  /// The map should contain a key 'name' and 'mac'.
   BleAdHocDevice.fromMap(Map map) : super(
-    label: '', address: '', name: map['deviceName'], mac: map['macAddress'], 
+    label: '', address: '', name: map['name'], mac: map['mac'], 
     type: BLE
   ) {
     this.mtu = MIN_MTU;
     this.address = 
-      (BLUETOOTHLE_UUID + map['macAddress'].replaceAll(new RegExp(':'), ''))
+      (BLUETOOTHLE_UUID + map['mac'].replaceAll(new RegExp(':'), ''))
         .toLowerCase();
   }
 

@@ -20,7 +20,7 @@ class Certificate {
   /// Creates a [Certificate] object.
   /// 
   /// The certificate is bound to the [owner] label, which has been issued by
-  /// [issuer]. The certificate is valid until [valitidy] date time. This
+  /// [issuer]. The certificate is valid until [validity] date time. This
   /// certificate acknowledges the binding of identity of [owner] with the 
   /// public key [key].
   Certificate(

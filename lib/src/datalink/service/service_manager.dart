@@ -21,9 +21,7 @@ abstract class ServiceManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Gets the ad hoc event stream.
-  /// 
-  /// Returns an [AdHocEvent] stream.
+  /// Ad hoc event stream of the service manager.
   Stream<AdHocEvent> get eventStream => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/

@@ -142,7 +142,7 @@ class BleClient extends ServiceClient {
 
     // Convert the MessageAdHoc into bytes
     Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    int _id = id++ % UINT8_SIZE, mtu = _device.mtu, i = 0, flag, end;
+    int _id = id++ % UINT8_SIZE, mtu = _device.mtu - 3 - 2, i = 0, flag, end;
 
     /* Fragment the message bytes into smaller chunk of bytes */
 

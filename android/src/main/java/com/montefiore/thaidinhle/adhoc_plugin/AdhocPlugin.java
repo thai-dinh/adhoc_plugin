@@ -71,7 +71,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         try {
           final String mac = call.argument("mac");
           final String message = call.argument("message");
-          result.success(gattServerManager.writeToCharacteristic(message, mac)); 
+          gattServerManager.writeToCharacteristic(message, mac); 
         } catch (IOException exception) {
           result.success(false);
         }

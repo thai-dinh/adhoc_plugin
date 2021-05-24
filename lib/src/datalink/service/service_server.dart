@@ -18,7 +18,7 @@ abstract class ServiceServer extends Service {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the list of active connections (MAC address).
+  /// List of active connections represented by MAC addresses.
   List<String> get activeConnections => _activeConnections;
 
 /*-------------------------------Public methods-------------------------------*/

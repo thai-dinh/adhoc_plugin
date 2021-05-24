@@ -32,7 +32,7 @@ class BleAdHocManager extends ServiceManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the Bluetooth adapter name.
+  /// Bluetooth adapter name.
   Future<String> get adapterName => BleServices.bleAdapterName;
 
 /*-------------------------------Public methods-------------------------------*/
@@ -160,7 +160,7 @@ class BleAdHocManager extends ServiceManager {
 
     for (final device in btDevices) {
       pairedDevices.putIfAbsent(
-        device['macAddress'], () => BleAdHocDevice.fromMap(device)
+        device['mac'], () => BleAdHocDevice.fromMap(device)
       );
     }
 

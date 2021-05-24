@@ -41,7 +41,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   bool _requested = false;
   bool _display = false;
   String _selected = NONE;
-  String _deviceName = LOCAL;
+  String _name = LOCAL;
 
   @override
   void initState() {
@@ -188,6 +188,20 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                           title: Center(
                             child: const Text('Ad Hoc Playlist', style: TextStyle(color: Colors.white)),
                           ),
+                        ),
+                      ),
+
+                      Card(
+                        color: Colors.blue,
+                        child: ListTile(
+                          title: Center(
+                            child: const Text('Broadcast lorem ipsum', style: TextStyle(color: Colors.white)),
+                          ),
+                          onTap: () {
+                            String lorem_ipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin fringilla non ligula dictum efficitur. Nam venenatis augue rhoncus odio fringilla viverra. In accumsan faucibus fermentum. Vivamus libero felis, posuere nec consectetur nec, molestie quis odio. Duis varius at magna eget pretium. Nunc suscipit augue at condimentum lobortis. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Pellentesque enim justo, posuere nec dolor id, gravida rutrum urna. Suspendisse quis pellentesque augue, non pretium erat. Proin sit amet augue erat. Nunc ligula augue, suscipit ut leo ac, sagittis interdum arcu. Nunc maximus metus eu lorem iaculis mollis. Donec tortor purus, suscipit a dolor id, pretium mollis lacus. Maecenas magna tellus, vulputate id eros et, commodo condimentum elit. Donec elementum erat sed semper imperdiet. Sed erat mauris, tempus ut sollicitudin non, venenatis eget lorem. Quisque ullamcorper lacus turpis, et facilisis diam mollis vestibulum. Mauris sapien nisl, vehicula at vestibulum quis, egestas ut ligula. Quisque vitae felis risus. In lacinia risus quam. Duis ipsum lorem, pharetra in facilisis ut, fringilla a dolor. Sed aliquam posuere tellus, in facilisis ex. Aliquam dictum felis eros, ut facilisis leo sollicitudin at. Mauris pharetra fringilla magna, a lobortis mauris feugiat ac. Etiam varius sodales egestas. Nullam non augue mi. Aliquam vitae condimentum orci. In hac habitasse platea dictumst. Vestibulum purus libero, posuere eu metus at, fermentum posuere tortor. Mauris quis elit ipsum. Praesent vitae volutpat justo. Maecenas ac accumsan orci, vitae ultrices turpis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus vitae tellus eget purus gravida consectetur. Aliquam iaculis velit eros. Curabitur vel suscipit velit, a facilisis augue. Ut consequat dignissim nunc, a maximus lectus lobortis sed. Donec scelerisque pellentesque finibus. Donec non neque quis velit placerat consectetur eget vitae massa. Duis volutpat nibh nec leo lacinia, id cursus elit porttitor. Sed varius, urna vel dignissim ultricies, mi sapien sagittis turpis, quis venenatis ligula augue sit amet augue. Quisque sollicitudin odio justo, nec ornare leo ornare id. Pellentesque auctor, odio id auctor posuere, sapien nisi dignissim nunc, ut scelerisque sem erat ut lorem. Fusce sodales erat quis nulla tempus condimentum. Nulla bibendum, sapien in interdum vehicula, nisi dui placerat odio, a molestie eros magna in lacus. Donec semper nulla et ligula sagittis, posuere dapibus leo pharetra. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris lorem risus, tempus quis malesuada auctor, convallis aliquam metus. Duis non facilisis lacus. Quisque tempor finibus scelerisque. Mauris nisl enim, egestas ut hendrerit ut, varius eu mi. Sed sed enim ligula. Praesent imperdiet at dui vel pulvinar. Fusce pulvinar maximus libero mattis interdum. Nulla vel erat nunc. Vivamus accumsan metus elit, at bibendum massa eleifend non. Donec vel varius mi, eu laoreet neque. Sed iaculis purus ac mauris dapibus, id egestas orci mattis. Donec nec lorem justo. Maecenas fermentum maximus auctor. Cras sit amet mattis nisl. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Integer quis iaculis augue, in maximus est. Cras commodo sit amet lectus sit amet consectetur. Aliquam erat volutpat. Nunc sodales ligula eu mauris dapibus, sed porttitor ex dapibus. Phasellus sollicitudin eros erat, eu tincidunt tortor egestas ac. Praesent eget posuere mauris. Aenean et dictum nunc. Maecenas accumsan lorem sit amet orci scelerisque vulputate. Suspendisse sollicitudin pharetra aliquet. Ut egestas eleifend ante viverra cursus. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Duis interdum ante sapien, ut rhoncus dolor vestibulum ac. Etiam sit amet consectetur magna. Vestibulum ex elit, gravida vitae ante nec, dapibus mollis felis. Donec ut fermentum metus. Nulla commodo augue nec eros tempus, sit amet vulputate leo tempor. Aliquam condimentum ligula vitae sapien maximus molestie. Aenean mattis suscipit sapien, quis laoreet ex dignissim ac. Pellentesque mattis feugiat felis, sed placerat lorem malesuada id. Cras egestas at odio ut efficitur. Curabitur nec urna eu felis tempus venenatis. Fusce in metus non tellus luctus fermentum. Nam ut dignissim massa. Mauris eget facilisis mi. Nam hendrerit ante vel dui tincidunt, eget ornare nisl tincidunt. Vestibulum consequat dui ac quam condimentum, et condimentum nulla porta. Aenean diam ex, ultricies a aliquam vitae, venenatis sed ante. Cras felis tortor, viverra id neque et, sagittis aliquet neque. Mauris urna arcu, efficitur nec viverra in, venenatis sit amet magna. In viverra, nulla lobortis elementum efficitur, justo diam lacinia ipsum, ut sodales mi est ac orci. Pellentesque egestas mi a libero aliquet cursus. Lorem ipsum dolor sit amet, consectetur adipiscing elit sed.";
+                            print(lorem_ipsum.length);
+                            _manager.broadcast(lorem_ipsum);
+                          },
                         ),
                       ),
 
@@ -359,7 +373,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         );
 
         _localPlaylist.putIfAbsent(file.name, () => song);
-        Pair<String, String> pair = Pair(_deviceName, file.name);
+        Pair<String, String> pair = Pair(_name, file.name);
         if (!_playlist.contains(pair))
           _playlist.add(pair);
       }
@@ -380,7 +394,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     });
 
     _localPlaylist.forEach((name, file) {
-      peers.add(_deviceName);
+      peers.add(_name);
       songs.add(name);
     });
 

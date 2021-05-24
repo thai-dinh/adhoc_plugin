@@ -168,8 +168,8 @@ class WrapperBle extends WrapperNetwork {
 
     HashMap<String, BleAdHocDevice> paired = HashMap();
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
-    pairedDevices.forEach((macAddress, bleAdHocDevice) {
-      paired.putIfAbsent(macAddress, () => bleAdHocDevice);
+    pairedDevices.forEach((mac, bleAdHocDevice) {
+      paired.putIfAbsent(mac, () => bleAdHocDevice);
     });
 
     return paired;

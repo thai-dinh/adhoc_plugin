@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.util.Log;
 
 import io.flutter.plugin.common.BinaryMessenger;
@@ -127,12 +126,13 @@ public class GattServerManager {
         eventChannel = null;
     }
 
-    public boolean writeToCharacteristic(String message, String mac) throws IOException {
+    public void writeToCharacteristic(String message, String mac) throws IOException {
         if (verbose) Log.d(TAG, "writeToCharacteristic(): " + mac);
 
         BluetoothDevice device = mapMacDevice.get(mac);
         byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
-        int mtu = mapMacMtu.get(mac).intValue(), i = 0, flag = 0, end;
+        // 497 MTU maximum with the BLE plugin used -> 500 - 3 - 1 = 497 for flag
+        int mtu = mapMacMtu.get(mac).intValue() - 4, flag = 0, offset = 0, len = 0;
         ByteArrayOutputStream bytesBuffer = new ByteArrayOutputStream();
         boolean notification;
 
@@ -140,46 +140,31 @@ public class GattServerManager {
 
         // First byte indicates the flag
         // The flag value '0' determines the end of the fragmentation
-        if (i + mtu >= bytesMsg.length) {
+        if (mtu >= bytesMsg.length) {
             flag = BleUtils.MESSAGE_END;
-            end = bytesMsg.length;
+            len = bytesMsg.length;
         } else {
             flag = BleUtils.MESSAGE_FRAG;
-            end = i + mtu;
+            len = mtu;
         }
 
         do {
             bytesBuffer.reset();
             bytesBuffer.write(flag);
-            bytesBuffer.write(bytesMsg, i, end);
+            bytesBuffer.write(bytesMsg, offset, len);
 
             byte[] chunk = bytesBuffer.toByteArray();
-            boolean result = characteristic.setValue(chunk);
-            while (result == false) {
-                try {
-                    Thread.sleep(128);
-                } catch (InterruptedException exception) {
-
-                }
-
-                result = characteristic.setValue(chunk);
-            }
-
-            notification = 
-                gattServer.notifyCharacteristicChanged(device, characteristic, false);
+            characteristic.setValue(chunk);
+            gattServer.notifyCharacteristicChanged(device, characteristic, false);
 
             flag = BleUtils.MESSAGE_FRAG;
-            i += mtu;
+            offset += mtu;
 
-            if (i + mtu >= bytesMsg.length) {
+            if (offset + mtu >= bytesMsg.length) {
                 flag = BleUtils.MESSAGE_END;
-                end = bytesMsg.length - i;
-            } else {
-                end = i + mtu;
+                len = bytesMsg.length - offset;
             }
-        } while(i < bytesMsg.length);
-
-        return notification;
+        } while(offset < bytesMsg.length);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {
@@ -192,7 +177,7 @@ public class GattServerManager {
         for(BluetoothDevice device : listBtDevices) {
             HashMap<String, Object> mapDeviceInfo = new HashMap<>();
 
-            mapDeviceInfo.put("deviceName", device.getName());
+            mapDeviceInfo.put("name", device.getName());
             mapDeviceInfo.put("mac", device.getAddress());
 
             btDevices.add(mapDeviceInfo);

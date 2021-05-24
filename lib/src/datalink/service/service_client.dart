@@ -30,13 +30,13 @@ abstract class ServiceClient extends Service {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the time out duration.
+  /// Connection attempt time out duration.
   int get timeOut => _timeOut;
 
-  /// Returns the number of attempts
+  /// Connection attempts.
   int get attempts => _attempts;
 
-  /// Returns the back off time multiplied by itself one time.
+  /// Back off time for connection attempts.
   int get backOffTime => _backOffTime *= 2;
 
 /*-------------------------------Public methods-------------------------------*/

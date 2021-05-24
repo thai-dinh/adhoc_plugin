@@ -22,12 +22,12 @@ class BleServices {
 
 /*-----------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the stream of the platform-specific side.
+  /// Event stream of the platform-specific side.
   static Stream<Map<dynamic, dynamic>> get platformEventStream {
     return _platformEventStream;
   }
 
-  /// Returns the Bluetooth adapter name.
+  /// Bluetooth adapter name.
   static Future<String> get bleAdapterName async {
     final String? name = await _methodChannel.invokeMethod('getAdapterName');
     return name == null ? '' : name;
@@ -110,9 +110,7 @@ class BleServices {
 
   /// Gets the GATT server of the platform-specific side to send [message] to 
   /// the remote Ble-capable device of MAC addresss [mac].
-  /// 
-  /// Returns true if it has been successfully sent, otherwise false. 
-  static Future<bool> GATTSendMessage(MessageAdHoc message, String mac) async {
+  static Future<void> GATTSendMessage(MessageAdHoc message, String mac) async {
     return await _methodChannel.invokeMethod('sendMessage', <String, String>{
       'mac': mac,
       'message': json.encode(message.toJson()),

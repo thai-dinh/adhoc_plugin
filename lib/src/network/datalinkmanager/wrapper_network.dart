@@ -82,8 +82,8 @@ abstract class WrapperNetwork {
   /// Returns a [List] of [AdHocDevice], which are direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
-    for (String macAddress in neighbors.labelMac.values)
-      devices.add(mapMacDevices[macAddress]!);
+    for (String mac in neighbors.labelMac.values)
+      devices.add(mapMacDevices[mac]!);
 
     return devices;
   }
