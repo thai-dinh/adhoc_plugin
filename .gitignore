@@ -6,4 +6,6 @@
 .packages
 .pub/
 
+doc/api/
+
 build/
