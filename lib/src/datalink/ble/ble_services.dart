@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import '../service/constants.dart';
 import '../utils/msg_adhoc.dart';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 /// Class allowing to have access to platform-specific services. 
@@ -17,6 +20,8 @@ class BleServices {
     .receiveBroadcastStream()
       .cast<Map<dynamic, dynamic>>()
       .asBroadcastStream();
+
+  static int id = 0;
 
   const BleServices();
 
@@ -150,5 +155,59 @@ class BleServices {
   /// device, otherwise false.
   static Future<bool> createBond(String mac) async {
     return await _methodChannel.invokeMethod('createBond', mac);
+  }
+
+  /// Writes data to the ad hoc characteristic.
+  ///
+  /// The [message] is transformed into bytes, which are then written to the
+  /// characteristic of the remote host GATT server.
+  /// 
+  /// The remote host is identified by [mac].
+  /// 
+  /// The data is fragmented into smaller chunk of [mtu] bytes size.
+  static Future<void> writeToCharacteristic(MessageAdHoc message, String mac, int mtu) async {
+    FlutterReactiveBle _reactiveBle = FlutterReactiveBle();
+    Uuid _characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
+    Uuid _serviceUuid = Uuid.parse(SERVICE_UUID);
+
+    // Get the characteristic of the remote host GATT server
+    final characteristic = QualifiedCharacteristic(
+      serviceId: _serviceUuid,
+      characteristicId: _characteristicUuid,
+      deviceId: mac
+    );
+
+    // Convert the MessageAdHoc into bytes
+    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
+    int _id = id++ % UINT8_SIZE, _mtu = mtu - 3 - 2, i = 0, flag, end;
+
+    /* Fragment the message bytes into smaller chunk of bytes */
+
+    // First byte indicates the message ID and second byte the flag value
+    // The flag value '0' determines the end of the fragmentation
+    if (i + _mtu >= msg.length) {
+      flag = MESSAGE_END;
+      end = msg.length;
+    } else {
+      flag = MESSAGE_FRAG;
+      end = i + _mtu;
+    }
+
+    do {
+      List<int> _chunk = [_id, flag] + List.from(msg.getRange(i, end));
+      await _reactiveBle.writeCharacteristicWithoutResponse(
+        characteristic, value: _chunk
+      );
+
+      flag = MESSAGE_FRAG;
+      i += _mtu;
+
+      if (i + _mtu >= msg.length) {
+        flag = MESSAGE_END;
+        end = msg.length;
+      } else {
+        end = i + _mtu;
+      }
+    } while (i < msg.length);
   }
 }

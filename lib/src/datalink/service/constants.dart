@@ -73,15 +73,18 @@ const CONNECTION_INFORMATION  = 111;
 const DEVICE_INFO_BLE         = 112;
 /// Device info (MAC + Wi-Fi IP) recovered
 const DEVICE_INFO_WIFI        = 113;
-/// Discovery process finished
+
+/// Discovery process finished notification
 const ANDROID_DISCOVERY       = 120;
-/// Local adapter state (on/off)
+/// Local adapter state (on/off) notification
 const ANDROID_STATE           = 121;
-/// Wi-Fi Direct connection information
+/// Wi-Fi Direct connection information notification
 const ANDROID_CONNECTION      = 122;
-/// Device name and/or MAC address changes
+/// Device name and/or MAC address change notification
 const ANDROID_CHANGES         = 123;
-/// Ble pairing request
+/// Ble pairing request notification
 const ANDROID_BOND            = 124;
-/// Data written or read from characteristic
+/// Data written or read from characteristic notification
 const ANDROID_DATA            = 125;
+/// MTU size change notification
+const ANDROID_MTU             = 126;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -14,10 +15,16 @@ import '../utils/utils.dart';
 /// Class defining the server's logic for the Bluetooth Low Energy 
 /// implementation.
 class BleServer extends ServiceServer {
+  static int id = 0;
+
+  late HashMap<String, int> _mapMacMTU;
+
   /// Creates a [BleServer] object.
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
-  BleServer(bool verbose) : super(verbose);
+  BleServer(bool verbose) : super(verbose) {
+    this._mapMacMTU = HashMap();
+  }
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -44,11 +51,13 @@ class BleServer extends ServiceServer {
 
           if (state) {
             addActiveConnection(mac);
+            _mapMacMTU.putIfAbsent(mac, () => MIN_MTU);
 
             // Notify upper layer of a connection performed
             controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
           } else {
             removeInactiveConnection(mac);
+            _mapMacMTU.remove(mac);
 
             // Notify upper layer of a connection aborted
             controller.add(AdHocEvent(CONNECTION_ABORTED, mac));
@@ -85,6 +94,14 @@ class BleServer extends ServiceServer {
           controller.add(AdHocEvent(MESSAGE_RECEIVED, message));
           break;
 
+        case ANDROID_MTU:
+          String mac = map['mac'] as String;
+          int mtu = map['mtu'] as int;
+
+          // Update the MTU value of the remote node
+          _mapMacMTU.update(mac, (value) => mtu, ifAbsent: () => mtu);
+          break;
+
         default:
       }
     });
@@ -114,7 +131,9 @@ class BleServer extends ServiceServer {
   Future<void> send(MessageAdHoc message, String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
-    await BleServices.GATTSendMessage(message, mac);
+    BleServices.writeToCharacteristic(
+      message, mac, _mapMacMTU[mac] == null ? MIN_MTU : MAX_MTU
+    );
   }
 
 

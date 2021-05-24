@@ -16,8 +16,6 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// Class defining the client's logic for the Bluetooth LE implementation.
 class BleClient extends ServiceClient {
-  static int id = 0;
-
   late BleAdHocDevice _device;
   late FlutterReactiveBle _reactiveBle;
   late Uuid _characteristicUuid;
@@ -133,47 +131,7 @@ class BleClient extends ServiceClient {
     if (state == STATE_NONE)
       throw NoConnectionException('No remote connection');
 
-    // Get the characteristic of the remote host GATT server
-    final characteristic = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _characteristicUuid,
-      deviceId: _device.mac!
-    );
-
-    // Convert the MessageAdHoc into bytes
-    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
-    int _id = id++ % UINT8_SIZE, mtu = _device.mtu - 3 - 2, i = 0, flag, end;
-
-    /* Fragment the message bytes into smaller chunk of bytes */
-
-    // First byte indicates the message ID and second byte the flag value
-    // The flag value '0' determines the end of the fragmentation
-    if (i + mtu >= msg.length) {
-      flag = MESSAGE_END;
-      end = msg.length;
-    } else {
-      flag = MESSAGE_FRAG;
-      end = i + mtu;
-    }
-
-    do {
-      List<int> _chunk = [_id, flag] + List.from(msg.getRange(i, end));
-      await _reactiveBle.writeCharacteristicWithoutResponse(
-        characteristic, value: _chunk
-      );
-
-      Future.delayed(Duration(microseconds: UINT8_SIZE));
-
-      flag = MESSAGE_FRAG;
-      i += mtu;
-
-      if (i + mtu >= msg.length) {
-        flag = MESSAGE_END;
-        end = msg.length;
-      } else {
-        end = i + mtu;
-      }
-    } while (i < msg.length);
+    BleServices.writeToCharacteristic(message, _device.mac!, _device.mtu);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -223,14 +181,14 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            // // Check whether it is bonded to the remote host, if not, then
-            // // initiate a pairing process
-            // if (!(await BleServices.getBondState(_device.mac!))) {
-            //   // Pairing request
-            //   BleServices.createBond(_device.mac!);
-            // } else {
+            // Check whether it is bonded to the remote host, if not, then
+            // initiate a pairing process
+            if (!(await BleServices.getBondState(_device.mac!))) {
+              // Pairing request
+              BleServices.createBond(_device.mac!);
+            } else {
               await _initEnvironment();
-            // }
+            }
             break;
 
           case DeviceConnectionState.connecting:

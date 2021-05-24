@@ -23,13 +23,11 @@ import io.flutter.plugin.common.EventChannel.StreamHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.Map;
 
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
@@ -41,17 +39,16 @@ public class GattServerManager {
     private static final byte ANDROID_CHANGES    = 123;
     private static final byte ANDROID_BOND       = 124;
     private static final byte ANDROID_DATA       = 125;
+    private static final byte ANDROID_MTU        = 126;
 
     private boolean verbose;
     private Context context;
 
-    private BluetoothGattCharacteristic characteristic;
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
 
     private HashMap<String, HashMap<Integer, ByteArrayOutputStream>> data;
     private HashMap<String, BluetoothDevice> mapMacDevice;
-    private HashMap<String, Short> mapMacMtu;
 
     private EventChannel eventChannel;
     private MainThreadEventSink eventSink;
@@ -61,7 +58,6 @@ public class GattServerManager {
         this.context = context;
         this.data = new HashMap<>();
         this.mapMacDevice = new HashMap<>();
-        this.mapMacMtu = new HashMap<>();
         this.register();
     }
 
@@ -98,7 +94,7 @@ public class GattServerManager {
         this.bluetoothManager = bluetoothManager;
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
-        characteristic = new BluetoothGattCharacteristic(
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
             UUID.fromString(BleUtils.CHARACTERISTIC_UUID),
             BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | 
             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
@@ -110,8 +106,7 @@ public class GattServerManager {
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         );
 
-        boolean result = service.addCharacteristic(characteristic);
-        if (verbose) Log.d(TAG, Boolean.toString(result));
+        service.addCharacteristic(characteristic);
 
         gattServer.addService(service);
     }
@@ -124,47 +119,6 @@ public class GattServerManager {
         eventSink = null;
         eventChannel.setStreamHandler(null);
         eventChannel = null;
-    }
-
-    public void writeToCharacteristic(String message, String mac) throws IOException {
-        if (verbose) Log.d(TAG, "writeToCharacteristic(): " + mac);
-
-        BluetoothDevice device = mapMacDevice.get(mac);
-        byte[] bytesMsg = message.getBytes(StandardCharsets.UTF_8);
-        // 497 MTU maximum with the BLE plugin used -> 500 - 3 - 1 = 497 for flag
-        int mtu = mapMacMtu.get(mac).intValue() - 4, flag = 0, offset = 0, len = 0;
-        ByteArrayOutputStream bytesBuffer = new ByteArrayOutputStream();
-        boolean notification;
-
-        /* Fragment the message bytes into smaller chunk of bytes */
-
-        // First byte indicates the flag
-        // The flag value '0' determines the end of the fragmentation
-        if (mtu >= bytesMsg.length) {
-            flag = BleUtils.MESSAGE_END;
-            len = bytesMsg.length;
-        } else {
-            flag = BleUtils.MESSAGE_FRAG;
-            len = mtu;
-        }
-
-        do {
-            bytesBuffer.reset();
-            bytesBuffer.write(flag);
-            bytesBuffer.write(bytesMsg, offset, len);
-
-            byte[] chunk = bytesBuffer.toByteArray();
-            characteristic.setValue(chunk);
-            gattServer.notifyCharacteristicChanged(device, characteristic, false);
-
-            flag = BleUtils.MESSAGE_FRAG;
-            offset += mtu;
-
-            if (offset + mtu >= bytesMsg.length) {
-                flag = BleUtils.MESSAGE_END;
-                len = bytesMsg.length - offset;
-            }
-        } while(offset < bytesMsg.length);
     }
 
     public List<HashMap<String, Object>> getConnectedDevices() {
@@ -260,17 +214,6 @@ public class GattServerManager {
 
     private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
         @Override
-        public void onCharacteristicReadRequest(
-            BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic
-        ) {
-            if (verbose) Log.d(TAG, "onCharacteristicReadRequest()");
-
-            gattServer.sendResponse(
-                device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue()
-            );
-        }
-
-        @Override
         public void onCharacteristicWriteRequest(
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
@@ -303,8 +246,8 @@ public class GattServerManager {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
 
                 mapInfoValue.put("type", ANDROID_DATA);
-                mapInfoValue.put("data", byteBuffer.toByteArray());
                 mapInfoValue.put("mac", mac);
+                mapInfoValue.put("data", byteBuffer.toByteArray());
 
                 eventSink.success(mapInfoValue);
 
@@ -350,16 +293,13 @@ public class GattServerManager {
             if (verbose) 
                 Log.d(TAG, "onMtuChanged(): " + device.getAddress() + ", " + mtu);
 
-            mapMacMtu.put(device.getAddress(), new Short((short) mtu));
-        }
+            HashMap<String, Object> mapInfoValue = new HashMap<>();
 
-        @Override
-        public void onNotificationSent (BluetoothDevice device, int status) {
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                if (verbose) Log.d(TAG, "onNotificationSent(): failed");
-            } else {
-                if (verbose) Log.d(TAG, "onNotificationSent(): success");
-            }
+            mapInfoValue.put("type", ANDROID_MTU);
+            mapInfoValue.put("mac", device.getAddress());
+            mapInfoValue.put("mtu", mtu);
+
+            eventSink.success(mapInfoValue);
         }
     };
 
