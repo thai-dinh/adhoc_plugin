@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import '../service/adhoc_event.dart';
+import '../service/constants.dart';
+import '../service/service_server.dart';
+import '../utils/msg_adhoc.dart';
+import '../utils/utils.dart';
 
 
+/// Class defining the server's logic for the Wi-Fi Direct implementation.
 class WifiServer extends ServiceServer {
   late StreamSubscription<Socket> _connectionSub;
   late HashMap<String, HashMap<int, String>> _mapNameData;
@@ -19,6 +20,9 @@ class WifiServer extends ServiceServer {
   late HashMap<String, StringBuffer> _mapIpBuffer;
   late ServerSocket _serverSocket;
 
+  /// Creates a [WifiServer] object.
+  /// 
+  /// The debug/verbose mode is set if [verbose] is true.
   WifiServer(bool verbose) : super(verbose) {
     this._mapNameData = HashMap();
     this._mapIpStream = HashMap();
@@ -28,26 +32,30 @@ class WifiServer extends ServiceServer {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  void listen([String? hostIp, int? serverPort]) async {
+  /// Starts the listening process for incoming connections.
+  /// 
+  /// The socket connects to [hostIP] at port number [serverPort].
+  @override
+  void listen([String? hostIP, int? serverPort]) async {
     if (verbose) log(ServiceServer.TAG, 'Server: listen()');
 
-    _serverSocket = await ServerSocket.bind(hostIp, serverPort!, shared: true);
+    _serverSocket = await ServerSocket.bind(hostIP, serverPort!, shared: true);
   
     _connectionSub = _serverSocket.listen(
       (socket) {
-        String remoteAddress = socket.remoteAddress.address;
-        _mapIpSocket.putIfAbsent(remoteAddress, () => socket);
-        _mapIpStream.putIfAbsent(remoteAddress, () => socket.listen(
+        String remoteIPAddress = socket.remoteAddress.address;
+        _mapIpSocket.putIfAbsent(remoteIPAddress, () => socket);
+        _mapIpStream.putIfAbsent(remoteIPAddress, () => socket.listen(
           (data) async {
             if (verbose) {
               log(
                 ServiceServer.TAG, 
-                'bytes received from $remoteAddress:${socket.remotePort}'
+                'bytes received from $remoteIPAddress:${socket.remotePort}'
               );
             }
 
-            _mapNameData.putIfAbsent(remoteAddress, () => HashMap());
-            _mapIpBuffer.putIfAbsent(remoteAddress, () => StringBuffer());
+            _mapNameData.putIfAbsent(remoteIPAddress, () => HashMap());
+            _mapIpBuffer.putIfAbsent(remoteIPAddress, () => StringBuffer());
 
             String msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
@@ -55,36 +63,36 @@ class WifiServer extends ServiceServer {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG, 
-                    'received message from $remoteAddress:${socket.remotePort}'
+                    'received message from $remoteIPAddress:${socket.remotePort}'
                   );
                 }
               }
             } else if (msg[msg.length-1].compareTo('}') == 0) {
-              _mapIpBuffer[remoteAddress]!.write(msg);
-              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteAddress].toString())) {
+              _mapIpBuffer[remoteIPAddress]!.write(msg);
+              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG, 
-                    'received message from $remoteAddress:${socket.remotePort}'
+                    'received message from $remoteIPAddress:${socket.remotePort}'
                   );
                 }
               }
-              _mapIpBuffer[remoteAddress]!.clear();
+              _mapIpBuffer[remoteIPAddress]!.clear();
             } else {
-              _mapIpBuffer[remoteAddress]!.write(msg);
+              _mapIpBuffer[remoteIPAddress]!.write(msg);
             }
           },
           onError: (error) {
             // Error reported below as it is the same instance of 'error' below
-            _closeSocket(remoteAddress);
+            _closeSocket(remoteIPAddress);
           },
           onDone: () {
-            _closeSocket(remoteAddress);
-            controller.add(AdHocEvent(CONNECTION_ABORTED, remoteAddress));
+            _closeSocket(remoteIPAddress);
+            controller.add(AdHocEvent(CONNECTION_ABORTED, remoteIPAddress));
           }
         ));
 
-        controller.add(AdHocEvent(CONNECTION_PERFORMED, remoteAddress));
+        controller.add(AdHocEvent(CONNECTION_PERFORMED, remoteIPAddress));
       },
       onDone: () => this.stopListening(),
       onError: (error) => controller.add(AdHocEvent(CONNECTION_EXCEPTION, error))
@@ -93,6 +101,8 @@ class WifiServer extends ServiceServer {
     state = STATE_LISTENING;
   }
 
+
+  /// Stops the listening process for incoming connections.
   @override
   void stopListening() {
     if (verbose) log(ServiceServer.TAG, 'stopListening()');
@@ -109,25 +119,35 @@ class WifiServer extends ServiceServer {
     state = STATE_NONE;
   }
 
-  Future<void> send(MessageAdHoc message, String? remoteAddress) async {
-    if (verbose) log(ServiceServer.TAG, 'send() to $remoteAddress');
 
-    _mapIpSocket[remoteAddress!]!.write(json.encode(message.toJson()));
+  /// Sends a [message] to the remote device of IP address [remoteIPAddress].
+  @override
+  Future<void> send(MessageAdHoc message, String? remoteIPAddress) async {
+    if (verbose) log(ServiceServer.TAG, 'send() to $remoteIPAddress');
+
+    _mapIpSocket[remoteIPAddress!]!.write(json.encode(message.toJson()));
   }
 
-  Future<void> cancelConnection(String remoteAddress) async {
-    if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteAddress');
 
-    _closeSocket(remoteAddress);
-    controller.add(AdHocEvent(CONNECTION_ABORTED, remoteAddress));
+  /// Cancels an active connection with the remote device of IP address 
+  /// [remoteIPAddress].
+  @override
+  Future<void> cancelConnection(String remoteIPAddress) async {
+    if (verbose) log(ServiceServer.TAG, 'cancelConnection() - $remoteIPAddress');
+
+    _closeSocket(remoteIPAddress);
+    controller.add(AdHocEvent(CONNECTION_ABORTED, remoteIPAddress));
   }
 
 /*------------------------------Private methods-------------------------------*/
 
-  void _closeSocket(String remoteAddress) {
-    _mapIpStream[remoteAddress]!.cancel();
-    _mapIpStream.remove(remoteAddress);
-    _mapIpSocket[remoteAddress]!.close();
-    _mapIpSocket.remove(remoteAddress);
+  /// Closes a socket.
+  /// 
+  /// The socket associated to the IP address [remoteIPAddress] is closed.
+  void _closeSocket(String remoteIPAddress) {
+    _mapIpStream[remoteIPAddress]!.cancel();
+    _mapIpStream.remove(remoteIPAddress);
+    _mapIpSocket[remoteIPAddress]!.close();
+    _mapIpSocket.remove(remoteIPAddress);
   }
 }

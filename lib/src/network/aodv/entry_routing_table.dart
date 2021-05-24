@@ -3,10 +3,10 @@ import 'dart:collection';
 
 /// Class representing a routing table entry for AODV protocol.
 class EntryRoutingTable {
-  late String _destAddress;
+  late String _dstAddress;
   late String _next;
   late int _hop;
-  late int _destSeqNum;
+  late int _dstSeqNum;
   late int _lifetime;
   late List<String> _precursors;
   late HashMap<String, int> _activesDataPath;
@@ -14,16 +14,16 @@ class EntryRoutingTable {
   /// Creates an [EntryRoutingTable] object.
   /// 
   /// An entry requires the following parameters:
-  /// - [_destAddress]  String value representing the destination address.
+  /// - [_dstAddress]   String value representing the destination address.
   /// - [_next]         String value representing the next hop to reach the 
   ///                   destination address.
   /// - [_hop]          Integer value representing the hops number of the 
   ///                   destination.
-  /// - [_destSeqNum]   Integer value representing the sequence number.
+  /// - [_dstSeqNum]    Integer value representing the sequence number.
   /// - [_lifetime]     Integer value representing the lifetime of the entry.
   /// - [_precursors]   List containing the precursors of the current node.
   EntryRoutingTable(
-    this._destAddress, this._next, this._hop, this._destSeqNum, this._lifetime, 
+    this._dstAddress, this._next, this._hop, this._dstSeqNum, this._lifetime, 
     this._precursors
   ) {
     this._activesDataPath = HashMap();
@@ -32,7 +32,7 @@ class EntryRoutingTable {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Returns the destination address stored in this routing table entry.
-  String get destAddress => _destAddress;
+  String get dstAddress => _dstAddress;
 
   /// Returns the next hop stored in this routing table entry.
   String get next => _next;
@@ -41,7 +41,7 @@ class EntryRoutingTable {
   int get hop => _hop;
 
   /// Returns the sequence number stored in this routing table entry.
-  int get destSeqNum => _destSeqNum;
+  int get destSeqNum => _dstSeqNum;
 
   /// Returns the lifetime of the RREP message stored in this routing table entry.
   int get lifetime => _lifetime;
@@ -58,6 +58,7 @@ class EntryRoutingTable {
     _activesDataPath.putIfAbsent(address, () => DateTime.now().millisecond);
   }
 
+
   /// Returns the timestamp where data was forwarded for a particular [address].
   /// 
   /// Returns 0 if the [address] is not found in the active data path.
@@ -67,12 +68,14 @@ class EntryRoutingTable {
     return 0;
   }
 
+
   /// Updates the precursors list by adding a node's address [senderAddr] as
   /// a precursor of the current node.
   void updatePrecursors(String senderAddr) {
     if (!_precursors.contains(senderAddr))
       _precursors.add(senderAddr);
   }
+
 
   /// Displays the list of the precursors of the current node.
   String displayPrecursors() {
@@ -90,10 +93,10 @@ class EntryRoutingTable {
 
   @override
   String toString() {
-    return 'dst: $_destAddress' +
+    return 'dst: $_dstAddress' +
             ' nxt: $_next' +
             ' hop: $_hop' +
-            ' seq: $_destSeqNum ${displayPrecursors()}' +
-            ' dataPath ${_activesDataPath[_destAddress]}';
+            ' seq: $_dstSeqNum ${displayPrecursors()}' +
+            ' dataPath ${_activesDataPath[_dstAddress]}';
   }
 }

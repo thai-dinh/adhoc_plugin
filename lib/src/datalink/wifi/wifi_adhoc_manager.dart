@@ -2,14 +2,15 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/service/service_manager.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_info.dart';
+import 'wifi_adhoc_device.dart';
+import 'wifi_p2p_device.dart';
+import 'wifi_p2p_info.dart';
+import '../exceptions/device_not_found.dart';
+import '../service/adhoc_event.dart';
+import '../service/constants.dart';
+import '../service/service_manager.dart';
+import '../utils/utils.dart';
+
 import 'package:flutter/services.dart';
 
 
@@ -70,6 +71,7 @@ class WifiAdHocManager extends ServiceManager {
     super.release();
     _methodCh.invokeMethod('unregister');
   }
+
 
   /// Initializes the listening process of platform-side streams.
   @override
@@ -144,6 +146,7 @@ class WifiAdHocManager extends ServiceManager {
     await _methodCh.invokeMethod('register');
   }
 
+
   /// Triggers the discovery process of other Wi-Fi Direct devices.
   /// 
   /// The process lasts for [DISCOVERY_TIME] seconds.
@@ -179,11 +182,13 @@ class WifiAdHocManager extends ServiceManager {
     );
   }
 
+
   /// Updates the local adapter name of the device with [name].
   @override
   Future<bool> updateDeviceName(final String name) async {
     return await _methodCh.invokeMethod('updateDeviceName') as Future<bool>;
   }
+
 
   /// Resets the local adapter name of the device.
   @override
@@ -212,6 +217,7 @@ class WifiAdHocManager extends ServiceManager {
   static Future<bool> isWifiEnabled() async {
     return await _methodCh.invokeMethod('isWifiEnabled');
   }
+
 
   /// Removes the device from a Wi-Fi Direct group.
   static Future<void> removeGroup() async {

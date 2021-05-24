@@ -1,25 +1,25 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_client.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_server.dart';
-import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
-import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
-import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
+import 'constants.dart';
+import 'flood_msg.dart';
+import 'network_manager.dart';
+import 'wrapper_network.dart';
+import '../../appframework/config.dart';
+import '../../datalink/ble/ble_adhoc_device.dart';
+import '../../datalink/ble/ble_adhoc_manager.dart';
+import '../../datalink/ble/ble_client.dart';
+import '../../datalink/ble/ble_server.dart';
+import '../../datalink/ble/ble_services.dart';
+import '../../datalink/exceptions/device_failure.dart';
+import '../../datalink/service/adhoc_device.dart';
+import '../../datalink/service/adhoc_event.dart';
+import '../../datalink/service/constants.dart';
+import '../../datalink/service/service.dart';
+import '../../datalink/service/service_client.dart';
+import '../../datalink/utils/msg_adhoc.dart';
+import '../../datalink/utils/msg_header.dart';
+import '../../datalink/utils/utils.dart';
 
 
 /// Class inheriting the abstract wrapper class [WrapperNetwork] and managing 
@@ -39,14 +39,14 @@ class WrapperBle extends WrapperNetwork {
   /// The debug/verbose mode is set if [verbose] is true.
   /// 
   /// The given hash map [mapMacDevices] is used to map a UUID address entry to 
-  /// an AdHocDevice object.
+  /// an [AdHocDevice] object.
   WrapperBle(
-    bool verbose, Config config, HashMap<String?, AdHocDevice?> mapMacDevices
+    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
-    this._isDiscovering = false;
-    this._isInitialized = false;
     this.ownMac = '';
     this.type = BLE;
+    this._isDiscovering = false;
+    this._isInitialized = false;
     this.init(verbose, null);
   }
 
@@ -92,7 +92,7 @@ class WrapperBle extends WrapperNetwork {
   }
 
 
-  /// Disables the Bluetooth of the device.
+  /// Disables the Bluetooth adapter of the device.
   @override
   void disable() {
     mapAddrNetwork.clear();
@@ -115,8 +115,7 @@ class WrapperBle extends WrapperNetwork {
   /// Performs a Bluetooth Low Energy discovery process. 
   /// 
   /// If the Bluetooth Low Energy and Wi-Fi are enabled, the two discoveries are 
-  /// performed in parallel. A discovery process lasts for at least 10-12 
-  /// seconds.
+  /// performed in parallel. A discovery process lasts for at least 10-12 seconds.
   @override
   void discovery() {
     if (_isDiscovering)
@@ -152,7 +151,10 @@ class WrapperBle extends WrapperNetwork {
 
   /// Stops the listening process of incoming connections.
   @override
-  void stopListening() => serviceServer.stopListening();
+  void stopListening() {
+    super.stopListening();
+    serviceServer.stopListening();
+  }
 
 
   /// Gets all the Bluetooth devices which are already paired.
@@ -304,12 +306,12 @@ class WrapperBle extends WrapperNetwork {
           break;
 
         case CONNECTION_ABORTED:
-          // Process remote connection closed
-          connectionClosed(event.payload as String?);
+          // Process remote connection aborted
+          connectionClosed(event.payload as String);
           break;
 
         case CONNECTION_EXCEPTION:
-          // Notify upper layer of an exception occured at lower layer
+          // Notify upper layer of an exception occured at lower layers
           controller.add(AdHocEvent(INTERNAL_EXCEPTION, event.payload));
           break;
 
@@ -398,20 +400,22 @@ class WrapperBle extends WrapperNetwork {
 
         // Process received message from remote nodes
         receivedPeerMessage(
-          message.header, mapAddrNetwork[message.header.address]
+          message.header, mapAddrNetwork[message.header.address]!
         );
         break;
 
       case CONNECT_BROADCAST:
         FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
+        // If the flooding option is enabled, then flood the connection event
         if (checkFloodEvent(floodMsg.id)) {
           // Rebroadcast the message to this node direct neighbors
           broadcastExcept(message, message.header.label);
+          
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (AdHocDevice? device in hashSet) {
             if (device!.label != ownLabel && !setRemoteDevices.contains(device) 
-              && !isDirectNeighbors(device.label)) {
+              && !isDirectNeighbors(device.label!)) {
               // Notify upper layer of a new remote connection established
               controller.add(AdHocEvent(CONNECTION_EVENT, device));
 
@@ -422,7 +426,7 @@ class WrapperBle extends WrapperNetwork {
         break;
 
       case DISCONNECT_BROADCAST:
-        if (checkFloodEvent(message.pdu as String?)) {
+        if (checkFloodEvent(message.pdu as String)) {
           // Rebroadcast the message to this node direct neighbors
           broadcastExcept(message, message.header.label);
 
@@ -439,6 +443,7 @@ class WrapperBle extends WrapperNetwork {
           // Notify upper layer of a remote connection closed
           controller.add(AdHocEvent(DISCONNECTION_EVENT, device));
 
+          // Update set
           if (setRemoteDevices.contains(device))
             setRemoteDevices.remove(device);
         }
@@ -460,7 +465,7 @@ class WrapperBle extends WrapperNetwork {
         break;
 
       default:
-        // Notify upper layer of a message received
+        // Forward a message to upper layers
         controller.add(AdHocEvent(MESSAGE_EVENT, message));
     }
   }

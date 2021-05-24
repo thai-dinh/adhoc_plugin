@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/network/aodv/entry_routing_table.dart';
+import 'entry_routing_table.dart';
+import '../../datalink/utils/utils.dart';
 
 
 /// Class representing the routing table of the AODV protocol.
@@ -27,25 +27,25 @@ class RoutingTable {
   /// 
   /// Returns true if the entry has been added, otherwise false.
   bool addEntry(EntryRoutingTable entry) {
-    if (!_routingTable.containsKey(entry.destAddress)) {
-      if (_verbose) log(TAG, 'Add new entry in the RIB ${entry.destAddress}');
+    if (!_routingTable.containsKey(entry.dstAddress)) {
+      if (_verbose) log(TAG, 'Add new entry in the RIB ${entry.dstAddress}');
 
-      _routingTable.putIfAbsent(entry.destAddress, () => entry);
-      _nextDestMapping.putIfAbsent(entry.next, () => entry.destAddress);
+      _routingTable.putIfAbsent(entry.dstAddress, () => entry);
+      _nextDestMapping.putIfAbsent(entry.next, () => entry.dstAddress);
 
       return true;
     }
 
-    EntryRoutingTable existingEntry = _routingTable[entry.destAddress]!;
+    EntryRoutingTable existingEntry = _routingTable[entry.dstAddress]!;
 
     if (existingEntry.hop >= entry.hop) {
-      _routingTable.update(entry.destAddress, (value) => entry);
-      _nextDestMapping.update(entry.next, (value) => entry.destAddress);
+      _routingTable.update(entry.dstAddress, (value) => entry);
+      _nextDestMapping.update(entry.next, (value) => entry.dstAddress);
 
       if (_verbose) {
-        log(TAG, 'Entry: ${existingEntry.destAddress}'
+        log(TAG, 'Entry: ${existingEntry.dstAddress}'
               + ' hops: ${existingEntry.hop}'
-              + ' is replaced by ${entry.destAddress}'
+              + ' is replaced by ${entry.dstAddress}'
               + ' hops: ${entry.hop}');
       }
 
@@ -53,34 +53,38 @@ class RoutingTable {
     }
 
     if (_verbose) {
-      log(TAG, 'Entry: ${existingEntry.destAddress}'
+      log(TAG, 'Entry: ${existingEntry.dstAddress}'
             + ' hops: ${existingEntry.hop}'
-            + ' is NOT replaced by ${entry.destAddress}'
+            + ' is NOT replaced by ${entry.dstAddress}'
             + ' hops: ${entry.hop}');
     }
 
     return false;
   }
 
+
   /// Removes an entry in the routing table where the entry destination address
-  /// matches [destAddress].
-  void removeEntry(String? destAddress) {
-    _routingTable.remove(destAddress);
+  /// matches [dstAddress].
+  void removeEntry(String? dstAddress) {
+    _routingTable.remove(dstAddress);
   }
+
 
   /// Gets an [EntryRoutingTable] entry associated to the destination 
-  /// address [destAddress].
-  EntryRoutingTable? getNextFromDest(String? destAddress) {
-    return _routingTable[destAddress];
+  /// address [dstAddress].
+  EntryRoutingTable? getNextFromDest(String? dstAddress) {
+    return _routingTable[dstAddress];
   }
 
-  /// Checks whether the destination address [destAddress] is in the routing 
+
+  /// Checks whether the destination address [dstAddress] is in the routing 
   /// table.
   /// 
   /// Returns true if it is in the routing table, otherwise false.
-  bool containsDest(String? destAddress) {
-    return _routingTable.containsKey(destAddress);
+  bool containsDest(String? dstAddress) {
+    return _routingTable.containsKey(dstAddress);
   }
+
 
   /// Checks whether the next hop address [nextAddress] is in the routing table.
   /// 
@@ -89,12 +93,14 @@ class RoutingTable {
     return _nextDestMapping.containsKey(nextAddress);
   }
 
+
   /// Gets the destination address from the next hop address [nextAddress].
   /// 
   /// Returns the destination address.
-  String? getDestFromNext(String? nextAddress) {
+  String? getDestFromNext(String nextAddress) {
     return _nextDestMapping[nextAddress];
   }
+
 
   /// Gets the routing table.
   /// 
@@ -104,23 +110,26 @@ class RoutingTable {
     return _routingTable;
   }
 
+
   /// Gets a routing table entry associated to the destination address 
-  /// [destAddress].
+  /// [dstAddress].
   /// 
   /// Returns [EntryRoutingTable] object associated to the destination address.
-  EntryRoutingTable? getDestination(String? destAddress) {
-    return _routingTable[destAddress];
+  EntryRoutingTable? getDestination(String? dstAddress) {
+    return _routingTable[dstAddress];
   }
 
-  /// Gets the precursors of a node of destination address [destAddress].
+
+  /// Gets the precursors of a node of destination address [dstAddress].
   /// 
   /// Returns a [List] of [String] representing the precursors list.
-  List<String?> getPrecursorsFromDest(String? destAddress) {
-    EntryRoutingTable? entry = _routingTable[destAddress];
+  List<String?> getPrecursorsFromDest(String? dstAddress) {
+    EntryRoutingTable? entry = _routingTable[dstAddress];
     if (entry != null)
         return entry.precursors;
     return List.empty(growable: true);
   }
+
 
   /// Gets the data path from the address [address].
   /// 

@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import '../service/constants.dart';
+import '../service/service.dart';
+import '../utils/msg_adhoc.dart';
 
 
 /// Abstract class defining the client's logic and methods. It aims to serve as 

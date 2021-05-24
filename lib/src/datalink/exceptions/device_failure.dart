@@ -9,7 +9,7 @@ class DeviceFailureException implements Exception {
   /// Creates a [DeviceFailureException] object.
   /// 
   /// Displays the exception [_message] if it is given, otherwise "Device 
-  /// failure" is displayed.
+  /// failure" is set.
   DeviceFailureException([this._message = 'Device failure']);
 
   @override

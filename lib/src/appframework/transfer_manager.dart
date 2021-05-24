@@ -24,7 +24,6 @@ class TransferManager {
 
   List<AdHocDevice> get directNeighbors => _securityManager.directNeighbors;
 
-
   Stream<AdHocEvent> get eventStream => _securityManager.eventStream;
 
 /*-------------------------------Group methods--------------------------------*/
@@ -127,7 +126,7 @@ class TransferManager {
   }
 
 
-  void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label);
+  void disconnect(AdHocDevice device) => _datalinkManager.disconnect(device.label!);
 
 
   void disconnectAll() => _datalinkManager.disconnectAll();

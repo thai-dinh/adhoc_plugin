@@ -1,5 +1,6 @@
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import '../service/adhoc_device.dart';
+import '../service/constants.dart';
+
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 

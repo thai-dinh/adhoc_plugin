@@ -58,9 +58,9 @@ const DEVICE_INFO_BLE     = 112;     // Device info (MAC + BLE UUID) recovered
 const DEVICE_INFO_WIFI    = 113;     // Device info (MAC + Wi-Fi IP) recovered
 
 // Constant for dealing with platform-specific side
-const ANDROID_DISCOVERY  = 120;
-const ANDROID_STATE      = 121;
-const ANDROID_CONNECTION = 122;
-const ANDROID_CHANGES    = 123;
-const ANDROID_BOND       = 124;
-const ANDROID_DATA       = 125;
+const ANDROID_DISCOVERY  = 120;      // Discovery process finished
+const ANDROID_STATE      = 121;      // Local adapter state (on/off)
+const ANDROID_CONNECTION = 122;      // Wi-Fi Direct connection information
+const ANDROID_CHANGES    = 123;      // Device name and/or MAC address changes
+const ANDROID_BOND       = 124;      // Ble pairing request
+const ANDROID_DATA       = 125;      // Data written or read from characteristic

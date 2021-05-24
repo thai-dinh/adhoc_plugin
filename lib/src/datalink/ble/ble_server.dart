@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'ble_services.dart';
+import '../service/adhoc_event.dart';
+import '../service/constants.dart';
+import '../service/service_server.dart';
+import '../utils/msg_adhoc.dart';
+import '../utils/msg_header.dart';
+import '../utils/utils.dart';
 
 
 /// Class defining the server's logic for the Bluetooth Low Energy 

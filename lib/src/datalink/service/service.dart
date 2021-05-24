@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import '../service/adhoc_event.dart';
+import '../service/constants.dart';
+import '../utils/utils.dart';
 
 
 /// Abstract superclass providing common interfaces for the services 

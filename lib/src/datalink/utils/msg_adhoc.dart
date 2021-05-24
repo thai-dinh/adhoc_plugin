@@ -1,4 +1,5 @@
-import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
+import '../utils/msg_header.dart';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_adhoc.g.dart';
@@ -25,7 +26,7 @@ class MessageAdHoc {
 
   /// Creates a [MessageAdHoc] object from a map representation.
   /// 
-  /// Factory constructor that constructs a [MessageAdHoc] based on the 
+  /// Factory constructor that creates a [MessageAdHoc] based on the 
   /// information given by [map].
   factory MessageAdHoc.fromMap(Map map) {
     return MessageAdHoc(map['header'], map['pdu']);
@@ -33,10 +34,9 @@ class MessageAdHoc {
 
   /// Creates a [MessageAdHoc] object from a JSON representation.
   /// 
-  /// Factory constructor that constructs a [MessageAdHoc] based on the 
+  /// Factory constructor that creates a [MessageAdHoc] based on the 
   /// information given by [json].
-  factory MessageAdHoc.fromJson(Map<String, dynamic> json) 
-    => _$MessageAdHocFromJson(json);
+  factory MessageAdHoc.fromJson(Map<String, dynamic> json) => _$MessageAdHocFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
 

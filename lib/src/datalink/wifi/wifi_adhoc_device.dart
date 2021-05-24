@@ -1,6 +1,6 @@
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_p2p_device.dart';
+import '../service/adhoc_device.dart';
+import '../service/constants.dart';
+import '../wifi/wifi_p2p_device.dart';
 
 
 /// Class representing a remote Wifi-capable device.

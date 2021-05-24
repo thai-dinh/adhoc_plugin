@@ -8,7 +8,7 @@ part of 'flood_msg.dart';
 
 FloodMsg _$FloodMsgFromJson(Map<String, dynamic> json) {
   return FloodMsg(
-    json['id'] as String?,
+    json['id'] as String,
     const _HashSetConverter().fromJson(json['devices'] as Map<String, dynamic>),
   );
 }

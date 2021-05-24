@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/secure_data/certificate.dart';
+import 'certificate.dart';
+import '../appframework/config.dart';
 
 
-/// Class representing the certificate repository. It performs 
-/// certificates management, i.e., certificate addition, removal, and periodic
-/// validity check.  
+/// Class representing the certificate repository. It performs certificates 
+/// management, i.e., certificate addition, removal, and periodic validity check.  
 class CertificateRepository {
   late HashMap<String, Certificate> _repository;
   late int _period;
@@ -40,15 +39,21 @@ class CertificateRepository {
     );
   }
 
+
   /// Removes the certificate bound to the identity [label] from the repository.
   void removeCertificate(String label) {
     _repository.remove(label);
   }
 
+
   /// Gets the certificate bound to the identity [label] from the repository.
+  /// 
+  /// Returns a certificate bound the given label. The returned value is null if
+  /// not match is found.
   Certificate? getCertificate(String label) {
     return _repository[label];
   }
+
 
   /// Checks if the certificate bound to the identity [label] is int the 
   /// repository.

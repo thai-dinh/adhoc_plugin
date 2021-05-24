@@ -1,52 +1,74 @@
-import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
-import 'package:adhoc_plugin/src/secure_data/certificate.dart';
+import 'aodv_message.dart';
+import '../../secure_data/certificate.dart';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'rreq.g.dart';
 
 
+/// Class representing the RREQ message for the AODV protocol.
 @JsonSerializable()
 class RREQ extends AodvMessage {
   late int _hopCount;
   late int _rreqId;
-  late int destSequenceNum;
-  late String _destAddress;
-  late int _originSequenceNum;
-  late String _originAddress;
+  late int destSeqNum;
+  late String _dstAddress;
+  late int _srcSeqNum;
+  late String _srcAddress;
 
   late List<Certificate> certChain;
 
+  /// Creates a [RREQ] object.
+  /// 
+  /// The type of message is specified by [type], the hops number of the RREQ 
+  /// message is given by [hopCount], the broadcast ID [rreqId] of the RREQ 
+  /// message, the destination address is set to [dstAddress], the destination 
+  /// sequence number is set to [destSeqNum], the source address is given by 
+  /// [srcAddress], and its source sequence number by [srcSeqNum].
+  /// 
+  /// The list of certificate chain [certChain] is used for the certificate 
+  /// chain discovery process.
   RREQ(
-    int type, int hopCount, int rreqId, this.destSequenceNum, 
-    String destAddress, int originSequenceNum, String originAddress,
-    List<Certificate> certChain
+    int type, int hopCount, int rreqId, this.destSeqNum, String dstAddress, 
+    int srcSeqNum, String srcAddress, List<Certificate> certChain
   ) : super(type) {
     this._hopCount = hopCount;
     this._rreqId = rreqId;
-    this._destAddress = destAddress;
-    this._originSequenceNum = originSequenceNum;
-    this._originAddress = originAddress;
+    this._dstAddress = dstAddress;
+    this._srcSeqNum = srcSeqNum;
+    this._srcAddress = srcAddress;
     this.certChain = certChain;
   }
 
+  /// Creates a [RREQ] object from a JSON representation.
+  /// 
+  /// Factory constructor that creates a [RREQ] based on the information given 
+  /// by [json].
   factory RREQ.fromJson(Map<String, dynamic> json) => _$RREQFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
 
+  /// Returns the hop count of the RREP message.
   int get hopCount => _hopCount = _hopCount + 1;
 
+  /// Returns the broadcast ID of the RREP message.
   int get rreqId => _rreqId;
 
-  String get destAddress => _destAddress;
+  /// Returns the destination address of the RREP message.
+  String get dstAddress => _dstAddress;
 
-  int get originSequenceNum => _originSequenceNum;
+  /// Returns the source hop count of the RREP message.
+  int get srcSeqNum => _srcSeqNum;
 
-  String get originAddress => _originAddress;
+  /// Returns the source address of the RREP message.
+  String get srcAddress => _srcAddress;
 
 /*-------------------------------Public methods-------------------------------*/
 
+  /// Increments the hop count of the RREP message.
   void incrementHopCount() => this._hopCount;
 
+  /// Returns the JSON representation as a [Map] of this [RREQ] instance.
   Map<String, dynamic> toJson() => _$RREQToJson(this);
 
 /*------------------------------Override methods------------------------------*/
@@ -57,10 +79,10 @@ class RREQ extends AodvMessage {
             'type=$type' +
             ', hopCount=$_hopCount' +
             ', rreqId=$_rreqId' +
-            ', destSequenceNum=$destSequenceNum' +
-            ', destAddress=$_destAddress' +
-            ', originSequenceNum=$_originSequenceNum' +
-            ', originAddress=$_originAddress' +
+            ', destSeqNum=$destSeqNum' +
+            ', dstAddress=$_dstAddress' +
+            ', srcSeqNum=$_srcSeqNum' +
+            ', srcAddress=$_srcAddress' +
           '}';
   }
 }

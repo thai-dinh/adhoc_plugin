@@ -9,7 +9,7 @@ class NoConnectionException implements Exception {
   /// Creates a [NoConnectionException] object.
   /// 
   /// Displays the exception [_message] if it is given, otherwise "Connection 
-  /// error" is displayed.
+  /// error" is set.
   NoConnectionException([this._message = 'Connection error']);
 
   @override

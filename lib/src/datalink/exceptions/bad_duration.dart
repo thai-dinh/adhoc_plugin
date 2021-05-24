@@ -9,7 +9,7 @@ class BadDurationException implements Exception {
   /// Creates a [BadDurationException] object.
   /// 
   /// Displays the exception [_message] if it is given, otherwise "Bad duration"
-  /// is displayed.
+  /// is set.
   BadDurationException([this._message = 'Bad duration']);
 
   @override

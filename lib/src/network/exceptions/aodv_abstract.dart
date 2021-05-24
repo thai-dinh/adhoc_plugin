@@ -1,10 +1,15 @@
 import 'dart:core';
 
 
+/// Class signaling that an AODV exception has occurred.
 class AodvAbstractException implements Exception {
   String _message;
 
-  AodvAbstractException([this._message = 'Bad duration']);
+  /// Creates a [AodvAbstractException] object.
+  /// 
+  /// Displays the exception [_message] if it is given, otherwise "Aodv 
+  /// exception triggered" is set.
+  AodvAbstractException([this._message = 'Aodv exception triggered']);
 
   @override
   String toString() => _message;

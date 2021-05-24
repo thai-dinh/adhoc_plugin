@@ -9,7 +9,7 @@ class DeviceNotFoundException implements Exception {
   /// Creates a [DeviceNotFoundException] object.
   /// 
   /// Displays the exception [_message] if it is given, otherwise "Device not 
-  /// found" is displayed.
+  /// found" is set.
   DeviceNotFoundException([this._message = 'Device not found']);
 
   @override

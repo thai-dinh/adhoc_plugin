@@ -8,7 +8,7 @@ part of 'aodv_message.dart';
 
 AodvMessage _$AodvMessageFromJson(Map<String, dynamic> json) {
   return AodvMessage(
-    json['type'] as int?,
+    json['type'] as int,
   );
 }
 

@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
-import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
-import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
+import 'wifi_adhoc_manager.dart';
+import '../service/adhoc_event.dart';
+import '../service/constants.dart';
+import '../utils/msg_adhoc.dart';
+import '../service/service_client.dart';
+import '../utils/utils.dart';
 
 
 /// Class defining the client's logic for the Wi-Fi Direct implementation.
@@ -86,6 +86,7 @@ class WifiClient extends ServiceClient {
     );
   }
 
+
   /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
@@ -94,11 +95,13 @@ class WifiClient extends ServiceClient {
     _socket.close();
   }
 
+
   /// Initiates a connection with the remote device.
   @override
   Future<void> connect() async {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
+
 
   /// Cancels the connection with the remote device.
   @override
@@ -109,6 +112,7 @@ class WifiClient extends ServiceClient {
     // Notify upper layer of a connection aborted
     controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
   }
+
 
   /// Sends a [message] to the remote device.
   @override
@@ -136,6 +140,7 @@ class WifiClient extends ServiceClient {
       rethrow;
     }
   }
+
 
   /// Initiates a connection attempt.
   Future<void> _connectionAttempt() async {

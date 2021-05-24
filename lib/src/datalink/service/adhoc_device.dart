@@ -1,8 +1,10 @@
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import '../service/constants.dart';
+import '../utils/utils.dart';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'adhoc_device.g.dart';
+
 
 /// Object representing an ad hoc device in general. It can have Wifi, 
 /// Bluetooth Low Energy, or both enabled.
@@ -16,9 +18,7 @@ class AdHocDevice {
 
   late int _type;
 
-  /// Constructor
-  /// 
-  /// Creates an [AdHocDevice] object with the given parameters.
+  /// Creates an [AdHocDevice] object.
   ///
   /// If [label] is given, it is used to identify the remote device.
   /// 
@@ -34,9 +34,10 @@ class AdHocDevice {
     this._type = type;
   }
 
-  /// Constructor from map
+  /// Creates an [AdHocDevice] object from a JSON representation.
   /// 
-  /// Creates an [AdHocDevice] object from a map JSON representation ([json]).
+  /// Factory constructor that creates a [AdHocDevice] based on the information 
+  /// given by [json].
   factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -55,7 +56,7 @@ class AdHocDevice {
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Creates a JSON representation of this [AdHocDevice] instance.
+  /// Returns the JSON representation as a [Map] of this [AdHocDevice] instance.
   Map<String, dynamic> toJson() => _$AdHocDeviceToJson(this);
 
   /// Returns a [String] representation of this remote device's type

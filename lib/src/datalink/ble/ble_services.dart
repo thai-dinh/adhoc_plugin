@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import '../utils/msg_adhoc.dart';
+
 import 'package:flutter/services.dart';
 
 
@@ -26,13 +27,11 @@ class BleServices {
     return _platformEventStream;
   }
 
-
   /// Returns the Bluetooth adapter name.
   static Future<String> get bleAdapterName async {
     final String? name = await _methodChannel.invokeMethod('getAdapterName');
     return name == null ? '' : name;
   }
-
 
   /// Gets the list of already paired devices.
   /// 
@@ -40,7 +39,6 @@ class BleServices {
   static Future<List<Map>> get pairedDevices async {
     return await _methodChannel.invokeMethod('getPairedDevices');
   }
-
 
   /// Sets the verbose/debug mode if [verbose] is true.
   static set verbose(bool verbose) {
