@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:adhoc_plugin/adhoc_plugin.dart';
+
 import 'wifi_adhoc_manager.dart';
 import '../service/adhoc_event.dart';
 import '../service/constants.dart';
@@ -135,14 +137,18 @@ class WifiClient extends ServiceClient {
 
         await Future.delayed(delay);
         return _connect(attempts - 1, delay * 2);
+      } else {
+        // Notify upper layer of a failed connection attempts
+        controller.add(AdHocEvent(CONNECTION_FAILED, _serverIP));
       }
-
-      rethrow;
     }
   }
 
 
   /// Initiates a connection attempt.
+  /// 
+  /// Throws a [NoConnectionException] exception if a connection cannot be
+  /// established with the remote device.
   Future<void> _connectionAttempt() async {
     if (verbose) log(ServiceClient.TAG, 'Connect to $_serverIP : $_port');
 
@@ -150,16 +156,22 @@ class WifiClient extends ServiceClient {
       // Update state of the connection
       state = STATE_CONNECTING;
 
-      // Start the connection
-      _socket = await Socket.connect(
-        _serverIP, _port, timeout: Duration(milliseconds: timeOut)
-      );
+      try {
+        // Start the connection
+        _socket = await Socket.connect(
+          _serverIP, _port, timeout: Duration(milliseconds: timeOut)
+        );
+      } on SocketException {
+        state = STATE_NONE;
+
+        throw NoConnectionException('Unable to connect to $_serverIP');
+      }
 
       // Start the listening process for ad hoc events. In this case, ad hoc
       // events are messages received.
       listen();
 
-      // Notify upper layer of a successfull connection performed
+      // Notify upper layer of a successful connection performed
       controller.add(AdHocEvent(CONNECTION_PERFORMED, _serverIP));
 
       if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIP:$_port');

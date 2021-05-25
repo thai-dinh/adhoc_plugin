@@ -6,6 +6,7 @@ import 'flood_msg.dart';
 import 'network_manager.dart';
 import 'wrapper_network.dart';
 import '../../appframework/config.dart';
+import '../../datalink/exceptions/bad_duration.dart';
 import '../../datalink/exceptions/device_failure.dart';
 import '../../datalink/service/adhoc_device.dart';
 import '../../datalink/service/adhoc_event.dart';
@@ -22,7 +23,7 @@ import '../../datalink/wifi/wifi_server.dart';
 
 
 /// Class inheriting the abstract class [WrapperNetwork] and manages all 
-/// communications related to Wi-Fi Direct
+/// communications related to Wi-Fi Direct.
 class WrapperWifi extends WrapperNetwork {
   static const String TAG = "[WrapperWifi]";
 
@@ -88,12 +89,21 @@ class WrapperWifi extends WrapperNetwork {
 
   /// Initializes Wifi wrapper parameters.
   /// 
-  /// Note: It is not possible to enable/disable Wi-Fi starting with Starting 
-  /// with Build.VERSION_CODES#Q.
+  /// Throws an [BadDurationException] if the given duration exceeds 3600 
+  /// seconds or is negative.
+  /// 
+  /// Note: It is not possible to enable/disable Wi-Fi starting with 
+  /// Build.VERSION_CODES#Q.
   /// 
   /// https://developer.android.com/reference/android/net/wifi/WifiManager#setWifiEnabled(boolean)
   @override
   void enable(int duration) {
+    if (duration < 0 || duration > 3600) {
+      throw BadDurationException(
+        'Duration must be between 0 and 3600 second(s)'
+      );
+    }
+
     _wifiManager = WifiAdHocManager(verbose);
     _wifiManager.initialize();
     _initialize();

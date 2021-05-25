@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
 import 'ble_adhoc_device.dart';
 import 'ble_services.dart';
@@ -16,10 +14,10 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// Class defining the client's logic for the Bluetooth LE implementation.
 class BleClient extends ServiceClient {
+  StreamSubscription<ConnectionStateUpdate>? _connectionSub;
+
   late BleAdHocDevice _device;
   late FlutterReactiveBle _reactiveBle;
-  late Uuid _characteristicUuid;
-  late Uuid _serviceUuid;
   late bool _isInitialized;
 
   /// Creates a [BleClient] object.
@@ -36,8 +34,6 @@ class BleClient extends ServiceClient {
     verbose, attempts, timeOut
   ) {
     this._reactiveBle = FlutterReactiveBle();
-    this._characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
-    this._serviceUuid = Uuid.parse(SERVICE_UUID);
     this._isInitialized = false;
   }
 
@@ -48,38 +44,6 @@ class BleClient extends ServiceClient {
   /// In this case, an ad hoc event is a message received from the remote host.
   @override
   void listen() {
-    // Get the characteristic of the remote host GATT server
-    final qChar = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _characteristicUuid,
-      deviceId: _device.mac!
-    );
-
-    List<int> buffer = List.empty(growable: true);
-
-    // Listen to the changes of the characteristic
-    _reactiveBle.subscribeToCharacteristic(qChar).listen((chunk) {
-      // Recover the flag value
-      int flag = chunk[0];
-      // Add chunk to buffer
-      buffer.addAll(chunk.sublist(MESSAGE_FRAG));
-
-      // End of fragmentation
-      if (flag == MESSAGE_END) {
-        // Reconstruct the message
-        String strMessage = Utf8Decoder().convert(Uint8List.fromList(buffer));
-        MessageAdHoc msg = MessageAdHoc.fromJson(json.decode(strMessage));
-        // Reset buffer
-        buffer.clear();
-
-        if (verbose)
-          log(ServiceClient.TAG, 'Client: message received from ${_device.mac}');
-
-        // Notify upper layer of a message received
-        controller.add(AdHocEvent(MESSAGE_RECEIVED, msg));
-      }
-    });
-
     // Listen to event from the platform-specific side for pairing event
     BleServices.platformEventStream.listen((map) async {
       if (map['type'] == ANDROID_BOND) {
@@ -116,9 +80,11 @@ class BleClient extends ServiceClient {
   void disconnect() {
     this.stopListening();
     // Abort connection with the remote host
-    BleServices.cancelConnection(_device.mac!);
-    // Notify upper layer of a connection aborted
-    controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac!));
+    if (_connectionSub != null) {
+      _connectionSub!.cancel();
+      // Notify upper layer of a connection aborted
+      controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac!));
+    }
   }
 
 
@@ -136,15 +102,6 @@ class BleClient extends ServiceClient {
 
 /*------------------------------Private methods-------------------------------*/
   
-  /// Requests the max MTU size used for the connection with the remote device.
-  Future<void> _requestMaxMTU() async {
-    _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac!, 
-      mtu: MAX_MTU
-    );
-  }
-
-
   /// Initiates a connection attempts with [attempts] times and with a [delay]
   /// (ms) between each try.
   Future<void> _connect(int attempts, Duration delay) async {
@@ -157,20 +114,24 @@ class BleClient extends ServiceClient {
         
         await Future.delayed(delay);
         return _connect(attempts - 1, delay * 2);
+      } else {
+        // Notify upper layer of a failed connection attempts
+        controller.add(AdHocEvent(CONNECTION_FAILED, _device.mac));
       }
-
-      rethrow;
     }
   }
 
 
   /// Initiates a connection attempt.
+  /// 
+  /// Throws a [NoConnectionException] exception if a connection cannot be
+  /// established with the remote device.
   Future<void> _connectionAttempt() async {
     if (verbose) log(ServiceClient.TAG, 'Connect to ${_device.mac}');
 
     if (state == STATE_NONE || state == STATE_CONNECTING) {
       // Start the connection
-      _reactiveBle.connectToDevice(
+      _connectionSub = _reactiveBle.connectToDevice(
         id: _device.mac!,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
@@ -199,6 +160,9 @@ class BleClient extends ServiceClient {
           default:
             // Update state of the connection
             state = STATE_NONE;
+            throw NoConnectionException(
+              'Unable to connect to ${_device.address}'
+            );
         }
       });
     }
@@ -214,9 +178,12 @@ class BleClient extends ServiceClient {
     listen();
 
     // Request maximum MTU
-    await _requestMaxMTU();
+    _device.mtu = await _reactiveBle.requestMtu(
+      deviceId: _device.mac!, 
+      mtu: MAX_MTU
+    );
 
-    // Notify upper layer of a successfull connection performed
+    // Notify upper layer of a successful connection performed
     controller.add(AdHocEvent(
       CONNECTION_PERFORMED, [_device.mac, _device.address, CLIENT]
     ));

@@ -41,7 +41,7 @@ class DataLinkManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the direct neighbours of the current mobile as a [List] of 
+  /// Returns the direct neighbors of the current mobile as a [List] of 
   /// [AdHocDevice].
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> neighbors = List.empty(growable: true);
@@ -74,6 +74,9 @@ class DataLinkManager {
   /// Enables a particular technology.
   /// 
   /// The technology is specified by [type] and it is enabled for [duration] ms.
+  /// 
+  /// Throws an [BadDurationException] if the given duration exceeds 3600 
+  /// seconds or is negative.
   void enable(int duration, int type) {
     WrapperNetwork? wrapper = _wrappers[type];
     if (wrapper != null)
@@ -274,9 +277,9 @@ class DataLinkManager {
   }
 
 
-  /// Checks if a node is a direct neighbour.
+  /// Checks if a node is a direct neighbor.
   /// 
-  /// The neighbour is identified by [address].
+  /// The neighbor is identified by [address].
   /// 
   /// Returns true if it is a direct neightbour, otherwise false.
   bool isDirectNeighbors(String address) {
@@ -287,7 +290,7 @@ class DataLinkManager {
   }
 
 
-  /// Gets the direct neighbours of the current mobile.
+  /// Gets the direct neighbors of the current mobile.
   /// 
   /// Returns a [List] of [AdHocDevice], which are filled with direct neighours
   /// nodes regardless of the technology employed.

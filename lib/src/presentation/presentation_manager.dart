@@ -23,8 +23,8 @@ import 'package:pointycastle/pointycastle.dart';
 
 /// Class representing the core of the secure data layer. It performs 
 /// certificates management as well as encryption and decryption tasks.  
-class SecureDataManager {
-  static const String TAG = '[SecureDataManager]';
+class PresentationManager {
+  static const String TAG = '[PresentationManager]';
 
   final bool _verbose;
 
@@ -39,13 +39,13 @@ class SecureDataManager {
   late Set<String> _setFloodEvents;
   late int _validityPeriod;
 
-  /// Creates a [SecureDataManager] object.
+  /// Creates a [PresentationManager] object.
   /// 
   /// The debug/verbose mode is set if [_verbose] is true.
   /// 
   /// This object is configured according to [config], which contains specific 
   /// configurations.
-  SecureDataManager(this._verbose, Config config) {
+  PresentationManager(this._verbose, Config config) {
     this._repository = CertificateRepository(config);
     this._aodvManager = AodvManager(_verbose, _repository, config);
     this._datalinkManager = _aodvManager.dataLinkManager;
@@ -62,10 +62,10 @@ class SecureDataManager {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the [SecureGroupController] engine used by this instance.
+  /// Secure group manager used by this instance.
   SecureGroupController get groupController => _groupController;
 
-  /// Returns the [DataLinkManager] instance used by the AODV manager.
+  /// Data-link manager used by the AODV manager.
   DataLinkManager get datalinkManager => _datalinkManager;
 
   /// Returns the list of direct neighbors.

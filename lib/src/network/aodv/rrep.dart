@@ -1,5 +1,5 @@
 import 'aodv_message.dart';
-import '../../secure_data/certificate.dart';
+import '../../presentation/certificate.dart';
 
 import 'package:json_annotation/json_annotation.dart';
 

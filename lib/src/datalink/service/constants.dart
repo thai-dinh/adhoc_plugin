@@ -63,16 +63,18 @@ const DEVICE_DISCOVERED       = 106;
 const MESSAGE_RECEIVED        = 107;
 /// Connection performed
 const CONNECTION_PERFORMED    = 108;
+/// Connection faild
+const CONNECTION_FAILED       = 109;
 /// Connection aborted
-const CONNECTION_ABORTED      = 109;
+const CONNECTION_ABORTED      = 110;
 /// Connection exception raised
-const CONNECTION_EXCEPTION    = 110;
+const CONNECTION_EXCEPTION    = 111;
 /// Connection information
-const CONNECTION_INFORMATION  = 111;
+const CONNECTION_INFORMATION  = 112;
 /// Device info (MAC + BLE UUID) recovered
-const DEVICE_INFO_BLE         = 112;
+const DEVICE_INFO_BLE         = 113;
 /// Device info (MAC + Wi-Fi IP) recovered
-const DEVICE_INFO_WIFI        = 113;
+const DEVICE_INFO_WIFI        = 114;
 
 /// Discovery process finished notification
 const ANDROID_DISCOVERY       = 120;

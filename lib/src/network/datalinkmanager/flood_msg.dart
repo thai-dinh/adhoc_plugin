@@ -8,7 +8,7 @@ part 'flood_msg.g.dart';
 
 
 /// Class representing a message exchanged if the connection flooding is enabled. 
-/// It encapsulates information about remote nodes' neighbours.
+/// It encapsulates information about remote nodes' neighbors.
 @JsonSerializable()
 class FloodMsg {
   @_HashSetConverter()

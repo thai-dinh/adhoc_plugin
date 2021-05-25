@@ -20,8 +20,8 @@ import '../../datalink/service/constants.dart';
 import '../../datalink/utils/msg_adhoc.dart';
 import '../../datalink/utils/msg_header.dart';
 import '../../datalink/utils/utils.dart';
-import '../../secure_data/certificate_repository.dart';
-import '../../secure_data/constants.dart';
+import '../../presentation/certificate_repository.dart';
+import '../../presentation/constants.dart';
 
 
 /// Class representing the core of the AODV protocol. It manages all the 

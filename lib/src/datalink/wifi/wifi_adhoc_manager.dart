@@ -3,8 +3,6 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'wifi_adhoc_device.dart';
-import 'wifi_p2p_device.dart';
-import 'wifi_p2p_info.dart';
 import '../exceptions/device_not_found.dart';
 import '../service/adhoc_event.dart';
 import '../service/constants.dart';
@@ -82,12 +80,12 @@ class WifiAdHocManager extends ServiceManager {
       switch (map['type']) {
         case ANDROID_DISCOVERY: // Discovery process
           List<dynamic> list = map['peers'] as List<dynamic>;
-          List<WifiP2PDevice> peers = List.empty(growable: true);
-          list.forEach((map) => peers.add(WifiP2PDevice.fromMap(map)));
+          List<_WifiP2PDevice> peers = List.empty(growable: true);
+          list.forEach((map) => peers.add(_WifiP2PDevice.fromMap(map)));
 
           peers.forEach((device) {
             // Get a WifiAdHocDevice object from device
-            WifiAdHocDevice wifiDevice = WifiAdHocDevice(device);
+            WifiAdHocDevice wifiDevice = WifiAdHocDevice(device.name, device.mac);
             // Add the discovered device to the HashMap
             _mapMacDevice.putIfAbsent(wifiDevice.mac, () {
               if (verbose) {
@@ -110,7 +108,7 @@ class WifiAdHocManager extends ServiceManager {
           break;
 
         case ANDROID_CONNECTION: // Information about the group after connection
-          WifiP2PInfo info = WifiP2PInfo.fromMap(map['info'] as Map);
+          _WifiP2PInfo info = _WifiP2PInfo.fromMap(map['info'] as Map);
 
           // Notify upper layer of the Wi-Fi connection information received
           controller.add(
@@ -122,14 +120,13 @@ class WifiAdHocManager extends ServiceManager {
           break;
 
         case ANDROID_CHANGES:
-          WifiP2PDevice thisDevice = 
-            WifiP2PDevice(map['name'] as String, map['mac'] as String);
+          String name = map['name'] as String;
 
           // Process the name to be more user-friendly
-          if (thisDevice.name.contains('[Phone]')) {
-            _adapterName = thisDevice.name.substring(thisDevice.name.indexOf(' ') + 1);
+          if (name.contains('[Phone]')) {
+            _adapterName = name.substring(name.indexOf(' ') + 1);
           } else {
-            _adapterName = thisDevice.name;
+            _adapterName = name;
           }
 
           // Notify upper layer of this device Wi-Fi information received
@@ -222,5 +219,46 @@ class WifiAdHocManager extends ServiceManager {
   /// Removes the device from a Wi-Fi Direct group.
   static Future<void> removeGroup() async {
     await _methodCh.invokeMethod('removeGroup');
+  }
+}
+
+
+/// Class representing a Wi-Fi P2P devices.
+class _WifiP2PDevice {
+  late String name;
+  late String mac;
+
+  /// Creates a [_WifiP2PDevice] object.
+  /// 
+  /// The device is named after [name] and has the MAC address [mac].
+  _WifiP2PDevice(this.name, this.mac);
+
+  /// Creates a [_WifiP2PDevice] object.
+  /// 
+  /// The object is filled with information from [map]. The map should be a map
+  /// with the key type as [String] and value type as [dynamic]. The following
+  /// key should exits: 'name' and 'mac'.
+  _WifiP2PDevice.fromMap(Map map) {
+    name = map['name'];
+    mac = map['mac'];
+  }
+}
+
+
+/// Class representing a Wi-Fi P2P connection information.
+class _WifiP2PInfo {
+  late String groupOwnerAddress;
+  late bool groupFormed;
+  late bool isGroupOwner;
+
+  /// Creates a [_WifiP2PInfo] object.
+  /// 
+  /// The object is filled with information from [map]. The map should be a map
+  /// with the key type as [String] and value type as [dynamic]. The following
+  /// key should exits: 'groupOwnerAddress', 'groupFormed', and 'isGroupOwner'.
+  _WifiP2PInfo.fromMap(Map map) {
+    groupOwnerAddress = map['groupOwnerAddress'];
+    groupFormed = map['groupFormed'];
+    isGroupOwner = map['isGroupOwner'];
   }
 }

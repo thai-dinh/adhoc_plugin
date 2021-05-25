@@ -77,7 +77,7 @@ abstract class WrapperNetwork {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Gets the direct neighbours of this node.
+  /// Gets the direct neighbors of this node.
   /// 
   /// Returns a [List] of [AdHocDevice], which are direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
@@ -173,7 +173,7 @@ abstract class WrapperNetwork {
   }
 
 
-  /// Checks if a node with address [label] is a direct neighbour.
+  /// Checks if a node with address [label] is a direct neighbor.
   /// 
   /// Returns true if it is, otherwise false.
   bool isDirectNeighbors(String label) {

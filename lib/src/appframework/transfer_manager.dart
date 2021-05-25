@@ -1,22 +1,22 @@
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
-import 'package:adhoc_plugin/src/datalink/service/constants.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/secure_data/secure_data_manager.dart';
+import 'config.dart';
+import '../datalink/exceptions/device_failure.dart';
+import '../datalink/service/adhoc_device.dart';
+import '../datalink/service/adhoc_event.dart';
+import '../datalink/service/constants.dart';
+import '../network/datalinkmanager/datalink_manager.dart';
+import '../presentation/presentation_manager.dart';
 
 
 class TransferManager {
   final bool _verbose;
 
   late DataLinkManager _datalinkManager;
-  late SecureDataManager _securityManager;
+  late PresentationManager _securityManager;
 
   TransferManager(this._verbose, {Config? config}) {
-    this._securityManager = SecureDataManager(_verbose, config == null ? Config() : config);
+    this._securityManager = PresentationManager(_verbose, config == null ? Config() : config);
     this._datalinkManager = _securityManager.datalinkManager;
   }
 

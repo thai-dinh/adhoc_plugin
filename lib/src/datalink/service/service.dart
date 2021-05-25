@@ -33,22 +33,19 @@ abstract class Service {
     _state = state;
   }
 
-  /// Gets the state of the connection.
-  /// 
-  /// Returns an integer value representing the state of the connection.
+  /// State of the connection.
   int get state => _state;
 
-  /// Gets the ad hoc event stream.
-  /// 
-  /// Returns an [AdHocEvent] stream.
+  /// Ad hoc event stream containing events such as messages received, connection
+  /// performed, or aborted.
   Stream<AdHocEvent> get adhocEvent => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Start the listening process for ad hoc events.
+  /// Starts the listening process for ad hoc events.
   void listen();
 
-  /// Stop the listening process for ad hoc events.
+  /// Stops the listening process for ad hoc events.
   void stopListening() => controller.close();
 
 /*-----------------------------Private methods-------------------------------*/

@@ -88,7 +88,7 @@ class BleServer extends ServiceServer {
           }
 
           if (verbose)
-            log(ServiceServer.TAG, 'Server: message received from ${map['mac']}');
+            log(ServiceServer.TAG, 'Message received from ${map['mac']}');
 
           // Notify upper layer of message received
           controller.add(AdHocEvent(MESSAGE_RECEIVED, message));

@@ -62,7 +62,6 @@ class WrapperBle extends WrapperNetwork {
   Future<void> init(bool verbose, Config? config) async {
     if (await BleServices.isBleAdapterEnabled()) {
       this._bleAdHocManager = BleAdHocManager(verbose);
-      this._bleAdHocManager.enableDiscovery(3600); // TODO
       this.ownName = await BleServices.bleAdapterName;
       this._listenServer();
       this._initialize();
@@ -76,6 +75,9 @@ class WrapperBle extends WrapperNetwork {
   /// Enables the Bluetooth of the device as well as sets it in discovery mode.
   /// 
   /// The discovery mode lasts for [duration] ms.
+  /// 
+  /// Throws an [BadDurationException] if the given duration exceeds 3600 
+  /// seconds or is negative.
   @override
   void enable(int duration) async {
     if (!enabled) {
