@@ -115,8 +115,7 @@ class DataLinkManager {
   /// Performs a discovery process. 
   /// 
   /// If the Bluetooth Low Energy and Wi-Fi are enabled, the two discoveries are 
-  /// performed in parallel. A discovery process lasts for at least 10-12 
-  /// seconds.
+  /// performed in parallel. A discovery process lasts for at least 10/12 seconds.
   void discovery() {
     int enabled = checkState();
     if (enabled == 0)
@@ -265,10 +264,10 @@ class DataLinkManager {
   }
 
 
-  /// Gets all the Bluetooth Low Energy devices, which are already paired.
+  /// Gets all the Bluetooth devices, which are already paired with this device.
   /// 
-  /// Returns a hash map where the key type is a [String] and the value type is
-  /// a [AdHocDevice].
+  /// Returns a [HashMap] where the key type is a [String] and the value type is
+  /// an [AdHocDevice].
   Future<HashMap<String, AdHocDevice>> getPaired() async {
     WrapperNetwork? wrapper = _wrappers[BLE];
     if (wrapper != null && wrapper.enabled)
@@ -323,8 +322,7 @@ class DataLinkManager {
   /// The technology is specified by [type], where a '0' value represents Wi-Fi
   /// and a '1' value Bluetooth Low Energy.
   /// 
-  /// Returns a [String] representing the adapter name of the specified 
-  /// technology.
+  /// Returns the adapter name of the specified technology.
   Future<String> getAdapterName(int type) async {
     WrapperNetwork? wrapper = _wrappers[type];
     if (wrapper != null && wrapper.enabled)
@@ -338,7 +336,7 @@ class DataLinkManager {
   /// Returns a [HashMap] representing the adapter name of the specified 
   /// technology. The key value are integer, where a '0' value represents Wi-Fi
   /// and a '1' value Bluetooth Low Energy.
-  Future<HashMap<int, String>> getActifAdapterNames() async {
+  Future<HashMap<int, String>> getActiveAdapterNames() async {
     HashMap<int, String> adapterNames = HashMap();
 
     for (WrapperNetwork? wrapper in _wrappers) {
@@ -352,7 +350,7 @@ class DataLinkManager {
   }
 
 
-  /// Updates the name of a particular technology.
+  /// Updates the name of a particular technology adapter.
   /// 
   /// The technology is specified by [type], where a '0' value represents Wi-Fi
   /// and a '1' value Bluetooth Low Energy.
@@ -370,7 +368,7 @@ class DataLinkManager {
   }
 
 
-  /// Resest the adapter name of a particular technology.
+  /// Resets the adapter name of a particular technology adapter.
   /// 
   /// The technology is specified by [type], where a '0' value represents Wi-Fi
   /// and a '1' value Bluetooth Low Energy.

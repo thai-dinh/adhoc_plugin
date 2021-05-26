@@ -290,7 +290,7 @@ class SecureGroupController {
     _groupKey = SecretKey(_toBytes(_groupKeySum!));
   }
 
-  
+
   ///
   void _processDataReceived(AdHocEvent event) async {
     AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;

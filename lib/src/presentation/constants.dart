@@ -6,11 +6,11 @@ const NB_ISOLATE = 2; // Number of isolates for encryption/decryption
 
 // Constants
 const INITIALISATION = -1;  // Isolates initialisation
-const ENCRYPTION     = 0;   // Encryption request and reply tag to send to an isolate
-const DECRYPTION     = 1;   // Decryption request and reply tag to send to an isolate
+const ENCRYPTION = 0;       // Encryption request and reply tag to send to an isolate
+const DECRYPTION = 1;       // Decryption request and reply tag to send to an isolate
 
 // Constants
-const SECRET_KEY  = 0;  // Secret key tag for cryptographic tasks
+const SECRET_KEY = 0;   // Secret key tag for cryptographic tasks
 const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 
 // Constants
@@ -19,10 +19,10 @@ const MEMBER = 1;  // Member tag for group formation
 
 // Constants for the group key agreement protocol
 const FORMATION = 30;
-const JOIN      = 31;
-const LEAVE     = 32;
-const REQUEST   = 33;
-const REPLY     = 34;
+const JOIN = 31;
+const LEAVE = 32;
+const REQUEST = 33;
+const REPLY = 34;
 
 // Constants for the certificate management
 const ENCRYPTED_DATA   = 300;     // Data encrypted received or to send

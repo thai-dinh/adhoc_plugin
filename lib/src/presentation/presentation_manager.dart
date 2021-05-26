@@ -124,8 +124,8 @@ class PresentationManager {
 
   /// Broadcasts a message to all directly connected nodes.
   /// 
-  /// Broadcasts a message with [data] as payload and it is encrypted if 
-  /// [encrypted] is set to true.
+  /// The message payload is set to [data] and it is encrypted if [encrypted] is 
+  /// set to true.
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcast(Object data, bool encrypted) async {
@@ -144,12 +144,14 @@ class PresentationManager {
     }
   }
 
-  /// Broadcasts a message to all directly connected nodes except the one
-  /// specified.
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// one.
   /// 
-  /// Broadcasts to all directly connected node except for [excluded] a message 
-  /// with [data] as payload and it is encrypted if [encrypted] is set to true.
-  ///
+  /// The message payload is set to [data] and it is encrypted if [encrypted] is
+  /// set to true.
+  /// 
+  /// The node specified by [excluded] is not included in the broadcast.
+  /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcastExcept(
     Object data, String excluded, bool encrypted
