@@ -34,7 +34,7 @@ abstract class ServiceServer extends Service {
 
 
   /// Removes the MAC address [mac] of the active connection.
-  void removeInactiveConnection(String mac) {
+  void removeConnection(String mac) {
     if (containConnection(mac))
       _activeConnections.remove(mac);
   }

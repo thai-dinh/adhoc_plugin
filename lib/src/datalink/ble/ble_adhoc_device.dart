@@ -1,5 +1,6 @@
 import '../service/adhoc_device.dart';
 import '../service/constants.dart';
+import '../utils/identifier.dart';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -13,7 +14,8 @@ class BleAdHocDevice extends AdHocDevice {
   /// The information of the created object is filled according to the 
   /// information given by [device].
   BleAdHocDevice(DiscoveredDevice device) : super(
-    label: '', address: '', name: device.name, mac: device.id, type: BLE,
+    label: '', address: '', name: device.name, mac: Identifier(ble: device.id), 
+    type: BLE,
   ) {
     this.mtu = MIN_MTU;
     this.address = 
@@ -33,8 +35,8 @@ class BleAdHocDevice extends AdHocDevice {
   ) {
     this.mtu = MIN_MTU;
     this.address = 
-      (BLUETOOTHLE_UUID + map['mac'].replaceAll(new RegExp(':'), ''))
-        .toLowerCase();
+      (map['mac'] as Identifier).ble.replaceAll(new RegExp(':'), '');
+    this.address = BLUETOOTHLE_UUID + this.address!.toLowerCase();
   }
 
 /*------------------------------Override methods------------------------------*/

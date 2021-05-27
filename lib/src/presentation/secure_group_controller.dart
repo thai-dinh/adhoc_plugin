@@ -11,7 +11,6 @@ import '../datalink/service/adhoc_event.dart';
 import '../network/aodv/aodv_manager.dart';
 import '../network/datalinkmanager/constants.dart';
 import '../network/datalinkmanager/datalink_manager.dart';
-
 import 'package:cryptography/cryptography.dart';
 import 'package:ninja_prime/ninja_prime.dart';
 
@@ -51,7 +50,8 @@ class SecureGroupController {
 
   /// Creates a [SecureGroupController] object.
   /// 
-  /// 
+  /// This object is configured according to [config], which contains specific 
+  /// configurations.
   SecureGroupController(
     this._aodvManager, this._datalinkManager, this._eventStream, Config config
   ) {
@@ -68,7 +68,7 @@ class SecureGroupController {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
+  /// Stream of ad hoc event notifications of lower layers.
   Stream<AdHocEvent> get eventStream => _eventCtrl.stream;
 
 /*-------------------------------Public methods-------------------------------*/

@@ -1,5 +1,6 @@
 import '../service/adhoc_device.dart';
 import '../service/constants.dart';
+import '../utils/identifier.dart';
 
 
 /// Class representing a remote Wifi-capable device.
@@ -10,7 +11,7 @@ class WifiAdHocDevice extends AdHocDevice {
   /// 
   /// The instance is filled with information given by [device].
   WifiAdHocDevice(String name, String mac) : super(
-    label: '', address: '', name: name, mac: mac, type: WIFI
+    label: '', address: '', name: name, mac: Identifier(wifi: mac), type: WIFI
   ) {
     this.port = 0;
   }

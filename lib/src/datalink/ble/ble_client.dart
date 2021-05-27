@@ -51,7 +51,7 @@ class BleClient extends ServiceClient {
         bool state = map['state'] as bool;
 
         // If pairing request has succeded, then proceed with the connection
-        if (mac == _device.mac!)
+        if (mac == _device.mac.ble)
           await _initEnvironment();
 
         // Notify upper layer of bond state with a remote device
@@ -83,7 +83,7 @@ class BleClient extends ServiceClient {
     if (_connectionSub != null) {
       _connectionSub!.cancel();
       // Notify upper layer of a connection aborted
-      controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac!));
+      controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac));
     }
   }
 
@@ -97,7 +97,7 @@ class BleClient extends ServiceClient {
     if (state == STATE_NONE)
       throw NoConnectionException('No remote connection');
 
-    BleServices.writeToCharacteristic(message, _device.mac!, _device.mtu);
+    BleServices.writeToCharacteristic(message, _device.mac.ble, _device.mtu);
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -132,7 +132,7 @@ class BleClient extends ServiceClient {
     if (state == STATE_NONE || state == STATE_CONNECTING) {
       // Start the connection
       _connectionSub = _reactiveBle.connectToDevice(
-        id: _device.mac!,
+        id: _device.mac.ble,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
       ).listen((event) async {
@@ -142,14 +142,14 @@ class BleClient extends ServiceClient {
             if (verbose)
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
 
-            // Check whether it is bonded to the remote host, if not, then
-            // initiate a pairing process
-            if (!(await BleServices.getBondState(_device.mac!))) {
-              // Pairing request
-              BleServices.createBond(_device.mac!);
-            } else {
+            // // Check whether it is bonded to the remote host, if not, then
+            // // initiate a pairing process
+            // if (!(await BleServices.getBondState(_device.mac.ble))) {
+            //   // Pairing request
+            //   BleServices.createBond(_device.mac.ble);
+            // } else {
               await _initEnvironment();
-            }
+            // }
             break;
 
           case DeviceConnectionState.connecting:
@@ -179,13 +179,13 @@ class BleClient extends ServiceClient {
 
     // Request maximum MTU
     _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac!, 
+      deviceId: _device.mac.ble, 
       mtu: MAX_MTU
     );
 
     // Notify upper layer of a successful connection performed
     controller.add(AdHocEvent(
-      CONNECTION_PERFORMED, [_device.mac, _device.address, CLIENT]
+      CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]
     ));
 
     // Update state of the connection

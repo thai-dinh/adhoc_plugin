@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
+import '../../datalink/utils/identifier.dart';
+
 import 'constants.dart';
 import 'wrapper_ble.dart';
 import 'wrapper_network.dart';
@@ -20,7 +22,7 @@ import '../../datalink/utils/msg_header.dart';
 class DataLinkManager {
   late String _ownLabel;
   late List<WrapperNetwork?> _wrappers;
-  late HashMap<String, AdHocDevice> _mapAddressDevice;
+  late HashMap<Identifier, AdHocDevice> _mapAddressDevice;
   late StreamController<AdHocEvent> _controller;
 
   /// Creates a [DataLinkManager] object.
@@ -281,9 +283,9 @@ class DataLinkManager {
   /// The neighbor is identified by [address].
   /// 
   /// Returns true if it is a direct neightbour, otherwise false.
-  bool isDirectNeighbors(String address) {
+  bool isDirectNeighbor(String address) {
     for (WrapperNetwork? wrapper in _wrappers)
-      if (wrapper != null && wrapper.enabled && wrapper.isDirectNeighbors(address))
+      if (wrapper != null && wrapper.enabled && wrapper.isDirectNeighbor(address))
         return true;
     return false;
   }
@@ -363,7 +365,7 @@ class DataLinkManager {
     if (wrapper != null && wrapper.enabled) {
       return await _wrappers[type]!.updateDeviceName(newName);
     } else {
-      throw DeviceFailureException('${_typeString(type)} adapter is not enabled');
+      throw DeviceFailureException('${_typeAsString(type)} adapter is not enabled');
     }
   }
 
@@ -377,7 +379,7 @@ class DataLinkManager {
     if (wrapper != null && wrapper.enabled) {
       wrapper.resetDeviceName();
     } else {
-      throw DeviceFailureException('${_typeString(type)} adapter is not enabled');
+      throw DeviceFailureException('${_typeAsString(type)} adapter is not enabled');
     }
   }
 
@@ -441,7 +443,7 @@ class DataLinkManager {
   /// The type is specified by [type].
   /// 
   /// Returns the type of the wrapper as a [String] value.
-  String _typeString(int type) {
+  String _typeAsString(int type) {
     switch (type) {
       case BLE:
         return "Ble";

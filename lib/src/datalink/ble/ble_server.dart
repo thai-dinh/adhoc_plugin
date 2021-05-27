@@ -9,6 +9,7 @@ import '../service/constants.dart';
 import '../service/service_server.dart';
 import '../utils/msg_adhoc.dart';
 import '../utils/msg_header.dart';
+import '../utils/identifier.dart';
 import '../utils/utils.dart';
 
 
@@ -56,7 +57,7 @@ class BleServer extends ServiceServer {
             // Notify upper layer of a connection performed
             controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
           } else {
-            removeInactiveConnection(mac);
+            removeConnection(mac);
             _mapMacMTU.remove(mac);
 
             // Notify upper layer of a connection aborted
@@ -72,7 +73,7 @@ class BleServer extends ServiceServer {
             MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
 
           // Update the header of the message
-          if (message.header.mac == null || message.header.mac!.compareTo('') == 0) {
+          if (message.header.mac.ble == '') {
             String uuid = 
               map['mac'].replaceAll(new RegExp(':'), '').toLowerCase();
             uuid = BLUETOOTHLE_UUID + uuid;
@@ -82,7 +83,7 @@ class BleServer extends ServiceServer {
               label: message.header.label,
               name: message.header.name,
               address: uuid,
-              mac: map['mac'],
+              mac: Identifier(ble: map['mac']),
               deviceType: message.header.deviceType
             );
           }

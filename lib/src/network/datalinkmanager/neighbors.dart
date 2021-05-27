@@ -1,12 +1,13 @@
 import 'dart:collection';
 
 import 'network_manager.dart';
+import '../../datalink/utils/identifier.dart';
 
 
 /// Class managing the direct neighbors of a node.
 class Neighbors {
   late HashMap<String, NetworkManager> _neighbors;
-  late HashMap<String, String> _mapLabelMac;
+  late HashMap<String, Identifier> _mapLabelMac;
 
   /// Creates a [Neighbors] object.
   Neighbors() {
@@ -21,15 +22,15 @@ class Neighbors {
   HashMap<String, NetworkManager> get neighbors => _neighbors;
 
   /// Returns the direct neighbors of a node as a [HashMap] of 
-  /// <[String], [String]>, where the key is the label and the value the MAC
+  /// <[String], [Identifier]>, where the key is the label and the value the MAC
   /// address of the neighbor.
-  HashMap<String, String> get labelMac => _mapLabelMac;
+  HashMap<String, Identifier> get labelMac => _mapLabelMac;
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Add a direct neighbors whose label is [label], MAC address is [mac], and
   /// NetworkManager as [network]
-  void addNeighbors(String label, String mac, NetworkManager network) {
+  void addNeighbors(String label, Identifier mac, NetworkManager network) {
     _neighbors.putIfAbsent(label, () => network);
     _mapLabelMac.putIfAbsent(label, () => mac);
   }
@@ -41,6 +42,14 @@ class Neighbors {
       _mapLabelMac.remove(label);
       _neighbors.remove(label);
     }
+  }
+
+
+  /// Updates the MAC address of a neighbor.
+  /// 
+  /// The neighbor identified by [label] is getting its MAC updated by [mac].
+  void updateNeighbor(String label, Identifier mac) {
+    _mapLabelMac.update(label, (value) => mac);
   }
 
 

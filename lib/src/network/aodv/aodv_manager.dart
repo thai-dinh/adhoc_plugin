@@ -17,6 +17,7 @@ import '../../appframework/config.dart';
 import '../../datalink/service/adhoc_device.dart';
 import '../../datalink/service/adhoc_event.dart';
 import '../../datalink/service/constants.dart';
+import '../../datalink/utils/identifier.dart';
 import '../../datalink/utils/msg_adhoc.dart';
 import '../../datalink/utils/msg_header.dart';
 import '../../datalink/utils/utils.dart';
@@ -33,7 +34,7 @@ class AodvManager {
 
   MessageAdHoc? _dataMessage;
 
-  late String _ownMac;
+  late Identifier _ownMac;
   late String _ownName;
   late String _ownLabel;
   late int _ownSequenceNum;
@@ -54,7 +55,7 @@ class AodvManager {
   /// This object is configured according to [config], which contains specific 
   /// configurations.
   AodvManager(this._verbose, this._repository, Config config) {
-    this._ownMac = '';
+    this._ownMac = Identifier();
     this._ownName = '';
     this._ownLabel = config.label;
     this._ownSequenceNum = AodvConstants.FIRST_SEQUENCE_NUMBER;
@@ -109,13 +110,13 @@ class AodvManager {
 
         case DEVICE_INFO_BLE:
           List<dynamic> info = event.payload as List<dynamic>;
-          _ownMac = info[0] as String;
+          _ownMac.ble = info[0] as String;
           _ownName = info[1] as String;
           break;
 
-        case DEVICE_INFO_WIFI: // TODO: Always select this/identifier
+        case DEVICE_INFO_WIFI:
           List<dynamic> info = event.payload as List<dynamic>;
-          _ownMac = info[0] as String;
+          _ownMac.wifi = info[0] as String;
           _ownName = info[1] as String;
           break;
 
@@ -184,7 +185,7 @@ class AodvManager {
 
   /// Sends an ad hoc message [message] to the remote destination [address].
   void _send(MessageAdHoc message, String address) {
-    if (_datalinkManager.isDirectNeighbors(address)) {
+    if (_datalinkManager.isDirectNeighbor(address)) {
       EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(address);
       if (destNext != null && message.header.messageType == AodvConstants.DATA)
         // Update the data path

@@ -9,3 +9,7 @@
 ## 1.2.0
 
 * Add documentations
+
+## 1.3.0
+
+* Update documentations

@@ -10,9 +10,9 @@ import '../utils/msg_adhoc.dart';
 abstract class ServiceClient extends Service {
   static const String TAG = "[ServiceClient]";
 
-  late int _timeOut;
   late int _attempts;
   late int _backOffTime;
+  late int _timeOut;
 
   /// Creates a [ServiceClient] object.
   /// 

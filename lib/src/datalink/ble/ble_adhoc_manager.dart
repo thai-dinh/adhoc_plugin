@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoc_plugin/adhoc_plugin.dart';
+
 import 'ble_adhoc_device.dart';
 import 'ble_services.dart';
 import '../exceptions/bad_duration.dart';
@@ -107,7 +109,7 @@ class BleAdHocManager extends ServiceManager {
         // Get a BleAdHocDevice object from device
         BleAdHocDevice bleDevice = BleAdHocDevice(device);
         // Add the discovered device to the HashMap
-        _mapMacDevice.putIfAbsent(bleDevice.mac, () {
+        _mapMacDevice.putIfAbsent(bleDevice.mac.ble, () {
           if (verbose) {
             log(
               TAG, 'Device found: Name: ${device.name} - Address: ${device.id}'

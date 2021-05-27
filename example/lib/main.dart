@@ -47,6 +47,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
+    _manager.enableBle(3600); // TODO
     _manager.eventStream.listen(_processAdHocEvent);
   }
 

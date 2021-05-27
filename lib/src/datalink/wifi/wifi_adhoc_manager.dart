@@ -87,7 +87,7 @@ class WifiAdHocManager extends ServiceManager {
             // Get a WifiAdHocDevice object from device
             WifiAdHocDevice wifiDevice = WifiAdHocDevice(device.name, device.mac);
             // Add the discovered device to the HashMap
-            _mapMacDevice.putIfAbsent(wifiDevice.mac, () {
+            _mapMacDevice.putIfAbsent(wifiDevice.mac.wifi, () {
               if (verbose) {
                 log(TAG, 
                   'Device found -> Name: ${device.name} - Address: ${device.mac}'

@@ -1,3 +1,5 @@
+import 'package:adhoc_plugin/adhoc_plugin.dart';
+
 import '../utils/utils.dart';
 
 import 'package:json_annotation/json_annotation.dart';
@@ -10,8 +12,8 @@ part 'msg_header.g.dart';
 @JsonSerializable()
 class Header {
   String? _name;
-  String? _mac;
 
+  late Identifier _mac;
   late String _label;
   late int _messageType;
 
@@ -30,12 +32,12 @@ class Header {
   /// It can be either Bluetooth Low Energy or Wi-Fi Direct.
   Header({
     required int messageType, required String label, String? name, 
-    String? address, String? mac, int? deviceType
+    String? address, Identifier? mac, int? deviceType
   }) {
     this._messageType = messageType;
     this._label = checkString(label);
     this._name = checkString(name);
-    this._mac = mac;
+    this._mac = mac == null ? Identifier() : mac;
     this.address = address;
     this.deviceType = deviceType;
   }
@@ -61,7 +63,7 @@ class Header {
   String? get name => _name;
 
   /// Returns the sender device MAC address.
-  String? get mac => _mac;
+  Identifier get mac => _mac;
 
 /*-------------------------------Public methods-------------------------------*/
 

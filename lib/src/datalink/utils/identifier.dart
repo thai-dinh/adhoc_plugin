@@ -3,8 +3,8 @@
 /// 
 /// It allows to identify a device that owns two different MAC addresses.
 class Identifier {
-  String? ble;
-  String? wifi;
+  late String ble;
+  late String wifi;
 
   /// Creates a [Identifier] object.
   /// 
@@ -13,7 +13,7 @@ class Identifier {
   /// 
   /// If [wifi] is given, then it defines the MAC address using when dealing with
   /// Wi-Fi Direct.
-  Identifier([String? ble, String? wifi]) {
+  Identifier({String ble = '', String wifi = ''}) {
     this.ble = ble;
     this.wifi = wifi;
   }
@@ -23,7 +23,7 @@ class Identifier {
   /// Factory constructor that creates a [Identifier] based on the 
   /// information given by [json].
   factory Identifier.fromJson(Map<String, dynamic> json) {
-    return Identifier(json['ble'] as String?, json['wifi'] as String?);
+    return Identifier(ble: json['ble'] as String, wifi: json['wifi'] as String);
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -31,5 +31,15 @@ class Identifier {
   /// Returns the JSON representation as a [Map] of this [Identifier] instance.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{ 'ble': ble, 'wifi': wifi };
+  }
+
+/*------------------------------Override methods------------------------------*/
+
+  @override
+  String toString() {
+    return 'Identifier{' +
+              'ble=$ble, ' +
+              'wifi=$wifi' +
+           '}';
   }
 }

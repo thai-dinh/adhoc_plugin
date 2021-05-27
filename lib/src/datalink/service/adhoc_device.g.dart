@@ -11,7 +11,9 @@ AdHocDevice _$AdHocDeviceFromJson(Map<String, dynamic> json) {
     label: json['label'] as String?,
     address: json['address'] as String?,
     name: json['name'] as String?,
-    mac: json['mac'] as String?,
+    mac: json['mac'] == null
+        ? null
+        : Identifier.fromJson(json['mac'] as Map<String, dynamic>),
     type: json['type'] as int,
   );
 }

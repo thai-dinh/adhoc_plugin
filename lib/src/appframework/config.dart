@@ -1,10 +1,14 @@
-import 'constants.dart';
 import 'exceptions/bad_server_port.dart';
 import 'package:uuid/uuid.dart';
 
 
 /// Class allowing to modify the library's behaviour via parameters.
 class Config {
+  /// Minimum value allowed for the socket port (Wi-Fi Direct)
+  static const MIN_PORT = 1023;
+  /// Maximum value allowed for the socket port (Wi-Fi Direct)
+  static const MAX_PORT = 65535;
+
   late int _serverPort;
 
   late String label;

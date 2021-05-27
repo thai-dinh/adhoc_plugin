@@ -38,7 +38,7 @@ abstract class Service {
 
   /// Ad hoc event stream containing events such as messages received, connection
   /// performed, or aborted.
-  Stream<AdHocEvent> get adhocEvent => controller.stream;
+  Stream<AdHocEvent> get eventStream => controller.stream;
 
 /*-------------------------------Public methods-------------------------------*/
 

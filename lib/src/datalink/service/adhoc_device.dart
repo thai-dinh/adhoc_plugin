@@ -1,3 +1,5 @@
+import 'package:adhoc_plugin/adhoc_plugin.dart';
+
 import '../service/constants.dart';
 import '../utils/utils.dart';
 
@@ -15,8 +17,8 @@ class AdHocDevice {
 
   String? _label;
   String? _name;
-  String? _mac;
 
+  late Identifier _mac;
   late int _type;
 
   /// Creates an [AdHocDevice] object.
@@ -35,12 +37,12 @@ class AdHocDevice {
   /// If [type] is given, then it defines the type of technology used, i.e.,
   /// "0" stands for Wi-Fi Direct and "1" stands for Bluetooth Low Energy.
   AdHocDevice({
-    String? label, String? address, String? name, String? mac, int type = -1,
+    String? label, String? address, String? name, Identifier? mac, int type = -1,
   }) {
     this.address = checkString(address);
     this._label = checkString(label);
     this._name = checkString(name);
-    this._mac = mac;
+    this._mac = mac == null ? Identifier() : mac;
     this._type = type;
   }
 
@@ -57,7 +59,7 @@ class AdHocDevice {
   String? get name => _name;
 
   /// MAC address of this remote node instance.
-  String? get mac => _mac;
+  Identifier get mac => _mac;
 
   /// Type of this remote node instance.
   int get type => _type;

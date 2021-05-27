@@ -17,6 +17,7 @@ import '../../datalink/service/adhoc_event.dart';
 import '../../datalink/service/constants.dart';
 import '../../datalink/service/service.dart';
 import '../../datalink/service/service_client.dart';
+import '../../datalink/utils/identifier.dart';
 import '../../datalink/utils/msg_adhoc.dart';
 import '../../datalink/utils/msg_header.dart';
 import '../../datalink/utils/utils.dart';
@@ -30,23 +31,18 @@ class WrapperBle extends WrapperNetwork {
   String? _ownBleUUID;
   StreamSubscription<AdHocEvent>? _eventSub;
 
-  late bool _isDiscovering;
-  late bool _isInitialized;
   late BleAdHocManager _bleAdHocManager;
 
   /// Creates a [WrapperBle] object.
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   /// 
-  /// The given hash map [mapMacDevices] is used to map a UUID address entry to 
+  /// The given hash map [mapMacDevices] is used to map a MAC address entry to 
   /// an [AdHocDevice] object.
   WrapperBle(
-    bool verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices
+    bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
-    this.ownMac = '';
     this.type = BLE;
-    this._isDiscovering = false;
-    this._isInitialized = false;
     this.init(verbose, null);
   }
 
@@ -107,8 +103,8 @@ class WrapperBle extends WrapperNetwork {
       _eventSub = null;
     }
 
-    _isInitialized = false;
-    _isDiscovering = false;
+    isListening = false;
+    isDiscovering = false;
 
     enabled = false;
   }
@@ -120,12 +116,12 @@ class WrapperBle extends WrapperNetwork {
   /// performed in parallel. A discovery process lasts for at least 10-12 seconds.
   @override
   void discovery() {
-    if (_isDiscovering)
+    if (isDiscovering)
       return;
 
     _eventSub!.resume();
     _bleAdHocManager.discovery();
-    _isDiscovering = true;
+    isDiscovering = true;
   }
 
 
@@ -140,11 +136,11 @@ class WrapperBle extends WrapperNetwork {
   Future<void> connect(int attempts, AdHocDevice device) async {
     BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
     if (bleAdHocDevice != null) {
-      if (!serviceServer.containConnection(bleAdHocDevice.mac!)) {
+      if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
         throw DeviceFailureException(
-          device.name! + "(" + device.mac! + ") is already connected"
+          '${device.name} (${device.mac.ble}) is already connected'
         );
       }
     }
@@ -214,10 +210,10 @@ class WrapperBle extends WrapperNetwork {
   /// In this case, the streams contains [AdHocEvent] object related to the BLE
   /// discovery process.
   void _initialize() {
-    if (_isInitialized)
+    if (isListening)
       return;
 
-    _isInitialized = true;
+    isListening = true;
     // Listen to stream of ad hoc events
     _eventSub = _bleAdHocManager.eventStream.listen((AdHocEvent event) {
       // Notify upper layer of discovery event
@@ -228,8 +224,8 @@ class WrapperBle extends WrapperNetwork {
           // Process discovered potential peer
           BleAdHocDevice device = event.payload as BleAdHocDevice;
           // Add device to hash map
-          mapMacDevices.putIfAbsent(device.mac!, () {
-            if (verbose) log(TAG, "Add " + device.mac! + " into mapMacDevices");
+          mapMacDevices.putIfAbsent(device.mac, () {
+            if (verbose) log(TAG, "Add " + device.mac.ble + " into mapMacDevices");
             return device;
           });
           break;
@@ -239,14 +235,14 @@ class WrapperBle extends WrapperNetwork {
           if (verbose) log(TAG, 'Discovery end');
           (event.payload as Map).forEach((mac, device) {
             // Add device to hash map
-            mapMacDevices.putIfAbsent(mac, () {
+            mapMacDevices.putIfAbsent(Identifier(ble: mac), () {
               if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
               return device;
             });
           });
 
           discoveryCompleted = true;
-          _isDiscovering = false;
+          isDiscovering = false;
           _eventSub!.pause();
           break;
 
@@ -263,7 +259,7 @@ class WrapperBle extends WrapperNetwork {
   /// A service can be of type [ServiceClient] or [ServiceServer].
   void _onEvent(Service service) {
     // Listen to stream of ad hoc events
-    service.adhocEvent.listen((event) async { 
+    service.eventStream.listen((event) async { 
       switch (event.type) {
         case MESSAGE_RECEIVED:
           // Process message received
@@ -309,7 +305,7 @@ class WrapperBle extends WrapperNetwork {
 
         case CONNECTION_ABORTED:
           // Process remote connection aborted
-          connectionClosed(event.payload as String);
+          connectionClosed(Identifier(ble: event.payload as String));
           break;
 
         case CONNECTION_EXCEPTION:
@@ -354,13 +350,13 @@ class WrapperBle extends WrapperNetwork {
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Recover this own node MAC and BLE address
-        String? mac = message.header.mac;
-        ownMac = message.pdu as String;
-        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '');
+        String mac = message.header.mac.ble;
+        ownMac = Identifier(ble: message.pdu as String);
+        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '');
         _ownBleUUID = _ownBleUUID!.toLowerCase();
 
         // Notify upper layer of the recovery of this node's information
-        controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
+        controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac.ble, ownName]));
 
         // Respond to the control message received
         serviceServer.send(
@@ -375,7 +371,7 @@ class WrapperBle extends WrapperNetwork {
             ),
             mac
           ),
-          mac!
+          mac
         );
 
         // Process received message from remote nodes
@@ -394,11 +390,12 @@ class WrapperBle extends WrapperNetwork {
 
       case CONNECT_CLIENT:
         // Recover this own node MAC and BLE address
-        ownMac = message.pdu as String;
-        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.replaceAll(new RegExp(':'), '').toLowerCase();
+        ownMac = Identifier(ble: message.pdu as String);
+        _ownBleUUID = 
+          BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '').toLowerCase();
 
         // Notify upper layer of the recovery of this node's information
-        controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac, ownName]));
+        controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac.ble, ownName]));
 
         // Process received message from remote nodes
         receivedPeerMessage(
@@ -417,7 +414,7 @@ class WrapperBle extends WrapperNetwork {
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (AdHocDevice? device in hashSet) {
             if (device!.label != ownLabel && !setRemoteDevices.contains(device) 
-              && !isDirectNeighbors(device.label!)) {
+              && !isDirectNeighbor(device.label!)) {
               // Notify upper layer of a new remote connection established
               controller.add(AdHocEvent(CONNECTION_EVENT, device));
 

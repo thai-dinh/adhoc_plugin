@@ -10,6 +10,7 @@ import '../../datalink/exceptions/no_connection.dart';
 import '../../datalink/service/adhoc_device.dart';
 import '../../datalink/service/adhoc_event.dart';
 import '../../datalink/service/service_server.dart';
+import '../../datalink/utils/identifier.dart';
 import '../../datalink/utils/msg_header.dart';
 import '../../datalink/utils/msg_adhoc.dart';
 import '../../datalink/utils/utils.dart';
@@ -23,28 +24,30 @@ abstract class WrapperNetwork {
 
   final bool verbose;
 
+  late int type;
   late String ownLabel;
   late String ownName;
-  late String ownMac;
+  late Identifier ownMac;
 
   late bool flood;
   late int timeOut;
   late int attempts;
 
-  late int type;
   late bool enabled;
   late bool discoveryCompleted;
+  late bool isDiscovering;
+  late bool isListening;
   late Neighbors neighbors;
 
   late ServiceServer serviceServer;
 
   late HashMap<String, NetworkManager> mapAddrNetwork;
-  late HashMap<String, AdHocDevice> mapMacDevices;
-
-  late StreamController<AdHocEvent> controller;
+  late HashMap<Identifier, AdHocDevice> mapMacDevices;
 
   late Set<String> setFloodEvents;
   late HashSet<AdHocDevice> setRemoteDevices;
+
+  late StreamController<AdHocEvent> controller;
 
   /// Creates a [WrapperNetwork] object.
   /// 
@@ -53,20 +56,22 @@ abstract class WrapperNetwork {
   /// This object is configured according to [config], which contains specific 
   /// configurations.
   /// 
-  /// This object maps a MAC address entry ([String]) to an [AdHocDevice] object 
+  /// This object maps a MAC address entry ([Identifier]) to an [AdHocDevice] object 
   /// into [mapMacDevices].
   WrapperNetwork(
-    this.verbose, Config config, HashMap<String, AdHocDevice> mapMacDevices,
+    this.verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices,
   ) {
     this.flood = config.flood;
     this.timeOut = config.timeOut;
     this.attempts = 3;
     this.ownLabel = config.label;
     this.ownName = '';
-    this.ownMac = '';
+    this.ownMac = Identifier();
     this.type = -1;
     this.enabled = false;
     this.discoveryCompleted = false;
+    this.isDiscovering = false;
+    this.isListening = false;
     this.neighbors = Neighbors();
     this.mapMacDevices = mapMacDevices;
     this.mapAddrNetwork = HashMap();
@@ -82,7 +87,7 @@ abstract class WrapperNetwork {
   /// Returns a [List] of [AdHocDevice], which are direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
     List<AdHocDevice> devices = List.empty(growable: true);
-    for (String mac in neighbors.labelMac.values)
+    for (final mac in neighbors.labelMac.values)
       devices.add(mapMacDevices[mac]!);
 
     return devices;
@@ -176,7 +181,7 @@ abstract class WrapperNetwork {
   /// Checks if a node with address [label] is a direct neighbor.
   /// 
   /// Returns true if it is, otherwise false.
-  bool isDirectNeighbors(String label) {
+  bool isDirectNeighbor(String label) {
     return neighbors.neighbors.containsKey(label);
   }
 
@@ -247,12 +252,19 @@ abstract class WrapperNetwork {
     );
 
     // Add mapping MAC address (String) - device (AdHocDevice)
-    mapMacDevices.putIfAbsent(header.mac!, () => device);
+    for (final id in mapMacDevices.keys) {
+      if (id.ble == header.mac.ble || id.wifi == header.mac.wifi) {
+        mapMacDevices.remove(id);
+        break;
+      }
+    }
 
-    /// Check if the device is already in neighbors list
+    mapMacDevices.putIfAbsent(header.mac, () => device);
+
+    // Check if the device is already in neighbors list
     if (!neighbors.neighbors.containsKey(header.label)) {
       // Add the new neighbor
-      neighbors.addNeighbors(header.label, header.mac!, network);
+      neighbors.addNeighbors(header.label, header.mac, network);
 
       // Notify upper layer of a connection establishment
       controller.add(AdHocEvent(CONNECTION_EVENT, device));
@@ -269,6 +281,8 @@ abstract class WrapperNetwork {
           MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()),
         );
       }
+    } else { // Update MAC address if already present
+      neighbors.updateNeighbor(header.label, header.mac);
     }
   }
 
@@ -297,12 +311,16 @@ abstract class WrapperNetwork {
 
 
   /// Processes the disconnection of a remote node with MAC address [mac].
-  void connectionClosed(String? mac) {
-    if (mac == null || mac.compareTo('') == 0)
-      return;
-
+  void connectionClosed(Identifier mac) {
+    AdHocDevice? device = null;
     // Get AdHocDevice from the MAC address
-    AdHocDevice? device = mapMacDevices[mac];
+    for (final id in mapMacDevices.keys) {
+      if (id.ble == mac.ble || id.wifi == mac.wifi) {
+        device = mapMacDevices[id];
+        break;
+      }
+    }
+
     if (device != null) {
       String? label = device.label;
 
