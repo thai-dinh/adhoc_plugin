@@ -40,8 +40,11 @@ class SecureGroupController {
   BigInt? _k;
   /// Group key sum value
   BigInt? _groupKeySum;
+  BigInt? _groupKeyHash;
   /// Secret group key
   SecretKey? _groupKey;
+  ///
+  late String? _groupOwner;
   /// Map containing the Diffie-Hellman share of each member
   late HashMap<String, BigInt> _DHShare;
   /// Map containing the member share of each member
@@ -84,11 +87,13 @@ class SecureGroupController {
     if (groupId == null)
       groupId = 1;
 
-    _p = randomPrimeBigInt(512);
-    _g = randomPrimeBigInt(256);
+    _groupOwner = _ownLabel;
+
+    _p = randomPrimeBigInt(256);
+    _g = randomPrimeBigInt(128);
 
     SecureData message = SecureData(
-      GroupTag.GROUP_INIT.index, [groupId, _p.toString(), _g.toString()]
+      GroupTag.init.index, [groupId, _groupOwner, _p.toString(), _g.toString()]
     );
 
     _memberLabel.add(_ownLabel);
@@ -100,21 +105,21 @@ class SecureGroupController {
 
   /// Joins an existing secure group
   void joinSecureGroup() {
-    SecureData message = SecureData(GROUP_JOIN_REQ, []);
+    SecureData message = SecureData(GroupTag.join.index, []);
     _datalinkManager.broadcastObject(message);
   }
 
 
   /// Leaves an existing secure group
   void leaveSecureGroup() {
-    SecureData message = SecureData(GROUP_LEAVE_REQ, _memberLabel.first);
+    SecureData message = SecureData(GroupTag.leave.index, _memberLabel.first);
     for (final String? label in _memberLabel) {
       if (label! != _ownLabel)
         _aodvManager.sendMessageTo(label, message);
     }
 
     _p = _g = _x = _k = _groupKeySum = BigInt.zero;
-    _groupKey = null;
+    _groupKey = _groupKeyHash = null;
     _memberLabel.clear();
     _memberShare.clear();
     _DHShare.clear();
@@ -178,7 +183,7 @@ class SecureGroupController {
   void _timerExpired(int groupId) {
     if (true) log(TAG, '_timerExpired');
     SecureData message = SecureData(
-      GroupTag.GROUP_LIST.index, [groupId, _memberLabel]
+      GroupTag.list.index, [groupId, _memberLabel]
     );
 
     for (final String label in _memberLabel) {
@@ -190,7 +195,7 @@ class SecureGroupController {
     _DHShare.putIfAbsent(_ownLabel, () => y);
 
     message = SecureData(
-      GroupTag.GROUP_DH.index, [groupId, y.toString()]
+      GroupTag.share.index, [groupId, y.toString()]
     );
 
     for (final String label in _memberLabel) {
@@ -255,9 +260,9 @@ class SecureGroupController {
 
     // Solve the system of congruences (Chinese Remainder Theorem) using the 
     // Bézout's identity to obtain crt_ij
-    List<BigInt?> coefficients = _solveBezoutIdentity(mij, pij);
+    List<BigInt> coefficients = _solveBezoutIdentity(mij, pij);
     BigInt crtij = 
-      (_k! * coefficients[1]! * pij) + (di * coefficients[0]! * mij);
+      (_k! * coefficients[1] * pij) + (di * coefficients[0] * mij);
     while (crtij < BigInt.zero) {
       crtij += (mij * pij);
       print(crtij);
@@ -287,7 +292,6 @@ class SecureGroupController {
       _R = RS - Q*_R;
       _U = US - Q*_U;
       _V = VS - Q*_V;
-      print(_R);
     }
 
     return List.empty(growable: true)..add(U)..add(V);
@@ -320,25 +324,38 @@ class SecureGroupController {
   /// Computes the group key.
   /// 
   /// The way the group key is computed is defined by [type].
-  void _computeGroupKey(GroupTag type) async {
+  void _computeGroupKey(GroupTag type, [String? label]) async {
     if (true) log(TAG, '_computeGroupKey');
     // Step 6.
     // Compute the group key
-    _groupKeySum = _k!;
     switch (type) {
-      case GroupTag.GROUP_INIT:
+      case GroupTag.init:
+        _groupKeySum = _k!;
         for (final String label in _CRTShare.keys) {
           _groupKeySum = 
             _groupKeySum! ^ (_CRTShare[label]! % _memberShare[label]!);
         }
         break;
 
-      case GroupTag.GROUP_JOIN:
+      case GroupTag.join:
+        final Sha256 algorithm = Sha256();
+        final Hash hash = await algorithm.hash(_toBytes(_groupKeySum!));
+        _groupKeyHash = BigInt.from(hash.bytes.reduce((a, b) => a + b));
 
+        if (label == null) {
+          _groupKeySum = _groupKeyHash! ^ _k!;
+        } else {
+          _groupKeySum = 
+            _groupKeyHash! ^ (_CRTShare[label]! % _memberShare[label]!);
+        }
         break;
 
-      case GroupTag.GROUP_LEAVE:
-
+      case GroupTag.leave:
+        if (_groupOwner == _ownLabel) {
+          _groupKeySum = _groupKeySum! ^ _k!;
+        } else {
+          _groupKeySum = _groupKeySum! ^ (_CRTShare[label]! % _memberShare[label]!);
+        }
         break;
 
       default:
@@ -363,31 +380,31 @@ class SecureGroupController {
       return;
 
     GroupTag type = GroupTag.values[pdu.type];
+    List<dynamic> payload = pdu.payload as List<dynamic>;
     switch (type) {
-        case GroupTag.GROUP_INIT:
-          List<dynamic> payload = pdu.payload as List<dynamic>;
+        case GroupTag.init:
           int groupId = payload[0] as int;
           if (groupId == 1) {
-            _p = BigInt.parse(payload[1] as String);
-            _g = BigInt.parse(payload[2] as String);
+            _groupOwner = payload[1] as String;
 
-            SecureData msg = SecureData(GroupTag.GROUP_REP.index, [groupId]);
+            _p = BigInt.parse(payload[2] as String);
+            _g = BigInt.parse(payload[3] as String);
+
+            SecureData msg = SecureData(GroupTag.reply.index, [groupId]);
             _aodvManager.sendMessageTo(senderLabel, msg);
           } else {
             // TODO
           }
           break;
 
-        case GroupTag.GROUP_REP:
-          List<dynamic> payload = pdu.payload as List<dynamic>;
+        case GroupTag.reply:
           int groupId = payload[0] as int;
           if (groupId == 1) {
             _memberLabel.add(senderLabel);
           }
           break;
 
-        case GroupTag.GROUP_LIST:
-          List<dynamic> payload = pdu.payload as List<dynamic>;
+        case GroupTag.list:
           int groupId = payload[0] as int;
           if (groupId == 1) {
             _memberLabel.addAll((payload[1] as List<dynamic>).cast<String>());
@@ -395,7 +412,7 @@ class SecureGroupController {
             BigInt y = _computeDHShare();
             _DHShare.putIfAbsent(_ownLabel, () => y);
 
-            SecureData msg = SecureData(GroupTag.GROUP_DH.index, [groupId, y.toString()]);
+            SecureData msg = SecureData(GroupTag.share.index, [groupId, y.toString()]);
             for (final String label in _memberLabel) {
               if (label != _ownLabel)
                 _aodvManager.sendMessageTo(label, msg);
@@ -405,8 +422,7 @@ class SecureGroupController {
           }
           break;
 
-        case GroupTag.GROUP_DH:
-          List<dynamic> payload = pdu.payload as List<dynamic>;
+        case GroupTag.share:
           int groupId = payload[0] as int;
           if (groupId == 1) {
             BigInt yj = BigInt.parse(payload[1] as String);
@@ -416,8 +432,8 @@ class SecureGroupController {
             _DHShare.putIfAbsent(senderLabel, () => yj);
 
             SecureData msg = SecureData(
-              GroupTag.GROUP_KEY.index, 
-              [groupId, GroupTag.GROUP_INIT.index, crtij.toString()]
+              GroupTag.key.index, 
+              [groupId, GroupTag.init.index, crtij.toString()]
             );
 
             _aodvManager.sendMessageTo(senderLabel, msg);
@@ -426,18 +442,116 @@ class SecureGroupController {
           }
           break;
 
-        case GroupTag.GROUP_JOIN:
+        case GroupTag.join:
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            SecureData msg = SecureData(GroupTag.join_req.index, [groupId, senderLabel]); // Label
+            _aodvManager.sendMessageTo(_groupOwner!, msg);
+          } else {
+            // TODO
+          }
           break;
-        case GroupTag.GROUP_JOIN_REP:
+        case GroupTag.join_req:
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            _memberLabel.add(payload[1] as String);
+
+            final Sha256 algorithm = Sha256();
+            final Hash hash = await algorithm.hash(_toBytes(_groupKeySum!));
+            _groupKeyHash = BigInt.from(hash.bytes.reduce((a, b) => a + b));
+
+            List<String> labels = List.empty(growable: true);
+            List<String> values = List.empty(growable: true);
+            _DHShare.forEach((label, value) {
+              labels.add(label);
+              values.add(value.toString());
+            });
+
+            SecureData msg = SecureData(
+              GroupTag.join_rep.index, 
+              [groupId, _groupKeyHash.toString(), labels, values]
+            ); // Label
+
+            _aodvManager.sendMessageTo(_groupOwner!, msg);
+          } else {
+            // TODO
+          }
           break;
-        case GroupTag.GROUP_JOIN_REQ:
+        case GroupTag.join_rep:
+          int groupId = payload[0] as int;
+          if (payload.length > 3) { // New member
+            _groupKeyHash = BigInt.parse(payload[1] as String);
+
+            List<String> labels = (payload[2] as List).cast<String>();
+            List<String> values = (payload[3] as List).cast<String>();
+            HashMap<String, BigInt> buffer = HashMap();
+            for (int i = 0; i < labels.length; i++)
+              _DHShare.putIfAbsent(labels[i], () => BigInt.parse(values[i]));
+
+            BigInt y = _computeDHShare();
+            _DHShare.putIfAbsent(_ownLabel, () => y);
+            _DHShare.addAll(buffer);
+
+            for (final String label in _memberLabel) {
+              if (label != _ownLabel) {
+                BigInt mij = _computeMemberShare(label, _DHShare[label]!);
+                BigInt crtij = _computeCRTShare(label, _DHShare[label]!, mij);
+
+                SecureData msg = SecureData(
+                  GroupTag.join_rep.index, 
+                  [groupId, y.toString(), crtij.toString()]
+                ); // nonce
+
+                _aodvManager.sendMessageTo(label, msg);
+              }
+            }
+
+            _computeGroupKey(GroupTag.join, null);
+          } else { // Old member
+            BigInt yj = BigInt.parse(payload[1] as String);
+            BigInt mij = _computeMemberShare(senderLabel, yj);
+            BigInt crtij = BigInt.parse(payload[2] as String);
+
+            _DHShare.putIfAbsent(senderLabel, () => yj);
+            _memberShare.putIfAbsent(senderLabel, () => mij);
+            _CRTShare.putIfAbsent(senderLabel, () => crtij);
+
+            _computeGroupKey(GroupTag.join, senderLabel);
+          }
           break;
 
-        case GroupTag.GROUP_LEAVE:
+        case GroupTag.leave:
+          int groupId = payload[0] as int;
+          if (_groupOwner == _ownLabel) {
+            _memberLabel.remove(payload[1] as String);
+
+            for (String label in _memberLabel) {
+              BigInt yj = _DHShare[label]!;
+              BigInt mij = _memberShare[label]!;
+              BigInt crtij = _computeCRTShare(label, yj, mij);
+
+              SecureData msg = SecureData(
+                GroupTag.leave.index, [groupId, crtij.toString()]
+              ); // nonce
+
+              _aodvManager.sendMessageTo(label, msg);
+            }
+          } else {
+            if (payload[1] is String) {
+              SecureData msg = SecureData(
+                GroupTag.leave.index, [groupId, senderLabel]
+              ); // nonce
+
+              _aodvManager.sendMessageTo(_groupOwner!, msg);
+            } else {
+              _CRTShare[_groupOwner!] = BigInt.parse(payload[1] as String);
+
+              _computeGroupKey(GroupTag.leave, _groupOwner);
+            }
+          }
           break;
 
-        case GroupTag.GROUP_KEY:
-          List<dynamic> payload = pdu.payload as List<dynamic>;
+        case GroupTag.key:
           int groupId = payload[0] as int;
           if (groupId == 1) {
             GroupTag tag = GroupTag.values[payload[1] as int];

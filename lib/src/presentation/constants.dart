@@ -34,25 +34,34 @@ const CERT_REP         = 305;     // Reply to certificate request
 const CERT_REVOCATION  = 306;     // Certificate revocation notification
 
 // Constants for the secure group formation and management
-const GROUP_REQUEST       = 310;  // Group creation initiation
-const GROUP_REPLY         = 311;  // Group creation participation
-const GROUP_FORMATION_REQ = 312;  // Group creation information exchange request
-const GROUP_FORMATION_REP = 313;  // Group creation information exchange reply
-const GROUP_JOIN_REQ      = 314;  // Group join request
-const GROUP_JOIN_REP      = 315;  // Group join reply
-const GROUP_LEAVE_REQ     = 316;  // Group leave request
-const GROUP_LEAVE_REP     = 317;  // Group leave reply
 const GROUP_ERROR         = 318;  // Group processing error
 const GROUP_MESSAGE       = 319;  // Group message tag
 
 enum GroupTag {
-  GROUP_KEY,
-  GROUP_INIT,
-  GROUP_REP,
-  GROUP_LIST,
-  GROUP_DH,
-  GROUP_JOIN,
-  GROUP_JOIN_REQ,
-  GROUP_JOIN_REP,
-  GROUP_LEAVE,
+  /// Group key computation
+  key,
+
+  /// Group formation initiation
+  init,
+
+  /// Group formation reply
+  reply,
+
+  /// List of group member's label
+  list,
+
+  /// Public Diffie-Hellman share received
+  share,
+
+  /// Group join notification
+  join,
+
+  /// Group join request to leader
+  join_req,
+
+  /// Group join reply of leader
+  join_rep,
+
+  /// Group leave notification
+  leave,
 }
