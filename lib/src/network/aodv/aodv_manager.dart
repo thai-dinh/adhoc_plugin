@@ -287,7 +287,8 @@ class AodvManager {
       RREQ(
         AodvConstants.RREQ, AodvConstants.INIT_HOP_COUNT, 
         _aodvHelper.getIncrementRreqId(), _getDestSequenceNumber(destAddr), 
-        destAddr, _ownSequenceNum, _ownLabel, List.empty(growable: true)
+        destAddr, _ownSequenceNum, _ownLabel, AodvConstants.TTL[retry], 
+        List.empty(growable: true)
       )
     );
 
@@ -378,6 +379,11 @@ class AodvManager {
       if (rreq.srcAddress.compareTo(_ownLabel) == 0) {
         if (_verbose) log(TAG, 'Reject own RREQ ${rreq.srcAddress}');
       } else if (_aodvHelper.addBroadcastId(rreq.srcAddress, rreq.rreqId)) {
+
+        // Decrement TTL & check its value
+        rreq.decrementTTL();
+        if (rreq.ttl == 0)
+          return;
 
         // Update PDU and header
         rreq.incrementHopCount();

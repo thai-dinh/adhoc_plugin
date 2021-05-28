@@ -15,6 +15,7 @@ RREQ _$RREQFromJson(Map<String, dynamic> json) {
     json['dstAddress'] as String,
     json['srcSeqNum'] as int,
     json['srcAddress'] as String,
+    json['ttl'] as int,
     (json['certChain'] as List<dynamic>)
         .map((e) => Certificate.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -24,6 +25,7 @@ RREQ _$RREQFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$RREQToJson(RREQ instance) => <String, dynamic>{
       'type': instance.type,
       'destSeqNum': instance.destSeqNum,
+      'ttl': instance.ttl,
       'certChain': instance.certChain,
       'hopCount': instance.hopCount,
       'rreqId': instance.rreqId,

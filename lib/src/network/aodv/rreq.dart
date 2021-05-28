@@ -16,6 +16,7 @@ class RREQ extends AodvMessage {
   late int _srcSeqNum;
   late String _srcAddress;
 
+  late int ttl;
   late List<Certificate> certChain;
 
   /// Creates a [RREQ] object.
@@ -30,13 +31,14 @@ class RREQ extends AodvMessage {
   /// chain discovery process.
   RREQ(
     int type, int hopCount, int rreqId, this.destSeqNum, String dstAddress, 
-    int srcSeqNum, String srcAddress, List<Certificate> certChain
+    int srcSeqNum, String srcAddress, int ttl, List<Certificate> certChain
   ) : super(type) {
     this._hopCount = hopCount;
     this._rreqId = rreqId;
     this._dstAddress = dstAddress;
     this._srcSeqNum = srcSeqNum;
     this._srcAddress = srcAddress;
+    this.ttl = ttl;
     this.certChain = certChain;
   }
 
@@ -48,25 +50,28 @@ class RREQ extends AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the hop count of the RREP message.
+  /// Returns the hop count of the RREQ message.
   int get hopCount => _hopCount = _hopCount + 1;
 
-  /// Returns the broadcast ID of the RREP message.
+  /// Returns the broadcast ID of the RREQ message.
   int get rreqId => _rreqId;
 
-  /// Returns the destination address of the RREP message.
+  /// Returns the destination address of the RREQ message.
   String get dstAddress => _dstAddress;
 
-  /// Returns the source hop count of the RREP message.
+  /// Returns the source hop count of the RREQ message.
   int get srcSeqNum => _srcSeqNum;
 
-  /// Returns the source address of the RREP message.
+  /// Returns the source address of the RREQ message.
   String get srcAddress => _srcAddress;
 
 /*-------------------------------Public methods-------------------------------*/
 
-  /// Increments the hop count of the RREP message.
+  /// Increments the hop count of the RREQ message.
   void incrementHopCount() => this._hopCount;
+
+  /// Decrements the TTL of the RREQ message.
+  void decrementTTL() => this.ttl = this.ttl - 1;
 
   /// Returns the JSON representation as a [Map] of this [RREQ] instance.
   Map<String, dynamic> toJson() => _$RREQToJson(this);
