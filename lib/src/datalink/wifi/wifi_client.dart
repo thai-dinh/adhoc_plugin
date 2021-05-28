@@ -130,10 +130,14 @@ class WifiClient extends ServiceClient {
   Future<void> _connect(int attempts, Duration delay) async {
     try {
       await _connectionAttempt();
-    } on SocketException {
+    } catch (exception) {
       if (attempts > 0) {
-        if (verbose)
-          log(ServiceClient.TAG, 'Connection attempt $attempts failed');
+        if (verbose) {
+          log(
+            ServiceClient.TAG, 
+            'Connection attempt failed (${attempts - 1} remaining)'
+          );
+        }
 
         await Future.delayed(delay);
         return _connect(attempts - 1, delay * 2);

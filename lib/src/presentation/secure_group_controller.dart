@@ -8,6 +8,7 @@ import 'secure_data.dart';
 import '../appframework/config.dart';
 import '../datalink/service/adhoc_device.dart';
 import '../datalink/service/adhoc_event.dart';
+import '../datalink/utils/utils.dart';
 import '../network/aodv/aodv_manager.dart';
 import '../network/datalinkmanager/constants.dart';
 import '../network/datalinkmanager/datalink_manager.dart';
@@ -17,6 +18,8 @@ import 'package:ninja_prime/ninja_prime.dart';
 
 /// Class managing the creation and maintenance of a secure group
 class SecureGroupController {
+  static const TAG = '[SecureGroupController]';
+
   AodvManager _aodvManager;
   DataLinkManager _datalinkManager;
   Stream<AdHocEvent> _eventStream;
@@ -40,13 +43,13 @@ class SecureGroupController {
   /// Secret group key
   SecretKey? _groupKey;
   /// Map containing the Diffie-Hellman share of each member
-  late HashMap<String?, BigInt?> _DHShare;
+  late HashMap<String, BigInt> _DHShare;
   /// Map containing the member share of each member
-  late HashMap<String?, BigInt?> _memberShare;
+  late HashMap<String, BigInt> _memberShare;
   /// Map containing the Chinese Remainder Theorem solution of each member
-  late HashMap<String?, BigInt?> _CRTShare;
+  late HashMap<String, BigInt> _CRTShare;
   /// List containing the group member label
-  late List<String?> _memberLabel;
+  late List<String> _memberLabel;
 
   /// Creates a [SecureGroupController] object.
   /// 
@@ -74,18 +77,24 @@ class SecureGroupController {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Initiates a secure group creation process
-  void createSecureGroup() {
+  void createGroup([int? groupId]) {
+    // TODO:
+    if (true) log(TAG, 'createGroup');
+
+    if (groupId == null)
+      groupId = 1;
+
     _p = randomPrimeBigInt(512);
     _g = randomPrimeBigInt(256);
 
     SecureData message = SecureData(
-      GROUP_REQUEST, [_p.toString(), _g.toString()]
+      GroupTag.GROUP_INIT.index, [groupId, _p.toString(), _g.toString()]
     );
 
-    _datalinkManager.broadcastObject(message);
     _memberLabel.add(_ownLabel);
+    _datalinkManager.broadcastObject(message);
 
-    Timer(Duration(seconds: _expiryTime!), _createSecureGroupExpired);
+    Timer(Duration(seconds: _expiryTime!), () => _timerExpired(groupId!));
   }
 
 
@@ -117,6 +126,7 @@ class SecureGroupController {
   /// 
   /// The message payload is set to [data] and is encrypted using the group key.
   void sendMessageToGroup(Object? data) async {
+    if (true) log(TAG, 'sendMessageToGroup');
     // Encrypt data
     final AesCbc algorithm = AesCbc.with128bits(
       macAlgorithm: Hmac.sha256()
@@ -151,63 +161,92 @@ class SecureGroupController {
   }
 
 
-  ///
+  /// Computes a Diffie-Hellman share.
+  /// 
+  /// Returns a integer value as [BigInt] representing y = g^x mod p.
   BigInt _computeDHShare() {
-    // Step 1.
-    // Select the Diffie-Hellman private share x_i and compute public share y_i
+    if (true) log(TAG, '_computeDHShare');
     _x = randomBigInt(_p!.bitLength, max: _p);
     return _g!.modPow(_x!, _p!);
   }
 
   
-  ///
-  void _createSecureGroupExpired() {
-    // Step 2.
-    // Broadcast y_i to group members
-    _DHShare.putIfAbsent(_ownLabel, () => _computeDHShare());
+  /// Triggers the group key agreement.
+  /// 
+  /// The agreement process for the group [groupId] starts after the specified 
+  /// duration set at initialization by a Config object.
+  void _timerExpired(int groupId) {
+    if (true) log(TAG, '_timerExpired');
     SecureData message = SecureData(
-      GROUP_FORMATION_REQ, 
-      [LEADER, _memberLabel, _DHShare[_ownLabel]!.toString()]
+      GroupTag.GROUP_LIST.index, [groupId, _memberLabel]
     );
 
-    for (final String? label in _memberLabel)
+    for (final String label in _memberLabel) {
       if (label != _ownLabel)
-        _aodvManager.sendMessageTo(label!, message);
+        _aodvManager.sendMessageTo(label, message);
+    }
+
+    BigInt y = _computeDHShare();
+    _DHShare.putIfAbsent(_ownLabel, () => y);
+
+    message = SecureData(
+      GroupTag.GROUP_DH.index, [groupId, y.toString()]
+    );
+
+    for (final String label in _memberLabel) {
+      if (label != _ownLabel)
+        _aodvManager.sendMessageTo(label, message);
+    }
   }
 
   
-  ///
-  BigInt _computeMemberShare(String? label, BigInt? yj) {
-    // Step 3.
-    // Compute the Diffie-Hellman key shared of peers
-    BigInt mij = yj!.modPow(_x!, _p!);
+  /// Computes the Diffie-Hellman secret share.
+  /// 
+  /// The Diffie-Hellman secret share is computed from [yj] sent by a remote
+  /// node identified by [label].
+  /// 
+  /// Returns an integer value as [BigInt] representing the secret share.
+  BigInt _computeMemberShare(String label, BigInt yj) {
+    if (true) log(TAG, '_computeMemberShare');
+    BigInt mij = yj.modPow(_x!, _p!);
     mij = mij > (_p!~/BigInt.two) ? mij : _p! - mij;
     _memberShare.putIfAbsent(label, () => mij);
     return mij;
   }
 
   
-  ///
-  BigInt _computeCRTShare(String? label, BigInt? yj, BigInt? mij) {
-    BigInt pij, di, _min = _memberShare.values.first!;
+  /// Solves the CRT system of congruences.
+  /// 
+  /// The CRT system is solved with the parameters sent by a remote node [label].
+  /// 
+  /// The public D-H share and secret shared D-H share is set respectively to 
+  /// [yj] and [mij].
+  /// 
+  /// Returns the solution as an integer [BigInt] to the CRT system of 
+  /// congruences.
+  BigInt _computeCRTShare(String label, BigInt yj, BigInt mij) {
+    if (true) log(TAG, '_computeCRTShare');
+    BigInt pij, di, _min = _memberShare.values.first;
 
     // Step 4.
     // Choose p_ij such that gcd(p_ij , m_ij) = 1
     while (true) {
       pij = randomBigInt(_p!.bitLength);
-      if (mij!.gcd(pij) == BigInt.one)
+      if (mij.gcd(pij) == BigInt.one)
         break;
     }
 
     // Step 5.
     // Choose random k_i such that k_i < min(m_ij) , for all j (1 < j < n)
     _memberShare.forEach((label, value) {
-      if (value! < _min)
+      if (value < _min)
         _min = value;
     });
+
     _min = _min < BigInt.one ? BigInt.one : _min;
-  
+
     _k = randomBigInt(_min.bitLength, max: _min);
+    _recovered = _recovered! + 1;
 
     // Choose randim d_i such that d_i != k_i
     di = _k!;
@@ -215,20 +254,30 @@ class SecureGroupController {
       di = randomBigInt(_p!.bitLength);
 
     // Solve the system of congruences (Chinese Remainder Theorem) using the 
-    // existence construction (Bézout's identity) to obtain crt_ij
+    // Bézout's identity to obtain crt_ij
     List<BigInt?> coefficients = _solveBezoutIdentity(mij, pij);
     BigInt crtij = 
       (_k! * coefficients[1]! * pij) + (di * coefficients[0]! * mij);
-    while (crtij < BigInt.zero)
+    while (crtij < BigInt.zero) {
       crtij += (mij * pij);
+      print(crtij);
+    }
+
+    print('End computation');
 
     return crtij;
   }
 
-  
-  ///
-  List<BigInt> _solveBezoutIdentity(BigInt? a, BigInt? b) {
-    BigInt R = a!, _R = b!, U = BigInt.one, _U = BigInt.zero;
+
+  /// Solves the Bézout identity.
+  /// 
+  /// The system parameters is set to [a] and [b].
+  /// 
+  /// Returns a list of integer value as [BigInt] that represents the solution
+  /// of the system.
+  List<BigInt> _solveBezoutIdentity(BigInt a, BigInt b) {
+    if (true) log(TAG, '_solveBezoutIdentity');
+    BigInt R = a, _R = b, U = BigInt.one, _U = BigInt.zero;
     BigInt V = BigInt.zero, _V = BigInt.one;
 
     while (_R != BigInt.zero) {
@@ -238,13 +287,18 @@ class SecureGroupController {
       _R = RS - Q*_R;
       _U = US - Q*_U;
       _V = VS - Q*_V;
+      print(_R);
     }
 
     return List.empty(growable: true)..add(U)..add(V);
   }
 
   
-  ///
+  /// Gets the bytes representation of a [BigInt].
+  /// 
+  /// The given big int value to represent is given by [bigInt].
+  /// 
+  /// Returns the bytes representation of the given value.
   Uint8List _toBytes(BigInt bigInt) {
     const BYTE_SIZE = 8;
 
@@ -263,35 +317,41 @@ class SecureGroupController {
   }
 
   
-  ///
-  void _computeGroupKey(int type, [BigInt? kj]) async {
+  /// Computes the group key.
+  /// 
+  /// The way the group key is computed is defined by [type].
+  void _computeGroupKey(GroupTag type) async {
+    if (true) log(TAG, '_computeGroupKey');
     // Step 6.
     // Compute the group key
     _groupKeySum = _k!;
     switch (type) {
-      case FORMATION:
-        for (final String? label in _CRTShare.keys)
-          _groupKeySum = _groupKeySum! ^ (_CRTShare[label]! % _memberShare[label]!);
+      case GroupTag.GROUP_INIT:
+        for (final String label in _CRTShare.keys) {
+          _groupKeySum = 
+            _groupKeySum! ^ (_CRTShare[label]! % _memberShare[label]!);
+        }
         break;
 
-      case JOIN:
-        // final Sha256 algorithm = Sha256();
-        // final Hash hash = await algorithm.hash([_groupKeySum!]);
-        // _groupKeySum = _groupKeySum! ^ hash.bytes.reduce((a, b) => a + b);
+      case GroupTag.GROUP_JOIN:
+
         break;
 
-      case LEAVE:
-        _groupKeySum = _groupKeySum! ^ kj!;
+      case GroupTag.GROUP_LEAVE:
+
         break;
 
       default:
     }
 
+    print('GroupKey: ${_groupKeySum!.toInt()}');
     _groupKey = SecretKey(_toBytes(_groupKeySum!));
   }
 
 
-  ///
+  /// Processes the data received.
+  /// 
+  /// The data is retrieved from the [event] payload.
   void _processDataReceived(AdHocEvent event) async {
     AdHocDevice sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     String senderLabel = sender.label!;
@@ -299,169 +359,100 @@ class SecureGroupController {
       (event.payload as List<dynamic>)[1] as Map<String, dynamic>
     );
 
-    switch (pdu.type) {
-      case GROUP_REQUEST:
-        _datalinkManager.broadcastObjectExcept(pdu, senderLabel);
+    if (pdu.type > GroupTag.values.length)
+      return;
 
-        List<dynamic> data = pdu.payload as List<dynamic>;
-        _p = BigInt.parse(data[0] as String);
-        _g = BigInt.parse(data[1] as String);
+    GroupTag type = GroupTag.values[pdu.type];
+    switch (type) {
+        case GroupTag.GROUP_INIT:
+          List<dynamic> payload = pdu.payload as List<dynamic>;
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            _p = BigInt.parse(payload[1] as String);
+            _g = BigInt.parse(payload[2] as String);
 
-        SecureData reply = SecureData(GROUP_REPLY, []);
-        _aodvManager.sendMessageTo(senderLabel, reply);
-        break;
+            SecureData msg = SecureData(GroupTag.GROUP_REP.index, [groupId]);
+            _aodvManager.sendMessageTo(senderLabel, msg);
+          } else {
+            // TODO
+          }
+          break;
 
-      case GROUP_REPLY:
-        _memberLabel.add(senderLabel);
-        break;
+        case GroupTag.GROUP_REP:
+          List<dynamic> payload = pdu.payload as List<dynamic>;
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            _memberLabel.add(senderLabel);
+          }
+          break;
 
-      case GROUP_FORMATION_REQ:
-        List<dynamic> data = pdu.payload as List<dynamic>;
-        BigInt yj, mij, crtij;
+        case GroupTag.GROUP_LIST:
+          List<dynamic> payload = pdu.payload as List<dynamic>;
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            _memberLabel.addAll((payload[1] as List<dynamic>).cast<String>());
 
-        if (data[0] == LEADER) {
-          /* Step 1: Compute own Diffie-Hellman share y_i */
-          _DHShare.putIfAbsent(_ownLabel, () => _computeDHShare());
+            BigInt y = _computeDHShare();
+            _DHShare.putIfAbsent(_ownLabel, () => y);
 
-          // Store leader Diffie-Hellman share y_j
-          yj = BigInt.parse(data[2] as String);
-          _DHShare.putIfAbsent(senderLabel, () => yj);
-          // Get the list of group member label
-          _memberLabel.addAll((data[1] as List<dynamic>).cast<String>());
-
-          /* Step 2: Broadcast y_i to group members */
-          for (final String? label in _memberLabel) {
-            if (label != _ownLabel) {
-              SecureData reply = SecureData(
-                GROUP_FORMATION_REQ, [MEMBER, _DHShare[_ownLabel].toString()]
-              );
-
-              _aodvManager.sendMessageTo(label!, reply);
+            SecureData msg = SecureData(GroupTag.GROUP_DH.index, [groupId, y.toString()]);
+            for (final String label in _memberLabel) {
+              if (label != _ownLabel)
+                _aodvManager.sendMessageTo(label, msg);
             }
+          } else {
+            // TODO
           }
-        } else {
-          // Recover y_j
-          yj = BigInt.parse(data[1] as String);
-        }
+          break;
 
-        // Store y_j
-        _DHShare.putIfAbsent(senderLabel, () => yj);
+        case GroupTag.GROUP_DH:
+          List<dynamic> payload = pdu.payload as List<dynamic>;
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            BigInt yj = BigInt.parse(payload[1] as String);
+            BigInt mij = _computeMemberShare(senderLabel, yj);
+            BigInt crtij = _computeCRTShare(senderLabel, yj, mij);
 
-        /* Step 3, 4 & 5 */
-        // Compute y_j, m_ij, crt_ij of member
-        mij = _computeMemberShare(senderLabel, yj);
-        crtij = _computeCRTShare(senderLabel, yj, mij);
+            _DHShare.putIfAbsent(senderLabel, () => yj);
 
-        // Compute crt_ij of group member
-        SecureData reply = SecureData(GROUP_FORMATION_REP, crtij.toString());
-        _aodvManager.sendMessageTo(sender.label!, reply);
-        break;
+            SecureData msg = SecureData(
+              GroupTag.GROUP_KEY.index, 
+              [groupId, GroupTag.GROUP_INIT.index, crtij.toString()]
+            );
 
-      case GROUP_FORMATION_REP:
-        // Store crt_ji received from group memeber
-        _CRTShare.putIfAbsent(senderLabel, () => BigInt.parse(pdu.payload as String));
-        // Increment the count of key shared received from peers
-        _recovered = _recovered! + 1;
-        if (_recovered == _CRTShare.length) 
-          _computeGroupKey(FORMATION);
-        break;
+            _aodvManager.sendMessageTo(senderLabel, msg);
+          } else {
+            // TODO
+          }
+          break;
 
-      case GROUP_JOIN_REQ:
-        _memberLabel.add(senderLabel);
-        Sha256 algorithm = Sha256();
-        Hash hash = await algorithm.hash(_toBytes(_groupKeySum!));
-        SecureData message = SecureData(
-          GROUP_JOIN_REP, [REQUEST, _memberLabel, hash.bytes.reduce((a, b) => a + b), _DHShare]
-        );
+        case GroupTag.GROUP_JOIN:
+          break;
+        case GroupTag.GROUP_JOIN_REP:
+          break;
+        case GroupTag.GROUP_JOIN_REQ:
+          break;
 
-        _aodvManager.sendMessageTo(senderLabel, message);
-        break;
+        case GroupTag.GROUP_LEAVE:
+          break;
 
-      case GROUP_JOIN_REP:
-        List<dynamic> data = pdu.payload as List<dynamic>;
+        case GroupTag.GROUP_KEY:
+          List<dynamic> payload = pdu.payload as List<dynamic>;
+          int groupId = payload[0] as int;
+          if (groupId == 1) {
+            GroupTag tag = GroupTag.values[payload[1] as int];
+            BigInt crtji = BigInt.parse(payload[2] as String);
 
-        if (data[0] == REQUEST) {
-          List<String?> memberLabel = (data[1] as List<dynamic>).cast<String?>();
-          BigInt groupKeyHash = BigInt.parse(data[2] as String);
-          Map<String, BigInt> DHShare = 
-            (data[3] as Map<dynamic, dynamic>).cast<String, BigInt>();
+            _CRTShare.putIfAbsent(senderLabel, () => crtji);
+            _recovered = _recovered! + 1;
 
-          _memberLabel.addAll(memberLabel);
-          _groupKeySum = groupKeyHash;
-          DHShare.forEach((key, value) => _DHShare.putIfAbsent(key, () => value));
-
-          BigInt yi = _computeDHShare();
-          _DHShare.putIfAbsent(_ownLabel, () => yi);
-          for (final String? label in _memberLabel) {
-            if (label != _ownLabel) {
-              SecureData message = SecureData(GROUP_JOIN_REP, [REPLY, yi.toString()]);
-              _aodvManager.sendMessageTo(label!, message);
-
-              BigInt mij = _computeMemberShare(label, _DHShare[label]!);
-              BigInt crtij = _computeCRTShare(label, _DHShare[label], mij);
-              SecureData reply = SecureData(
-                GROUP_FORMATION_REP, [MEMBER, crtij.toString(), true]
-              );
-
-              _aodvManager.sendMessageTo(label, reply);
+            if (_recovered == _memberLabel.length) {
+              _computeGroupKey(tag);
             }
+          } else {
+            // TODO
           }
-        } else {
-          BigInt yj = BigInt.parse(data[1] as String);
-          BigInt mij = _computeMemberShare(senderLabel, yj);
-          _memberShare.putIfAbsent(senderLabel, () => mij);
-          _computeGroupKey(JOIN);
-        }
-        break;
-
-      case GROUP_LEAVE_REQ:
-        _memberLabel.remove(senderLabel);
-        _memberShare.remove(senderLabel);
-        _DHShare.remove(senderLabel);
-        _CRTShare.remove(senderLabel);
-
-        if (pdu.payload as String == _ownLabel) {
-          for (final String? label in _memberLabel) {
-            BigInt crtij = _computeCRTShare(label, _DHShare[label], _memberShare[label]);
-            SecureData reply = SecureData(GROUP_LEAVE_REP, crtij.toString());
-
-            _aodvManager.sendMessageTo(label!, reply);
-          }
-
-          _computeGroupKey(LEAVE);
-        }
-        break;
-
-      case GROUP_LEAVE_REP:
-        _CRTShare.update(senderLabel, (value) => BigInt.parse(pdu.payload as String));
-        _computeGroupKey(LEAVE);
-        break;
-
-      case GROUP_MESSAGE:
-        List<dynamic> data = pdu.payload as List<dynamic>;
-
-        // Set up the algorithm environment
-        final AesCbc algorithm = AesCbc.with128bits(
-          macAlgorithm: Hmac.sha256()
-        );
-
-        // Decrypt received data from group member
-        final Uint8List decrypted = Uint8List.fromList(
-          await algorithm.decrypt(
-            SecretBox(
-              (data[0] as List<dynamic>).cast<int>(),
-              nonce: (data[1] as List<dynamic>).cast<int>(), 
-              mac: Mac((data[2] as List<dynamic>).cast<int>()),
-            ),
-            secretKey: _groupKey!,
-          ),
-        );
-
-        // Reconstruct original data from bytes (Uint8List)
-        dynamic _data = JsonCodec().decode(Utf8Decoder().convert(decrypted));
-        // Notify upper layer (application layer) of data received
-        _eventCtrl.add(AdHocEvent(DATA_RECEIVED, [sender, _data]));
-        break;
+          break;
 
       default:
     }

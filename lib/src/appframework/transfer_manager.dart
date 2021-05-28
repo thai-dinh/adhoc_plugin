@@ -74,7 +74,7 @@ class TransferManager {
     if (_datalinkManager.checkState() == 0)
       throw DeviceFailureException('No wifi and bluetooth connectivity');
 
-    _securityManager.groupController.createSecureGroup();
+    _securityManager.groupController.createGroup();
   }
 
 

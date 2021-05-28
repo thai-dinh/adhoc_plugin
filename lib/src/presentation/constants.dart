@@ -44,3 +44,15 @@ const GROUP_LEAVE_REQ     = 316;  // Group leave request
 const GROUP_LEAVE_REP     = 317;  // Group leave reply
 const GROUP_ERROR         = 318;  // Group processing error
 const GROUP_MESSAGE       = 319;  // Group message tag
+
+enum GroupTag {
+  GROUP_KEY,
+  GROUP_INIT,
+  GROUP_REP,
+  GROUP_LIST,
+  GROUP_DH,
+  GROUP_JOIN,
+  GROUP_JOIN_REQ,
+  GROUP_JOIN_REP,
+  GROUP_LEAVE,
+}
