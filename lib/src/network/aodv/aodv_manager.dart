@@ -235,7 +235,7 @@ class AodvManager {
   /// precursor of a node.
   /// 
   /// Returns a list of [String] of precursors.
-  List<String> _addPrecursors(String? precursorName) {
+  List<String> _addPrecursor(String? precursorName) {
     return List<String>.empty(growable: true)..add(precursorName!);
   }
 
@@ -473,7 +473,7 @@ class AodvManager {
 
         _aodvHelper.addEntryRoutingTable(
           rrep.srcAddress, nextHop, hopRcv, rrep.seqNum, rrep.lifetime, 
-          _addPrecursors(destNext.next)
+          _addPrecursor(destNext.next)
         );
 
         // Trigger timer
@@ -498,7 +498,7 @@ class AodvManager {
     // Add routing table entry
     _aodvHelper.addEntryRoutingTable(
       rreq.srcAddress, senderAddr, rreq.hopCount, rreq.srcSeqNum, 
-      AodvConstants.NO_LIFE_TIME, _addPrecursors(entry.next)
+      AodvConstants.NO_LIFE_TIME, _addPrecursor(entry.next)
     );
 
     // Trigger timer
@@ -580,7 +580,7 @@ class AodvManager {
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
           rrep.srcAddress, message.header.label, hopCount, rrep.seqNum, 
-          rrep.lifetime, _addPrecursors(destNext.next)
+          rrep.lifetime, _addPrecursor(destNext.next)
         );
 
         // Update header

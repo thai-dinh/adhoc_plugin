@@ -68,7 +68,7 @@ class RREQ extends AodvMessage {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Increments the hop count of the RREQ message.
-  void incrementHopCount() => this._hopCount;
+  void incrementHopCount() => this._hopCount = this._hopCount + 1;
 
   /// Decrements the TTL of the RREQ message.
   void decrementTTL() => this.ttl = this.ttl - 1;
