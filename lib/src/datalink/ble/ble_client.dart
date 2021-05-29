@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
 import 'ble_adhoc_device.dart';
 import 'ble_services.dart';
 import '../exceptions/no_connection.dart';
@@ -8,8 +10,6 @@ import '../service/constants.dart';
 import '../service/service_client.dart';
 import '../utils/msg_adhoc.dart';
 import '../utils/utils.dart';
-
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 /// Class defining the client's logic for the Bluetooth LE implementation.

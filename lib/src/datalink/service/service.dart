@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
+import 'adhoc_event.dart';
+import 'constants.dart';
 import '../utils/utils.dart';
 
 

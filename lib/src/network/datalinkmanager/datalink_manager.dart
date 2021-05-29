@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import '../../datalink/utils/identifier.dart';
-
 import 'constants.dart';
 import 'wrapper_ble.dart';
 import 'wrapper_network.dart';
@@ -12,6 +10,7 @@ import '../../datalink/exceptions/device_failure.dart';
 import '../../datalink/service/adhoc_device.dart';
 import '../../datalink/service/adhoc_event.dart';
 import '../../datalink/service/constants.dart';
+import '../../datalink/utils/identifier.dart';
 import '../../datalink/utils/msg_adhoc.dart';
 import '../../datalink/utils/msg_header.dart';
 

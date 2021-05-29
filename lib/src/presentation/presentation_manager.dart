@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:pointycastle/pointycastle.dart';
+
 import 'certificate.dart';
 import 'certificate_repository.dart';
 import 'constants.dart';
@@ -17,8 +19,6 @@ import '../datalink/utils/utils.dart';
 import '../network/aodv/aodv_manager.dart';
 import '../network/datalinkmanager/constants.dart';
 import '../network/datalinkmanager/datalink_manager.dart';
-
-import 'package:pointycastle/pointycastle.dart';
 
 
 /// Class representing the core of the secure data layer. It performs 
@@ -103,7 +103,7 @@ class PresentationManager {
 
       // Encrypt data
       if (_verbose) log(TAG, 'send(): begin encryption');
-      Uint8List encryptedData = await _engine.encrypt(
+      List<dynamic> encryptedData = await _engine.encrypt(
         Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key
       );
 
@@ -282,11 +282,8 @@ class PresentationManager {
     String senderLabel = sender.label!;
     switch (pdu.type) {
       case ENCRYPTED_DATA:
-        // Retrieve the data received
-        List<int> received = (pdu.payload as List<dynamic>).cast<int>();
-
         // Decrypt the data received
-        Uint8List data = await _engine.decrypt(Uint8List.fromList(received));
+        Uint8List data = await _engine.decrypt(pdu.payload as List<dynamic>);
 
         // Notify upper layer of data received
         _controller.add(AdHocEvent(

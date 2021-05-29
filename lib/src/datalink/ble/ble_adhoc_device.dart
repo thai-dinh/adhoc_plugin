@@ -1,8 +1,8 @@
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
 import '../service/adhoc_device.dart';
 import '../service/constants.dart';
 import '../utils/identifier.dart';
-
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 
 /// Class representing a remote Ble-capable device.

@@ -3,6 +3,9 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart';
+import 'package:ninja_prime/ninja_prime.dart';
+
 import 'constants.dart';
 import 'secure_data.dart';
 import '../appframework/config.dart';
@@ -12,8 +15,6 @@ import '../datalink/utils/utils.dart';
 import '../network/aodv/aodv_manager.dart';
 import '../network/datalinkmanager/constants.dart';
 import '../network/datalinkmanager/datalink_manager.dart';
-import 'package:cryptography/cryptography.dart';
-import 'package:ninja_prime/ninja_prime.dart';
 
 
 /// Class managing the creation and maintenance of a secure group

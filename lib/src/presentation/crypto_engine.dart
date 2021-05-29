@@ -4,13 +4,13 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart' as Crypto;
+import 'package:pointycastle/export.dart';
+
 import 'certificate.dart';
 import 'constants.dart';
 import 'reply.dart';
 import 'request.dart';
-
-import 'package:cryptography/cryptography.dart' as Crypto;
-import 'package:pointycastle/export.dart';
 
 
 /// Class managing the encryption and decryption process.
@@ -68,21 +68,20 @@ class CryptoEngine {
   /// 
   /// The engine encrypts the [data] with the [publicKey] of a remote node.
   /// 
-  /// Returns the encrypted data as a list of bytes [Uint8List].
-  Future<Uint8List> encrypt(Uint8List data, RSAPublicKey publicKey) {
-    Completer completer = new Completer<Uint8List>();
+  /// Returns the encrypted data as a list of dynamic objects.
+  Future<List<dynamic>> encrypt(Uint8List data, RSAPublicKey publicKey) {
+    Completer completer = new Completer<List<dynamic>>();
 
     // Send request to encryption isolate
     _sendPorts[ENCRYPTION]!.send(Request(data, publicKey: publicKey));
 
     // Listen to the reply of the encryption isolate
     _stream.listen((reply) {
-      if (reply.rep == ENCRYPTION) {
-        completer.complete(reply.data);
-      }
+      if (reply.rep == ENCRYPTION)
+        completer.complete(reply.data as List<dynamic>);
     });
 
-    return completer.future as Future<Uint8List>;
+    return completer.future as Future<List<dynamic>>;
   }
 
 
@@ -91,7 +90,7 @@ class CryptoEngine {
   /// The engine decrypts the [data] with the private key of the node.
   /// 
   /// Returns the decrypted data as a list of bytes [Uint8List].
-  Future<Uint8List> decrypt(Uint8List data) {
+  Future<Uint8List> decrypt(List<dynamic> data) {
     Completer completer = new Completer<Uint8List>();
 
     // Send request to decryption isolate
@@ -99,9 +98,8 @@ class CryptoEngine {
 
     // Listen to the reply of the decryption isolate
     _stream.listen((reply) {
-      if (reply.rep == DECRYPTION) {
+      if (reply.rep == DECRYPTION)
         completer.complete(Uint8List.fromList(reply.data));
-      }
     });
 
     return completer.future as Future<Uint8List>;
@@ -199,22 +197,31 @@ void processEncryption(SendPort port) {
   port.send(Reply(INITIALISATION, [ENCRYPTION ,_receivePort.sendPort]));
 
   _receivePort.listen((request) async {
-    final Crypto.AesCbc algorithm = Crypto.AesCbc.with128bits(
-      macAlgorithm: Crypto.Hmac.sha256()
-    );
+    final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
+      ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
 
+    final Crypto.Chacha20 algorithm = Crypto.Chacha20(macAlgorithm: Crypto.Hmac.sha256());
     final Crypto.SecretKey secretKey = await algorithm.newSecretKey();
+
+    // Stopwatch watch = Stopwatch();
+    // watch.start();
+
     final Crypto.SecretBox secretBox = await algorithm.encrypt(
       request.data as Uint8List,
       secretKey: secretKey,
     );
 
-    final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
+    // watch.stop();
+    // print('Encryption 1: ${watch.elapsedMilliseconds} ms');
+    // watch.reset();
+    // watch.start();
 
     Uint8List encryptedKey = _processData(
       encryptor, Uint8List.fromList(await secretKey.extractBytes())
     );
+
+    // watch.stop();
+    // print('Encryption 2: ${watch.elapsedMilliseconds} ms');
 
     List<List<int>> encryptedData = List.empty(growable: true);
     encryptedData.add(secretBox.cipherText);
@@ -225,9 +232,7 @@ void processEncryption(SendPort port) {
     reply[SECRET_KEY] = encryptedKey;
     reply[SECRET_DATA] = encryptedData;
 
-    port.send(
-      Reply(ENCRYPTION, Utf8Encoder().convert(JsonCodec().encode(reply)))
-    );
+    port.send(Reply(ENCRYPTION, reply));
   });
 }
 
@@ -240,18 +245,18 @@ void processDecryption(SendPort port) {
   port.send(Reply(INITIALISATION, [DECRYPTION ,_receivePort.sendPort]));
 
   _receivePort.listen((request) async {
-    List<dynamic> reply = 
-      JsonCodec().decode(Utf8Decoder().convert(request.data as List<int>));
+    List<dynamic> reply = request.data as List<dynamic>;
 
     final OAEPEncoding decryptor = OAEPEncoding(RSAEngine())
       ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
 
+    final Crypto.Chacha20 algorithm = Crypto.Chacha20(macAlgorithm: Crypto.Hmac.sha256());
+
+    // Stopwatch watch = Stopwatch();
+    // watch.start();
+
     Uint8List secretKey = _processData(
       decryptor, Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>())
-    );
-
-    final Crypto.AesCbc algorithm = Crypto.AesCbc.with128bits(
-      macAlgorithm: Crypto.Hmac.sha256()
     );
 
     final Uint8List decrypted = Uint8List.fromList(
@@ -264,6 +269,9 @@ void processDecryption(SendPort port) {
         secretKey: Crypto.SecretKey(secretKey),
       ),
     );
+
+    // watch.stop();
+    // print('Decryption: ${watch.elapsedMilliseconds} ms');
 
     port.send(Reply(DECRYPTION, decrypted));
   });

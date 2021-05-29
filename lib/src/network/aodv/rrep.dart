@@ -1,7 +1,7 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import 'aodv_message.dart';
 import '../../presentation/certificate.dart';
-
-import 'package:json_annotation/json_annotation.dart';
 
 part 'rrep.g.dart';
 
@@ -12,31 +12,31 @@ class RREP extends AodvMessage {
   late int _seqNum;
   late int _hopCount;
   late int _lifetime;
-  late String _dstAddress;
-  late String _srcAddress;
+  late String _dstAddr;
+  late String _srcAddr;
 
-  late List<Certificate> certChain;
+  late List<Certificate> chain;
 
   /// Creates a [RREP] object.
   /// 
   /// The type of message is specified by [type], the hops number of the RREP 
   /// message is given by [hopCount], the destination address is set to 
-  /// [dstAddress], the sequence number is set to [seqNum], the source address
-  /// is given by [srcAddress], and the lifetime of the RREP message is set
+  /// [dstAddr], the sequence number is set to [seqNum], the source address
+  /// is given by [srcAddr], and the lifetime of the RREP message is set
   /// to [lifetime].
   /// 
-  /// The list of certificate chain [certChain] is used for the certificate 
+  /// The list of certificate [chain] is used for the certificate 
   /// chain discovery process.
   RREP(
-    int type, int hopCount, String dstAddress, int seqNum, 
-    String srcAddress, int lifetime, List<Certificate> certChain
+    int type, int hopCount, String dstAddr, int seqNum, 
+    String srcAddr, int lifetime, List<Certificate> chain
   ) : super(type) {
     this._seqNum = seqNum;
     this._hopCount = hopCount;
     this._lifetime = lifetime;
-    this._dstAddress = dstAddress;
-    this._srcAddress = srcAddress;
-    this.certChain = certChain;
+    this._dstAddr = dstAddr;
+    this._srcAddr = srcAddr;
+    this.chain = chain;
   }
 
   /// Creates a [RREP] object from a JSON representation.
@@ -57,10 +57,10 @@ class RREP extends AodvMessage {
   int get lifetime => _lifetime;
 
   /// Returns the destination addresss of the RREP message.
-  String get dstAddress => _dstAddress;
+  String get dstAddr => _dstAddr;
 
   /// Returns the source address of the RREP message.
-  String get srcAddress => _srcAddress;
+  String get srcAddr => _srcAddr;
 
   /// Returns the hop count incremeted by one of the RREP message.
   int incrementHopCount() => _hopCount = _hopCount + 1;
@@ -77,9 +77,9 @@ class RREP extends AodvMessage {
       return 'RREP{' +
                 'type=$type' +
                 ', hopCount=$_hopCount' +
-                ', dstAddress=$_dstAddress' +
+                ', dstAddr=$_dstAddr' +
                 ', destSeqNum=$_seqNum' +
-                ', srcAddress=$_srcAddress' +
+                ', srcAddr=$_srcAddr' +
                 ', lifetime=$_lifetime' +
               '}';
   }

@@ -218,8 +218,6 @@ public class GattServerManager {
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
         ) {
-            if (verbose) Log.d(TAG, "onCharacteristicWriteRequest()");
-
             if(responseNeeded) {
                 gattServer.sendResponse(
                     device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]

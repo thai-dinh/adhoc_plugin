@@ -324,31 +324,31 @@ class AodvManager {
 
     if (_verbose) log(TAG, 'Received RREQ from $originateAddr');
 
-    if (rreq.dstAddress.compareTo(_ownLabel) == 0) {
+    if (rreq.dstAddr.compareTo(_ownLabel) == 0) {
       // Save the destination sequence number
-      _saveDestSequenceNumber(rreq.srcAddress, rreq.srcSeqNum);
+      _saveDestSequenceNumber(rreq.srcAddr, rreq.srcSeqNum);
 
       if (_verbose) 
         log(TAG, '$_ownLabel is the destination (stop RREQ broadcast)');
 
       // Notify upper layer of the certificate chain received
-      _controller.add(AdHocEvent(CERT_REP, rreq.certChain));
+      _controller.add(AdHocEvent(CERT_REP, rreq.chain));
 
       // Update routing table
       EntryRoutingTable? entry = _aodvHelper.addEntryRoutingTable(
-        rreq.srcAddress, originateAddr, hop, rreq.srcSeqNum, 
+        rreq.srcAddr, originateAddr, hop, rreq.srcSeqNum, 
         AodvConstants.NO_LIFE_TIME, List.empty(growable: true)
       );
 
       if (entry != null) {
-        if (rreq.destSeqNum > _ownSequenceNum)
+        if (rreq.dstSeqNum > _ownSequenceNum)
           // Destination node increments its sequence number when the 
           // sequence number in RREQ is equal to its stored number
           _getNextSequenceNumber();
 
         // Generate RREP to be sent
         RREP rrep = RREP(
-          AodvConstants.RREP, AodvConstants.INIT_HOP_COUNT, rreq.srcAddress, 
+          AodvConstants.RREP, AodvConstants.INIT_HOP_COUNT, rreq.srcAddr, 
           _ownSequenceNum, _ownLabel, AodvConstants.LIFE_TIME, 
           List.empty(growable: true)
         );
@@ -370,15 +370,15 @@ class AodvManager {
         );
 
         // Trigger timer for this reverse route
-        _timerFlushReverseRoute(rreq.srcAddress, rreq.srcSeqNum);
+        _timerFlushReverseRoute(rreq.srcAddr, rreq.srcSeqNum);
       }
-    } else if (_aodvHelper.containsDest(rreq.dstAddress)) {
+    } else if (_aodvHelper.containsDest(rreq.dstAddr)) {
       // Send RREP GRATUITOUS to destination
       _sendRREP_GRATUITOUS(message.header.label, rreq);
     } else {
-      if (rreq.srcAddress.compareTo(_ownLabel) == 0) {
-        if (_verbose) log(TAG, 'Reject own RREQ ${rreq.srcAddress}');
-      } else if (_aodvHelper.addBroadcastId(rreq.srcAddress, rreq.rreqId)) {
+      if (rreq.srcAddr.compareTo(_ownLabel) == 0) {
+        if (_verbose) log(TAG, 'Reject own RREQ ${rreq.srcAddr}');
+      } else if (_aodvHelper.addBroadcastId(rreq.srcAddr, rreq.rreqId)) {
 
         // Decrement TTL & check its value
         rreq.decrementTTL();
@@ -400,15 +400,15 @@ class AodvManager {
 
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
-          rreq.srcAddress, originateAddr, hop, rreq.srcSeqNum, 
+          rreq.srcAddr, originateAddr, hop, rreq.srcSeqNum, 
           AodvConstants.NO_LIFE_TIME, []
         );
 
         // Trigger timer for this reverse route
-        _timerFlushReverseRoute(rreq.srcAddress, rreq.srcSeqNum);
+        _timerFlushReverseRoute(rreq.srcAddr, rreq.srcSeqNum);
       } else {
         if (_verbose) 
-          log(TAG, 'Already received this RREQ from ${rreq.srcAddress}');
+          log(TAG, 'Already received this RREQ from ${rreq.srcAddr}');
       }
     }
   }
@@ -425,38 +425,38 @@ class AodvManager {
 
     if (_verbose) log(TAG, 'Received RREP from $nextHop');
 
-    if (rrep.dstAddress.compareTo(_ownLabel) == 0) {
+    if (rrep.dstAddr.compareTo(_ownLabel) == 0) {
       if (_verbose) log(TAG, '$_ownLabel is the destination (stop RREP)');
       // Notify the upper layer of the certificate chain received
-      _controller.add(AdHocEvent(CERT_REP, rrep.certChain));
+      _controller.add(AdHocEvent(CERT_REP, rrep.chain));
 
       // Save the destination sequence number
-      _saveDestSequenceNumber(rrep.srcAddress, rrep.seqNum);
+      _saveDestSequenceNumber(rrep.srcAddr, rrep.seqNum);
 
       // Update routing table
       _aodvHelper.addEntryRoutingTable(
-        rrep.srcAddress, nextHop, hopRcv, rrep.seqNum, rrep.lifetime, []
+        rrep.srcAddr, nextHop, hopRcv, rrep.seqNum, rrep.lifetime, []
       );
 
       // Send data message to destination node
       Data data = _dataMessage!.pdu as Data;
-      _send(_dataMessage!, data.dstAddress!);
+      _send(_dataMessage!, data.dstAddr!);
 
       // Trigger timer
       _timerFlushForwardRoute(
-        rrep.srcAddress, rrep.seqNum, rrep.lifetime
+        rrep.srcAddr, rrep.seqNum, rrep.lifetime
       );
     } else {
-      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(rrep.dstAddress);
+      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(rrep.dstAddr);
       if (destNext == null) {
         throw AodvUnknownDestException(
-          'No destNext found in the routing Table for ${rrep.dstAddress}'
+          'No destNext found in the routing Table for ${rrep.dstAddr}'
         );
       } else {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
 
         // Add intermediate node certificate to the certificate chain
-        rrep.certChain.add(_repository.getCertificate(message.header.label)!);
+        rrep.chain.add(_repository.getCertificate(message.header.label)!);
         rrep.incrementHopCount();
         _send(
           MessageAdHoc(
@@ -472,12 +472,12 @@ class AodvManager {
         );
 
         _aodvHelper.addEntryRoutingTable(
-          rrep.srcAddress, nextHop, hopRcv, rrep.seqNum, rrep.lifetime, 
+          rrep.srcAddr, nextHop, hopRcv, rrep.seqNum, rrep.lifetime, 
           _addPrecursor(destNext.next)
         );
 
         // Trigger timer
-        _timerFlushForwardRoute(rrep.srcAddress, rrep.seqNum, rrep.lifetime);
+        _timerFlushForwardRoute(rrep.srcAddr, rrep.seqNum, rrep.lifetime);
       }
     }
   }
@@ -490,24 +490,24 @@ class AodvManager {
   /// needed for the [RREP] message are found in [rreq].
   void _sendRREP_GRATUITOUS(String senderAddr, RREQ rreq) {
     // Get entry in routing table for the destination
-    EntryRoutingTable entry = _aodvHelper.getDestination(rreq.dstAddress)!;
+    EntryRoutingTable entry = _aodvHelper.getDestination(rreq.dstAddr)!;
 
     // Update the list of precursors
     entry.updatePrecursors(senderAddr);
 
     // Add routing table entry
     _aodvHelper.addEntryRoutingTable(
-      rreq.srcAddress, senderAddr, rreq.hopCount, rreq.srcSeqNum, 
+      rreq.srcAddr, senderAddr, rreq.hopCount, rreq.srcSeqNum, 
       AodvConstants.NO_LIFE_TIME, _addPrecursor(entry.next)
     );
 
     // Trigger timer
-    _timerFlushReverseRoute(rreq.srcAddress, rreq.srcSeqNum);
+    _timerFlushReverseRoute(rreq.srcAddr, rreq.srcSeqNum);
 
     // Generate gratuitous RREP for the next destination
     RREP rrep = RREP(
-      AodvConstants.RREP_GRATUITOUS, rreq.hopCount, rreq.dstAddress, 
-      _ownSequenceNum, rreq.srcAddress, AodvConstants.LIFE_TIME,
+      AodvConstants.RREP_GRATUITOUS, rreq.hopCount, rreq.dstAddr, 
+      _ownSequenceNum, rreq.srcAddr, AodvConstants.LIFE_TIME,
       List.empty(growable: true)
     );
 
@@ -529,8 +529,8 @@ class AodvManager {
 
     // Generate RREP message for the source
     rrep = RREP(
-      AodvConstants.RREP, entry.hop+ 1, rreq.srcAddress, entry.destSeqNum, 
-      entry.dstAddress, AodvConstants.LIFE_TIME, List.empty(growable: true)
+      AodvConstants.RREP, entry.hop+ 1, rreq.srcAddr, entry.dstSeqNum, 
+      entry.dstAddr, AodvConstants.LIFE_TIME, List.empty(growable: true)
     );
 
     // Send RREP message to the source
@@ -544,10 +544,10 @@ class AodvManager {
         ),
         rrep
       ),
-      rreq.srcAddress
+      rreq.srcAddr
     );
 
-    if (_verbose) log(TAG, 'Send RREP to ${rreq.srcAddress}');
+    if (_verbose) log(TAG, 'Send RREP to ${rreq.srcAddr}');
   }
 
   /// Processes an ad hoc [message] of type RREP_GRATUITOUS.
@@ -557,29 +557,29 @@ class AodvManager {
     // Get hop count
     int hopCount = rrep.incrementHopCount();
 
-    if (rrep.dstAddress.compareTo(_ownLabel) == 0) {
+    if (rrep.dstAddr.compareTo(_ownLabel) == 0) {
       if (_verbose) log(TAG, '$_ownLabel is the destination (stop RREP)');
 
       // Update routing table
       _aodvHelper.addEntryRoutingTable(
-        rrep.srcAddress, message.header.label, hopCount, rrep.seqNum, 
+        rrep.srcAddr, message.header.label, hopCount, rrep.seqNum, 
         rrep.lifetime, []
       );
 
       // Trigger timer
-      _timerFlushReverseRoute(rrep.srcAddress, rrep.seqNum);
+      _timerFlushReverseRoute(rrep.srcAddr, rrep.seqNum);
     } else {
-      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(rrep.dstAddress);
+      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(rrep.dstAddr);
       if (destNext == null) {
         throw AodvUnknownDestException(
-          'No destNext found in the routing Table for ${rrep.dstAddress}'
+          'No destNext found in the routing Table for ${rrep.dstAddr}'
         );
       } else {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
         
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
-          rrep.srcAddress, message.header.label, hopCount, rrep.seqNum, 
+          rrep.srcAddr, message.header.label, hopCount, rrep.seqNum, 
           rrep.lifetime, _addPrecursor(destNext.next)
         );
 
@@ -595,7 +595,7 @@ class AodvManager {
         _send(message, destNext.next);
 
         // Trigger timer
-        _timerFlushReverseRoute(rrep.srcAddress, rrep.seqNum);
+        _timerFlushReverseRoute(rrep.srcAddr, rrep.seqNum);
       }
     }
   }
@@ -650,12 +650,12 @@ class AodvManager {
     if (_verbose) 
       log(TAG, 
         'Received RERR from $originateAddr ->' 
-        + 'Node ${rerr.unreachableDestAddress} is unreachable'
+        + 'Node ${rerr.unreachableDstAddr} is unreachable'
       );
 
-    if (rerr.unreachableDestAddress.compareTo(_ownLabel) == 0) {
+    if (rerr.unreachableDstAddr.compareTo(_ownLabel) == 0) {
       if (_verbose) log(TAG, 'RERR received on the destination (stop forward)');
-    } else if (_aodvHelper.containsDest(rerr.unreachableDestAddress)) {
+    } else if (_aodvHelper.containsDest(rerr.unreachableDstAddr)) {
       // Update header of the message
       message.header = Header(
         messageType: AodvConstants.RERR, 
@@ -666,7 +666,7 @@ class AodvManager {
         
       // Send to precursors
       List<String?> precursors = 
-        _aodvHelper.getPrecursorsFromDest(rerr.unreachableDestAddress);
+        _aodvHelper.getPrecursorsFromDest(rerr.unreachableDstAddr);
 
       if (precursors.isNotEmpty) {
         for (String? precursor in precursors) {
@@ -678,10 +678,10 @@ class AodvManager {
       }
 
       // Remove the entry
-      _aodvHelper.removeEntry(rerr.unreachableDestAddress);
+      _aodvHelper.removeEntry(rerr.unreachableDstAddr);
     } else {
       if (_verbose) 
-        log(TAG, 'Node does not contain dest: ${rerr.unreachableDestAddress}');
+        log(TAG, 'Node does not contain dest: ${rerr.unreachableDstAddr}');
     }
   }
 
@@ -697,7 +697,7 @@ class AodvManager {
     if (_verbose) 
       log(TAG, 'Data message received from: ${message.header.label}');
 
-    if (data.dstAddress!.compareTo(_ownLabel) == 0) {
+    if (data.dstAddr!.compareTo(_ownLabel) == 0) {
       if (_verbose) 
         log(TAG, _ownLabel + ' is the destination (stop DATA message)');
 
@@ -718,10 +718,10 @@ class AodvManager {
     } else {
       // Forward the DATA message to the destination with regards to the routing 
       // table
-      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(data.dstAddress!);
+      EntryRoutingTable? destNext = _aodvHelper.getNextfromDest(data.dstAddr!);
       if (destNext == null) {
         throw AodvUnknownDestException(
-          'No destNext found in the routing Table for ${data.dstAddress}'
+          'No destNext found in the routing Table for ${data.dstAddr}'
         );
       } else {
         if (_verbose) log(TAG, 'Destination reachable via ${destNext.next}');
@@ -741,7 +741,7 @@ class AodvManager {
         );
 
         // Update the data path
-        destNext.updateDataPath(data.dstAddress!);
+        destNext.updateDataPath(data.dstAddr!);
         // Send the message to the next destination
         _send(message, destNext.next);
       }
@@ -753,37 +753,37 @@ class AodvManager {
   /// Purges the forward entries of the routing table after [lifeTime] ms if 
   /// no data is transmitted on a connection.
   /// 
-  /// The destination node of the connection is given by [dstAddress] and its
+  /// The destination node of the connection is given by [dstAddr] and its
   /// sequence number by [seqNum]. 
   /// 
   /// The variable 'lifeTime' should be set to LIFE_TIME ms.
-  void _timerFlushForwardRoute(String dstAddress, int seqNum, int lifeTime) {
+  void _timerFlushForwardRoute(String dstAddr, int seqNum, int lifeTime) {
     Timer(Duration(milliseconds: lifeTime),
       () {
         if (_verbose) { 
           log(TAG, 
-            'Add timer for $dstAddress - seq: $seqNum - lifeTime: $lifeTime'
+            'Add timer for $dstAddr - seq: $seqNum - lifeTime: $lifeTime'
           );
         }
 
         // Get the difference of time between the current time and the last time 
         // where data has been transmitted
-        int lastChanged = _aodvHelper.getDataPathFromAddress(dstAddress);
+        int lastChanged = _aodvHelper.getDataPathFromAddress(dstAddr);
         int difference = (DateTime.now().millisecond - lastChanged);
 
         if (lastChanged == 0) {
           // If no data on the reverse route, delete it
-          _aodvHelper.removeEntry(dstAddress);
+          _aodvHelper.removeEntry(dstAddr);
 
           if (_verbose)
-            log(TAG, 'No Data on $dstAddress');
+            log(TAG, 'No Data on $dstAddr');
         } else if (difference < lifeTime) {
           // Data on the path, restart the timer
-          _timerFlushForwardRoute(dstAddress, seqNum, lifeTime);
+          _timerFlushForwardRoute(dstAddr, seqNum, lifeTime);
         } else {
           // If no data on the reverse route, delete it
-          _aodvHelper.removeEntry(dstAddress);
-          if (_verbose) log(TAG, 'No Data on $dstAddress since $difference');
+          _aodvHelper.removeEntry(dstAddr);
+          if (_verbose) log(TAG, 'No Data on $dstAddr since $difference');
         }
       }
     );
@@ -792,36 +792,36 @@ class AodvManager {
   /// Purges the reverse entries of the routing table after EXPIRED_TABLE ms if 
   /// no data is transmitted on a connection.
   /// 
-  /// The source node of the connection is given by [srcAddress] and its
+  /// The source node of the connection is given by [srcAddr] and its
   /// sequence number by [seqNum]. 
   /// 
   /// The variable 'lifeTime' should be set to LIFE_TIME ms.
-  void _timerFlushReverseRoute(String srcAddress, int seqNum) {
+  void _timerFlushReverseRoute(String srcAddr, int seqNum) {
     Timer(Duration(milliseconds: AodvConstants.EXPIRED_TABLE),
       () {
         if (_verbose)
-          log(TAG, 'Add timer for $srcAddress - seq: $seqNum');
+          log(TAG, 'Add timer for $srcAddr - seq: $seqNum');
 
         // Get the difference of time between the current time and the last time 
         // where data is transmitted
-        int lastChanged = _aodvHelper.getDataPathFromAddress(srcAddress);
+        int lastChanged = _aodvHelper.getDataPathFromAddress(srcAddr);
         int difference = (DateTime.now().millisecond - lastChanged);
 
         if (lastChanged == 0) {
           // If no data on the reverse route, delete it
-          _aodvHelper.removeEntry(srcAddress);
+          _aodvHelper.removeEntry(srcAddr);
 
           if (_verbose) 
-            log(TAG, 'No Data on $srcAddress');
+            log(TAG, 'No Data on $srcAddr');
         } else if (difference < AodvConstants.EXPIRED_TIME) {
           // Data on the path, restart timer
-          _timerFlushReverseRoute(srcAddress, seqNum);
+          _timerFlushReverseRoute(srcAddr, seqNum);
         } else {
           // If no data on the reverse route, delete it
-          _aodvHelper.removeEntry(srcAddress);
+          _aodvHelper.removeEntry(srcAddr);
 
           if (_verbose) 
-            log(TAG, 'No Data on $srcAddress since $difference');
+            log(TAG, 'No Data on $srcAddr since $difference');
         }
       }
     );

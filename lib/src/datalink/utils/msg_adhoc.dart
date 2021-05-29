@@ -1,6 +1,6 @@
-import '../utils/msg_header.dart';
-
 import 'package:json_annotation/json_annotation.dart';
+
+import 'msg_header.dart';
 
 part 'msg_adhoc.g.dart';
 

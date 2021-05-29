@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'msg_adhoc.dart';
 
 
 /// Checks whether the given [string] is null.

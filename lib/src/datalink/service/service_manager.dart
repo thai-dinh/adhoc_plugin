@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../service/adhoc_event.dart';
+import 'adhoc_event.dart';
 
 
 /// Abstract superclass providing common interfaces for the technology manager 

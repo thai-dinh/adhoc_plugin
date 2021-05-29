@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import '../service/constants.dart';
-import '../service/service.dart';
+import 'constants.dart';
+import 'service.dart';
 import '../utils/msg_adhoc.dart';
 
 

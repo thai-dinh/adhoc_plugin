@@ -1,9 +1,8 @@
-import 'package:adhoc_plugin/adhoc_plugin.dart';
-
-import '../service/constants.dart';
-import '../utils/utils.dart';
-
 import 'package:json_annotation/json_annotation.dart';
+
+import 'constants.dart';
+import '../utils/identifier.dart';
+import '../utils/utils.dart';
 
 part 'adhoc_device.g.dart';
 

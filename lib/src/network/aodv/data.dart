@@ -6,14 +6,14 @@ part 'data.g.dart';
 /// Class representing a DATA message for the AODV protocol.
 @JsonSerializable()
 class Data {
-  String? dstAddress;
+  String? dstAddr;
   Object? payload;
 
   /// Creates a [Data] object.
   /// 
-  /// The destination address is specified by [dstAddress] and its payload is
+  /// The destination address is specified by [dstAddr] and its payload is
   /// given by [payload].
-  Data(this.dstAddress, this.payload);
+  Data(this.dstAddr, this.payload);
 
   /// Creates a [Data] object from a JSON representation.
   /// 
@@ -31,7 +31,7 @@ class Data {
   @override
   String toString() {
     return 'Data{' +
-            'dstAddress=$dstAddress' +
+            'dstAddr=$dstAddr' +
             ', payload=${payload.toString()}' +
           '}';
   }

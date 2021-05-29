@@ -1,8 +1,8 @@
 import 'dart:collection';
 
-import '../../datalink/service/adhoc_device.dart';
-
 import 'package:json_annotation/json_annotation.dart';
+
+import '../../datalink/service/adhoc_device.dart';
 
 part 'flood_msg.g.dart';
 

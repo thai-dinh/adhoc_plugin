@@ -3,7 +3,7 @@ import 'dart:collection';
 
 /// Class representing a routing table entry for AODV protocol.
 class EntryRoutingTable {
-  late String _dstAddress;
+  late String _dstAddr;
   late String _next;
   late int _hop;
   late int _dstSeqNum;
@@ -14,7 +14,7 @@ class EntryRoutingTable {
   /// Creates an [EntryRoutingTable] object.
   /// 
   /// An entry requires the following parameters:
-  /// - [_dstAddress]   String value representing the destination address.
+  /// - [_dstAddr]      String value representing the destination address.
   /// - [_next]         String value representing the next hop to reach the 
   ///                   destination address.
   /// - [_hop]          Integer value representing the hops number of the 
@@ -23,7 +23,7 @@ class EntryRoutingTable {
   /// - [_lifetime]     Integer value representing the lifetime of the entry.
   /// - [_precursors]   List containing the precursors of the current node.
   EntryRoutingTable(
-    this._dstAddress, this._next, this._hop, this._dstSeqNum, this._lifetime, 
+    this._dstAddr, this._next, this._hop, this._dstSeqNum, this._lifetime, 
     this._precursors
   ) {
     this._activesDataPath = HashMap();
@@ -32,7 +32,7 @@ class EntryRoutingTable {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Returns the destination address stored in this routing table entry.
-  String get dstAddress => _dstAddress;
+  String get dstAddr => _dstAddr;
 
   /// Returns the next hop stored in this routing table entry.
   String get next => _next;
@@ -41,7 +41,7 @@ class EntryRoutingTable {
   int get hop => _hop;
 
   /// Returns the sequence number stored in this routing table entry.
-  int get destSeqNum => _dstSeqNum;
+  int get dstSeqNum => _dstSeqNum;
 
   /// Returns the lifetime of the RREP message stored in this routing table entry.
   int get lifetime => _lifetime;
@@ -93,10 +93,10 @@ class EntryRoutingTable {
 
   @override
   String toString() {
-    return 'dst: $_dstAddress' +
+    return 'dst: $_dstAddr' +
             ' nxt: $_next' +
             ' hop: $_hop' +
             ' seq: $_dstSeqNum ${displayPrecursors()}' +
-            ' dataPath ${_activesDataPath[_dstAddress]}';
+            ' dataPath ${_activesDataPath[_dstAddr]}';
   }
 }

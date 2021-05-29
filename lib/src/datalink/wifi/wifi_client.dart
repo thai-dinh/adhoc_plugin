@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:adhoc_plugin/adhoc_plugin.dart';
-
 import 'wifi_adhoc_manager.dart';
+import '../exceptions/no_connection.dart';
 import '../service/adhoc_event.dart';
 import '../service/constants.dart';
-import '../utils/msg_adhoc.dart';
 import '../service/service_client.dart';
+import '../utils/msg_adhoc.dart';
 import '../utils/utils.dart';
 
 

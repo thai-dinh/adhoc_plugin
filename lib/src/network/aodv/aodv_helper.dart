@@ -116,7 +116,7 @@ class AodvHelper {
 
   /// Gets the size ([int]) of the routing table.
   int sizeRoutingTable() {
-    return _routingTable.getRoutingTable().length;
+    return _routingTable.routingTable.length;
   }
 
 
@@ -143,7 +143,7 @@ class AodvHelper {
   /// Returns a set of type [MapEntry] with key type as [String] and value type
   /// as [EntryRoutingTable].
   Set<MapEntry<String?, EntryRoutingTable?>> getEntrySet() {
-    return _routingTable.getRoutingTable().entries.toSet();
+    return _routingTable.routingTable.entries.toSet();
   }
 
 

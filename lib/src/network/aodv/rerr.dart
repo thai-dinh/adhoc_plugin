@@ -1,6 +1,6 @@
-import 'aodv_message.dart';
-
 import 'package:json_annotation/json_annotation.dart';
+
+import 'aodv_message.dart';
 
 part 'rerr.g.dart';
 
@@ -8,19 +8,19 @@ part 'rerr.g.dart';
 /// Class representing the RERR message for the AODV protocol.
 @JsonSerializable()
 class RERR extends AodvMessage {
-  late String _unreachableDestAddress;
-  late int _unreachableDestSeqNum;
+  late String _unreachableDstAddr;
+  late int _unreachableDstSeqNum;
 
   /// Creates a [RERR] object.
   /// 
   /// The type of message is specified by [type], the unreachable destination 
-  /// address is given by [unreachableDestAddress], and its sequence number by
-  /// [unreachableDestSeqNum].
+  /// address is given by [unreachableDstAddr], and its sequence number by
+  /// [unreachableDstSeqNum].
   RERR(
-    int type, String unreachableDestAddress, int unreachableDestSeqNum
+    int type, String unreachableDstAddr, int unreachableDstSeqNum
   ) : super(type) {
-    this._unreachableDestAddress = unreachableDestAddress;
-    this._unreachableDestSeqNum = unreachableDestSeqNum;
+    this._unreachableDstAddr = unreachableDstAddr;
+    this._unreachableDstSeqNum = unreachableDstSeqNum;
   }
 
   /// Creates a [RERR] object from a JSON representation.
@@ -32,10 +32,10 @@ class RERR extends AodvMessage {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Returns the unreachable destination address.
-  String get unreachableDestAddress => _unreachableDestAddress;
+  String get unreachableDstAddr => _unreachableDstAddr;
 
   /// Returns the unreachable sequence number.
-  int get unreachableDestSeqNum => _unreachableDestSeqNum;
+  int get unreachableDstSeqNum => _unreachableDstSeqNum;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -48,8 +48,8 @@ class RERR extends AodvMessage {
   String toString() {
     return 'RERR{' +
               'type=$type' +
-              ', unreachableDestAddress=$_unreachableDestAddress' +
-              ', unreachableDestSeqNum=$_unreachableDestSeqNum'  +
+              ', unreachableDstAddr=$_unreachableDstAddr' +
+              ', unreachableDstSeqNum=$_unreachableDstSeqNum'  +
             '}';
   }
 }

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../service/constants.dart';
-import '../utils/msg_adhoc.dart';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+
+import '../service/constants.dart';
+import '../utils/msg_adhoc.dart';
 
 
 /// Class allowing to have access to platform-specific services. 
