@@ -36,7 +36,13 @@ import static android.net.wifi.p2p.WifiP2pManager.ERROR;
 import static android.net.wifi.p2p.WifiP2pManager.P2P_UNSUPPORTED;
 import static android.os.Looper.getMainLooper;
 
-
+/**
+ * Class managing the Wi-Fi discovery and the pairing with other Wi-Fi devices.
+ * 
+ * NOTE: Most of the following source code has been borrowed and adapted from 
+ * the original codebase provided by Gaulthier Gain, which can be found at:
+ * https://github.com/gaulthiergain/AdHocLib
+ */
 public class WifiAdHocManager implements MethodCallHandler {
     private static final String TAG = "[AdHocPlugin][WifiAdHocManager]";
     private static final String METHOD_NAME = "ad.hoc.lib/wifi.method.channel";
@@ -54,6 +60,12 @@ public class WifiAdHocManager implements MethodCallHandler {
     private WifiBroadcastReceiver receiver;
     private WifiP2pManager wifiP2pManager;
 
+    /**
+     * Default constructor
+     *
+     * @param context   Context object giving global information about the 
+     *                  application environment.
+     */
     public WifiAdHocManager(Context context) {
         this.verbose = false;
         this.registered = false;
@@ -114,6 +126,12 @@ public class WifiAdHocManager implements MethodCallHandler {
 
 /*--------------------------------Public methods------------------------------*/
 
+    /**
+     * Method allowing to initialize the method call handler.
+     * 
+     * @param messenger BinaryMessenger object, which sends binary data across 
+     *                  the Flutter platform barrier.
+     */
     public void initMethodCallHandler(BinaryMessenger messenger) {
         if (verbose) Log.d(TAG, "initMethodCallHandler()");
 
@@ -135,19 +153,32 @@ public class WifiAdHocManager implements MethodCallHandler {
         });
     }
 
+    /** 
+     * Method allowing to release the ressources used.
+     */
     public void close() {
         if (verbose) Log.d(TAG, "close()");
+
         unregister();
         methodChannel.setMethodCallHandler(null);
     }
 
 /*-------------------------------Private methods------------------------------*/
 
+    /** 
+     * Method allowing to update the verbose/debug mode.
+     * 
+     * @param verbose   Boolean value representing the sate of the verbose/debug 
+     *                  mode.
+     */
     private void setVerbose(boolean verbose) {
         if (verbose) Log.d(TAG, "setVerbose()");
         this.verbose = verbose;
     }
 
+    /** 
+     * Method allowing to register the broadcast receiver.
+     */
     private void register() {
         if (verbose) Log.d(TAG, "register()");
 
@@ -166,6 +197,9 @@ public class WifiAdHocManager implements MethodCallHandler {
         registered = true;
     }
 
+    /** 
+     * Method allowing to unregister the broadcast receiver.
+     */
     private void unregister() {
         if (verbose) Log.d(TAG, "unregister()");
 
@@ -175,6 +209,11 @@ public class WifiAdHocManager implements MethodCallHandler {
         }
     }
 
+    /**
+     * Method allowing to check whether the Wi-Fi Direct adapter is enabled.
+     *
+     * @return true if it is enabled, otherwise false.
+     */
     private boolean isWifiEnabled() {
         if (verbose) Log.d(TAG, "isWifiEnabled()");
 
@@ -185,6 +224,14 @@ public class WifiAdHocManager implements MethodCallHandler {
         return wifiManager != null && wifiManager.isWifiEnabled();
     }
 
+    /**
+     * Method allowing to update the device Wi-Fi adapter name.
+     *
+     * @param name  String value representing the new name of the device Wi-Fi 
+     *              adapter.
+     *
+     * @return true if the name was set, otherwise false.
+     */
     private boolean updateDeviceName(String name) {
         try {
             Method method = wifiP2pManager.getClass().getMethod(
@@ -209,10 +256,20 @@ public class WifiAdHocManager implements MethodCallHandler {
         }
     }
 
+    /**
+     * Method allowing to reset the name of the device Wi-Fi adapter.
+     */
     private boolean resetDeviceName() {
         return (initialName != null) ? updateDeviceName(initialName) : false;
     }
 
+    /**
+     * Method allowing to retrieve the MAC address of the Wi-Fi Direct adapter.
+     *  
+     * @return String value representing the MAC address.
+     * 
+     * @throws SocketException if an I/O error occurs.
+     */
     private String getMacAddress() {
         try {
             ArrayList<NetworkInterface> networkInterfaces = 
@@ -243,6 +300,14 @@ public class WifiAdHocManager implements MethodCallHandler {
         return "";
     }
 
+    /**
+     * Method allowing to get the error message as a String according to the
+     * error code integer value.
+     *
+     * @param reasonCode    Integer value representing the reason of failure.
+     * 
+     * @return String value representing the reason for failure.
+     */
     private String errorCode(int reasonCode) {
         switch (reasonCode) {
             case ERROR:
@@ -258,6 +323,9 @@ public class WifiAdHocManager implements MethodCallHandler {
 
 /*------------------------------WiFi P2P methods------------------------------*/
 
+    /* 
+     * Method allowing to start the discovery process of Wi-Fi Direct peers.
+     */
     private void startDiscovery() {
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
@@ -274,6 +342,12 @@ public class WifiAdHocManager implements MethodCallHandler {
         });
     }
 
+    /**
+     * Method allowing to connect to a remote Wi-Fi Direct peer.
+     *
+     * @param remoteAddress String value representing the IP address of the 
+     *                      remote Wi-Fi Direct peer.
+     */
     private void connect(final String remoteAddress) {
         final WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = remoteAddress.toLowerCase();
@@ -282,18 +356,19 @@ public class WifiAdHocManager implements MethodCallHandler {
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                if (verbose) 
-                    Log.d(TAG, "connect(): success");
+                if (verbose) Log.d(TAG, "connect(): success");
             }
 
             @Override
             public void onFailure(int reasonCode) {
-                if (verbose) 
-                    Log.e(TAG, "connect(): failure -> " + errorCode(reasonCode));
+                if (verbose) Log.e(TAG, "connect(): failure -> " + errorCode(reasonCode));
             }
         });
     }
 
+    /**
+     * Method allowing to remove a existing P2P group.
+     */
     private void removeGroup() {
         wifiP2pManager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
             @Override

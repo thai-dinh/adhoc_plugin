@@ -68,10 +68,10 @@ class PresentationManager {
   /// Data-link manager used by the AODV manager.
   DataLinkManager get datalinkManager => _datalinkManager;
 
-  /// Returns the list of direct neighbors.
+  /// List of direct neighbors.
   List<AdHocDevice> get directNeighbors => _datalinkManager.directNeighbors;
 
-  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
+  /// Stream events of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
 /*------------------------------Public methods--------------------------------*/
@@ -205,7 +205,6 @@ class PresentationManager {
 
   /// Initializes the listening process of lower layer streams.
   void _initialize() {
-    if (_verbose) log(TAG, '_initialize()');
     _aodvManager.eventStream.listen((event) {
       switch (event.type) {
         case CONNECTION_EVENT:
@@ -251,8 +250,6 @@ class PresentationManager {
   /// Throws a [VerificationFailedException] upon failure, i.e., a certificate
   /// is not valid.
   void _processCertificateReply(List<Certificate> certificateChain) {
-    if (_verbose) log(TAG, '_processCertificateReply()');
-
     // Chain verification
     for (final Certificate cert in certificateChain) {
       if (cert.validity.isBefore(DateTime.now()))
@@ -272,6 +269,26 @@ class PresentationManager {
     // Send encrypted messages
     for (final Object data in toSend)
       send(data, cert.owner, true);
+  }
+
+
+  /// Issues a certificate.
+  /// 
+  /// Generates a [Certificate] for the binding of the public key [key] and the 
+  /// identity of the directly trusted neighbor [label].
+  void _issueCertificate(String label, RSAPublicKey key) {
+    // Issue the certificate
+    DateTime validity = DateTime.now().add(Duration(seconds: _validityPeriod));
+    Certificate certificate = 
+      Certificate(label, _aodvManager.label, validity, key);
+
+    // Sign the certificate
+    Uint8List signature = 
+      _engine.sign(Utf8Encoder().convert(certificate.toString()));
+    certificate.signature = signature;
+
+    // Add the certificate into the repository
+    _repository.addCertificate(certificate);
   }
 
 
@@ -379,27 +396,5 @@ class PresentationManager {
 
       default:
     }
-  }
-
-
-  /// Issues a certificate.
-  /// 
-  /// Generates a [Certificate] for the binding of the public key [key] and the 
-  /// identity of the directly trusted neighbor [label].
-  void _issueCertificate(String label, RSAPublicKey key) {
-    if (_verbose) log(TAG, '_issueCertificate()');
-
-    // Issue the certificate
-    DateTime validity = DateTime.now().add(Duration(seconds: _validityPeriod));
-    Certificate certificate = 
-      Certificate(label, _aodvManager.label, validity, key);
-
-    // Sign the certificate
-    Uint8List signature = 
-      _engine.sign(Utf8Encoder().convert(certificate.toString()));
-    certificate.signature = signature;
-
-    // Add the certificate into the repository
-    _repository.addCertificate(certificate);
   }
 }
