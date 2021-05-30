@@ -22,9 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 
 
+/** 
+ * Class defining a BroadcastReceiver that notifies of Wi-Fi Direct events.
+ */
 public class WifiBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "[AdHocPlugin][BroadcastReceiver]";
 
+    // Constants for communication with the Flutter platform barrier
     private static final byte ANDROID_DISCOVERY  = 120;
     private static final byte ANDROID_STATE      = 121;
     private static final byte ANDROID_CONNECTION = 122;
@@ -35,6 +39,16 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
     private EventSink eventSink;
     private WifiP2pManager wifiP2pManager;
 
+    /**
+     * Default constructor
+     * 
+     * @param channel           Wi-Fi Direct channel representing the channel 
+     *                          connecting the application to the Wi-Fi Direct 
+     *                          framework.
+     * @param eventSink         Event callback for sending event to the Flutter
+     *                          client.
+     * @param wifiP2pManager    Class managing Wi-Fi Direct connectivity.
+    */
     public WifiBroadcastReceiver(
         Channel channel, EventSink eventSink, WifiP2pManager wifiP2pManager
     ) {
@@ -44,6 +58,12 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
         this.wifiP2pManager = wifiP2pManager;
     }
 
+    /** 
+     * Method allowing to update the verbose/debug mode.
+     * 
+     * @param verbose   Boolean value representing the sate of the verbose/debug 
+     *                  mode.
+     */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
@@ -57,6 +77,7 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
             case WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION: {
                 if (verbose) Log.d(TAG, "onReceive(): STATE_CHANGED");
     
+                // State of Wi-Fi P2P has change
                 int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
                 mapInfoValue.put("type", ANDROID_STATE);
                 if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
@@ -64,13 +85,15 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
                 } else {
                     mapInfoValue.put("state", false);
                 }
-
+                
+                // Notify Flutter client
                 eventSink.success(mapInfoValue);
                 break;
             }
 
             case WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION: {
                 if (verbose) Log.d(TAG, "onReceive(): PEERS_CHANGED");
+                // List of peer available
                 if (wifiP2pManager != null) {
                     wifiP2pManager.requestPeers(channel, peerListListener);
                 }
@@ -79,12 +102,14 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
 
             case WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION: {
                 if (verbose) Log.d(TAG, "onReceive(): CONNECTION_CHANGED");
+                // Connection established
                 wifiP2pManager.requestConnectionInfo(channel, connectionInfoListener);
                 break;
             }
 
             case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: {
                 if (verbose) Log.d(TAG, "onReceive(): THIS_DEVICE_CHANGED");
+                // Device information changed
                 WifiP2pDevice wifiP2pDevice = 
                     (WifiP2pDevice) intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
                 
@@ -92,6 +117,7 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
                 mapInfoValue.put("name", wifiP2pDevice.deviceName);
                 mapInfoValue.put("mac", wifiP2pDevice.deviceAddress.toUpperCase());
     
+                // Notify Flutter client
                 eventSink.success(mapInfoValue);
                 break;
             }
@@ -101,11 +127,12 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+    // Interface for callback invocation when the peer list is available
     private PeerListListener peerListListener = new PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             if (verbose) Log.d(TAG, "onPeersAvailable()");
-            
+            // List of peer information available
             HashMap<String, Object> mapInfoValue = new HashMap<>();
             mapInfoValue.put("type", ANDROID_DISCOVERY);
 
@@ -119,16 +146,17 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
             }
 
             mapInfoValue.put("peers", listPeers);
-
+            // Notify Flutter client
             eventSink.success(mapInfoValue);
         }
     };
 
+    // Interface for callback invocation when the connection info is available
     private WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(final WifiP2pInfo info) {
             if (verbose) Log.d(TAG, "onConnectionInfoAvailable()");
-
+            // Information about the P2P group available
             HashMap<String, Object> mapInfoValue = new HashMap<>();
             HashMap<String, Object> mapConnectionInfoValue = new HashMap<>();
             mapInfoValue.put("type", ANDROID_CONNECTION);
@@ -144,7 +172,7 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
             }
 
             mapInfoValue.put("info", mapConnectionInfoValue);
-
+            // Notify Flutter client
             eventSink.success(mapInfoValue);
         }
     };

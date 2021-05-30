@@ -33,11 +33,21 @@ const CERT_REQ         = 304;     // Request certificate
 const CERT_REP         = 305;     // Reply to certificate request
 const CERT_REVOCATION  = 306;     // Certificate revocation notification
 
-// Constants for the secure group formation and management
-const GROUP_ERROR         = 318;  // Group processing error
-const GROUP_MESSAGE       = 319;  // Group message tag
+enum CryptoTask {
+  /// Isoalte initialisation 
+  initialisation,
 
-enum GroupTag {
+  /// Encryption tag
+  encryption,
+
+  /// Decryption tag
+  decryption,
+
+  /// Group encryption & decryption tag
+  group_data,
+}
+
+enum SecureGroup {
   /// Group key computation
   key,
 
@@ -64,4 +74,7 @@ enum GroupTag {
 
   /// Group leave notification
   leave,
+
+  /// Group data
+  data
 }

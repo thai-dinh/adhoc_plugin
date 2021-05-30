@@ -29,10 +29,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Class managing the Gatt server used by Bluetooth Low Energy.
+ */
 public class GattServerManager {
     private static final String TAG = "[AdHocPlugin][GattServer]";
     private static final String EVENT_NAME = "ad.hoc.lib/ble.event.channel";
 
+    // Constants for communication with the Flutter platform barrier
     private static final byte ANDROID_DISCOVERY  = 120;
     private static final byte ANDROID_STATE      = 121;
     private static final byte ANDROID_CONNECTION = 122;
@@ -53,6 +57,12 @@ public class GattServerManager {
     private EventChannel eventChannel;
     private MainThreadEventSink eventSink;
 
+    /**
+     * Default constructor
+     * 
+     * @param context   Context object giving global information about the 
+     *                  application environment.
+     */
     public GattServerManager(Context context) {
         this.verbose = false;
         this.context = context;
@@ -63,10 +73,22 @@ public class GattServerManager {
 
 /*--------------------------------Public methods------------------------------*/
 
+    /** 
+     * Method allowing to update the verbose/debug mode.
+     * 
+     * @param verbose   Boolean value representing the sate of the verbose/debug 
+     *                  mode.
+     */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
 
+    /**
+     * Method allowing to set up the platform event channel.
+     * 
+     * @param messenger BinaryMessenger object, which sends binary data across 
+     *                  the Flutter platform barrier.
+     */
     public void setupEventChannel(BinaryMessenger messenger) {
         if (verbose) Log.d(TAG, "setupEventChannel()");
 
@@ -88,12 +110,20 @@ public class GattServerManager {
         });
     }
 
+    /**
+     * Method allowing to open a Gatt server.
+     * 
+     * @param bluetoothManager  Manager for Bluetooth-related task Management.
+     * @param context           Context object giving global information about 
+     *                          the application environment.
+     */
     public void openGattServer(BluetoothManager bluetoothManager, Context context) {
         if (verbose) Log.d(TAG, "openGattServer()");
 
         this.bluetoothManager = bluetoothManager;
         this.gattServer = bluetoothManager.openGattServer(context, bluetoothGattServerCallback);
 
+        // Creating a characteristic
         BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
             UUID.fromString(BleUtils.CHARACTERISTIC_UUID),
             BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | 
@@ -101,16 +131,21 @@ public class GattServerManager {
             BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE
         );
 
+        // Creating a service
         BluetoothGattService service = new BluetoothGattService(
             UUID.fromString(BleUtils.SERVICE_UUID),
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         );
 
+        // Add characteristic to service
         service.addCharacteristic(characteristic);
-
+        // Add service to gatt server
         gattServer.addService(service);
     }
 
+    /**
+     * Method allowing to close the gatt server.
+     */
     public void closeGattServer() {
         if (verbose) Log.d(TAG, "closeGattServer()");
 
@@ -121,6 +156,11 @@ public class GattServerManager {
         eventChannel = null;
     }
 
+    /**
+     * Method allowing to get the connected devices through Bluetooth.
+     * 
+     * @return List of connected devices represented by a HashMap<String, Object>.
+     */
     public List<HashMap<String, Object>> getConnectedDevices() {
         if (verbose) Log.d(TAG, "getConnectedDevices()");
 
@@ -140,6 +180,11 @@ public class GattServerManager {
         return btDevices;
     }
 
+    /**
+     * Method allowing to get the bond state with a remote BLE device.
+     * 
+     * @return true if it is bonded, otherwise false.
+     */
     public boolean getBondState(String mac) {
         if (verbose) Log.d(TAG, "getBondState(): " + mac);
 
@@ -152,6 +197,11 @@ public class GattServerManager {
         return device.getBondState() == BluetoothDevice.BOND_BONDED;
     }
 
+    /**
+     * Method allowing to create a bond with a remote BLE device.
+     * 
+     * @return true if the request has been sent, otherwise false.
+     */
     public boolean createBond(String mac) {
         if (verbose) Log.d(TAG, "createBond(): " + mac);
 
@@ -162,6 +212,11 @@ public class GattServerManager {
         return device.createBond();
     }
 
+    /**
+     * Method allowing to cancel a connection to a Gatt server.
+     * 
+     * @param mac   String value representing the MAC address of a remote peer.
+     */
     public void cancelConnection(String mac) {
         if (verbose) Log.d(TAG, "cancelConnection(): " + mac);
 
@@ -174,6 +229,9 @@ public class GattServerManager {
 
 /*-------------------------------Private methods------------------------------*/
 
+    /** 
+     * Method allowing to register the broadcast receiver.
+     */
     private void register() {
         if (verbose) Log.d(TAG, "register()");
 
@@ -182,6 +240,7 @@ public class GattServerManager {
         context.registerReceiver(receiver, filter);
     }
 
+    // BroadcastReceiver that notifies of Bluetooth bond events.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -197,31 +256,32 @@ public class GattServerManager {
 
                 if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
                     if (verbose) Log.d(TAG, "onReceive(): BOND_BONDED");
-
+                    // Device is already bonded (paired)
                     mapInfoValue.put("state", true);
                 } else if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
                     if (verbose) Log.d(TAG, "onReceive(): BOND_BONDING");
+                    // Pairing process
                 } else {
                     if (verbose) Log.d(TAG, "onReceive(): BOND_NONE");
-
+                    // Device is not bonded (paired)
                     mapInfoValue.put("state", false);
                 }
 
+                // Notify Flutter client of bond state
                 eventSink.success(mapInfoValue);
             }
         }
     };
 
+    // Interface callback for events related to the Gatt server
     private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
         @Override
         public void onCharacteristicWriteRequest(
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
             boolean preparedWrite, boolean responseNeeded, int offset, byte[] value
         ) {
-            if(responseNeeded) {
-                gattServer.sendResponse(
-                    device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]
-                );
+            if (responseNeeded) {
+                gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, new byte[0]);
             }
 
             String mac = device.getAddress();
@@ -234,12 +294,14 @@ public class GattServerManager {
                 byteBuffer = new ByteArrayOutputStream();
             }
 
+            // Process the fragmentated data by removing the flags from data
             try {
                 byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
             } catch (IOException exception) {
 
             }
 
+            // If it is the end of fragmentation, then send data to Flutter client
             if (flag == BleUtils.MESSAGE_END) {
                 HashMap<String, Object> mapInfoValue = new HashMap<>();
 
@@ -247,10 +309,12 @@ public class GattServerManager {
                 mapInfoValue.put("mac", mac);
                 mapInfoValue.put("data", byteBuffer.toByteArray());
 
+                // Send data to Flutter client
                 eventSink.success(mapInfoValue);
 
                 buffer.put(id, null);
             } else {
+                // If not the end of fragmentation, then store the data in the buffer
                 buffer.put(id, byteBuffer);
             }
 
@@ -270,19 +334,21 @@ public class GattServerManager {
             mapInfoValue.put("type", ANDROID_CONNECTION);
             mapInfoValue.put("mac", mac);
 
+            // A peer has established a connection to the Gatt server
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mapInfoValue.put("state", true);
                 
                 HashMap<Integer, ByteArrayOutputStream> map = new HashMap<>();
                 data.put(mac, map);
                 mapMacDevice.put(mac, device);
-            } else {
+            } else { // A peer has aborted a connection to the Gatt server
                 mapInfoValue.put("state", false);
 
                 data.remove(mac);
                 mapMacDevice.remove(mac);
             }
 
+            // Send the event to the Flutter client
             eventSink.success(mapInfoValue);
         }
 
@@ -297,14 +363,28 @@ public class GattServerManager {
             mapInfoValue.put("mac", device.getAddress());
             mapInfoValue.put("mtu", mtu);
 
+            // Send the event to the Flutter client
             eventSink.success(mapInfoValue);
         }
     };
 
+    /**
+     * Wrapper class that is needed to avoid the problem of
+     * "Methods marked with @UiThread must be executed on the main thread"
+     * 
+     * NOTE: The solution has been borrowed from:
+     * https://github.com/flutter/flutter/issues/34993
+     */
     private class MainThreadEventSink implements EventSink {
         private EventSink eventSink;
         private Handler handler;
 
+        /**
+         * Default constructor
+         * 
+         * @param eventSink  Event callback for sending event to the Flutter 
+         *                   client.
+         */
         public MainThreadEventSink(EventSink eventSink) {
             this.eventSink = eventSink;
             handler = new Handler(Looper.getMainLooper());

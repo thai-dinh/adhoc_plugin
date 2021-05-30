@@ -16,7 +16,10 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-
+/**
+ * Class managing the Android platform-specific code, which is responsible 
+ * of managing platform call from the Flutter client.
+ */
 public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   private static final String METHOD_NAME = "ad.hoc.lib/ble.method.channel";
 
@@ -37,18 +40,22 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
     this.bluetoothManager = 
       (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
+    // Attach this plugin to the Flutter environment
     methodChannel = new MethodChannel(messenger, METHOD_NAME);
     methodChannel.setMethodCallHandler(this);
 
+    // GattServerManager and BleManager (BLE)
     gattServerManager = new GattServerManager(context);
     bleManager = new BleManager();
 
+    // WifiAdHocManager (Wi-Fi Direct)
     WifiAdHocManager = new WifiAdHocManager(context);
     WifiAdHocManager.initMethodCallHandler(messenger);
   }
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+    // Method that communicate with the Flutter client (Platform Channel)
     switch (call.method) {
       case "setVerbose":
         final boolean verbose = call.arguments();

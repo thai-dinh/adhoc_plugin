@@ -49,10 +49,10 @@ class PresentationManager {
     this._repository = CertificateRepository(config);
     this._aodvManager = AodvManager(_verbose, _repository, config);
     this._datalinkManager = _aodvManager.dataLinkManager;
-    this._groupController = SecureGroupController(
-      _aodvManager, _datalinkManager, _aodvManager.eventStream, config
-    );
     this._engine = CryptoEngine();
+    this._groupController = SecureGroupController(
+      _engine, _aodvManager, _datalinkManager, _aodvManager.eventStream, config
+    );
     this._controller = StreamController<AdHocEvent>.broadcast();
     this._buffer = HashMap();
     this._setFloodEvents = Set();
@@ -104,10 +104,10 @@ class PresentationManager {
       // Encrypt data
       if (_verbose) log(TAG, 'send(): begin encryption');
       List<dynamic> encryptedData = await _engine.encrypt(
-        Utf8Encoder().convert(JsonCodec().encode(data)), certificate.key
+        Utf8Encoder().convert(JsonCodec().encode(data)), 
+        publicKey: certificate.key
       );
-
-      if (_verbose) log(TAG, 'send(): end encryption ${encryptedData.length}');
+      if (_verbose) log(TAG, 'send(): end encryption');
 
       // Send encrypted data
       _aodvManager.sendMessageTo(

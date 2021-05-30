@@ -66,18 +66,34 @@ class CryptoEngine {
 
   /// Encrypts the given data using a specified public key.
   /// 
-  /// The engine encrypts the [data] with the [publicKey] of a remote node.
+  /// The engine encrypts the [data] with the given cryptographic key.
+  /// 
+  /// If [publicKey] of a remote node is set, then asymmetric encryption is 
+  /// performed.
+  /// 
+  /// If [sharedKey] of a secure group is set, then symmetric encryption is
+  /// performed.
   /// 
   /// Returns the encrypted data as a list of dynamic objects.
-  Future<List<dynamic>> encrypt(Uint8List data, RSAPublicKey publicKey) {
+  Future<List<dynamic>> encrypt(
+    Uint8List data, {RSAPublicKey? publicKey, Crypto.SecretKey? sharedKey}
+  ) {
     Completer completer = new Completer<List<dynamic>>();
 
     // Send request to encryption isolate
-    _sendPorts[ENCRYPTION]!.send(Request(data, publicKey: publicKey));
+    if (publicKey != null) {
+      _sendPorts[ENCRYPTION]!.send(
+        Request(CryptoTask.encryption, data, publicKey: publicKey)
+      );
+    } else {
+      _sendPorts[ENCRYPTION]!.send(
+        Request(CryptoTask.group_data, data, sharedKey: sharedKey)
+      );
+    }
 
     // Listen to the reply of the encryption isolate
     _stream.listen((reply) {
-      if (reply.rep == ENCRYPTION)
+      if (reply.rep == CryptoTask.encryption)
         completer.complete(reply.data as List<dynamic>);
     });
 
@@ -85,20 +101,35 @@ class CryptoEngine {
   }
 
 
-  /// Decrypt the given data using the node private key.
+  /// Decrypts the given data using the node private key.
   /// 
-  /// The engine decrypts the [data] with the private key of the node.
+  /// The engine decrypts the [data] with a given cryptographic key.
+  /// 
+  /// If [sharedKey] of a secure group is set, then symmetric decryption is
+  /// performed. Otherwise, asymmetric decryption is performed with the private
+  /// key of this node.
   /// 
   /// Returns the decrypted data as a list of bytes [Uint8List].
-  Future<Uint8List> decrypt(List<dynamic> data) {
+  Future<Uint8List> decrypt(List data, {Crypto.SecretKey? sharedKey}) {
     Completer completer = new Completer<Uint8List>();
 
     // Send request to decryption isolate
-    _sendPorts[DECRYPTION]!.send(Request(data, privateKey: _privateKey));
+    if (sharedKey == null) {
+      print(_sendPorts);
+      print(data);
+      print(sharedKey);
+      _sendPorts[DECRYPTION]!.send(
+        Request(CryptoTask.decryption, data, privateKey: _privateKey)
+      );
+    } else {
+      _sendPorts[DECRYPTION]!.send(
+        Request(CryptoTask.group_data, data, sharedKey: sharedKey)
+      );
+    }
 
     // Listen to the reply of the decryption isolate
     _stream.listen((reply) {
-      if (reply.rep == DECRYPTION)
+      if (reply.rep == CryptoTask.decryption)
         completer.complete(Uint8List.fromList(reply.data));
     });
 
@@ -161,7 +192,7 @@ class CryptoEngine {
   /// Initializes internal parameters.
   void _initialize() async {
     _stream.listen((reply) {
-      if (reply.rep == INITIALISATION) {
+      if (reply.rep == CryptoTask.initialisation) {
         _sendPorts[reply.data[0]] = reply.data[1];
       }
     });
@@ -194,34 +225,38 @@ class CryptoEngine {
 /// The [port] is used to communicate with the isolate. 
 void processEncryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
-  port.send(Reply(INITIALISATION, [ENCRYPTION ,_receivePort.sendPort]));
+  port.send(
+    Reply(CryptoTask.initialisation, [ENCRYPTION ,_receivePort.sendPort])
+  );
+
+  final Crypto.Chacha20 algorithm = Crypto.Chacha20(
+    macAlgorithm: Crypto.Hmac.sha256()
+  );
+
+  Crypto.SecretKey secretKey;
+  OAEPEncoding encryptor;
+  Uint8List? encryptedKey;
 
   _receivePort.listen((request) async {
-    final OAEPEncoding encryptor = OAEPEncoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
+    Request req = request as Request;
+    if (req.req == CryptoTask.encryption) {
+      encryptor = OAEPEncoding(RSAEngine())..init(
+        true, PublicKeyParameter<RSAPublicKey>(request.publicKey!)
+      );
 
-    final Crypto.Chacha20 algorithm = Crypto.Chacha20(macAlgorithm: Crypto.Hmac.sha256());
-    final Crypto.SecretKey secretKey = await algorithm.newSecretKey();
+      secretKey = await algorithm.newSecretKey();
 
-    // Stopwatch watch = Stopwatch();
-    // watch.start();
+      encryptedKey = _processData(
+        encryptor, Uint8List.fromList(await secretKey.extractBytes())
+      );
+    } else {
+      secretKey = req.sharedKey!;
+    }
 
     final Crypto.SecretBox secretBox = await algorithm.encrypt(
       request.data as Uint8List,
       secretKey: secretKey,
     );
-
-    // watch.stop();
-    // print('Encryption 1: ${watch.elapsedMilliseconds} ms');
-    // watch.reset();
-    // watch.start();
-
-    Uint8List encryptedKey = _processData(
-      encryptor, Uint8List.fromList(await secretKey.extractBytes())
-    );
-
-    // watch.stop();
-    // print('Encryption 2: ${watch.elapsedMilliseconds} ms');
 
     List<List<int>> encryptedData = List.empty(growable: true);
     encryptedData.add(secretBox.cipherText);
@@ -232,7 +267,7 @@ void processEncryption(SendPort port) {
     reply[SECRET_KEY] = encryptedKey;
     reply[SECRET_DATA] = encryptedData;
 
-    port.send(Reply(ENCRYPTION, reply));
+    port.send(Reply(CryptoTask.encryption, reply));
   });
 }
 
@@ -242,7 +277,7 @@ void processEncryption(SendPort port) {
 /// The [port] is used to communicate with the isolate. 
 void processDecryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
-  port.send(Reply(INITIALISATION, [DECRYPTION ,_receivePort.sendPort]));
+  port.send(Reply(CryptoTask.initialisation, [DECRYPTION ,_receivePort.sendPort]));
 
   _receivePort.listen((request) async {
     List<dynamic> reply = request.data as List<dynamic>;
@@ -251,9 +286,6 @@ void processDecryption(SendPort port) {
       ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
 
     final Crypto.Chacha20 algorithm = Crypto.Chacha20(macAlgorithm: Crypto.Hmac.sha256());
-
-    // Stopwatch watch = Stopwatch();
-    // watch.start();
 
     Uint8List secretKey = _processData(
       decryptor, Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>())
@@ -270,10 +302,7 @@ void processDecryption(SendPort port) {
       ),
     );
 
-    // watch.stop();
-    // print('Decryption: ${watch.elapsedMilliseconds} ms');
-
-    port.send(Reply(DECRYPTION, decrypted));
+    port.send(Reply(CryptoTask.decryption, decrypted));
   });
 }
 
