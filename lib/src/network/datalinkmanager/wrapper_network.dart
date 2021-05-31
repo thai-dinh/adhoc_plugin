@@ -264,7 +264,7 @@ abstract class WrapperNetwork {
     // Check if the device is already in neighbors list
     if (!neighbors.neighbors.containsKey(header.label)) {
       // Add the new neighbor
-      neighbors.addNeighbors(header.label, header.mac, network);
+      neighbors.addNeighbor(header.label, header.mac, network);
 
       // Notify upper layer of a connection establishment
       controller.add(AdHocEvent(CONNECTION_EVENT, device));

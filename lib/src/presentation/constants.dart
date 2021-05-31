@@ -13,17 +13,6 @@ const DECRYPTION = 1;       // Decryption request and reply tag to send to an is
 const SECRET_KEY = 0;   // Secret key tag for cryptographic tasks
 const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 
-// Constants
-const LEADER = 0;  // Leader tag for group formation
-const MEMBER = 1;  // Member tag for group formation
-
-// Constants for the group key agreement protocol
-const FORMATION = 30;
-const JOIN = 31;
-const LEAVE = 32;
-const REQUEST = 33;
-const REPLY = 34;
-
 // Constants for the certificate management
 const ENCRYPTED_DATA   = 300;     // Data encrypted received or to send
 const UNENCRYPTED_DATA = 301;     // Data unencrypted received or to send

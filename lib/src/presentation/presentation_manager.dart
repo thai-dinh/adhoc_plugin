@@ -50,6 +50,7 @@ class PresentationManager {
     this._aodvManager = AodvManager(_verbose, _repository, config);
     this._datalinkManager = _aodvManager.dataLinkManager;
     this._engine = CryptoEngine();
+    this._engine.initialize();
     this._groupController = SecureGroupController(
       _engine, _aodvManager, _datalinkManager, _aodvManager.eventStream, config
     );
@@ -181,7 +182,11 @@ class PresentationManager {
     if (_verbose) log(TAG, 'revokeCertificate()');
 
     // Generate a new pair of public and private key
-    _engine.generateRSAkeyPair();
+    AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> newKey = 
+      _engine.generateRSAkeyPair();
+
+    _engine.privateKey = newKey.privateKey;
+    _engine.publicKey = newKey.publicKey;
 
     // Unique timestamp to avoid infinite flooding in the network
     String timestamp = 
@@ -282,9 +287,8 @@ class PresentationManager {
     Certificate certificate = 
       Certificate(label, _aodvManager.label, validity, key);
 
-    // Sign the certificate
-    Uint8List signature = 
-      _engine.sign(Utf8Encoder().convert(certificate.toString()));
+    // Sign the public key
+    Uint8List signature = _engine.sign(Utf8Encoder().convert(key.toString()));
     certificate.signature = signature;
 
     // Add the certificate into the repository

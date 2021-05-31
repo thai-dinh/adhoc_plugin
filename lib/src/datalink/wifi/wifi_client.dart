@@ -107,11 +107,11 @@ class WifiClient extends ServiceClient {
   /// Cancels the connection with the remote device.
   @override
   Future<void> disconnect() async {
-    this.stopListening();
-    // Leave Wi-Fi Direct group
-    await WifiAdHocManager.removeGroup();
     // Notify upper layer of a connection aborted
     controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
+    // Leave Wi-Fi Direct group
+    await WifiAdHocManager.removeGroup();
+    this.stopListening();
   }
 
 

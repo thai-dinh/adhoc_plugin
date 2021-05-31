@@ -30,7 +30,7 @@ class Neighbors {
 
   /// Add a direct neighbors whose label is [label], MAC address is [mac], and
   /// NetworkManager as [network]
-  void addNeighbors(String label, Identifier mac, NetworkManager network) {
+  void addNeighbor(String label, Identifier mac, NetworkManager network) {
     _neighbors.putIfAbsent(label, () => network);
     _mapLabelMac.putIfAbsent(label, () => mac);
   }

@@ -15,7 +15,7 @@ import 'request.dart';
 
 /// Class managing the encryption and decryption process.
 class CryptoEngine {
-  late RSAPublicKey _publicKey;
+  late RSAPublicKey publicKey;
   late RSAPrivateKey _privateKey;
 
   late ReceivePort _mainPort;
@@ -26,29 +26,41 @@ class CryptoEngine {
   /// Creates a [CryptoEngine] object.
   CryptoEngine() {
     final keys = generateRSAkeyPair();
-    this._publicKey = keys.publicKey;
+    this.publicKey = keys.publicKey;
     this._privateKey = keys.privateKey;
     this._mainPort = ReceivePort();
     this._stream = this._mainPort.asBroadcastStream();
     this._isolates = List.filled(NB_ISOLATE, null);
     this._sendPorts = List.filled(NB_ISOLATE, null);
-    this._initialize();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the public key of this engine.
-  RSAPublicKey get publicKey => _publicKey;
+  /// RSA private key of this engine.
+  set privateKey(RSAPrivateKey key) => this._privateKey = key;
 
 /*-------------------------------Public methods-------------------------------*/
+
+  /// Initializes internal parameters.
+  Future<void> initialize() async {
+    _stream.listen((reply) {
+      if (reply.rep == CryptoTask.initialisation) {
+        _sendPorts[reply.data[0]] = reply.data[1];
+      }
+    });
+
+    // Spawn the isolate for decryption and encryption
+    _isolates[ENCRYPTION] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
+    _isolates[DECRYPTION] = await Isolate.spawn(processDecryption, _mainPort.sendPort);
+  }
 
   /// Generates a pair of public and private key using the RSA algorithm.
   /// 
   /// Returns a pair of [RSAPublicKey] and [RSAPrivateKey] key with a bit key
-  /// length of 2048 bits.
+  /// length of 1024 bits.
   AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> generateRSAkeyPair() {
     // Bit key length
-    int bitLength = 2048;
+    int bitLength = 1024;
 
     // Create and initialize a RSA key generator
     final keyGen = RSAKeyGenerator()..init(ParametersWithRandom(
@@ -93,8 +105,11 @@ class CryptoEngine {
 
     // Listen to the reply of the encryption isolate
     _stream.listen((reply) {
-      if (reply.rep == CryptoTask.encryption)
-        completer.complete(reply.data as List<dynamic>);
+      if (reply.rep == CryptoTask.encryption) {
+        try {
+          completer.complete(reply.data as List<dynamic>);
+        } catch (exception) { }
+      }
     });
 
     return completer.future as Future<List<dynamic>>;
@@ -115,9 +130,6 @@ class CryptoEngine {
 
     // Send request to decryption isolate
     if (sharedKey == null) {
-      print(_sendPorts);
-      print(data);
-      print(sharedKey);
       _sendPorts[DECRYPTION]!.send(
         Request(CryptoTask.decryption, data, privateKey: _privateKey)
       );
@@ -129,8 +141,11 @@ class CryptoEngine {
 
     // Listen to the reply of the decryption isolate
     _stream.listen((reply) {
-      if (reply.rep == CryptoTask.decryption)
-        completer.complete(Uint8List.fromList(reply.data));
+      if (reply.rep == CryptoTask.decryption) {
+        try {
+          completer.complete(Uint8List.fromList(reply.data));
+        } catch (exception) { }
+      }
     });
 
     return completer.future as Future<Uint8List>;
@@ -164,15 +179,13 @@ class CryptoEngine {
   bool verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
     // Instantiate a RSASigner object with the desired digest algorithm
     final RSASigner verifier = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
-
     // Set the verifier into verify mode
     verifier.init(false, PublicKeyParameter<RSAPublicKey>(key));
-    certificate.signature = Uint8List(1);
 
     try {
       // Verify the signature
       return verifier.verifySignature(
-        Utf8Encoder().convert(certificate.toString()), RSASignature(signature)
+        Utf8Encoder().convert(certificate.key.toString()), RSASignature(signature)
       );
     } on ArgumentError {
       return false;
@@ -188,20 +201,6 @@ class CryptoEngine {
   }
 
 /*------------------------------Private methods-------------------------------*/
-
-  /// Initializes internal parameters.
-  void _initialize() async {
-    _stream.listen((reply) {
-      if (reply.rep == CryptoTask.initialisation) {
-        _sendPorts[reply.data[0]] = reply.data[1];
-      }
-    });
-
-    // Spawn the isolate for decryption and encryption
-    _isolates[ENCRYPTION] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
-    _isolates[DECRYPTION] = await Isolate.spawn(processDecryption, _mainPort.sendPort);
-  }
-
 
   /// Returns a [SecureRandom] object;
   SecureRandom _random() {
@@ -279,17 +278,32 @@ void processDecryption(SendPort port) {
   ReceivePort _receivePort = ReceivePort();
   port.send(Reply(CryptoTask.initialisation, [DECRYPTION ,_receivePort.sendPort]));
 
+  final Crypto.Chacha20 algorithm = Crypto.Chacha20(
+    macAlgorithm: Crypto.Hmac.sha256()
+  );
+
+  Crypto.SecretKey secretKey;
+  OAEPEncoding decryptor;
+
   _receivePort.listen((request) async {
+    Request req = request as Request;
     List<dynamic> reply = request.data as List<dynamic>;
 
-    final OAEPEncoding decryptor = OAEPEncoding(RSAEngine())
-      ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
+    if (req.req == CryptoTask.decryption) {
+      decryptor = OAEPEncoding(RSAEngine())..init(
+        false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!)
+      );
 
-    final Crypto.Chacha20 algorithm = Crypto.Chacha20(macAlgorithm: Crypto.Hmac.sha256());
+      Uint8List secretKeyBytes = _processData(
+        decryptor, Uint8List.fromList(
+          (reply[SECRET_KEY] as List<dynamic>).cast<int>()
+        )
+      );
 
-    Uint8List secretKey = _processData(
-      decryptor, Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>())
-    );
+      secretKey = Crypto.SecretKey(secretKeyBytes);
+    } else {
+      secretKey = req.sharedKey!;
+    }
 
     final Uint8List decrypted = Uint8List.fromList(
       await algorithm.decrypt(
@@ -298,7 +312,7 @@ void processDecryption(SendPort port) {
           nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
           mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
         ),
-        secretKey: Crypto.SecretKey(secretKey),
+        secretKey: secretKey,
       ),
     );
 

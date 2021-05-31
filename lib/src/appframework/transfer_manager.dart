@@ -18,7 +18,6 @@ class TransferManager {
   late DataLinkManager _datalinkManager;
   late PresentationManager _securityManager;
 
-
   /// Creates a [TransferManager] object.
   /// 
   /// The debug/verbose mode is set if [_verbose] is true.

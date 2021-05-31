@@ -123,7 +123,7 @@ class BleAdHocManager extends ServiceManager {
 
     isDiscovering = true;
     // Notify upper layer of the discovery process' start
-    controller.add(AdHocEvent(DISCOVERY_START, null));
+    controller.add(AdHocEvent(DISCOVERY_START, []));
     // Stop the discovery process after DISCOVERY_TIME
     Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
   }

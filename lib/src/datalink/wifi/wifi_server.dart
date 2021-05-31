@@ -36,7 +36,7 @@ class WifiServer extends ServiceServer {
   /// 
   /// The socket connects to [hostIP] at port number [serverPort].
   @override
-  void listen([String? hostIP, int? serverPort]) async {
+  Future<void> listen([String? hostIP, int? serverPort]) async {
     if (verbose) log(ServiceServer.TAG, 'Server: listen()');
 
     _serverSocket = await ServerSocket.bind(hostIP, serverPort!, shared: true);

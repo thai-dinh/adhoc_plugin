@@ -26,7 +26,7 @@ class CertificateRepository {
   /// Returns the list of certificates of this repository.
   List<Certificate> get certificates {
     List<Certificate> certificates = List.empty(growable: true);
-    _repository.entries.map((entry) => certificates.add(entry.value));
+    _repository.forEach((key, value) => certificates.add(value));
     return certificates;
   }
 

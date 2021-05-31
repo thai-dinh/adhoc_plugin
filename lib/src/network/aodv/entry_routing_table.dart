@@ -81,7 +81,7 @@ class EntryRoutingTable {
   String displayPrecursors() {
     StringBuffer buffer = StringBuffer();
 
-    buffer.write('precursors: {');
+    buffer.write('precursors: { ');
     for (final String precursor in _precursors)
       buffer.write('$precursor ');
     buffer.write('}');
