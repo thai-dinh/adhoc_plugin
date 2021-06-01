@@ -13,6 +13,7 @@ class Config {
 
   late String label;
   late bool flood;
+  late bool open;
   late int timeOut;
   late int expiryTime;
   late int validityPeriod;
@@ -25,6 +26,9 @@ class Config {
   /// 
   /// If [flood] is set to true, then internal flooding mechanisms are activated,
   /// e.g., flood new connection events.
+  /// 
+  /// If [open] is set to true, then the current device will always join the
+  /// first group formation message received.
   /// 
   /// If [serverPort] is given, then it is used instead of the default one 
   /// (52000). The port number should be exclusively bewteen 1023 and 65535. 
@@ -39,8 +43,9 @@ class Config {
   /// If [validityCheck] is given, then it is used instead of the default one 
   /// (7200 seconds).
   Config({
-    String label = '', bool flood = false, int serverPort = 52000,
-    int expiryTime = 10, int validityPeriod = 7200, int validityCheck = 7200
+    String label = '', bool flood = false, bool open = false, 
+    int serverPort = 52000, int expiryTime = 10, int validityPeriod = 7200, 
+    int validityCheck = 7200
   }) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.flood = flood;

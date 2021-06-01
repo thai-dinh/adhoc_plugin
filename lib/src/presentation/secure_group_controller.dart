@@ -26,6 +26,8 @@ class SecureGroupController {
   Stream<AdHocEvent> _eventStream;
   late String _ownLabel;
   late StreamController<AdHocEvent> _controller;
+  late bool _open;
+  late Set<String> _setFloodEvents;
 
   /// Order of the finite cyclic group
   BigInt? _p;
@@ -66,6 +68,8 @@ class SecureGroupController {
   ) {
     this._ownLabel = _aodvManager.label;
     this._controller = StreamController<AdHocEvent>.broadcast();
+    this._open = config.open;
+    this._setFloodEvents = Set();
     this._k = null;
     this._d = null;
     this._expiryTime = config.expiryTime;
@@ -83,6 +87,9 @@ class SecureGroupController {
   /// Stream of ad hoc event notifications of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
+  /// Stance about joining group formation
+  set open(bool open) => _open = open;
+
 /*-------------------------------Public methods-------------------------------*/
 
   /// Initiates a secure group creation process
@@ -93,6 +100,7 @@ class SecureGroupController {
     _isFormationOn = true;
 
     _groupOwner = _ownLabel;
+    String timestamp = _ownLabel + DateTime.now().toIso8601String();
 
     int low = 32;
     int seed = max(low + low, Random(42).nextInt(192));
@@ -102,7 +110,8 @@ class SecureGroupController {
     _g = randomPrimeBigInt(low);
 
     SecureData message = SecureData(
-      SecureGroup.init.index, [_groupOwner, _p.toString(), _g.toString()]
+      SecureGroup.init.index, 
+      [timestamp, _groupOwner, _p.toString(), _g.toString()]
     );
 
     // Broadcast formation group advertisement
@@ -376,11 +385,20 @@ class SecureGroupController {
     List<dynamic> payload = pdu.payload as List<dynamic>;
     switch (type) {
         case SecureGroup.init:
+          String timestamp = payload[0] as String;
+          if (!_setFloodEvents.contains(timestamp)) {
+            _setFloodEvents.add(timestamp);
+            _datalinkManager.broadcastObject(pdu);
+          }
+
+          if (_open == false)
+            return;
+
           // Store group owner label
-          _groupOwner = payload[0] as String;
+          _groupOwner = payload[1] as String;
           // Store Diffie-Hellman parameters
-          _p = BigInt.parse(payload[1] as String);
-          _g = BigInt.parse(payload[2] as String);
+          _p = BigInt.parse(payload[2] as String);
+          _g = BigInt.parse(payload[3] as String);
           // Reply to the group formation
           SecureData msg = SecureData(SecureGroup.reply.index, []);
           _aodvManager.sendMessageTo(senderLabel, msg);

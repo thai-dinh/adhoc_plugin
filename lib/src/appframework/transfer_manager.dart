@@ -66,6 +66,9 @@ class TransferManager {
     return _datalinkManager.getActiveAdapterNames();
   }
 
+  /// Stance about joining group formation
+  set open(bool open) => _securityManager.groupController.open = open;
+
 /*-------------------------------Group Methods--------------------------------*/
 
   /// Creates a secure group.
