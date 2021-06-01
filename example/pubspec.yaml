@@ -15,7 +15,7 @@ dependencies:
   analyzer_plugin: ^0.6.0
   cupertino_icons: ^1.0.3
   file_picker: ^3.0.1
-  path_provider: ^2.0.1
+  path_provider: ^2.0.2
 
 dev_dependencies:
   flutter_test:

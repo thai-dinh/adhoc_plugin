@@ -221,7 +221,7 @@ class PresentationManager {
 
           // Generate a message for certificate exchange process
           SecureData msg = SecureData(
-            CERT_XCHG_REQ,
+            CERT_EXCHANGE,
             [_engine.publicKey.modulus.toString(), 
              _engine.publicKey.exponent.toString()]
           );
@@ -318,26 +318,7 @@ class PresentationManager {
         _controller.add(AdHocEvent(DATA_RECEIVED, [sender, pdu.payload]));
         break;
 
-      case CERT_XCHG_REQ:
-        List<String> _pdu = (pdu.payload as List<dynamic>).cast<String>();
-        // Issue a certificate
-        _issueCertificate(
-          senderLabel, 
-          RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last))
-        );
-
-        // Construct a SecureData message for certificate exchange process
-        SecureData data = SecureData(
-          CERT_XCHG_REP,
-          [_engine.publicKey.modulus.toString(), 
-           _engine.publicKey.exponent.toString()]
-        );
-
-        // Send this node's public key the directly trusted neighbor
-        _aodvManager.sendMessageTo(senderLabel, data.toJson());
-        break;
-
-      case CERT_XCHG_REP:
+      case CERT_EXCHANGE:
         List<String> _pdu = (pdu.payload as List<dynamic>).cast<String>();
         // Issue a certificate
         _issueCertificate(

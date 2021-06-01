@@ -50,19 +50,19 @@ class RREQ extends AodvMessage {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the hop count of the RREQ message.
+  /// Hop count of the RREQ message.
   int get hopCount => _hopCount = _hopCount + 1;
 
-  /// Returns the broadcast ID of the RREQ message.
+  /// Broadcast ID of the RREQ message.
   int get rreqId => _rreqId;
 
-  /// Returns the destination address of the RREQ message.
+  /// Destination address of the RREQ message.
   String get dstAddr => _dstAddr;
 
-  /// Returns the source hop count of the RREQ message.
+  /// Source hop count of the RREQ message.
   int get srcSeqNum => _srcSeqNum;
 
-  /// Returns the source address of the RREQ message.
+  /// Source address of the RREQ message.
   String get srcAddr => _srcAddr;
 
 /*-------------------------------Public methods-------------------------------*/

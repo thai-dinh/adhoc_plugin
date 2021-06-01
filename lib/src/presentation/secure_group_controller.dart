@@ -148,7 +148,7 @@ class SecureGroupController {
   /// 
   /// The message payload is set to [data] and is encrypted using the group key.
   void sendMessageToGroup(Object? data) async {
-    Future<List> encrypted = _engine.encrypt(
+    List encrypted = await _engine.encrypt(
       Utf8Encoder().convert(JsonCodec().encode(data)), 
       sharedKey: _groupKey!,
     );
@@ -452,6 +452,9 @@ class SecureGroupController {
           // Group owner responds to the group join request received
           String joiningMember = payload[0] as String;
           _memberLabel.add(joiningMember);
+
+          if (_memberLabel.contains(joiningMember))
+            return;
 
           // Compute hash of the group key and send it along public Diffie-Hellman
           // shares of all group members to the joining member.

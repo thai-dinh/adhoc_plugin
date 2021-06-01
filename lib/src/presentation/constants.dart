@@ -16,8 +16,7 @@ const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 // Constants for the certificate management
 const ENCRYPTED_DATA   = 300;     // Data encrypted received or to send
 const UNENCRYPTED_DATA = 301;     // Data unencrypted received or to send
-const CERT_XCHG_REQ    = 302;     // Certificate exchange request
-const CERT_XCHG_REP    = 303;     // Certificate exchange reply
+const CERT_EXCHANGE    = 302;     // Certificate exchange request
 const CERT_REQ         = 304;     // Request certificate
 const CERT_REP         = 305;     // Reply to certificate request
 const CERT_REVOCATION  = 306;     // Certificate revocation notification
