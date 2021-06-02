@@ -5,6 +5,10 @@ import '../../datalink/utils/utils.dart';
 
 
 /// Class representing the routing table of the AODV protocol.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class RoutingTable {
   static const String TAG = '[RoutingTable]';
 

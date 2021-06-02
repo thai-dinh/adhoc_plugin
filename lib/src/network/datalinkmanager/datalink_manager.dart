@@ -18,6 +18,10 @@ import '../../datalink/utils/msg_header.dart';
 /// Class acting as an intermediary sub-layer between the lower layer (data-link)
 /// and the sub-layer (aodv) related to the routing protocol. It chooses which 
 /// wrapper to use to transmit data.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class DataLinkManager {
   late String _ownLabel;
   late List<WrapperNetwork?> _wrappers;

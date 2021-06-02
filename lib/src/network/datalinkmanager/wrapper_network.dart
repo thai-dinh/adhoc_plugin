@@ -19,6 +19,10 @@ import '../../datalink/utils/utils.dart';
 /// Super abstract class defining the parameters and methods for managing 
 /// connections, messages received. It aims to serve as a common interface for 
 /// the service classes 'WrapperBle' and 'WrapperWifi'.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 abstract class WrapperNetwork {
   static const String TAG = "[WrapperNetwork]";
 

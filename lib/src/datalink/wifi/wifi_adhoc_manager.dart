@@ -164,7 +164,7 @@ class WifiAdHocManager extends ServiceManager {
     _methodCh.invokeMethod('discovery');
 
     // Notify upper layer of the discovery process' start
-    controller.add(AdHocEvent(DISCOVERY_START, null));
+    controller.add(AdHocEvent(DISCOVERY_START, []));
 
     // Stop the discovery process after DISCOVERY_TIME
     Timer(

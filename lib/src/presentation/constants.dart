@@ -14,12 +14,16 @@ const SECRET_KEY = 0;   // Secret key tag for cryptographic tasks
 const SECRET_DATA = 1;  // Encrypted data tag for cryptographic tasks
 
 // Constants for the certificate management
-const ENCRYPTED_DATA   = 300;     // Data encrypted received or to send
-const UNENCRYPTED_DATA = 301;     // Data unencrypted received or to send
-const CERT_EXCHANGE    = 302;     // Certificate exchange request
-const CERT_REQ         = 304;     // Request certificate
-const CERT_REP         = 305;     // Reply to certificate request
-const CERT_REVOCATION  = 306;     // Certificate revocation notification
+const ENCRYPTED_DATA    = 300;     // Data encrypted received or to send
+const UNENCRYPTED_DATA  = 301;     // Data unencrypted received or to send
+const CERT_EXCHANGE     = 302;     // Certificate exchange request
+const CERT_REQ          = 304;     // Request certificate
+const CERT_REP          = 305;     // Reply to certificate request
+const CERT_REVOCATION   = 306;     // Certificate revocation notification
+const GROUP_STATUS      = 307;     // Group status notification
+const GROUP_LEAVE       = 308;     // Group left notification
+const GROUP_JOIN        = 309;     // Group join notification
+const GROUP_KEY_UPDATED = 310;     // Group key update notification
 
 enum CryptoTask {
   /// Isoalte initialisation 

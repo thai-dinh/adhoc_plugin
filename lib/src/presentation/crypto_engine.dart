@@ -262,6 +262,8 @@ void processEncryption(SendPort port) {
     encryptedData.add(secretBox.nonce);
     encryptedData.add(secretBox.mac.bytes);
 
+    print(secretBox.mac.bytes);
+
     List<dynamic> reply = List.filled(2, null);
     reply[SECRET_KEY] = encryptedKey;
     reply[SECRET_DATA] = encryptedData;
@@ -304,6 +306,8 @@ void processDecryption(SendPort port) {
     } else {
       secretKey = req.sharedKey!;
     }
+
+    print(reply[SECRET_DATA][2]);
 
     final Uint8List decrypted = Uint8List.fromList(
       await algorithm.decrypt(

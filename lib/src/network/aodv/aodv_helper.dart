@@ -7,6 +7,10 @@ import '../../datalink/utils/utils.dart';
 
 /// Class helping the 'AodvManager' class by managing broadcast requests and 
 /// the routing table.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class AodvHelper {
   static const String TAG = '[AodvHelper]';
 

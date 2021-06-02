@@ -10,6 +10,7 @@ import 'package:ninja_prime/ninja_prime.dart';
 import 'constants.dart';
 import 'crypto_engine.dart';
 import 'secure_data.dart';
+import 'exceptions/group_not_formed.dart';
 import '../appframework/config.dart';
 import '../datalink/service/adhoc_device.dart';
 import '../datalink/service/adhoc_event.dart';
@@ -27,6 +28,7 @@ class SecureGroupController {
   late String _ownLabel;
   late StreamController<AdHocEvent> _controller;
   late bool _open;
+  late bool _isGroupFormed;
   late Set<String> _setFloodEvents;
 
   /// Order of the finite cyclic group
@@ -69,6 +71,7 @@ class SecureGroupController {
     this._ownLabel = _aodvManager.label;
     this._controller = StreamController<AdHocEvent>.broadcast();
     this._open = config.open;
+    this._isGroupFormed = false;
     this._setFloodEvents = Set();
     this._k = null;
     this._d = null;
@@ -138,6 +141,8 @@ class SecureGroupController {
     if (!_isFormationOn)
       return;
 
+    _isGroupFormed = false;
+
     // Send a leave group notification
     SecureData msg = SecureData(SecureGroup.leave.index, []);
     _aodvManager.sendMessageTo(_groupOwner!, msg);
@@ -156,7 +161,14 @@ class SecureGroupController {
   /// Sends a encrypted message to the secure group.
   /// 
   /// The message payload is set to [data] and is encrypted using the group key.
+  /// 
+  /// Throws a [GroupNotFormedException] exception if the group is not formed
+  /// or the device is not part of any secure group.
   void sendMessageToGroup(Object? data) async {
+    if (_isGroupFormed == false) {
+      throw GroupNotFormedException();
+    }
+
     List encrypted = await _engine.encrypt(
       Utf8Encoder().convert(JsonCodec().encode(data)), 
       sharedKey: _groupKey!,
@@ -334,12 +346,15 @@ class SecureGroupController {
   void _computeGroupKey(SecureGroup type, [String? label]) async {
     BigInt groupKeySum = BigInt.zero;
     BigInt groupKeyHash = BigInt.zero;
+    String operation = '';
 
     switch (type) {
       case SecureGroup.init:
         groupKeySum += _k!;
         for (final String label in _CRTShare.keys)
           groupKeySum ^= (_CRTShare[label]! % _memberShare[label]!);
+
+        operation = 'formation';
         break;
 
       case SecureGroup.join:
@@ -350,6 +365,8 @@ class SecureGroupController {
         } else {
           groupKeySum = groupKeyHash ^ (_CRTShare[label]! % _memberShare[label]!);
         }
+
+        operation = 'join';
         break;
 
       case SecureGroup.leave:
@@ -358,13 +375,30 @@ class SecureGroupController {
         } else {
           groupKeySum ^= (_CRTShare[_groupOwner]! % _memberShare[_groupOwner]!);
         }
+
+        operation = 'leave';
         break;
 
       default:
     }
 
-    print('GroupKey: ${groupKeySum.toInt()}');
-    _groupKey = SecretKey(_toBytes(groupKeySum));
+    Uint8List keyBytes = _toBytes(groupKeySum);
+    int length = keyBytes.length;
+    if (length < 32) {
+      keyBytes = 
+        Uint8List.fromList(keyBytes.toList() + List.filled(32 - length, 42));
+    } else if (length > 32) {
+      keyBytes = keyBytes.sublist(0, 32);
+    }
+
+    _groupKey = SecretKey(keyBytes);
+
+    if (_isGroupFormed == false) {
+      _isGroupFormed = true;
+      _controller.add(AdHocEvent(GROUP_STATUS, true));
+    }
+
+    _controller.add(AdHocEvent(GROUP_KEY_UPDATED, operation));
   }
 
 
@@ -388,7 +422,7 @@ class SecureGroupController {
           String timestamp = payload[0] as String;
           if (!_setFloodEvents.contains(timestamp)) {
             _setFloodEvents.add(timestamp);
-            _datalinkManager.broadcastObject(pdu);
+            _datalinkManager.broadcastObjectExcept(pdu, senderLabel);
           }
 
           if (_open == false)
@@ -396,6 +430,10 @@ class SecureGroupController {
 
           // Store group owner label
           _groupOwner = payload[1] as String;
+          // Reject own advertisement
+          if (_groupOwner == _ownLabel)
+            return;
+
           // Store Diffie-Hellman parameters
           _p = BigInt.parse(payload[2] as String);
           _g = BigInt.parse(payload[3] as String);
@@ -405,8 +443,9 @@ class SecureGroupController {
           break;
 
         case SecureGroup.reply:
-          // Add member to list of group member
-          _memberLabel.add(senderLabel);
+          if (!_memberLabel.contains(senderLabel))
+            // Add member to list of group member
+            _memberLabel.add(senderLabel);
           break;
 
         case SecureGroup.list:

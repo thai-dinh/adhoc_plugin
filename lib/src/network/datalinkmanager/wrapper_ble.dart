@@ -25,6 +25,10 @@ import '../../datalink/utils/utils.dart';
 
 /// Class inheriting the abstract wrapper class [WrapperNetwork] and managing 
 /// all communications related to Bluetooth Low Energy.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class WrapperBle extends WrapperNetwork {
   static const String TAG = "[WrapperBle]";
 

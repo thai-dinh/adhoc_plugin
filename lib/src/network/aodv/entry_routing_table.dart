@@ -2,6 +2,10 @@ import 'dart:collection';
 
 
 /// Class representing a routing table entry for AODV protocol.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class EntryRoutingTable {
   late String _dstAddr;
   late String _next;

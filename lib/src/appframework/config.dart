@@ -49,6 +49,7 @@ class Config {
   }) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.flood = flood;
+    this.open = open;
     this.serverPort = serverPort;
     this.timeOut = 5000;
     this.expiryTime = expiryTime;

@@ -244,6 +244,24 @@ class PresentationManager {
           _controller.add(event);
       }
     });
+
+    _groupController.eventStream.listen((event) {
+      switch (event.type) {
+        case DATA_RECEIVED:
+          _controller.add(event);
+          break;
+
+        case GROUP_STATUS:
+          _controller.add(event);
+          break;
+
+        case GROUP_KEY_UPDATED:
+          _controller.add(event);
+          break;
+
+        default:
+      }
+    });
   }
 
 

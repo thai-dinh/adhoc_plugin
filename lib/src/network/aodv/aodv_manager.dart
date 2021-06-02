@@ -27,6 +27,10 @@ import '../../presentation/constants.dart';
 
 /// Class representing the core of the AODV protocol. It manages all the 
 /// messages received and to send.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class AodvManager {
   static const String TAG = '[AodvManager]';
 

@@ -20,13 +20,13 @@ class WifiAdHocDevice extends AdHocDevice {
 
   @override
   String toString() {
-    return 'WifiAdHocDevice' +
+    return 'WifiAdHocDevice{' +
               'ipAddress=$address' +
               ', port=$port' +
               ', label=$label' +
-              ', name$name' +
-              ', mac$mac' +
-              ', type${super.typeAsString()}' +
+              ', name=$name' +
+              ', mac=$mac' +
+              ', type=${super.typeAsString()}' +
            '}';
   }
 }

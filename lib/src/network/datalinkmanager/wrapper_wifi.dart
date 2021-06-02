@@ -25,6 +25,10 @@ import '../../datalink/wifi/wifi_server.dart';
 
 /// Class inheriting the abstract class [WrapperNetwork] and manages all 
 /// communications related to Wi-Fi Direct.
+/// 
+/// NOTE: Most of the following source code has been borrowed and adapted from 
+/// the original codebase provided by Gaulthier Gain, which can be found at:
+/// https://github.com/gaulthiergain/AdHocLib
 class WrapperWifi extends WrapperNetwork {
   static const String TAG = "[WrapperWifi]";
 
