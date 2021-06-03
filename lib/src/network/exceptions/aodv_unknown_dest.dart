@@ -3,7 +3,7 @@ import 'dart:core';
 
 /// Class signaling that a AODV unknown destination route exception has occurred.
 class AodvUnknownDestException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [AodvUnknownDestException] object.
   /// 

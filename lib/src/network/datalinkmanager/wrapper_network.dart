@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'constants.dart';
-import 'flood_msg.dart';
-import 'neighbors.dart';
-import 'network_manager.dart';
-import '../../appframework/config.dart';
-import '../../datalink/exceptions/no_connection.dart';
-import '../../datalink/service/adhoc_device.dart';
-import '../../datalink/service/adhoc_event.dart';
-import '../../datalink/service/service_server.dart';
-import '../../datalink/utils/identifier.dart';
-import '../../datalink/utils/msg_header.dart';
-import '../../datalink/utils/msg_adhoc.dart';
-import '../../datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/neighbors.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
 /// Super abstract class defining the parameters and methods for managing 
@@ -65,23 +65,23 @@ abstract class WrapperNetwork {
   WrapperNetwork(
     this.verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices,
   ) {
-    this.flood = config.flood;
-    this.timeOut = config.timeOut;
-    this.attempts = 3;
-    this.ownLabel = config.label;
-    this.ownName = '';
-    this.ownMac = Identifier();
-    this.type = -1;
-    this.enabled = false;
-    this.discoveryCompleted = false;
-    this.isDiscovering = false;
-    this.isListening = false;
-    this.neighbors = Neighbors();
     this.mapMacDevices = mapMacDevices;
-    this.mapAddrNetwork = HashMap();
-    this.controller = StreamController<AdHocEvent>();
-    this.setFloodEvents = Set();
-    this.setRemoteDevices = HashSet();
+    flood = config.flood;
+    timeOut = config.timeOut;
+    attempts = 3;
+    ownLabel = config.label;
+    ownName = '';
+    ownMac = Identifier();
+    type = -1;
+    enabled = false;
+    discoveryCompleted = false;
+    isDiscovering = false;
+    isListening = false;
+    neighbors = Neighbors();
+    mapAddrNetwork = HashMap();
+    controller = StreamController<AdHocEvent>();
+    setFloodEvents = <String>{};
+    setRemoteDevices = HashSet();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -90,9 +90,10 @@ abstract class WrapperNetwork {
   /// 
   /// Returns a [List] of [AdHocDevice], which are direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
-    List<AdHocDevice> devices = List.empty(growable: true);
-    for (final mac in neighbors.labelMac.values)
+    var devices = List<AdHocDevice>.empty(growable: true);
+    for (final mac in neighbors.labelMac.values) {
       devices.add(mapMacDevices[mac]!);
+    }
 
     return devices;
   }
@@ -161,7 +162,7 @@ abstract class WrapperNetwork {
 
   /// Closes the stream controller.
   void stopListening() {
-    this.controller.close();
+    controller.close();
   }
 
 
@@ -195,9 +196,10 @@ abstract class WrapperNetwork {
   /// The message to sent is given by [message] and its destination address is
   /// set to [label]
   void sendMessage(String label, MessageAdHoc message) {
-    NetworkManager? network = neighbors.getNeighbor(label);
-    if (network != null)
+    var network = neighbors.getNeighbor(label);
+    if (network != null) {
       network.sendMessage(message);
+    }
   }
 
 
@@ -205,11 +207,11 @@ abstract class WrapperNetwork {
   /// 
   /// Returns true if the [message] has been successfully broadcasted, otherwise
   /// false.
-  bool broadcast(MessageAdHoc message) {
-    if (neighbors.neighbors.length > 0) {
-      neighbors.neighbors.values.forEach((network) async {
+  Future<bool> broadcast(MessageAdHoc message) async {
+    if (neighbors.neighbors.isNotEmpty) {
+      for (var network in neighbors.neighbors.values) {
         await network.sendMessage(message);
-      });
+      }
 
       return true;
     }
@@ -224,7 +226,7 @@ abstract class WrapperNetwork {
   /// Returns true if the [message] has been successfully broadcasted to all 
   /// direct neighbors except [excluded], otherwise false.
   bool broadcastExcept(MessageAdHoc message, String excluded) {
-    if (neighbors.neighbors.length > 0) {
+    if (neighbors.neighbors.isNotEmpty) {
       neighbors.neighbors.forEach((label, network) async {
         if (excluded.compareTo(label) != 0) {
           await network.sendMessage(message);
@@ -247,7 +249,7 @@ abstract class WrapperNetwork {
     if (verbose) log(TAG, 'receivedPeerMessage(): ${header.mac}');
 
     // Recover the AdHocDevice of the remote node
-    AdHocDevice device = AdHocDevice(
+    var device = AdHocDevice(
       label: header.label,
       address: header.address,
       name: header.name,
@@ -278,7 +280,7 @@ abstract class WrapperNetwork {
 
       // If connection flooding option is enable, floods the connection event
       if (flood) {
-        String id = header.label + DateTime.now().millisecond.toString();
+        var id = header.label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
         header.messageType = CONNECT_BROADCAST;
         broadcast(
@@ -293,7 +295,7 @@ abstract class WrapperNetwork {
 
   /// Disconnects the node from a particular node denoted by [label].
   void disconnect(String label) {
-    NetworkManager? network = neighbors.getNeighbor(label);
+    var network = neighbors.getNeighbor(label);
     if (network != null) {
       network.disconnect();
       neighbors.remove(label);
@@ -303,10 +305,11 @@ abstract class WrapperNetwork {
 
   /// Disconnects the node from all remote node.
   void disconnectAll() {
-    if (neighbors.neighbors.length > 0) {
+    if (neighbors.neighbors.isNotEmpty) {
       for (NetworkManager? network in neighbors.neighbors.values) {
-        if (network != null)
+        if (network != null) {
           network.disconnect();
+        }
       }
 
       neighbors.clear();
@@ -316,7 +319,7 @@ abstract class WrapperNetwork {
 
   /// Processes the disconnection of a remote node with MAC address [mac].
   void connectionClosed(Identifier mac) {
-    AdHocDevice? device = null;
+    AdHocDevice? device;
     // Get AdHocDevice from the MAC address
     for (final id in mapMacDevices.keys) {
       if (id.ble == mac.ble || id.wifi == mac.wifi) {
@@ -326,7 +329,7 @@ abstract class WrapperNetwork {
     }
 
     if (device != null) {
-      String? label = device.label;
+      var label = device.label;
 
       // Remove device from neighbors and hash maps
       neighbors.remove(label!);
@@ -340,10 +343,10 @@ abstract class WrapperNetwork {
 
       // If the connection flooding option is enable, floods the disconnect event
       if (flood) {
-        String id = label + DateTime.now().millisecond.toString();
+        var id = label + DateTime.now().millisecond.toString();
         setFloodEvents.add(id);
 
-        Header header = Header(
+        var header = Header(
           messageType: DISCONNECT_BROADCAST,
           label: label,
           name: device.name,
@@ -355,8 +358,9 @@ abstract class WrapperNetwork {
         broadcastExcept(MessageAdHoc(header, id), label);
 
         // Update the set
-        if (setRemoteDevices.contains(device))
+        if (setRemoteDevices.contains(device)) {
           setRemoteDevices.remove(device);
+        }
       }
     } else {
       throw NoConnectionException('Error while closing connection');

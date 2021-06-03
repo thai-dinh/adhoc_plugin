@@ -4,11 +4,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_server.dart';
-import '../utils/msg_adhoc.dart';
-import '../utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
 
 /// Class defining the server's logic for the Wi-Fi Direct implementation.
@@ -24,10 +24,10 @@ class WifiServer extends ServiceServer {
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   WifiServer(bool verbose) : super(verbose) {
-    this._mapNameData = HashMap();
-    this._mapIpStream = HashMap();
-    this._mapIpSocket = HashMap();
-    this._mapIpBuffer = HashMap();
+    _mapNameData = HashMap();
+    _mapIpStream = HashMap();
+    _mapIpSocket = HashMap();
+    _mapIpBuffer = HashMap();
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -43,7 +43,7 @@ class WifiServer extends ServiceServer {
   
     _connectionSub = _serverSocket.listen(
       (socket) {
-        String remoteIPAddress = socket.remoteAddress.address;
+        var remoteIPAddress = socket.remoteAddress.address;
         _mapIpSocket.putIfAbsent(remoteIPAddress, () => socket);
         _mapIpStream.putIfAbsent(remoteIPAddress, () => socket.listen(
           (data) async {
@@ -57,9 +57,9 @@ class WifiServer extends ServiceServer {
             _mapNameData.putIfAbsent(remoteIPAddress, () => HashMap());
             _mapIpBuffer.putIfAbsent(remoteIPAddress, () => StringBuffer());
 
-            String msg = Utf8Decoder().convert(data);
+            var msg = Utf8Decoder().convert(data);
             if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-              for (MessageAdHoc _msg in splitMessages(msg)) {
+              for (var _msg in splitMessages(msg)) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG, 
@@ -69,7 +69,7 @@ class WifiServer extends ServiceServer {
               }
             } else if (msg[msg.length-1].compareTo('}') == 0) {
               _mapIpBuffer[remoteIPAddress]!.write(msg);
-              for (MessageAdHoc _msg in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
+              for (var _msg in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG, 
@@ -94,7 +94,7 @@ class WifiServer extends ServiceServer {
 
         controller.add(AdHocEvent(CONNECTION_PERFORMED, remoteIPAddress));
       },
-      onDone: () => this.stopListening(),
+      onDone: stopListening,
       onError: (error) => controller.add(AdHocEvent(CONNECTION_EXCEPTION, error))
     );
 

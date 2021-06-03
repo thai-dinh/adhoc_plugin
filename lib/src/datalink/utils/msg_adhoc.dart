@@ -1,6 +1,5 @@
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'msg_header.dart';
 
 part 'msg_adhoc.g.dart';
 
@@ -9,9 +8,8 @@ part 'msg_adhoc.g.dart';
 /// using the plugin.
 @JsonSerializable(explicitToJson: true)
 class MessageAdHoc {
-  Object? _pdu;
-
-  late Header _header;
+  late Header header;
+  Object? pdu;
 
   /// Creates a [MessageAdHoc] object.
   /// 
@@ -19,17 +17,14 @@ class MessageAdHoc {
   /// 
   /// The [pdu] is a generic object, which represents the PDU (Data) of a 
   /// message.
-  MessageAdHoc(Header header, Object? pdu) {
-    this._header = header;
-    this._pdu = pdu;
-  }
+  MessageAdHoc(this.header, this.pdu);
 
   /// Creates a [MessageAdHoc] object from a map representation.
   /// 
   /// Factory constructor that creates a [MessageAdHoc] based on the 
   /// information given by [map].
   factory MessageAdHoc.fromMap(Map map) {
-    return MessageAdHoc(map['header'], map['pdu']);
+    return MessageAdHoc(map['header'] as Header, map['pdu']);
   }
 
   /// Creates a [MessageAdHoc] object from a JSON representation.
@@ -37,20 +32,6 @@ class MessageAdHoc {
   /// Factory constructor that creates a [MessageAdHoc] based on the 
   /// information given by [json].
   factory MessageAdHoc.fromJson(Map<String, dynamic> json) => _$MessageAdHocFromJson(json);
-
-/*------------------------------Getters & Setters-----------------------------*/
-
-  /// Sets the new [header] of this [MessageAdHoc] instance.
-  set header(Header header) => this._header = header;
-
-  /// Sets the new [pdu] of this [MessageAdHoc] instance.
-  set pdu(Object? pdu) => this._pdu = pdu;
-
-  /// Return the header of this [MessageAdHoc] instance.
-  Header get header => _header;
-
-  /// Return the PDU (data) of this [MessageAdHoc] instance.
-  Object? get pdu => _pdu;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -62,8 +43,8 @@ class MessageAdHoc {
   @override
   String toString() {
     return 'MessageAdHoc{' + 
-              'header=${_header.toString()}' +
-              ', pdu=${_pdu.toString()}' + 
+              'header=${header.toString()}' +
+              ', pdu=${pdu.toString()}' + 
             '}';
   }
 }

@@ -31,7 +31,7 @@ void main() {
   });
 
   group('Neighbors tests', () {
-    const String label = 'label';
+    const label = 'label';
 
     late Identifier mac;
     late Neighbors neighbors;
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('Updating a neighbor should update it', () {
-      final Identifier newMac = Identifier(ble: 'test');
+      final newMac = Identifier(ble: 'test');
 
       neighbors.addNeighbor(label, mac, networkManager);
       neighbors.updateNeighbor(label, newMac);

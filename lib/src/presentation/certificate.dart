@@ -26,11 +26,11 @@ class Certificate {
   Certificate(
     String owner, String issuer, DateTime validity, RSAPublicKey key
   ) {
-    this._owner = owner;
-    this._issuer = issuer;
-    this._validity = validity;
-    this._key = key;
-    this.signature = Uint8List(1);
+    _owner = owner;
+    _issuer = issuer;
+    _validity = validity;
+    _key = key;
+    signature = Uint8List(1);
   }
 
   /// Creates a [Certificate] object from a JSON representation.
@@ -66,14 +66,14 @@ class _PublicKeyConverter implements JsonConverter<RSAPublicKey, Map<String, dyn
 
   @override
   RSAPublicKey fromJson(Map<String, dynamic> json) {
-    BigInt modulus = BigInt.parse(json['modulus'] as String);
-    BigInt exponent = BigInt.parse(json['exponent'] as String);
+    var modulus = BigInt.parse(json['modulus'] as String);
+    var exponent = BigInt.parse(json['exponent'] as String);
     return RSAPublicKey(modulus, exponent);
   }
 
   @override
   Map<String, dynamic> toJson(RSAPublicKey key) {
-    Map<String, dynamic> map = Map();
+    var map = <String, dynamic>{};
 
     map['modulus'] = key.modulus.toString();
     map['exponent'] = key.exponent.toString();

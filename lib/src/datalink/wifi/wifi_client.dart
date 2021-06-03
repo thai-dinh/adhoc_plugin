@@ -2,20 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'wifi_adhoc_manager.dart';
-import '../exceptions/no_connection.dart';
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_client.dart';
-import '../utils/msg_adhoc.dart';
-import '../utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
 
 
 /// Class defining the client's logic for the Wi-Fi Direct implementation.
 class WifiClient extends ServiceClient {
+  late final String _serverIP;
+  late final int _port;
   late Socket _socket;
-  late String _serverIP;
-  late int _port;
 
   /// Creates a [WifiClient] object.
   /// 
@@ -40,18 +40,19 @@ class WifiClient extends ServiceClient {
   @override
   void listen() {
     // Initialize a buffer
-    StringBuffer buffer = StringBuffer();
+    var buffer = StringBuffer();
     // Listen to messages sent by the server
     _socket.listen(
       (data) {
-        if (verbose)
+        if (verbose) {
           log(ServiceClient.TAG, 'bytes received from $_serverIP:${_socket.port}');
+        }
 
         // Convert bytes to string
-        String msg = Utf8Decoder().convert(data);
+        var msg = Utf8Decoder().convert(data);
 
         if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          for (MessageAdHoc _msg in splitMessages(msg)) {
+          for (var _msg in splitMessages(msg)) {
             controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
             if (verbose) {
               log(ServiceClient.TAG, 
@@ -61,7 +62,7 @@ class WifiClient extends ServiceClient {
           }
         } else if (msg[msg.length-1].compareTo('}') == 0) {
           buffer.write(msg);
-          for (MessageAdHoc _msg in splitMessages(buffer.toString())) {
+          for (var _msg in splitMessages(buffer.toString())) {
             controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
             if (verbose) {
               log(ServiceClient.TAG, 
@@ -82,7 +83,7 @@ class WifiClient extends ServiceClient {
         // Notify the upper layer of an connection aborted
         controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
         // Stop the listening process for ad hoc events.
-        this.stopListening();
+        stopListening();
       }
     );
   }
@@ -111,7 +112,7 @@ class WifiClient extends ServiceClient {
     controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
     // Leave Wi-Fi Direct group
     await WifiAdHocManager.removeGroup();
-    this.stopListening();
+    stopListening();
   }
 
 
@@ -129,7 +130,7 @@ class WifiClient extends ServiceClient {
   Future<void> _connect(int attempts, Duration delay) async {
     try {
       await _connectionAttempt();
-    } catch (exception) {
+    } on NoConnectionException {
       if (attempts > 0) {
         if (verbose) {
           log(

@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'constants.dart';
-import 'flood_msg.dart';
-import 'network_manager.dart';
-import 'wrapper_network.dart';
-import '../../appframework/config.dart';
-import '../../datalink/ble/ble_adhoc_device.dart';
-import '../../datalink/ble/ble_adhoc_manager.dart';
-import '../../datalink/ble/ble_client.dart';
-import '../../datalink/ble/ble_server.dart';
-import '../../datalink/ble/ble_services.dart';
-import '../../datalink/exceptions/device_failure.dart';
-import '../../datalink/service/adhoc_device.dart';
-import '../../datalink/service/adhoc_event.dart';
-import '../../datalink/service/constants.dart';
-import '../../datalink/service/service.dart';
-import '../../datalink/service/service_client.dart';
-import '../../datalink/utils/identifier.dart';
-import '../../datalink/utils/msg_adhoc.dart';
-import '../../datalink/utils/msg_header.dart';
-import '../../datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_manager.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_client.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_server.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 
 
 /// Class inheriting the abstract wrapper class [WrapperNetwork] and managing 
@@ -46,8 +46,8 @@ class WrapperBle extends WrapperNetwork {
   WrapperBle(
     bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices
   ) : super(verbose, config, mapMacDevices) {
-    this.type = BLE;
-    this.init(verbose, null);
+    type = BLE;
+    init(verbose, null);
   }
 
 /*------------------------------Override methods------------------------------*/
@@ -61,13 +61,13 @@ class WrapperBle extends WrapperNetwork {
   @override
   Future<void> init(bool verbose, Config? config) async {
     if (await BleServices.isBleAdapterEnabled()) {
-      this._bleAdHocManager = BleAdHocManager(verbose);
-      this.ownName = await BleServices.bleAdapterName;
-      this._listenServer();
-      this._initialize();
-      this.enabled = true;
+      _bleAdHocManager = BleAdHocManager(verbose);
+      ownName = await BleServices.bleAdapterName;
+      _listenServer();
+      _initialize();
+      enabled = true;
     } else {
-      this.enabled = false;
+      enabled = false;
     }
   }
 
@@ -81,15 +81,15 @@ class WrapperBle extends WrapperNetwork {
   @override
   void enable(int duration) async {
     if (!enabled) {
-      this._bleAdHocManager = BleAdHocManager(verbose);
+      _bleAdHocManager = BleAdHocManager(verbose);
       await _bleAdHocManager.enable();
-      this._bleAdHocManager.enableDiscovery(duration);
-      this.ownName = await BleServices.bleAdapterName;
-      this._listenServer();
-      this._initialize();
-      this.enabled = true;
+      _bleAdHocManager.enableDiscovery(duration);
+      ownName = await BleServices.bleAdapterName;
+      _listenServer();
+      _initialize();
+      enabled = true;
     } else {
-      this._bleAdHocManager.enableDiscovery(duration);
+      _bleAdHocManager.enableDiscovery(duration);
     }
   }
 
@@ -120,8 +120,9 @@ class WrapperBle extends WrapperNetwork {
   /// performed in parallel. A discovery process lasts for at least 10-12 seconds.
   @override
   void discovery() {
-    if (isDiscovering)
+    if (isDiscovering) {
       return;
+    }
 
     _eventSub!.resume();
     _bleAdHocManager.discovery();
@@ -138,7 +139,7 @@ class WrapperBle extends WrapperNetwork {
   /// the remote peer.
   @override
   Future<void> connect(int attempts, AdHocDevice device) async {
-    BleAdHocDevice? bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
+    var bleAdHocDevice = mapMacDevices[device.mac] as BleAdHocDevice?;
     if (bleAdHocDevice != null) {
       if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);
@@ -165,13 +166,14 @@ class WrapperBle extends WrapperNetwork {
   /// devices.
   @override
   Future<HashMap<String, AdHocDevice>> getPaired() async {
-    if (!await BleServices.isBleAdapterEnabled())
+    if (!await BleServices.isBleAdapterEnabled()) {
       return HashMap();
+    }
 
-    HashMap<String, BleAdHocDevice> paired = HashMap();
+    var paired = HashMap<String, BleAdHocDevice>();
     Map pairedDevices = await _bleAdHocManager.getPairedDevices();
     pairedDevices.forEach((mac, bleAdHocDevice) {
-      paired.putIfAbsent(mac, () => bleAdHocDevice);
+      paired.putIfAbsent(mac as String, () => bleAdHocDevice as BleAdHocDevice);
     });
 
     return paired;
@@ -184,7 +186,7 @@ class WrapperBle extends WrapperNetwork {
   @override
   Future<String> getAdapterName() async {
     final String? name = await _bleAdHocManager.adapterName;
-    return name == null ? '' : name;
+    return name ?? '';
   }
 
 
@@ -194,7 +196,7 @@ class WrapperBle extends WrapperNetwork {
   @override
   Future<bool> updateDeviceName(String name) async {
     final bool? result = await _bleAdHocManager.updateDeviceName(name);
-    return result == null ? false : result;
+    return result ?? false;
   }
 
 
@@ -204,7 +206,7 @@ class WrapperBle extends WrapperNetwork {
   @override
   Future<bool> resetDeviceName() async {
     final bool? result = await _bleAdHocManager.resetDeviceName();
-    return result == null ? false : result;
+    return result ?? false;
   }
 
 /*------------------------------Private methods-------------------------------*/
@@ -214,19 +216,20 @@ class WrapperBle extends WrapperNetwork {
   /// In this case, the streams contains [AdHocEvent] object related to the BLE
   /// discovery process.
   void _initialize() {
-    if (isListening)
+    if (isListening) {
       return;
+    }
 
     isListening = true;
     // Listen to stream of ad hoc events
-    _eventSub = _bleAdHocManager.eventStream.listen((AdHocEvent event) {
+    _eventSub = _bleAdHocManager.eventStream.listen((event) {
       // Notify upper layer of discovery event
       controller.add(event);
 
       switch (event.type) {
         case DEVICE_DISCOVERED:
           // Process discovered potential peer
-          BleAdHocDevice device = event.payload as BleAdHocDevice;
+          var device = event.payload as BleAdHocDevice;
           // Add device to hash map
           mapMacDevices.putIfAbsent(device.mac, () {
             if (verbose) log(TAG, "Add " + device.mac.ble + " into mapMacDevices");
@@ -239,9 +242,9 @@ class WrapperBle extends WrapperNetwork {
           if (verbose) log(TAG, 'Discovery end');
           (event.payload as Map).forEach((mac, device) {
             // Add device to hash map
-            mapMacDevices.putIfAbsent(Identifier(ble: mac), () {
+            mapMacDevices.putIfAbsent(Identifier(ble: mac as String), () {
               if (verbose) log(TAG, "Add " + mac + " into mapMacDevices");
-              return device;
+              return device as BleAdHocDevice;
             });
           });
 
@@ -272,17 +275,18 @@ class WrapperBle extends WrapperNetwork {
 
         case CONNECTION_PERFORMED:
           // Process connection establishment
-          List<dynamic> data = event.payload as List<dynamic>;
-          String mac = data[0] as String;
-          String uuid = data[1] as String;
-          int serviceType = data[2] as int;
-          if (serviceType == SERVER)
+          var data = event.payload as List<dynamic>;
+          var mac = data[0] as String;
+          var uuid = data[1] as String;
+          var serviceType = data[2] as int;
+          if (serviceType == SERVER) {
             break;
+          }
 
           // Store remote node's NetworkManager
           mapAddrNetwork.putIfAbsent(
             uuid, () => NetworkManager(
-              (MessageAdHoc msg) async {
+              (msg) async {
                 msg.header.address = _ownBleUUID;
                 msg.header.deviceType = BLE;
                 (service as ServiceClient).send(msg);
@@ -354,9 +358,9 @@ class WrapperBle extends WrapperNetwork {
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Recover this own node MAC and BLE address
-        String mac = message.header.mac.ble;
+        var mac = message.header.mac.ble;
         ownMac = Identifier(ble: message.pdu as String);
-        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '');
+        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(RegExp(':'), '');
         _ownBleUUID = _ownBleUUID!.toLowerCase();
 
         // Notify upper layer of the recovery of this node's information
@@ -382,7 +386,7 @@ class WrapperBle extends WrapperNetwork {
         receivedPeerMessage(
           message.header,
           NetworkManager(
-            (MessageAdHoc msg) async {
+            (msg) async {
               msg.header.address = _ownBleUUID;
               msg.header.deviceType = BLE;
               await serviceServer.send(msg, mac);
@@ -396,7 +400,7 @@ class WrapperBle extends WrapperNetwork {
         // Recover this own node MAC and BLE address
         ownMac = Identifier(ble: message.pdu as String);
         _ownBleUUID = 
-          BLUETOOTHLE_UUID + ownMac.ble.replaceAll(new RegExp(':'), '').toLowerCase();
+          BLUETOOTHLE_UUID + ownMac.ble.replaceAll(RegExp(':'), '').toLowerCase();
 
         // Notify upper layer of the recovery of this node's information
         controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac.ble, ownName]));
@@ -408,7 +412,7 @@ class WrapperBle extends WrapperNetwork {
         break;
 
       case CONNECT_BROADCAST:
-        FloodMsg floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
+        var floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         // If the flooding option is enabled, then flood the connection event
         if (checkFloodEvent(floodMsg.id)) {
           // Rebroadcast the message to this node direct neighbors
@@ -416,7 +420,7 @@ class WrapperBle extends WrapperNetwork {
           
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
-          for (AdHocDevice? device in hashSet) {
+          for (var device in hashSet) {
             if (device!.label != ownLabel && !setRemoteDevices.contains(device) 
               && !isDirectNeighbor(device.label!)) {
               // Notify upper layer of a new remote connection established
@@ -434,9 +438,9 @@ class WrapperBle extends WrapperNetwork {
           broadcastExcept(message, message.header.label);
 
           // Get the header of the message received
-          Header header = message.header;
+          var header = message.header;
           // Get the sender information
-          AdHocDevice device = AdHocDevice(
+          var device = AdHocDevice(
             label: header.label,
             name: header.name,
             mac: header.mac,
@@ -447,16 +451,17 @@ class WrapperBle extends WrapperNetwork {
           controller.add(AdHocEvent(DISCONNECTION_EVENT, device));
 
           // Update set
-          if (setRemoteDevices.contains(device))
+          if (setRemoteDevices.contains(device)) {
             setRemoteDevices.remove(device);
+          }
         }
         break;
 
       case BROADCAST:
         // Get the header of the message received
-        Header header = message.header;
+        var header = message.header;
         // Get the sender information
-        AdHocDevice device = AdHocDevice(
+        var device = AdHocDevice(
           label: header.label,
           name: header.name,
           mac: header.mac,

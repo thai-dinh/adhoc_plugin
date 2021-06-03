@@ -48,7 +48,7 @@ void main() {
     });
 
     test('displayPrecursors()', () {
-      final String precursors = 'precursors: { address }';
+      final precursors = 'precursors: { address }';
       entry.updatePrecursors('address');
 
       expect(entry.displayPrecursors(), precursors);
@@ -123,7 +123,7 @@ void main() {
     });
 
     test('addEntryRoutingTable(...) test', () {
-      EntryRoutingTable result = aodvHelper.addEntryRoutingTable(
+      var result = aodvHelper.addEntryRoutingTable(
         dstAddr, next, hop, dstSeqNum, lifetime, precursors
       )!;
 
@@ -167,7 +167,7 @@ void main() {
         dstAddr, next, hop, dstSeqNum, lifetime, precursors
       );
 
-      EntryRoutingTable? result = aodvHelper.getDestination(dstAddr);
+      var result = aodvHelper.getDestination(dstAddr);
 
       expect(result!.dstAddr, entry.dstAddr);
 

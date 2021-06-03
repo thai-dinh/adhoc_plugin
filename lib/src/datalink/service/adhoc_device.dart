@@ -1,8 +1,7 @@
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'constants.dart';
-import '../utils/identifier.dart';
-import '../utils/utils.dart';
 
 part 'adhoc_device.g.dart';
 
@@ -39,10 +38,10 @@ class AdHocDevice {
     String? label, String? address, String? name, Identifier? mac, int type = -1,
   }) {
     this.address = checkString(address);
-    this._label = checkString(label);
-    this._name = checkString(name);
-    this._mac = mac == null ? Identifier() : mac;
-    this._type = type;
+    _label = checkString(label);
+    _name = checkString(name);
+    _mac = mac ?? Identifier();
+    _type = type;
   }
 
   /// Factory constructor that creates an [AdHocDevice] object from a JSON 

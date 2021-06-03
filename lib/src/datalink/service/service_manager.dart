@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 
 
 /// Abstract superclass providing common interfaces for the technology manager 
@@ -15,8 +15,8 @@ abstract class ServiceManager {
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   ServiceManager(this.verbose) {
-    this.isDiscovering = false;
-    this.controller = StreamController<AdHocEvent>.broadcast();
+    isDiscovering = false;
+    controller = StreamController<AdHocEvent>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

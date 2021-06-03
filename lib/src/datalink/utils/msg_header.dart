@@ -1,7 +1,6 @@
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'identifier.dart';
-import 'utils.dart';
 
 part 'msg_header.g.dart';
 
@@ -14,7 +13,7 @@ class Header {
 
   late Identifier _mac;
   late String _label;
-  late int _messageType;
+  late int messageType;
 
   String? address;
   int? deviceType;
@@ -33,12 +32,12 @@ class Header {
     required int messageType, required String label, String? name, 
     String? address, Identifier? mac, int? deviceType
   }) {
-    this._messageType = messageType;
-    this._label = checkString(label);
-    this._name = checkString(name);
-    this._mac = mac == null ? Identifier() : mac;
     this.address = address;
     this.deviceType = deviceType;
+    this.messageType = messageType;
+    _label = checkString(label);
+    _name = checkString(name);
+    _mac = mac == null ? Identifier() : mac;
   }
 
   /// Creates a [Header] object from a JSON representation.
@@ -48,12 +47,6 @@ class Header {
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
-
-  /// Sets the message type to [messageType].
-  set messageType(int messageType) => this._messageType = messageType;
-
-  /// Returns the type of the message.
-  int get messageType => _messageType;
 
   /// Returns the sender label.
   String get label => _label;
@@ -74,12 +67,12 @@ class Header {
   @override
   String toString() {
     return 'Header{' +
-              'messageType=${_messageType.toString()}' +
+              'messageType=$messageType' +
               ', label=$_label' +
               ', name=$_name' +
               ', address=$address' +
               ', mac=$_mac' +
-              ', deviceType=${deviceType.toString()}' + 
+              ', deviceType=$deviceType' + 
             '}';
   }
 }

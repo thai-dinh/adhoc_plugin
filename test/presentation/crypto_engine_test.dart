@@ -9,7 +9,7 @@ import 'package:pointycastle/pointycastle.dart';
 
 
 void main() {
-  final String string = 'Hello world!';
+  final string = 'Hello world!';
 
   late CryptoEngine cryptoEngine;
   late RSAPublicKey rsaPublicKey;
@@ -20,7 +20,7 @@ void main() {
     cryptoEngine = CryptoEngine();
     await cryptoEngine.initialize();
     rsaPublicKey = cryptoEngine.generateRSAkeyPair().publicKey;
-    final Chacha20 chacha20 = Chacha20(macAlgorithm: Hmac.sha256());
+    final chacha20 = Chacha20(macAlgorithm: Hmac.sha256());
     secretKey = await chacha20.newSecretKey();
     certificate = Certificate('owner', 'issuer', DateTime.now(), rsaPublicKey);
   });
@@ -30,11 +30,11 @@ void main() {
   });
 
   test('encrypt() and decrypt() test', () async {
-    List<dynamic> encrypted = await cryptoEngine.encrypt(
+    var encrypted = await cryptoEngine.encrypt(
       Uint8List.fromList(utf8.encode(string)), publicKey: cryptoEngine.publicKey
     );
 
-    String result = utf8.decode(await cryptoEngine.decrypt(encrypted));
+    var result = utf8.decode(await cryptoEngine.decrypt(encrypted));
 
     expect(result, string);
 
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('sign() and verify() test', () {
-    Uint8List signature = cryptoEngine.sign(
+    var signature = cryptoEngine.sign(
       Uint8List.fromList(Utf8Encoder().convert(rsaPublicKey.toString()))
     );
 

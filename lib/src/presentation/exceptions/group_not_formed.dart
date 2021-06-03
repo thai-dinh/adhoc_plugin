@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that verification of a certificae chain exception has 
 /// occurred.
 class GroupNotFormedException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [GroupNotFormedException] object.
   /// 

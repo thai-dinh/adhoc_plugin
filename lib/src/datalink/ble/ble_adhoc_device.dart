@@ -1,8 +1,7 @@
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
-import '../service/adhoc_device.dart';
-import '../service/constants.dart';
-import '../utils/identifier.dart';
 
 
 /// Class representing a remote Ble-capable device.
@@ -17,10 +16,9 @@ class BleAdHocDevice extends AdHocDevice {
     label: '', address: '', name: device.name, mac: Identifier(ble: device.id), 
     type: BLE,
   ) {
-    this.mtu = MIN_MTU;
-    this.address = 
-      (BLUETOOTHLE_UUID + device.id.replaceAll(new RegExp(':'), ''))
-        .toLowerCase();
+    mtu = MIN_MTU;
+    address = 
+      (BLUETOOTHLE_UUID + device.id.replaceAll(RegExp(':'), '')).toLowerCase();
   }
 
   /// Creates an [BleAdHocDevice] object.
@@ -29,14 +27,13 @@ class BleAdHocDevice extends AdHocDevice {
   /// information given by [map].
   /// 
   /// The map should contain a key 'name' and 'mac'.
-  BleAdHocDevice.fromMap(Map map) : super(
-    label: '', address: '', name: map['name'], mac: map['mac'], 
-    type: BLE
+  BleAdHocDevice.fromMap(Map<dynamic, dynamic> map) : super(
+    label: '', address: '', name: map['name'] as String, 
+    mac: map['mac'] as Identifier, type: BLE
   ) {
-    this.mtu = MIN_MTU;
-    this.address = 
-      (map['mac'] as Identifier).ble.replaceAll(new RegExp(':'), '');
-    this.address = BLUETOOTHLE_UUID + this.address!.toLowerCase();
+    mtu = MIN_MTU;
+    address = (map['mac'] as Identifier).ble.replaceAll(RegExp(':'), '');
+    address = BLUETOOTHLE_UUID + address!.toLowerCase();
   }
 
 /*------------------------------Override methods------------------------------*/

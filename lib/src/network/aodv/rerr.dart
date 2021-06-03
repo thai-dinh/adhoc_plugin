@@ -1,6 +1,5 @@
+import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'aodv_message.dart';
 
 part 'rerr.g.dart';
 
@@ -19,8 +18,8 @@ class RERR extends AodvMessage {
   RERR(
     int type, String unreachableDstAddr, int unreachableDstSeqNum
   ) : super(type) {
-    this._unreachableDstAddr = unreachableDstAddr;
-    this._unreachableDstSeqNum = unreachableDstSeqNum;
+    _unreachableDstAddr = unreachableDstAddr;
+    _unreachableDstSeqNum = unreachableDstSeqNum;
   }
 
   /// Creates a [RERR] object from a JSON representation.

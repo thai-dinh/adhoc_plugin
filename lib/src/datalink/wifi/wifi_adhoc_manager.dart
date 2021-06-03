@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'wifi_adhoc_device.dart';
-import '../exceptions/device_not_found.dart';
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_manager.dart';
-import '../utils/utils.dart';
-
+import 'package:adhoc_plugin/src/datalink/exceptions/device_not_found.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_manager.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/services.dart';
 
 
@@ -19,8 +18,8 @@ class WifiAdHocManager extends ServiceManager {
 
   static const String _methodName = 'ad.hoc.lib/wifi.method.channel';
   static const String _eventName = 'ad.hoc.lib/wifi.event.channel';
-  static const MethodChannel _methodCh = const MethodChannel(_methodName);
-  static const EventChannel _eventCh = const EventChannel(_eventName);
+  static const MethodChannel _methodCh = MethodChannel(_methodName);
+  static const EventChannel _eventCh = EventChannel(_eventName);
 
   late String _adapterName;
   late HashMap<String?, WifiAdHocDevice?> _mapMacDevice;
@@ -30,9 +29,8 @@ class WifiAdHocManager extends ServiceManager {
   /// The debug/verbose mode is set if [verbose] is true.
   WifiAdHocManager(bool verbose) : super(verbose) {
     _methodCh.invokeMethod('setVerbose', verbose);
-
-    this._adapterName = '';
-    this._mapMacDevice = HashMap();
+    _adapterName = '';
+    _mapMacDevice = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -45,16 +43,17 @@ class WifiAdHocManager extends ServiceManager {
 
   /// Returns the MAC address in upper case of the Wi-Fi adapter.
   Future<String> get mac async {
-    String _mac = await _methodCh.invokeMethod('getMacAddress');
+    var _mac = await _methodCh.invokeMethod('getMacAddress') as String;
     return _mac.toUpperCase();
   }
 
   /// Returns the Wi-Fi Direct IP address of the device.
   Future<String> get ownIp async {
-    String ipAddress = '';
-    for (NetworkInterface interface in await NetworkInterface.list()) {
-      if (interface.name.compareTo('p2p-wlan0-0') == 0)
+    var ipAddress = '';
+    for (var interface in await NetworkInterface.list()) {
+      if (interface.name.compareTo('p2p-wlan0-0') == 0) {
         ipAddress = interface.addresses.first.address;
+      }
     }
 
     return ipAddress;
@@ -75,22 +74,24 @@ class WifiAdHocManager extends ServiceManager {
   @override
   void initialize() async {
     _eventCh.receiveBroadcastStream().listen((event) async {
-      Map map = event as Map;
+      var map = event as Map;
 
       switch (map['type']) {
         case ANDROID_DISCOVERY: // Discovery process
-          List<dynamic> list = map['peers'] as List<dynamic>;
-          List<_WifiP2PDevice> peers = List.empty(growable: true);
-          list.forEach((map) => peers.add(_WifiP2PDevice.fromMap(map)));
+          var list = map['peers'] as List<dynamic>;
+          var peers = List<_WifiP2PDevice>.empty(growable: true);
+          for (var map in list) {
+            peers.add(_WifiP2PDevice.fromMap(map as Map<dynamic, dynamic>));
+          }
 
-          peers.forEach((device) {
+          for (var device in peers) {
             // Get a WifiAdHocDevice object from device
-            WifiAdHocDevice wifiDevice = WifiAdHocDevice(device.name, device.mac);
+            var wifiDevice = WifiAdHocDevice(device.name, device.mac);
             // Add the discovered device to the HashMap
             _mapMacDevice.putIfAbsent(wifiDevice.mac.wifi, () {
               if (verbose) {
                 log(TAG, 
-                  'Device found -> Name: ${device.name} - Address: ${device.mac}'
+                  'Device found: Name=(${device.name}) - Address=(${device.mac})'
                 );
               }
 
@@ -98,8 +99,8 @@ class WifiAdHocManager extends ServiceManager {
             });
 
             // Notify upper layer of a device discovered
-            controller.add(AdHocEvent(DEVICE_DISCOVERED, wifiDevice));
-          });
+            controller.add(AdHocEvent(DEVICE_DISCOVERED, wifiDevice));    
+          }
           break;
 
         case ANDROID_STATE: // Status of the Wi-Fi (enabled/disabled)
@@ -108,7 +109,7 @@ class WifiAdHocManager extends ServiceManager {
           break;
 
         case ANDROID_CONNECTION: // Information about the group after connection
-          _WifiP2PInfo info = _WifiP2PInfo.fromMap(map['info'] as Map);
+          var info = _WifiP2PInfo.fromMap(map['info'] as Map);
 
           // Notify upper layer of the Wi-Fi connection information received
           controller.add(
@@ -120,7 +121,7 @@ class WifiAdHocManager extends ServiceManager {
           break;
 
         case ANDROID_CHANGES:
-          String name = map['name'] as String;
+          var name = map['name'] as String;
 
           // Process the name to be more user-friendly
           if (name.contains('[Phone]')) {
@@ -152,8 +153,9 @@ class WifiAdHocManager extends ServiceManager {
     if (verbose) log(TAG, 'discovery()');
 
     // If a discovery process is ongoing, then return
-    if (isDiscovering)
+    if (isDiscovering) {
       return;
+    }
 
     isDiscovering = true;
 
@@ -199,9 +201,10 @@ class WifiAdHocManager extends ServiceManager {
   Future<void> connect(String mac) async {
     if (verbose) log(TAG, 'connect(): $mac');
 
-    WifiAdHocDevice? device = _mapMacDevice[mac];
-    if (device == null)
+    var device = _mapMacDevice[mac];
+    if (device == null) {
       throw DeviceNotFoundException('Discovery is required before connecting');
+    }
 
     await _methodCh.invokeMethod('connect', mac);
   }
@@ -212,7 +215,7 @@ class WifiAdHocManager extends ServiceManager {
   /// 
   /// Returns true if it is, otherwise false.
   static Future<bool> isWifiEnabled() async {
-    return await _methodCh.invokeMethod('isWifiEnabled');
+    return await _methodCh.invokeMethod('isWifiEnabled') as bool;
   }
 
 
@@ -239,8 +242,8 @@ class _WifiP2PDevice {
   /// with the key type as [String] and value type as [dynamic]. The following
   /// key should exits: 'name' and 'mac'.
   _WifiP2PDevice.fromMap(Map map) {
-    name = map['name'];
-    mac = map['mac'];
+    name = map['name'] as String;
+    mac = map['mac'] as String;
   }
 }
 
@@ -257,8 +260,8 @@ class _WifiP2PInfo {
   /// with the key type as [String] and value type as [dynamic]. The following
   /// key should exits: 'groupOwnerAddress', 'groupFormed', and 'isGroupOwner'.
   _WifiP2PInfo.fromMap(Map map) {
-    groupOwnerAddress = map['groupOwnerAddress'];
-    groupFormed = map['groupFormed'];
-    isGroupOwner = map['isGroupOwner'];
+    groupOwnerAddress = map['groupOwnerAddress'] as String;
+    groupFormed = map['groupFormed'] as bool;
+    isGroupOwner = map['isGroupOwner'] as bool;
   }
 }

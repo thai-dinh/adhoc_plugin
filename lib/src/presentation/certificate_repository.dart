@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'certificate.dart';
-import '../appframework/config.dart';
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/presentation/certificate.dart';
 
 
 /// Class representing the certificate repository. It performs certificates 
@@ -16,16 +16,16 @@ class CertificateRepository {
   /// This object is configured according to [config], which contains specific 
   /// configurations.
   CertificateRepository(Config config) {
-    this._repository = HashMap();
-    this._period = config.validityCheck;
-    this._checkCertificatesValidity();
+    _repository = HashMap();
+    _period = config.validityCheck;
+    _checkCertificatesValidity();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Returns the list of certificates of this repository.
   List<Certificate> get certificates {
-    List<Certificate> certificates = List.empty(growable: true);
+    var certificates = List<Certificate>.empty(growable: true);
     _repository.forEach((key, value) => certificates.add(value));
     return certificates;
   }

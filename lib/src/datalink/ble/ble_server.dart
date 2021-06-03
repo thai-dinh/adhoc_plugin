@@ -3,14 +3,14 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'ble_services.dart';
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_server.dart';
-import '../utils/msg_adhoc.dart';
-import '../utils/msg_header.dart';
-import '../utils/identifier.dart';
-import '../utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
 
 /// Class defining the server's logic for the Bluetooth Low Energy 
@@ -24,7 +24,7 @@ class BleServer extends ServiceServer {
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   BleServer(bool verbose) : super(verbose) {
-    this._mapMacMTU = HashMap();
+    _mapMacMTU = HashMap();
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -45,9 +45,9 @@ class BleServer extends ServiceServer {
     BleServices.platformEventStream.listen((map) async {
       switch (map['type']) {
         case ANDROID_CONNECTION:
-          String mac = map['mac'] as String;
-          bool state = map['state'] as bool;
-          String uuid = mac.replaceAll(new RegExp(':'), '').toLowerCase();
+          var mac = map['mac'] as String;
+          var state = map['state'] as bool;
+          var uuid = mac.replaceAll(RegExp(':'), '').toLowerCase();
           uuid = BLUETOOTHLE_UUID + uuid;
 
           if (state) {
@@ -67,15 +67,20 @@ class BleServer extends ServiceServer {
 
         case ANDROID_DATA:
           // Message received as bytes
-          Uint8List bytes = Uint8List.fromList(map['data']);
+          var bytes = Uint8List.fromList(
+            (map['data'] as List<dynamic>).cast<int>()
+          );
+
           // Reconstruct the message
-          MessageAdHoc message = 
-            MessageAdHoc.fromJson(json.decode(Utf8Decoder().convert(bytes)));
+          var message = 
+            MessageAdHoc.fromJson(
+              json.decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>
+            );
 
           // Update the header of the message
           if (message.header.mac.ble == '') {
-            String uuid = 
-              map['mac'].replaceAll(new RegExp(':'), '').toLowerCase();
+            var uuid = (map['mac'] as String)
+              .replaceAll(RegExp(':'), '').toLowerCase();
             uuid = BLUETOOTHLE_UUID + uuid;
 
             message.header = Header(
@@ -83,21 +88,22 @@ class BleServer extends ServiceServer {
               label: message.header.label,
               name: message.header.name,
               address: uuid,
-              mac: Identifier(ble: map['mac']),
+              mac: Identifier(ble: map['mac'] as String),
               deviceType: message.header.deviceType
             );
           }
 
-          if (verbose)
+          if (verbose) {
             log(ServiceServer.TAG, 'Message received from ${map['mac']}');
+          }
 
           // Notify upper layer of message received
           controller.add(AdHocEvent(MESSAGE_RECEIVED, message));
           break;
 
         case ANDROID_MTU:
-          String mac = map['mac'] as String;
-          int mtu = map['mtu'] as int;
+          var mac = map['mac'] as String;
+          var mtu = map['mtu'] as int;
 
           // Update the MTU value of the remote node
           _mapMacMTU.update(mac, (value) => mtu, ifAbsent: () => mtu);

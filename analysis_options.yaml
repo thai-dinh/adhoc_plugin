@@ -1,0 +1,47 @@
+analyzer:
+  exclude: 
+    - "build/**"
+    - "**/*.g.dart"
+  strong-mode:
+    implicit-casts: false
+
+linter:
+  rules:
+    # Error Rules
+    - avoid_private_typedef_functions
+    - avoid_returning_this
+    - avoid_slow_async_io
+    - camel_case_types
+    - curly_braces_in_flow_control_structures
+    - directives_ordering
+    - empty_constructor_bodies
+    - file_names
+    - hash_and_equals
+    - library_names
+    - library_prefixes
+    # Style Rules
+    - avoid_catching_errors
+    - avoid_classes_with_only_static_members
+    - avoid_function_literals_in_foreach_calls
+    - avoid_init_to_null
+    - avoid_null_checks_in_equality_operators
+    - avoid_relative_lib_imports
+    - avoid_return_types_on_setters
+    - avoid_returning_null
+    - avoid_types_on_closure_parameters
+    - camel_case_extensions
+    - implementation_imports
+    - omit_local_variable_types
+    - package_api_docs
+    - prefer_collection_literals
+    - prefer_equal_for_default_values
+    - prefer_final_fields
+    - prefer_if_null_operators
+    - prefer_is_empty
+    - unnecessary_brace_in_string_interps
+    - unnecessary_const
+    - unnecessary_lambdas
+    - unnecessary_this
+    - use_rethrow_when_possible
+    - use_setters_to_change_properties
+    - use_to_and_as_if_applicable

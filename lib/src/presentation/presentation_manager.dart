@@ -1,24 +1,22 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoc_plugin/src/presentation/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/certificate_repository.dart';
+import 'package:adhoc_plugin/src/presentation/constants.dart';
+import 'package:adhoc_plugin/src/presentation/crypto_engine.dart';
+import 'package:adhoc_plugin/src/presentation/exceptions/verification_failed.dart';
+import 'package:adhoc_plugin/src/presentation/secure_data.dart';
+import 'package:adhoc_plugin/src/presentation/secure_group_controller.dart';
 import 'package:pointycastle/pointycastle.dart';
-
-import 'certificate.dart';
-import 'certificate_repository.dart';
-import 'constants.dart';
-import 'crypto_engine.dart';
-import 'exceptions/verification_failed.dart';
-import 'secure_data.dart';
-import 'secure_group_controller.dart';
-import '../appframework/config.dart';
-import '../datalink/service/adhoc_device.dart';
-import '../datalink/service/adhoc_event.dart';
-import '../datalink/utils/utils.dart';
-import '../network/aodv/aodv_manager.dart';
-import '../network/datalinkmanager/constants.dart';
-import '../network/datalinkmanager/datalink_manager.dart';
 
 
 /// Class representing the core of the secure data layer. It performs 
@@ -46,19 +44,19 @@ class PresentationManager {
   /// This object is configured according to [config], which contains specific 
   /// configurations.
   PresentationManager(this._verbose, Config config) {
-    this._repository = CertificateRepository(config);
-    this._aodvManager = AodvManager(_verbose, _repository, config);
-    this._datalinkManager = _aodvManager.dataLinkManager;
-    this._engine = CryptoEngine();
-    this._engine.initialize();
-    this._groupController = SecureGroupController(
+    _repository = CertificateRepository(config);
+    _aodvManager = AodvManager(_verbose, _repository, config);
+    _datalinkManager = _aodvManager.dataLinkManager;
+    _engine = CryptoEngine();
+    _engine.initialize();
+    _groupController = SecureGroupController(
       _engine, _aodvManager, _datalinkManager, _aodvManager.eventStream, config
     );
-    this._controller = StreamController<AdHocEvent>.broadcast();
-    this._buffer = HashMap();
-    this._setFloodEvents = Set();
-    this._validityPeriod = config.validityPeriod;
-    this._initialize();
+    _controller = StreamController<AdHocEvent>.broadcast();
+    _buffer = HashMap();
+    _setFloodEvents = <String>{};
+    _validityPeriod = config.validityPeriod;
+    _initialize();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -86,7 +84,7 @@ class PresentationManager {
 
     if (encrypted) {
       // Get the public certificate of the destination node
-      Certificate? certificate = _repository.getCertificate(destination);
+      var certificate = _repository.getCertificate(destination);
       if (certificate == null) {
         // Request certificate as it is not in the certificate repository
         // (Certificate Chain Discovery)
@@ -104,7 +102,7 @@ class PresentationManager {
 
       // Encrypt data
       if (_verbose) log(TAG, 'send(): begin encryption');
-      List<dynamic> encryptedData = await _engine.encrypt(
+      var encryptedData = await _engine.encrypt(
         Utf8Encoder().convert(JsonCodec().encode(data)), 
         publicKey: certificate.key
       );
@@ -134,8 +132,9 @@ class PresentationManager {
 
     if (encrypted) {
       // Broadcast encrypted data
-      for (final neighbor in _datalinkManager.directNeighbors)
+      for (final neighbor in _datalinkManager.directNeighbors) {
         send(data, neighbor.label!, true);
+      }
       return true;
     } else {
       // Broadcast unencrypted data
@@ -161,9 +160,11 @@ class PresentationManager {
 
     if (encrypted) {
       // Encrypt and send encrypted data to direct neighbors except excluded
-      for (final neighbor in _datalinkManager.directNeighbors)
-        if (neighbor.label != excluded)
+      for (final neighbor in _datalinkManager.directNeighbors) {
+        if (neighbor.label != excluded) {
           send(data, neighbor.label!, true);
+        }
+      }
       return true;
     } else {
       // Encrypt and send unencrypted data to direct neighbors except excluded
@@ -182,19 +183,19 @@ class PresentationManager {
     if (_verbose) log(TAG, 'revokeCertificate()');
 
     // Generate a new pair of public and private key
-    AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> newKey = 
+    var newKey = 
       _engine.generateRSAkeyPair();
 
     _engine.privateKey = newKey.privateKey;
     _engine.publicKey = newKey.publicKey;
 
     // Unique timestamp to avoid infinite flooding in the network
-    String timestamp = 
+    var timestamp = 
       _aodvManager.label + DateTime.now().millisecond.toString();
     _setFloodEvents.add(timestamp);
 
     // Construct a SecureData message for certificate notification
-    SecureData msg = SecureData(
+    var msg = SecureData(
       CERT_REVOCATION,
       List.empty(growable: true)
         ..add(timestamp)..add(_aodvManager.label)
@@ -217,10 +218,10 @@ class PresentationManager {
           _controller.add(event);
 
           // Process connection performed with a directly neighbor
-          AdHocDevice neighbor = event.payload as AdHocDevice;
+          var neighbor = event.payload as AdHocDevice;
 
           // Generate a message for certificate exchange process
-          SecureData msg = SecureData(
+          var msg = SecureData(
             CERT_EXCHANGE,
             [_engine.publicKey.modulus.toString(), 
              _engine.publicKey.exponent.toString()]
@@ -231,8 +232,8 @@ class PresentationManager {
 
         case DATA_RECEIVED:
           // Process data received
-          List payload = event.payload as List;
-          AdHocDevice sender = payload[0] as AdHocDevice;
+          var payload = event.payload as List;
+          var sender = payload[0] as AdHocDevice;
           _processData(
             sender, 
             SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>)
@@ -274,24 +275,28 @@ class PresentationManager {
   /// is not valid.
   void _processCertificateReply(List<Certificate> certificateChain) {
     // Chain verification
-    for (final Certificate cert in certificateChain) {
-      if (cert.validity.isBefore(DateTime.now()))
+    for (final cert in certificateChain) {
+      if (cert.validity.isBefore(DateTime.now())) {
         throw VerificationFailedException();
+      }
     }
 
     // Add intermediate nodes' certificates to repository
-    for (final Certificate cert in certificateChain)
+    for (final cert in certificateChain) {
       _repository.addCertificate(cert);
+    }
 
     // Check if encrypted message needs to be sent to destination node
-    Certificate cert = certificateChain.last;
-    List<Object>? toSend = _buffer[cert.owner];
-    if (toSend == null)
+    var cert = certificateChain.last;
+    var toSend = _buffer[cert.owner];
+    if (toSend == null) {
       return;
+    }
 
     // Send encrypted messages
-    for (final Object data in toSend)
+    for (final data in toSend) {
       send(data, cert.owner, true);
+    }
   }
 
 
@@ -301,12 +306,12 @@ class PresentationManager {
   /// identity of the directly trusted neighbor [label].
   void _issueCertificate(String label, RSAPublicKey key) {
     // Issue the certificate
-    DateTime validity = DateTime.now().add(Duration(seconds: _validityPeriod));
-    Certificate certificate = 
+    var validity = DateTime.now().add(Duration(seconds: _validityPeriod));
+    var certificate = 
       Certificate(label, _aodvManager.label, validity, key);
 
     // Sign the public key
-    Uint8List signature = _engine.sign(Utf8Encoder().convert(key.toString()));
+    var signature = _engine.sign(Utf8Encoder().convert(key.toString()));
     certificate.signature = signature;
 
     // Add the certificate into the repository
@@ -318,11 +323,11 @@ class PresentationManager {
   /// 
   /// The data [pdu] sent by [sender] is processed according to its type.
   void _processData(AdHocDevice sender, SecureData pdu) async {
-    String senderLabel = sender.label!;
+    var senderLabel = sender.label!;
     switch (pdu.type) {
       case ENCRYPTED_DATA:
         // Decrypt the data received
-        Uint8List data = await _engine.decrypt(pdu.payload as List<dynamic>);
+        var data = await _engine.decrypt(pdu.payload as List<dynamic>);
 
         // Notify upper layer of data received
         _controller.add(AdHocEvent(
@@ -337,7 +342,7 @@ class PresentationManager {
         break;
 
       case CERT_EXCHANGE:
-        List<String> _pdu = (pdu.payload as List<dynamic>).cast<String>();
+        var _pdu = (pdu.payload as List<dynamic>).cast<String>();
         // Issue a certificate
         _issueCertificate(
           senderLabel,
@@ -350,30 +355,32 @@ class PresentationManager {
         break;
 
       case CERT_REP:
-        List<Certificate> _pdu = 
+        var _pdu = 
           (pdu.payload as List<dynamic>).cast<Certificate>();
         // Process the certificate chain
         try {
           _processCertificateReply(_pdu);
-        } catch (exception) {
-          _controller.add(AdHocEvent(INTERNAL_EXCEPTION, exception));
+        } on VerificationFailedException {
+          _controller.add(
+            AdHocEvent(INTERNAL_EXCEPTION, VerificationFailedException())
+          );
         }
         break;
 
       case CERT_REVOCATION:
-        List<String> _pdu = 
+        var _pdu = 
           (pdu.payload as List<dynamic>).cast<String>();
 
-        String timestamp = _pdu[0];
-        String label = _pdu[1];
-        String modulus = _pdu[2];
-        String exponent = _pdu[3];
+        var timestamp = _pdu[0];
+        var label = _pdu[1];
+        var modulus = _pdu[2];
+        var exponent = _pdu[3];
 
         // Remove the revoked certificate
         _repository.removeCertificate(label);
 
         // Get list of direct neighbors
-        List<AdHocDevice> directNeighbors = _datalinkManager.directNeighbors;
+        var directNeighbors = _datalinkManager.directNeighbors;
 
         // Check if the sender is a directly trusted neighbor, if it is, then
         // generate a new certificate
@@ -390,7 +397,7 @@ class PresentationManager {
           _setFloodEvents.add(timestamp);
 
           // Construct a SecureData message for certificate notification
-          SecureData msg = SecureData(CERT_REVOCATION, [timestamp, label]);
+          var msg = SecureData(CERT_REVOCATION, [timestamp, label]);
 
           // Broadcast to directly trusted neighbors
           _datalinkManager.broadcastObjectExcept(msg.toJson(), senderLabel);

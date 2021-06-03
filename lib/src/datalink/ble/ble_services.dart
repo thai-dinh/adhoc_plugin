@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
-import '../service/constants.dart';
-import '../utils/msg_adhoc.dart';
 
 
 /// Class allowing to have access to platform-specific services. 
@@ -14,9 +12,9 @@ import '../utils/msg_adhoc.dart';
 class BleServices {
   static const String _methodName = 'ad.hoc.lib/ble.method.channel';
   static const String _eventName = 'ad.hoc.lib/ble.event.channel';
-  static const MethodChannel _methodChannel = const MethodChannel(_methodName);
-  static const EventChannel _eventChannel = const EventChannel(_eventName);
-  static Stream<Map<dynamic, dynamic>> _platformEventStream = _eventChannel
+  static const MethodChannel _methodChannel = MethodChannel(_methodName);
+  static const EventChannel _eventChannel = EventChannel(_eventName);
+  static final Stream<Map<dynamic, dynamic>> _platformEventStream = _eventChannel
     .receiveBroadcastStream()
       .cast<Map<dynamic, dynamic>>()
       .asBroadcastStream();
@@ -34,15 +32,16 @@ class BleServices {
 
   /// Bluetooth adapter name.
   static Future<String> get bleAdapterName async {
-    final String? name = await _methodChannel.invokeMethod('getAdapterName');
-    return name == null ? '' : name;
+    final name = await _methodChannel.invokeMethod('getAdapterName');
+    return name == null ? '' : name as String;
   }
 
   /// Gets the list of already paired devices.
   /// 
   /// Returns a list of [Map] representing the information of the paired devices.
-  static Future<List<Map>> get pairedDevices async {
-    return await _methodChannel.invokeMethod('getPairedDevices');
+  static Future<List<Map<dynamic, dynamic>>> get pairedDevices async {
+    return await _methodChannel.invokeMethod('getPairedDevices') 
+      as List<Map<dynamic, dynamic>>;
   }
 
   /// Sets the verbose/debug mode if [verbose] is true.
@@ -68,7 +67,7 @@ class BleServices {
   /// 
   /// Returns true if it is, otherwise false.
   static Future<bool> isBleAdapterEnabled() async {
-    return await _methodChannel.invokeMethod('isEnabled');
+    return await _methodChannel.invokeMethod('isEnabled') as bool;
   }
 
 
@@ -88,7 +87,7 @@ class BleServices {
   /// 
   /// Returns true if the name is successfully set, otherwise false.
   static Future<bool> updateDeviceName(String name) async {
-    return await _methodChannel.invokeMethod('updateDeviceName', name);
+    return await _methodChannel.invokeMethod('updateDeviceName', name) as bool;
   }
 
 
@@ -96,7 +95,7 @@ class BleServices {
   /// 
   /// Returns true if the name is successfully reset, otherwise false.
   static Future<bool> resetDeviceName() async {
-    return await _methodChannel.invokeMethod('resetDeviceName');
+    return await _methodChannel.invokeMethod('resetDeviceName') as bool;
   }
 
 /*----------------------------Gatt Server methods----------------------------*/
@@ -134,7 +133,7 @@ class BleServices {
   /// 
   /// Returns the name of the Bluetooth adapter as a String.
   static Future<String> getCurrentName() async {
-    return await _methodChannel.invokeMethod('getCurrentName');
+    return await _methodChannel.invokeMethod('getCurrentName') as String;
   }
 
 
@@ -144,7 +143,7 @@ class BleServices {
   /// Returns true if this device is bonded to the remote device, otherwise 
   /// false.
   static Future<bool> getBondState(String mac) async {
-    return await _methodChannel.invokeMethod('getBondState', mac);
+    return await _methodChannel.invokeMethod('getBondState', mac) as bool;
   }
 
 
@@ -154,7 +153,7 @@ class BleServices {
   /// Returns true if this device has been successfully bonded with the remote 
   /// device, otherwise false.
   static Future<bool> createBond(String mac) async {
-    return await _methodChannel.invokeMethod('createBond', mac);
+    return await _methodChannel.invokeMethod('createBond', mac) as bool;
   }
 
   /// Writes data to the ad hoc characteristic.
@@ -166,9 +165,9 @@ class BleServices {
   /// 
   /// The data is fragmented into smaller chunk of [mtu] bytes size.
   static Future<void> writeToCharacteristic(MessageAdHoc message, String mac, int mtu) async {
-    FlutterReactiveBle _reactiveBle = FlutterReactiveBle();
-    Uuid _characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
-    Uuid _serviceUuid = Uuid.parse(SERVICE_UUID);
+    var _reactiveBle = FlutterReactiveBle();
+    var _characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
+    var _serviceUuid = Uuid.parse(SERVICE_UUID);
 
     // Get the characteristic of the remote host GATT server
     final characteristic = QualifiedCharacteristic(
@@ -178,7 +177,7 @@ class BleServices {
     );
 
     // Convert the MessageAdHoc into bytes
-    Uint8List msg = Utf8Encoder().convert(json.encode(message.toJson()));
+    var msg = Utf8Encoder().convert(json.encode(message.toJson()));
     int _id = id++ % UINT8_SIZE, _mtu = mtu - 3 - 2, i = 0, flag, end;
 
     /* Fragment the message bytes into smaller chunk of bytes */
@@ -194,7 +193,7 @@ class BleServices {
     }
 
     do {
-      List<int> _chunk = [_id, flag] + List.from(msg.getRange(i, end));
+      var _chunk = [_id, flag] + List.from(msg.getRange(i, end));
       await _reactiveBle.writeCharacteristicWithoutResponse(
         characteristic, value: _chunk
       );

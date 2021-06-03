@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'entry_routing_table.dart';
-import '../../datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/aodv/entry_routing_table.dart';
 
 
 /// Class representing the routing table of the AODV protocol.
@@ -21,8 +21,8 @@ class RoutingTable {
   /// 
   /// The debug/verbose mode is set if [_verbose] is true.
   RoutingTable(this._verbose) {
-    this._nextDestMapping = HashMap();
-    this._routingTable = HashMap();
+    _nextDestMapping = HashMap();
+    _routingTable = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -48,7 +48,7 @@ class RoutingTable {
       return true;
     }
 
-    EntryRoutingTable existingEntry = _routingTable[entry.dstAddr]!;
+    var existingEntry = _routingTable[entry.dstAddr]!;
 
     if (existingEntry.hop >= entry.hop) {
       _routingTable.update(entry.dstAddr, (value) => entry);
@@ -127,9 +127,10 @@ class RoutingTable {
   /// 
   /// Returns a [List] of [String] representing the precursors list.
   List<String?> getPrecursorsFromDest(String? dstAddr) {
-    EntryRoutingTable? entry = _routingTable[dstAddr];
-    if (entry != null)
-        return entry.precursors;
+    var entry = _routingTable[dstAddr];
+    if (entry != null) {
+      return entry.precursors;
+    }
     return List.empty(growable: true);
   }
 
@@ -138,9 +139,11 @@ class RoutingTable {
   /// 
   /// Returns an [int] representing the last time the data has been transmitted.
   int getDataPathFromAddress(String? addr) {
-    EntryRoutingTable? entry = _routingTable[addr];
-    if (entry != null)
-        return entry.getActivesDataPath(addr!);
+    var entry = _routingTable[addr];
+    if (entry != null) {
+      return entry.getActivesDataPath(addr!);
+    }
+
     return 0;
   }
 }

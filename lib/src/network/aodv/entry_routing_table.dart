@@ -7,12 +7,12 @@ import 'dart:collection';
 /// the original codebase provided by Gaulthier Gain, which can be found at:
 /// https://github.com/gaulthiergain/AdHocLib
 class EntryRoutingTable {
-  late String _dstAddr;
-  late String _next;
-  late int _hop;
-  late int _dstSeqNum;
-  late int _lifetime;
-  late List<String> _precursors;
+  late final String _dstAddr;
+  late final String _next;
+  late final int _hop;
+  late final int _dstSeqNum;
+  late final int _lifetime;
+  late final List<String> _precursors;
   late HashMap<String, int> _activesDataPath;
 
   /// Creates an [EntryRoutingTable] object.
@@ -30,7 +30,7 @@ class EntryRoutingTable {
     this._dstAddr, this._next, this._hop, this._dstSeqNum, this._lifetime, 
     this._precursors
   ) {
-    this._activesDataPath = HashMap();
+    _activesDataPath = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -67,8 +67,10 @@ class EntryRoutingTable {
   /// 
   /// Returns 0 if the [address] is not found in the active data path.
   int getActivesDataPath(String address) {
-    if (_activesDataPath.containsKey(address))
+    if (_activesDataPath.containsKey(address)) {
       return _activesDataPath[address]!;
+    }
+
     return 0;
   }
 
@@ -76,18 +78,21 @@ class EntryRoutingTable {
   /// Updates the precursors list by adding a node's address [senderAddr] as
   /// a precursor of the current node.
   void updatePrecursors(String senderAddr) {
-    if (!_precursors.contains(senderAddr))
+    if (!_precursors.contains(senderAddr)) {
       _precursors.add(senderAddr);
+    }
   }
 
 
   /// Displays the list of the precursors of the current node.
   String displayPrecursors() {
-    StringBuffer buffer = StringBuffer();
+    var buffer = StringBuffer();
 
     buffer.write('precursors: { ');
-    for (final String precursor in _precursors)
+    for (final precursor in _precursors) {
       buffer.write('$precursor ');
+    }
+
     buffer.write('}');
 
     return buffer.toString();

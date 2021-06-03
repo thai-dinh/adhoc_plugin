@@ -1,5 +1,5 @@
-import 'service.dart';
-import '../utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 
 /// Abstract class defining the server's logic and methods. It aims to serve as 
@@ -13,7 +13,7 @@ abstract class ServiceServer extends Service {
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   ServiceServer(bool verbose) : super(verbose) {
-    this._activeConnections = List.empty(growable: true);
+    _activeConnections = List.empty(growable: true);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -35,8 +35,9 @@ abstract class ServiceServer extends Service {
 
   /// Removes the MAC address [mac] of the active connection.
   void removeConnection(String mac) {
-    if (containConnection(mac))
+    if (containConnection(mac)) {
       _activeConnections.remove(mac);
+    }
   }
 
 

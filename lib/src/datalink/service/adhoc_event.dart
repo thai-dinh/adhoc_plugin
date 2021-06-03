@@ -14,7 +14,7 @@ class AdHocEvent {
   /// 
   /// The ad hoc event is represented by information given by [map].
   AdHocEvent.fromMap(Map map) {
-    this.type = map['type'];
-    this.payload = map['payload'];
+    type = map['type'] as int;
+    payload = map['payload'];
   }
 }

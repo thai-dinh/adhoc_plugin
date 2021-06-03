@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that a AODV Message exception has occurred during processing 
 /// of a message.
 class AodvMessageException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [AodvMessageException] object.
   /// 

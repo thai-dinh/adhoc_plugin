@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'network_manager.dart';
-import '../../datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
 
 /// Class managing the direct neighbors of a node.
@@ -11,8 +11,8 @@ class Neighbors {
 
   /// Creates a [Neighbors] object.
   Neighbors() {
-    this._neighbors = HashMap();
-    this._mapLabelMac = HashMap();
+    _neighbors = HashMap();
+    _mapLabelMac = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

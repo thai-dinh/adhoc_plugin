@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'adhoc_event.dart';
-import 'constants.dart';
-import '../utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
 
 /// Abstract superclass providing common interfaces for the services 
@@ -20,16 +20,18 @@ abstract class Service {
   /// 
   /// The debug/verbose mode is set if [verbose] is true.
   Service(this.verbose) {
-    this._state = STATE_NONE;
-    this.controller = StreamController<AdHocEvent>.broadcast();
+    _state = STATE_NONE;
+    controller = StreamController<AdHocEvent>.broadcast();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Sets the state of the connection to [state].
   set state(int state) {
-    if (verbose)
+    if (verbose) {
       log(TAG, 'state: ${_stateToString(_state)} -> ${_stateToString(state)}');
+    }
+
     _state = state;
   }
 

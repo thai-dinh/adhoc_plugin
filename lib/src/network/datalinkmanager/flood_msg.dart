@@ -1,8 +1,7 @@
 import 'dart:collection';
 
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import '../../datalink/service/adhoc_device.dart';
 
 part 'flood_msg.g.dart';
 
@@ -39,18 +38,20 @@ class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>, Map<Strin
 
   @override
   HashSet<AdHocDevice> fromJson(Map<String, dynamic> json) {
-    List<AdHocDevice> devices = List.empty(growable: true);
-    List<Map<String, dynamic>> list = 
+    var devices = List<AdHocDevice>.empty(growable: true);
+    var list = 
       (json['devices'] as List<dynamic>).cast<Map<String, dynamic>>();
 
-    list.forEach((device) => devices.add(AdHocDevice.fromJson(device)));
+    for (var device in list) {
+      devices.add(AdHocDevice.fromJson(device));
+    }
 
     return HashSet.from(devices);
   }
 
   @override
   Map<String, dynamic> toJson(HashSet<AdHocDevice> devices) {
-    Map<String, dynamic> map = Map();
+    var map = <String, dynamic>{};
 
     map['devices'] = List.empty(growable: true)..addAll(devices);
 

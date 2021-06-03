@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that a Device Failure exception has been triggered due to 
 /// invalid state of the device.
 class DeviceFailureException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [DeviceFailureException] object.
   /// 

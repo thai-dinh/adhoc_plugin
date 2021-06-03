@@ -1,4 +1,4 @@
-import 'constants.dart';
+import 'package:adhoc_plugin/src/presentation/constants.dart';
 
 
 /// Class representing the reply of the encryption/decryption isolate to a 

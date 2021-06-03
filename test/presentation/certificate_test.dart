@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/appframework/config.dart';
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
 import 'package:adhoc_plugin/src/presentation/certificate.dart';
 import 'package:adhoc_plugin/src/presentation/certificate_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,7 +99,7 @@ void main() {
 
     test('Certificate should be returned', () {
       repository.addCertificate(mockCertificate);
-      Certificate returned = repository.getCertificate(mockCertificate.owner)!;
+      var returned = repository.getCertificate(mockCertificate.owner)!;
 
       expect(returned, mockCertificate);
     });

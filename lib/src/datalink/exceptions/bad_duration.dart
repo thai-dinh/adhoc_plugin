@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that a Bad Duration exception has been triggered due to 
 /// invalid duration given.
 class BadDurationException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [BadDurationException] object.
   /// 

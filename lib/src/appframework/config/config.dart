@@ -1,4 +1,4 @@
-import 'exceptions/bad_server_port.dart';
+import 'package:adhoc_plugin/src/appframework/exceptions/bad_server_port.dart';
 import 'package:uuid/uuid.dart';
 
 
@@ -51,10 +51,10 @@ class Config {
     this.flood = flood;
     this.open = open;
     this.serverPort = serverPort;
-    this.timeOut = 5000;
     this.expiryTime = expiryTime;
     this.validityPeriod = validityPeriod;
     this.validityCheck = validityCheck;
+    timeOut = 5000;
   }
 
 /*-----------------------------fe-Getters & Setters-----------------------------*/

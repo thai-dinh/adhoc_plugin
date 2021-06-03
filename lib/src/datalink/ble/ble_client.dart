@@ -1,22 +1,21 @@
 import 'dart:async';
 
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_client.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
-import 'ble_adhoc_device.dart';
-import 'ble_services.dart';
-import '../exceptions/no_connection.dart';
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_client.dart';
-import '../utils/msg_adhoc.dart';
-import '../utils/utils.dart';
 
 
 /// Class defining the client's logic for the Bluetooth LE implementation.
 class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate>? _connectionSub;
 
-  late BleAdHocDevice _device;
+  late final BleAdHocDevice _device;
   late FlutterReactiveBle _reactiveBle;
   late bool _isInitialized;
 
@@ -33,8 +32,8 @@ class BleClient extends ServiceClient {
   ) : super(
     verbose, attempts, timeOut
   ) {
-    this._reactiveBle = FlutterReactiveBle();
-    this._isInitialized = false;
+    _reactiveBle = FlutterReactiveBle();
+    _isInitialized = false;
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -47,12 +46,13 @@ class BleClient extends ServiceClient {
     // Listen to event from the platform-specific side for pairing event
     BleServices.platformEventStream.listen((map) async {
       if (map['type'] == ANDROID_BOND) {
-        String mac = map['mac'] as String;
-        bool state = map['state'] as bool;
+        var mac = map['mac'] as String;
+        var state = map['state'] as bool;
 
         // If pairing request has succeded, then proceed with the connection
-        if (mac == _device.mac.ble)
+        if (mac == _device.mac.ble) {
           await _initEnvironment();
+        }
 
         // Notify upper layer of bond state with a remote device
         controller.add(AdHocEvent(ANDROID_BOND, [mac, state]));
@@ -78,7 +78,7 @@ class BleClient extends ServiceClient {
   /// Cancels the connection with the remote device.
   @override
   void disconnect() {
-    this.stopListening();
+    stopListening();
     // Abort connection with the remote host
     if (_connectionSub != null) {
       _connectionSub!.cancel();
@@ -91,11 +91,13 @@ class BleClient extends ServiceClient {
   /// Sends a [message] to the remote device.
   @override
   Future<void> send(MessageAdHoc message) async {
-    if (verbose) 
+    if (verbose) {
       log(ServiceClient.TAG, 'Client: sendMessage() -> ${_device.mac}');
+    }
 
-    if (state == STATE_NONE)
+    if (state == STATE_NONE) {
       throw NoConnectionException('No remote connection');
+    }
 
     BleServices.writeToCharacteristic(message, _device.mac.ble, _device.mtu);
   }
@@ -109,10 +111,11 @@ class BleClient extends ServiceClient {
       await _connectionAttempt();
     } on NoConnectionException {
       if (attempts > 0) {
-        if (verbose)
+        if (verbose) {
           log(ServiceClient.TAG, 'Connection attempt $attempts failed');
-        
-        await Future.delayed(delay);
+        }
+
+        await Future<void>.delayed(delay);
         return _connect(attempts - 1, delay * 2);
       } else {
         // Notify upper layer of a failed connection attempts
@@ -139,8 +142,9 @@ class BleClient extends ServiceClient {
         // Listen to the connection state changes
         switch (event.connectionState) {
           case DeviceConnectionState.connected:
-            if (verbose)
+            if (verbose) {
               log(ServiceClient.TAG, 'Connected to ${_device.mac}');
+            }
 
             // // Check whether it is bonded to the remote host, if not, then
             // // initiate a pairing process
@@ -171,8 +175,9 @@ class BleClient extends ServiceClient {
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _initEnvironment() async {
-    if (_isInitialized)
+    if (_isInitialized) {
       return;
+    }
 
     // Start listening process for ad hoc events (messages)
     listen();

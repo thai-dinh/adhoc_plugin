@@ -4,13 +4,12 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:cryptography/cryptography.dart' as Crypto;
+import 'package:adhoc_plugin/src/presentation/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/constants.dart';
+import 'package:adhoc_plugin/src/presentation/reply.dart';
+import 'package:adhoc_plugin/src/presentation/request.dart';
+import 'package:cryptography/cryptography.dart' as crypto;
 import 'package:pointycastle/export.dart';
-
-import 'certificate.dart';
-import 'constants.dart';
-import 'reply.dart';
-import 'request.dart';
 
 
 /// Class managing the encryption and decryption process.
@@ -26,18 +25,18 @@ class CryptoEngine {
   /// Creates a [CryptoEngine] object.
   CryptoEngine() {
     final keys = generateRSAkeyPair();
-    this.publicKey = keys.publicKey;
-    this._privateKey = keys.privateKey;
-    this._mainPort = ReceivePort();
-    this._stream = this._mainPort.asBroadcastStream();
-    this._isolates = List.filled(NB_ISOLATE, null);
-    this._sendPorts = List.filled(NB_ISOLATE, null);
+    publicKey = keys.publicKey;
+    _privateKey = keys.privateKey;
+    _mainPort = ReceivePort();
+    _stream = _mainPort.asBroadcastStream();
+    _isolates = List.filled(NB_ISOLATE, null);
+    _sendPorts = List.filled(NB_ISOLATE, null);
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// RSA private key of this engine.
-  set privateKey(RSAPrivateKey key) => this._privateKey = key;
+  set privateKey(RSAPrivateKey key) => _privateKey = key;
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -45,7 +44,7 @@ class CryptoEngine {
   Future<void> initialize() async {
     _stream.listen((reply) {
       if (reply.rep == CryptoTask.initialisation) {
-        _sendPorts[reply.data[0]] = reply.data[1];
+        _sendPorts[reply.data[0] as int] = reply.data[1] as SendPort;
       }
     });
 
@@ -60,7 +59,7 @@ class CryptoEngine {
   /// length of 1024 bits.
   AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> generateRSAkeyPair() {
     // Bit key length
-    int bitLength = 1024;
+    var bitLength = 1024;
 
     // Create and initialize a RSA key generator
     final keyGen = RSAKeyGenerator()..init(ParametersWithRandom(
@@ -88,9 +87,9 @@ class CryptoEngine {
   /// 
   /// Returns the encrypted data as a list of dynamic objects.
   Future<List<dynamic>> encrypt(
-    Uint8List data, {RSAPublicKey? publicKey, Crypto.SecretKey? sharedKey}
+    Uint8List data, {RSAPublicKey? publicKey, crypto.SecretKey? sharedKey}
   ) {
-    Completer completer = new Completer<List<dynamic>>();
+    Completer completer = Completer<List<dynamic>>();
 
     // Send request to encryption isolate
     if (publicKey != null) {
@@ -125,8 +124,8 @@ class CryptoEngine {
   /// key of this node.
   /// 
   /// Returns the decrypted data as a list of bytes [Uint8List].
-  Future<Uint8List> decrypt(List data, {Crypto.SecretKey? sharedKey}) {
-    Completer completer = new Completer<Uint8List>();
+  Future<Uint8List> decrypt(List data, {crypto.SecretKey? sharedKey}) {
+    Completer completer = Completer<Uint8List>();
 
     // Send request to decryption isolate
     if (sharedKey == null) {
@@ -143,7 +142,9 @@ class CryptoEngine {
     _stream.listen((reply) {
       if (reply.rep == CryptoTask.decryption) {
         try {
-          completer.complete(Uint8List.fromList(reply.data));
+          completer.complete(Uint8List.fromList(
+            (reply.data as List<dynamic>).cast<int>())
+          );
         } catch (exception) { }
       }
     });
@@ -159,7 +160,7 @@ class CryptoEngine {
   /// Returns the digital signature of the data as a list of bytes [Uint8List].
   Uint8List sign(Uint8List data) {
     // Instantiate a RSASigner object with the desired digest algorithm
-    final RSASigner signer = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
+    final signer = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
 
     // Set the verifier into sign mode
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(_privateKey));
@@ -178,18 +179,14 @@ class CryptoEngine {
   /// otherwise false.
   bool verify(Certificate certificate, Uint8List signature, RSAPublicKey key) {
     // Instantiate a RSASigner object with the desired digest algorithm
-    final RSASigner verifier = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
+    final verifier = RSASigner(SHA256Digest(), DIGEST_IDENTIFIER);
     // Set the verifier into verify mode
     verifier.init(false, PublicKeyParameter<RSAPublicKey>(key));
 
-    try {
-      // Verify the signature
-      return verifier.verifySignature(
-        Utf8Encoder().convert(certificate.key.toString()), RSASignature(signature)
-      );
-    } on ArgumentError {
-      return false;
-    }
+    // Verify the signature
+    return verifier.verifySignature(
+      Utf8Encoder().convert(certificate.key.toString()), RSASignature(signature)
+    );
   }
 
 
@@ -206,12 +203,13 @@ class CryptoEngine {
   SecureRandom _random() {
     const ROLL = 32;
 
-    final FortunaRandom secureRandom = FortunaRandom();
-    final Random seedSource = Random.secure();
-    final List<int> seeds = List.empty(growable: true);
+    final secureRandom = FortunaRandom();
+    final seedSource = Random.secure();
+    final seeds = List<int>.empty(growable: true);
 
-    for (int i = 0; i < ROLL; i++)
+    for (var i = 0; i < ROLL; i++) {
       seeds.add(seedSource.nextInt(255));
+    }
 
     secureRandom.seed(KeyParameter(Uint8List.fromList(seeds)));
     return secureRandom;
@@ -223,21 +221,21 @@ class CryptoEngine {
 /// 
 /// The [port] is used to communicate with the isolate. 
 void processEncryption(SendPort port) {
-  ReceivePort _receivePort = ReceivePort();
+  var _receivePort = ReceivePort();
   port.send(
     Reply(CryptoTask.initialisation, [ENCRYPTION ,_receivePort.sendPort])
   );
 
-  final Crypto.Chacha20 algorithm = Crypto.Chacha20(
-    macAlgorithm: Crypto.Hmac.sha256()
+  final algorithm = crypto.Chacha20(
+    macAlgorithm: crypto.Hmac.sha256()
   );
 
-  Crypto.SecretKey secretKey;
+  crypto.SecretKey secretKey;
   OAEPEncoding encryptor;
   Uint8List? encryptedKey;
 
   _receivePort.listen((request) async {
-    Request req = request as Request;
+    var req = request as Request;
     if (req.req == CryptoTask.encryption) {
       encryptor = OAEPEncoding(RSAEngine())..init(
         true, PublicKeyParameter<RSAPublicKey>(request.publicKey!)
@@ -252,19 +250,18 @@ void processEncryption(SendPort port) {
       secretKey = req.sharedKey!;
     }
 
-    final Crypto.SecretBox secretBox = await algorithm.encrypt(
+    final secretBox = await algorithm.encrypt(
       request.data as Uint8List,
       secretKey: secretKey,
     );
 
-    List<List<int>> encryptedData = List.empty(growable: true);
+    var encryptedData = List<List<int>>.empty(growable: true);
     encryptedData.add(secretBox.cipherText);
     encryptedData.add(secretBox.nonce);
     encryptedData.add(secretBox.mac.bytes);
+    encryptedData.add(secretBox.concatenation());
 
-    print(secretBox.mac.bytes);
-
-    List<dynamic> reply = List.filled(2, null);
+    var reply = List<dynamic>.filled(2, null);
     reply[SECRET_KEY] = encryptedKey;
     reply[SECRET_DATA] = encryptedData;
 
@@ -277,44 +274,42 @@ void processEncryption(SendPort port) {
 /// 
 /// The [port] is used to communicate with the isolate. 
 void processDecryption(SendPort port) {
-  ReceivePort _receivePort = ReceivePort();
+  var _receivePort = ReceivePort();
   port.send(Reply(CryptoTask.initialisation, [DECRYPTION ,_receivePort.sendPort]));
 
-  final Crypto.Chacha20 algorithm = Crypto.Chacha20(
-    macAlgorithm: Crypto.Hmac.sha256()
+  final algorithm = crypto.Chacha20(
+    macAlgorithm: crypto.Hmac.sha256()
   );
 
-  Crypto.SecretKey secretKey;
+  crypto.SecretKey secretKey;
   OAEPEncoding decryptor;
 
   _receivePort.listen((request) async {
-    Request req = request as Request;
-    List<dynamic> reply = request.data as List<dynamic>;
+    var req = request as Request;
+    var reply = request.data as List<dynamic>;
 
     if (req.req == CryptoTask.decryption) {
       decryptor = OAEPEncoding(RSAEngine())..init(
         false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!)
       );
 
-      Uint8List secretKeyBytes = _processData(
+      var secretKeyBytes = _processData(
         decryptor, Uint8List.fromList(
           (reply[SECRET_KEY] as List<dynamic>).cast<int>()
         )
       );
 
-      secretKey = Crypto.SecretKey(secretKeyBytes);
+      secretKey = crypto.SecretKey(secretKeyBytes);
     } else {
       secretKey = req.sharedKey!;
     }
 
-    print(reply[SECRET_DATA][2]);
-
-    final Uint8List decrypted = Uint8List.fromList(
+    final decrypted = Uint8List.fromList(
       await algorithm.decrypt(
-        Crypto.SecretBox(
+        crypto.SecretBox(
           (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
           nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
-          mac: Crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
+          mac: crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
         ),
         secretKey: secretKey,
       ),
@@ -327,15 +322,15 @@ void processDecryption(SendPort port) {
 
 /// Process the data give an encryption engine.
 Uint8List _processData(AsymmetricBlockCipher engine, Uint8List data) {
-  final int numBlocks = data.length ~/ engine.inputBlockSize 
+  final numBlocks = data.length ~/ engine.inputBlockSize 
     + ((data.length % engine.inputBlockSize != 0) ? 1 : 0);
 
-  final Uint8List output = Uint8List(numBlocks * engine.outputBlockSize);
-  int inputOffset = 0;
-  int outputOffset = 0;
+  final output = Uint8List(numBlocks * engine.outputBlockSize);
+  var inputOffset = 0;
+  var outputOffset = 0;
 
   while (inputOffset < data.length) {
-    final int chunkSize = (inputOffset + engine.inputBlockSize <= data.length) ? 
+    final chunkSize = (inputOffset + engine.inputBlockSize <= data.length) ? 
       engine.inputBlockSize : data.length - inputOffset;
 
     outputOffset += engine.processBlock(data, inputOffset, chunkSize, output, outputOffset);

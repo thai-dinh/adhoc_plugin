@@ -1,7 +1,6 @@
+import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
+import 'package:adhoc_plugin/src/presentation/certificate.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'aodv_message.dart';
-import '../../presentation/certificate.dart';
 
 part 'rrep.g.dart';
 
@@ -31,12 +30,12 @@ class RREP extends AodvMessage {
     int type, int hopCount, String dstAddr, int seqNum, 
     String srcAddr, int lifetime, List<Certificate> chain
   ) : super(type) {
-    this._seqNum = seqNum;
-    this._hopCount = hopCount;
-    this._lifetime = lifetime;
-    this._dstAddr = dstAddr;
-    this._srcAddr = srcAddr;
     this.chain = chain;
+    _seqNum = seqNum;
+    _hopCount = hopCount;
+    _lifetime = lifetime;
+    _dstAddr = dstAddr;
+    _srcAddr = srcAddr;
   }
 
   /// Creates a [RREP] object from a JSON representation.

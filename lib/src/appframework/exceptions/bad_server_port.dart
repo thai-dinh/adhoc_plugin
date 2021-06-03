@@ -3,7 +3,7 @@ import 'dart:core';
 
 /// Class signaling that an bad server port value exception has occurred.
 class BadServerPortException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [BadServerPortException] object.
   /// 

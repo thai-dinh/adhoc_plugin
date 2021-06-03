@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that a Device Not Found exception has been triggered due to 
 /// not finding the AdHocDevice object of a remote peer.
 class DeviceNotFoundException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [DeviceNotFoundException] object.
   /// 

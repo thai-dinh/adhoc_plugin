@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'constants.dart';
-import 'service.dart';
-import '../utils/msg_adhoc.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service.dart';
+import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
 
 /// Abstract class defining the client's logic and methods. It aims to serve as 
@@ -10,9 +10,9 @@ import '../utils/msg_adhoc.dart';
 abstract class ServiceClient extends Service {
   static const String TAG = "[ServiceClient]";
 
-  late int _attempts;
+  late final int _attempts;
+  late final int _timeOut;
   late int _backOffTime;
-  late int _timeOut;
 
   /// Creates a [ServiceClient] object.
   /// 
@@ -25,7 +25,7 @@ abstract class ServiceClient extends Service {
   ServiceClient(
     bool verbose, this._attempts, this._timeOut,
   ) : super(verbose) {
-    this._backOffTime = new Random().nextInt(HIGH - LOW) + LOW;
+    _backOffTime = Random().nextInt(HIGH - LOW) + LOW;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

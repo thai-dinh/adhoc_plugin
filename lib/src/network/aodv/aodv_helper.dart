@@ -1,8 +1,8 @@
 import 'dart:collection';
 
-import 'entry_routing_table.dart';
-import 'routing_table.dart';
-import '../../datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
+import 'package:adhoc_plugin/src/network/aodv/entry_routing_table.dart';
+import 'package:adhoc_plugin/src/network/aodv/routing_table.dart';
 
 
 /// Class helping the 'AodvManager' class by managing broadcast requests and 
@@ -24,9 +24,9 @@ class AodvHelper {
   /// 
   /// The debug/verbose mode is set if [_verbose] is true.
   AodvHelper(this._verbose) {
-    this._rreqId = 1;
-    this._routingTable = RoutingTable(_verbose);
-    this._entryBroadcast = HashSet();
+    _rreqId = 1;
+    _routingTable = RoutingTable(_verbose);
+    _entryBroadcast = HashSet();
   }
 
 /*------------------------------Public methods-------------------------------*/
@@ -45,7 +45,7 @@ class AodvHelper {
     String destAddress, String next, int hop, int seq, int lifetime, 
     List<String> precursors
   ) {
-    EntryRoutingTable entry = EntryRoutingTable(
+    var entry = EntryRoutingTable(
       destAddress, next, hop, seq, lifetime, precursors
     );
 
@@ -61,7 +61,7 @@ class AodvHelper {
   /// Returns true if it has been added to the set, otherwise false (already
   /// contained in the set).
   bool addBroadcastId(String sourceAddress, int rreqId) {
-    String entry = sourceAddress + rreqId.toString();
+    var entry = sourceAddress + rreqId.toString();
 
     if (!_entryBroadcast.contains(entry)) {
       _entryBroadcast.add(entry);

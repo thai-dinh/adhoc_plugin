@@ -1,7 +1,6 @@
+import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
+import 'package:adhoc_plugin/src/presentation/certificate.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'aodv_message.dart';
-import '../../presentation/certificate.dart';
 
 part 'rreq.g.dart';
 
@@ -33,13 +32,13 @@ class RREQ extends AodvMessage {
     int type, int hopCount, int rreqId, this.dstSeqNum, String dstAddr, 
     int srcSeqNum, String srcAddr, int ttl, List<Certificate> chain
   ) : super(type) {
-    this._hopCount = hopCount;
-    this._rreqId = rreqId;
-    this._dstAddr = dstAddr;
-    this._srcSeqNum = srcSeqNum;
-    this._srcAddr = srcAddr;
     this.ttl = ttl;
     this.chain = chain;
+    _hopCount = hopCount;
+    _rreqId = rreqId;
+    _dstAddr = dstAddr;
+    _srcSeqNum = srcSeqNum;
+    _srcAddr = srcAddr;
   }
 
   /// Creates a [RREQ] object from a JSON representation.
@@ -68,10 +67,10 @@ class RREQ extends AodvMessage {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Increments the hop count of the RREQ message.
-  void incrementHopCount() => this._hopCount = this._hopCount + 1;
+  void incrementHopCount() => _hopCount = _hopCount + 1;
 
   /// Decrements the TTL of the RREQ message.
-  void decrementTTL() => this.ttl = this.ttl - 1;
+  void decrementTTL() => ttl = ttl - 1;
 
   /// Returns the JSON representation as a [Map] of this [RREQ] instance.
   Map<String, dynamic> toJson() => _$RREQToJson(this);

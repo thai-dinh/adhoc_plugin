@@ -8,7 +8,7 @@ class SearchBar extends SearchDelegate<String> {
   String _selected = '';
 
   SearchBar(this._playlist) {
-    this._recentPick = List.empty(growable: true);
+    _recentPick = List.empty(growable: true);
   }
 
   @override
@@ -29,25 +29,28 @@ class SearchBar extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    this.close(context, _selected);
+    close(context, _selected);
     return null;
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    List<String> suggestions = List.empty(growable: true);
+    var suggestions = List<String>.empty(growable: true);
 
     if (query.isEmpty) {
       suggestions = _recentPick;
     } else {
-      List<String> songNames = List.empty(growable: true);
-      _playlist.forEach((name) => songNames.add(name));
+      var songNames = List<String>.empty(growable: true);
+      for (var name in _playlist) {
+        songNames.add(name);
+      }
+
       suggestions.addAll(songNames.where((element) => element.contains(query)));
     }
 
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         return ListTile(
           title: Text(suggestions[index]),
           onTap: () {

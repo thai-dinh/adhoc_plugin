@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:adhoc_plugin/src/datalink/ble/ble_adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/ble/ble_services.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/datalink/service/service_manager.dart';
+import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
-import 'ble_adhoc_device.dart';
-import 'ble_services.dart';
-import '../exceptions/bad_duration.dart';
-import '../service/adhoc_event.dart';
-import '../service/constants.dart';
-import '../service/service_manager.dart';
-import '../utils/utils.dart';
 
 
 /// Class managing the Bluetooth Low Energy discovery process of other remote 
@@ -26,8 +25,8 @@ class BleAdHocManager extends ServiceManager {
   BleAdHocManager(bool verbose) : super(verbose) {
     BleServices.verbose = verbose;
 
-    this._reactiveBle = FlutterReactiveBle();
-    this._mapMacDevice = HashMap();
+    _reactiveBle = FlutterReactiveBle();
+    _mapMacDevice = HashMap();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -82,7 +81,7 @@ class BleAdHocManager extends ServiceManager {
     BleServices.startAdvertise();
   
     // Start timer to stop discovery mode after 'duration' seconds
-    Timer(Duration(seconds: duration), () => BleServices.stopAdvertise());
+    Timer(Duration(seconds: duration), BleServices.stopAdvertise);
   }
 
 
@@ -92,8 +91,9 @@ class BleAdHocManager extends ServiceManager {
     if (verbose) log(TAG, 'discovery()');
 
     // If a discovery process is ongoing, then cancel the process
-    if (isDiscovering)
+    if (isDiscovering) {
       _stopScan();
+    }
 
     // Clear the history of discovered devices
     _mapMacDevice.clear();
@@ -105,7 +105,7 @@ class BleAdHocManager extends ServiceManager {
     ).listen(
       (device) {
         // Get a BleAdHocDevice object from device
-        BleAdHocDevice bleDevice = BleAdHocDevice(device);
+        var bleDevice = BleAdHocDevice(device);
         // Add the discovered device to the HashMap
         _mapMacDevice.putIfAbsent(bleDevice.mac.ble, () {
           if (verbose) {
@@ -123,9 +123,9 @@ class BleAdHocManager extends ServiceManager {
 
     isDiscovering = true;
     // Notify upper layer of the discovery process' start
-    controller.add(AdHocEvent(DISCOVERY_START, []));
+    controller.add(AdHocEvent(DISCOVERY_START, <dynamic>[]));
     // Stop the discovery process after DISCOVERY_TIME
-    Timer(Duration(milliseconds: DISCOVERY_TIME), () => _stopScan());
+    Timer(Duration(milliseconds: DISCOVERY_TIME), _stopScan);
   }
 
 
@@ -154,13 +154,13 @@ class BleAdHocManager extends ServiceManager {
   Future<HashMap<String?, BleAdHocDevice>> getPairedDevices() async {
     if (verbose) log(TAG, 'getPairedDevices()');
 
-    HashMap<String?, BleAdHocDevice> pairedDevices = HashMap();
+    var pairedDevices = HashMap<String?, BleAdHocDevice>();
     // Request list of paired devices
-    List<Map> btDevices = await BleServices.pairedDevices;
+    var btDevices = await BleServices.pairedDevices;
 
     for (final device in btDevices) {
       pairedDevices.putIfAbsent(
-        device['mac'], () => BleAdHocDevice.fromMap(device)
+        device['mac'] as String, () => BleAdHocDevice.fromMap(device)
       );
     }
 

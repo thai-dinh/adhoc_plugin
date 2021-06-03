@@ -1,12 +1,12 @@
 import 'dart:collection';
 
-import 'config.dart';
-import '../datalink/exceptions/device_failure.dart';
-import '../datalink/service/adhoc_device.dart';
-import '../datalink/service/adhoc_event.dart';
-import '../datalink/service/constants.dart';
-import '../network/datalinkmanager/datalink_manager.dart';
-import '../presentation/presentation_manager.dart';
+import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
+import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoc_plugin/src/presentation/presentation_manager.dart';
 
 
 /// Class providing high-Level APIs to manage ad hoc networks and network 
@@ -25,9 +25,9 @@ class TransferManager {
   /// This object is configured according to [config], which contains specific 
   /// configurations.
   TransferManager(this._verbose, {Config? config}) {
-    this._config = config == null ? Config() : config;
-    this._securityManager = PresentationManager(_verbose, _config);
-    this._datalinkManager = _securityManager.datalinkManager;
+    _config = config ?? Config();
+    _securityManager = PresentationManager(_verbose, _config);
+    _datalinkManager = _securityManager.datalinkManager;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
@@ -73,8 +73,9 @@ class TransferManager {
 
   /// Creates a secure group.
   void createGroup() {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.groupController.createGroup();
   }
@@ -82,8 +83,9 @@ class TransferManager {
 
   /// Joins an existing secure group.
   void joinGroup() {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.groupController.joinSecureGroup();
   }
@@ -91,8 +93,9 @@ class TransferManager {
 
   /// Leaves an existing secure group.
   void leaveGroup() {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.groupController.leaveSecureGroup();
   }
@@ -102,8 +105,9 @@ class TransferManager {
   /// 
   /// The payload [data] is encrypted.
   void sendMessageToGroup(Object data) {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.groupController.sendMessageToGroup(data);
   }
@@ -115,8 +119,9 @@ class TransferManager {
   /// The message payload is set to [data] and the message is sent to the remote
   /// node, which is specified by [destination].
   void sendMessageTo(Object data, String destination) {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.send(data, destination, false);
   }
@@ -127,8 +132,9 @@ class TransferManager {
   /// The message payload is set to [data] and is encrypted. The message is sent 
   /// to the remote node, which is specified by [destination].
   void sendEncryptedMessageTo(Object data, String destination) {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     _securityManager.send(data, destination, true);
   }
@@ -140,8 +146,9 @@ class TransferManager {
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcast(Object data) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     return await _securityManager.broadcast(data, false);
   }
@@ -154,8 +161,9 @@ class TransferManager {
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> encryptedBroadcast(Object data) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     return await _securityManager.broadcast(data, true);
   }
@@ -170,8 +178,9 @@ class TransferManager {
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> broadcastExcept(Object data, AdHocDevice excluded) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     return await _securityManager.broadcastExcept(data, excluded.label!, false);
   }
@@ -186,8 +195,9 @@ class TransferManager {
   /// 
   /// Returns true upon successful broadcast, otherwise false.
   Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
     return await _securityManager.broadcastExcept(data, excluded.label!, true);
   }
@@ -208,10 +218,11 @@ class TransferManager {
   /// if [attempts] is set, then it is done "attempts" times. Otherwise, the
   /// connection is only attempted once.
   Future<void> connect(AdHocDevice device, [int? attempts]) async {        
-    if (_datalinkManager.checkState() == 0)
+    if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
 
-    await _datalinkManager.connect(attempts == null ? 1 : attempts, device);
+    await _datalinkManager.connect(attempts ?? 1, device);
   }
 
 

@@ -9,16 +9,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 
 void main() {
-  final bool verbose = true;
+  final verbose = true;
 
   late WifiServer wifiServer;
   late WifiClient wifiClient;
 
-  int port = 4567;
-  String serverIP = InternetAddress.loopbackIPv4.address;
-  int attempts = 3;
-  int timeOut = 1000;
-  MessageAdHoc messageAdHoc = MessageAdHoc(
+  var port = 4567;
+  var serverIP = InternetAddress.loopbackIPv4.address;
+  var attempts = 3;
+  var timeOut = 1000;
+  var messageAdHoc = MessageAdHoc(
     Header(label: '', messageType: WIFI), 'Hello world!'
   );
 

@@ -1,7 +1,6 @@
+import 'package:adhoc_plugin/src/presentation/constants.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:pointycastle/pointycastle.dart';
-
-import 'constants.dart';
 
 
 /// Class representing a request for encryption/decryption to the 

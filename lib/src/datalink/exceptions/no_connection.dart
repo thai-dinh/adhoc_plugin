@@ -4,7 +4,7 @@ import 'dart:core';
 /// Class signaling that a No Connection exception has been triggered due to 
 /// invalid connection state with a remote peer.
 class NoConnectionException implements Exception {
-  String _message;
+  final String _message;
 
   /// Creates a [NoConnectionException] object.
   /// 

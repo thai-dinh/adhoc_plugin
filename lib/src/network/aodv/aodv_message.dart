@@ -6,7 +6,7 @@ abstract class AodvMessage {
   /// 
   /// The type of message is specified by [type]. 
   AodvMessage(int type) {
-    this._type = type;
+    _type = type;
   }
 
 /*------------------------------Getters & Setters-----------------------------*/

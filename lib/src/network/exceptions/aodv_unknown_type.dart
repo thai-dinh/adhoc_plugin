@@ -3,9 +3,9 @@ import 'dart:core';
 
 /// Class signaling that a AODV unknown type exception has occurred.
 class AodvUnknownTypeException implements Exception {
-  String _message;
+  final String _message;
 
-  /// Creates a [AodvAbstractException] object.
+  /// Creates a [AodvUnknownTypeException] object.
   /// 
   /// Displays the exception [_message] if it is given, otherwise "Aodv unknow 
   /// type exception triggered" is set.
