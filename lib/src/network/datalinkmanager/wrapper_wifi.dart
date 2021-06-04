@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/bad_duration.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
@@ -22,11 +22,10 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/wrapper_network.dart';
 
-
-/// Class inheriting the abstract class [WrapperNetwork] and manages all 
+/// Class inheriting the abstract class [WrapperNetwork] and manages all
 /// communications related to Wi-Fi Direct.
-/// 
-/// NOTE: Most of the following source code has been borrowed and adapted from 
+///
+/// NOTE: Most of the following source code has been borrowed and adapted from
 /// the original codebase provided by Gaulthier Gain, which can be found at:
 /// https://github.com/gaulthiergain/AdHocLib
 class WrapperWifi extends WrapperNetwork {
@@ -42,14 +41,14 @@ class WrapperWifi extends WrapperNetwork {
   late HashMap<String?, String?> _mapIPAddressMac;
 
   /// Creates a [WrapperWifi] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
-  /// The given hash map [mapMacDevices] is used to map a MAC address entry to 
+  ///
+  /// The given hash map [mapMacDevices] is used to map a MAC address entry to
   /// an [AdHocDevice] object.
-  WrapperWifi(
-    bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices
-  ) : super(verbose, config, mapMacDevices) {
+  WrapperWifi(bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices)
+    : super(verbose, config, mapMacDevices) {
+
     type = WIFI;
     _isConnecting = false;
     _isGroupOwner = false;
@@ -65,9 +64,9 @@ class WrapperWifi extends WrapperNetwork {
 /*------------------------------Override methods------------------------------*/
 
   /// Initializes internal parameters.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
+  ///
   /// This object is configured according to the parameters in [config] if it
   /// is given, otherwise the default settings are used.
   @override
@@ -86,22 +85,20 @@ class WrapperWifi extends WrapperNetwork {
     }
   }
 
-
   /// Initializes Wifi wrapper parameters.
-  /// 
-  /// Throws an [BadDurationException] if the given duration exceeds 3600 
+  ///
+  /// Throws an [BadDurationException] if the given duration exceeds 3600
   /// seconds or is negative.
-  /// 
-  /// Note: It is not possible to enable/disable Wi-Fi starting with 
+  ///
+  /// Note: It is not possible to enable/disable Wi-Fi starting with
   /// Build.VERSION_CODES#Q.
-  /// 
+  ///
   /// https://developer.android.com/reference/android/net/wifi/WifiManager#setWifiEnabled(boolean)
   @override
   void enable(int duration) {
     if (duration < 0 || duration > 3600) {
       throw BadDurationException(
-        'Duration must be between 0 and 3600 second(s)'
-      );
+          'Duration must be between 0 and 3600 second(s)');
     }
 
     _wifiManager = WifiAdHocManager(verbose);
@@ -110,9 +107,8 @@ class WrapperWifi extends WrapperNetwork {
     enabled = true;
   }
 
-
   /// Clears the data structure of the wrapper.
-  @override 
+  @override
   void disable() {
     mapAddrNetwork.clear();
     neighbors.clear();
@@ -120,10 +116,9 @@ class WrapperWifi extends WrapperNetwork {
     enabled = false;
   }
 
-
-  /// Performs a Wi-Fi Direct discovery process. 
-  /// 
-  /// If the Bluetooth Low Energy and Wi-Fi are enabled, the two discoveries are 
+  /// Performs a Wi-Fi Direct discovery process.
+  ///
+  /// If the Bluetooth Low Energy and Wi-Fi are enabled, the two discoveries are
   /// performed in parallel. A discovery process lasts for at least 10-12 seconds.
   @override
   void discovery() {
@@ -135,12 +130,11 @@ class WrapperWifi extends WrapperNetwork {
     isDiscovering = true;
   }
 
-
   /// Connects to a remote peer.
-  /// 
-  /// The remote peer is specified by [device] and the connection attempts is 
+  ///
+  /// The remote peer is specified by [device] and the connection attempts is
   /// set to [attempts].
-  /// 
+  ///
   /// Throws a [DeviceFailureException] if this device is alreay connected to
   /// the remote peer.
   @override
@@ -150,12 +144,9 @@ class WrapperWifi extends WrapperNetwork {
       this.attempts = attempts;
       await _wifiManager.connect(device.mac.wifi);
     } else {
-        throw DeviceFailureException(
-          '${device.name} (${device.mac.wifi}) is already connected'
-        );
-      }
+      throw DeviceFailureException('${device.name} (${device.mac.wifi}) is already connected');
+    }
   }
-
 
   /// Stops the listening process of incoming connections.
   @override
@@ -165,14 +156,12 @@ class WrapperWifi extends WrapperNetwork {
     isListening = false;
   }
 
-
   /// Not used in Wi-Fi direct context.
   @override
   Future<HashMap<String, AdHocDevice>> getPaired() async => HashMap();
 
-
   /// Gets the Wi-Fi adapter name.
-  /// 
+  ///
   /// Returns a [String] representing the adapter name.
   @override
   Future<String> getAdapterName() async {
@@ -180,24 +169,22 @@ class WrapperWifi extends WrapperNetwork {
     return name ?? '';
   }
 
-
   /// Updates the Wi-Fi adapter name of the device with [name].
-  /// 
+  ///
   /// Returns true if the name is successfully set, otherwise false.
   @override
   Future<bool> updateDeviceName(final String name) async {
     final bool? result = await _wifiManager.updateDeviceName(name);
-    return result ?? false ;
+    return result ?? false;
   }
 
-
   /// Resets the Wi-Fi adapter name of the device.
-  /// 
+  ///
   /// Returns true if the name is successfully reset, otherwise false.
   @override
   Future<bool> resetDeviceName() async {
     final bool? result = await _wifiManager.resetDeviceName();
-    return result ?? false ;
+    return result ?? false;
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -213,9 +200,8 @@ class WrapperWifi extends WrapperNetwork {
     WifiAdHocManager.removeGroup();
   }
 
-
   /// Checks if the current device is the Wi-Fi Direct group owner.
-  /// 
+  ///
   /// Returns true if it is, otherwise false.
   bool isWifiGroupOwner() => _isGroupOwner;
 
@@ -238,7 +224,10 @@ class WrapperWifi extends WrapperNetwork {
 
           // Add device to hash map
           mapMacDevices.putIfAbsent(device.mac, () {
-            if (verbose) log(TAG, "Add " + device.mac.wifi + " into mapMacDevices");
+            if (verbose) {
+              log(TAG, "Add " + device.mac.wifi + " into mapMacDevices");
+            }
+
             return device;
           });
 
@@ -272,7 +261,7 @@ class WrapperWifi extends WrapperNetwork {
           var groupOwnerAddress = info[2] as String;
 
           _isGroupOwner = isGroupOwner;
-          // If a group has been successfully formed and this node is the group 
+          // If a group has been successfully formed and this node is the group
           // owner, then listen to incoming connections
           if (isConnected && _isGroupOwner) {
             _groupOwnerAddr = _ownIPAddress = groupOwnerAddress;
@@ -298,13 +287,12 @@ class WrapperWifi extends WrapperNetwork {
     });
   }
 
-
   /// Processes the [AdHocEvent] according to the given service.
-  /// 
+  ///
   /// A service can be of type [ServiceClient] or [ServiceServer].
   void _onEvent(Service service) {
     // Listen to stream of ad hoc events
-    service.eventStream.listen((event) async { 
+    service.eventStream.listen((event) async {
       switch (event.type) {
         case MESSAGE_RECEIVED:
           // Process message received
@@ -326,9 +314,9 @@ class WrapperWifi extends WrapperNetwork {
                 msg.header.address = _ownIPAddress;
                 msg.header.deviceType = WIFI;
                 (service as ServiceClient).send(msg);
-              }, 
+              },
               () => (service as ServiceClient).disconnect()
-            )
+            ),
           );
 
           // Update own name
@@ -338,19 +326,17 @@ class WrapperWifi extends WrapperNetwork {
           controller.add(AdHocEvent(DEVICE_INFO_WIFI, [ownMac.wifi, ownName]));
 
           // Send control message
-          (service as ServiceClient).send(
-            MessageAdHoc(
-              Header(
-                messageType: CONNECT_SERVER,
-                label: ownLabel,
-                name: ownName,
-                mac: ownMac,
-                address: _ownIPAddress,
-                deviceType: WIFI
-              ),
-              null,
-            )
-          );
+          (service as ServiceClient).send(MessageAdHoc(
+            Header(
+              messageType: CONNECT_SERVER,
+              label: ownLabel,
+              name: ownName,
+              mac: ownMac,
+              address: _ownIPAddress,
+              deviceType: WIFI
+            ),
+            null,
+          ));
           break;
 
         case CONNECTION_ABORTED:
@@ -358,7 +344,14 @@ class WrapperWifi extends WrapperNetwork {
           connectionClosed(Identifier(wifi: _mapIPAddressMac[event.payload as String]!));
           break;
 
-        case CONNECTION_EXCEPTION:
+        case CONNECTION_FAILED:
+          var identifier = Identifier(wifi: _mapIPAddressMac[event.payload as String]!);
+          var device = mapMacDevices[identifier]!;
+
+          controller.add(AdHocEvent(CONNECTION_FAILED, device));
+          break;
+
+        case INTERNAL_EXCEPTION:
           // Notify upper layer of an exception occured at lower layers
           controller.add(AdHocEvent(INTERNAL_EXCEPTION, event.payload));
           break;
@@ -368,37 +361,30 @@ class WrapperWifi extends WrapperNetwork {
     });
   }
 
-
   /// Starts the server listening process of incoming connections or messages
   /// received.
   void _listenServer() {
-    /// Start server listening 
+    /// Start server listening
     serviceServer = WifiServer(verbose)..listen(_ownIPAddress, _serverPort);
     // Listen to the ad hoc events of the network (msg received, ...)
     _onEvent(serviceServer);
   }
 
-
-
   void _connect(int remotePort) async {
-    final wifiClient = 
-      WifiClient(verbose, remotePort, _groupOwnerAddr!, attempts, timeOut);
+    final wifiClient = WifiClient(verbose, remotePort, _groupOwnerAddr!, attempts, timeOut);
     _onEvent(wifiClient);
     await wifiClient.connect();
   }
 
-
   /// Processes messages received from remote nodes.
-  /// 
+  ///
   /// The [message] represents a message send through the network.
   void _processMsgReceived(MessageAdHoc message) async {
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Save the mapping of remote IP address with its remote MAC address
         var remoteAddress = message.header.address;
-        _mapIPAddressMac.putIfAbsent(
-          remoteAddress, () => message.header.mac.wifi
-        );
+        _mapIPAddressMac.putIfAbsent(remoteAddress, () => message.header.mac.wifi);
 
         // Update own name
         ownName = _wifiManager.adapterName;
@@ -417,7 +403,7 @@ class WrapperWifi extends WrapperNetwork {
               address: _ownIPAddress,
               deviceType: type
             ),
-            null,
+            [],
           ),
           remoteAddress!
         );
@@ -430,21 +416,19 @@ class WrapperWifi extends WrapperNetwork {
               msg.header.address = _ownIPAddress;
               msg.header.deviceType = WIFI;
               serviceServer.send(msg, remoteAddress);
-            },
+            }, 
             () => serviceServer.cancelConnection(remoteAddress)
-          )
+          ),
         );
         break;
 
       case CONNECT_CLIENT:
         // Save the mapping of remote IP address with its remote MAC address
-        _mapIPAddressMac.putIfAbsent(
-          message.header.address, () => message.header.mac.wifi
-        );
+        _mapIPAddressMac.putIfAbsent(message.header.address, () => message.header.mac.wifi);
 
         // Save remote node's NetworkManager
         var network = mapAddrNetwork[message.header.address];
-        
+
         // Process message received from a remote peer
         receivedPeerMessage(message.header, network!);
         break;
@@ -459,11 +443,11 @@ class WrapperWifi extends WrapperNetwork {
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (var device in hashSet) {
-            if (device!.label != ownLabel && !setRemoteDevices.contains(device)
-              && !isDirectNeighbor(device.label!)
-            ) {
+            if (device!.label != ownLabel && !setRemoteDevices.contains(device) &&
+                !isDirectNeighbor(device.label!)) {
+
               // Notify upper layer of a new remote connection established
-              controller.add(AdHocEvent(CONNECTION_EVENT, device));
+              controller.add(AdHocEvent(CONNECTION_PERFORMED, device));
 
               setRemoteDevices.add(device);
             }
@@ -487,7 +471,7 @@ class WrapperWifi extends WrapperNetwork {
           );
 
           // Notify upper layer of a remote connection closed
-          controller.add(AdHocEvent(DISCONNECTION_EVENT, device));
+          controller.add(AdHocEvent(CONNECTION_ABORTED, device));
 
           // Update set
           if (setRemoteDevices.contains(device)) {

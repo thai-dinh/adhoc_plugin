@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
@@ -392,13 +392,14 @@ class SecureGroupController {
       default:
     }
 
+    var keyLengthRequired = 32;
     var keyBytes = _toBytes(groupKeySum);
     var length = keyBytes.length;
-    if (length < 32) {
+    if (length < keyLengthRequired) {
       keyBytes = 
-        Uint8List.fromList(keyBytes.toList() + List.filled(32 - length, 42));
-    } else if (length > 32) {
-      keyBytes = keyBytes.sublist(0, 32);
+        Uint8List.fromList(keyBytes.toList() + List.filled(keyLengthRequired - length, 42));
+    } else if (length > keyLengthRequired) {
+      keyBytes = keyBytes.sublist(0, keyLengthRequired);
     }
 
     final algorithm = Chacha20(macAlgorithm: Hmac.sha256());

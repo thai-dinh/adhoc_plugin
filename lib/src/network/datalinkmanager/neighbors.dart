@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
-
 /// Class managing the direct neighbors of a node.
 class Neighbors {
   late HashMap<String, NetworkManager> _neighbors;
@@ -17,13 +16,11 @@ class Neighbors {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Returns the active connections of a node as a [HashMap] of 
-  /// <[String], [NetworkManager]>.
+  /// Direct neighbors of a node as a [HashMap] of <[String], [NetworkManager]>.
   HashMap<String, NetworkManager> get neighbors => _neighbors;
 
-  /// Returns the direct neighbors of a node as a [HashMap] of 
-  /// <[String], [Identifier]>, where the key is the label and the value the MAC
-  /// address of the neighbor.
+  /// Direct neighbors of a node as a [HashMap] of <[String], [Identifier]>, 
+  /// where the key is the label and the value the MAC address of the neighbor.
   HashMap<String, Identifier> get labelMac => _mapLabelMac;
 
 /*-------------------------------Public methods-------------------------------*/
@@ -35,7 +32,6 @@ class Neighbors {
     _mapLabelMac.putIfAbsent(label, () => mac);
   }
 
-
   /// Removes the entry of the hashmap [_mapLabelMac] where [label] is the key
   void remove(String label) {
     if (_neighbors.containsKey(label)) {
@@ -44,23 +40,20 @@ class Neighbors {
     }
   }
 
-
   /// Updates the MAC address of a neighbor.
-  /// 
+  ///
   /// The neighbor identified by [label] is getting its MAC updated by [mac].
   void updateNeighbor(String label, Identifier mac) {
     _mapLabelMac.update(label, (value) => mac);
   }
 
-
   /// Gets the NetworkManager object associated to key [label].
-  /// 
+  ///
   /// Returns the associated [NetworkManager] to [label]. The returned value is
   /// null if no match is found.
   NetworkManager? getNeighbor(String label) {
     return _neighbors.containsKey(label) ? _neighbors[label] : null;
   }
-
 
   /// Clears the content of the data structure.
   void clear() {

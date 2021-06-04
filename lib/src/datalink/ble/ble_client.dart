@@ -10,7 +10,6 @@ import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
-
 /// Class defining the client's logic for the Bluetooth LE implementation.
 class BleClient extends ServiceClient {
   StreamSubscription<ConnectionStateUpdate>? _connectionSub;
@@ -20,18 +19,15 @@ class BleClient extends ServiceClient {
   late bool _isInitialized;
 
   /// Creates a [BleClient] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
+  ///
   /// This client service deals with the remote host [_device].
-  /// 
-  /// Connection attempts to a remote device are done at most [attempts] times. 
+  ///
+  /// Connection attempts to a remote device are done at most [attempts] times.
   /// A connection attempt waiting time is set to [timeOut] ms.
-  BleClient(
-    bool verbose, this._device, int attempts, int timeOut
-  ) : super(
-    verbose, attempts, timeOut
-  ) {
+  BleClient(bool verbose, this._device, int attempts, int timeOut)
+      : super(verbose, attempts, timeOut) {
     _reactiveBle = FlutterReactiveBle();
     _isInitialized = false;
   }
@@ -39,7 +35,7 @@ class BleClient extends ServiceClient {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Starts the listening process for ad hoc events.
-  /// 
+  ///
   /// In this case, an ad hoc event is a message received from the remote host.
   @override
   void listen() {
@@ -60,13 +56,11 @@ class BleClient extends ServiceClient {
     });
   }
 
-
   /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
     super.stopListening();
   }
-
 
   /// Initiates a connection with the remote device.
   @override
@@ -74,19 +68,17 @@ class BleClient extends ServiceClient {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
 
-
   /// Cancels the connection with the remote device.
   @override
   void disconnect() {
     stopListening();
-    // Abort connection with the remote host
     if (_connectionSub != null) {
+      // Abort connection with the remote host
       _connectionSub!.cancel();
       // Notify upper layer of a connection aborted
       controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac));
     }
   }
-
 
   /// Sends a [message] to the remote device.
   @override
@@ -103,7 +95,7 @@ class BleClient extends ServiceClient {
   }
 
 /*------------------------------Private methods-------------------------------*/
-  
+
   /// Initiates a connection attempts with [attempts] times and with a [delay]
   /// (ms) between each try.
   Future<void> _connect(int attempts, Duration delay) async {
@@ -119,14 +111,13 @@ class BleClient extends ServiceClient {
         return _connect(attempts - 1, delay * 2);
       } else {
         // Notify upper layer of a failed connection attempts
-        controller.add(AdHocEvent(CONNECTION_FAILED, _device.mac));
+        controller.add(AdHocEvent(CONNECTION_FAILED, _device));
       }
     }
   }
 
-
   /// Initiates a connection attempt.
-  /// 
+  ///
   /// Throws a [NoConnectionException] exception if a connection cannot be
   /// established with the remote device.
   Future<void> _connectionAttempt() async {
@@ -152,26 +143,21 @@ class BleClient extends ServiceClient {
             //   // Pairing request
             //   BleServices.createBond(_device.mac.ble);
             // } else {
-              await _initEnvironment();
+            await _initEnvironment();
             // }
             break;
 
           case DeviceConnectionState.connecting:
-            // Update state of the connection
             state = STATE_CONNECTING;
             break;
 
           default:
-            // Update state of the connection
             state = STATE_NONE;
-            throw NoConnectionException(
-              'Unable to connect to ${_device.address}'
-            );
+            throw NoConnectionException('Unable to connect to ${_device.address}');
         }
       });
     }
   }
-
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _initEnvironment() async {
@@ -183,19 +169,12 @@ class BleClient extends ServiceClient {
     listen();
 
     // Request maximum MTU
-    _device.mtu = await _reactiveBle.requestMtu(
-      deviceId: _device.mac.ble, 
-      mtu: MAX_MTU
-    );
+    _device.mtu = await _reactiveBle.requestMtu(deviceId: _device.mac.ble, mtu: MAX_MTU);
 
     // Notify upper layer of a successful connection performed
-    controller.add(AdHocEvent(
-      CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]
-    ));
+    controller.add(AdHocEvent(CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]));
 
-    // Update state of the connection
     state = STATE_CONNECTED;
-
     _isInitialized = true;
   }
 }

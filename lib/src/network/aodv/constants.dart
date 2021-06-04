@@ -1,7 +1,7 @@
 // Constants for hop counts and TTL values;
 const TTL = [100, 50, 25, 10, 5, 3];
 const INIT_HOP_COUNT = 0;
-const RREQ_RETRIES = 6;
+const RREQ_RETRIES = 5;
 const MAX_SINT_VAL = 4294967296;  // Max signed integer value
 
 // Sequence Numbers

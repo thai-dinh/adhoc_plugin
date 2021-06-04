@@ -4,8 +4,7 @@ import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
-
-/// Abstract superclass providing common interfaces for the services 
+/// Abstract superclass providing common interfaces for the services
 /// 'ServiceClient' and 'ServiceServer' classes.
 abstract class Service {
   static const String TAG = "[Service]";
@@ -17,7 +16,7 @@ abstract class Service {
   late StreamController<AdHocEvent> controller;
 
   /// Creates a [Service] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
   Service(this.verbose) {
     _state = STATE_NONE;
@@ -53,7 +52,7 @@ abstract class Service {
 /*-----------------------------Private methods-------------------------------*/
 
   /// Gets the state of the connection as a [String].
-  /// 
+  ///
   /// Returns the current state of the connection. The possible outcomes are
   /// 'Connected', 'Connecting', 'Listening', and 'None'.
   String _stateToString(int state) {

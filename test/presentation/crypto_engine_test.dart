@@ -20,8 +20,8 @@ void main() {
     cryptoEngine = CryptoEngine();
     await cryptoEngine.initialize();
     rsaPublicKey = cryptoEngine.generateRSAkeyPair().publicKey;
-    final chacha20 = Chacha20(macAlgorithm: Hmac.sha256());
-    secretKey = await chacha20.newSecretKey();
+    final algorithm = Chacha20.poly1305Aead();
+    secretKey = await algorithm.newSecretKey();
     certificate = Certificate('owner', 'issuer', DateTime.now(), rsaPublicKey);
   });
 

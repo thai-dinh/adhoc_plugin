@@ -10,8 +10,7 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_device.dart';
 import 'package:flutter/services.dart';
 
-
-/// Class managing the Wi-Fi discovery and the pairing process with other 
+/// Class managing the Wi-Fi discovery and the pairing process with other
 /// Wi-Fi devices.
 class WifiAdHocManager extends ServiceManager {
   static const String TAG = '[WifiAdHocManager]';
@@ -25,7 +24,7 @@ class WifiAdHocManager extends ServiceManager {
   late HashMap<String?, WifiAdHocDevice?> _mapMacDevice;
 
   /// Creates a [WifiAdHocManager] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
   WifiAdHocManager(bool verbose) : super(verbose) {
     _methodCh.invokeMethod('setVerbose', verbose);
@@ -69,7 +68,6 @@ class WifiAdHocManager extends ServiceManager {
     _methodCh.invokeMethod('unregister');
   }
 
-
   /// Initializes the listening process of platform-side streams.
   @override
   void initialize() async {
@@ -90,16 +88,14 @@ class WifiAdHocManager extends ServiceManager {
             // Add the discovered device to the HashMap
             _mapMacDevice.putIfAbsent(wifiDevice.mac.wifi, () {
               if (verbose) {
-                log(TAG, 
-                  'Device found: Name=(${device.name}) - Address=(${device.mac})'
-                );
+                log(TAG, 'Device found: Name=(${device.name}) - Address=(${device.mac})');
               }
 
               return wifiDevice;
             });
 
             // Notify upper layer of a device discovered
-            controller.add(AdHocEvent(DEVICE_DISCOVERED, wifiDevice));    
+            controller.add(AdHocEvent(DEVICE_DISCOVERED, wifiDevice));
           }
           break;
 
@@ -112,11 +108,8 @@ class WifiAdHocManager extends ServiceManager {
           var info = _WifiP2PInfo.fromMap(map['info'] as Map);
 
           // Notify upper layer of the Wi-Fi connection information received
-          controller.add(
-            AdHocEvent(
-              CONNECTION_INFORMATION, 
-              [info.groupFormed, info.isGroupOwner, info.groupOwnerAddress]
-            )
+          controller.add(AdHocEvent(
+            CONNECTION_INFORMATION, [info.groupFormed, info.isGroupOwner, info.groupOwnerAddress])
           );
           break;
 
@@ -144,9 +137,8 @@ class WifiAdHocManager extends ServiceManager {
     await _methodCh.invokeMethod('register');
   }
 
-
   /// Triggers the discovery process of other Wi-Fi Direct devices.
-  /// 
+  ///
   /// The process lasts for [DISCOVERY_TIME] seconds.
   @override
   void discovery() {
@@ -169,25 +161,20 @@ class WifiAdHocManager extends ServiceManager {
     controller.add(AdHocEvent(DISCOVERY_START, []));
 
     // Stop the discovery process after DISCOVERY_TIME
-    Timer(
-      Duration(milliseconds: DISCOVERY_TIME), 
-      () {
-        if (verbose) log(TAG, 'Discovery completed');
+    Timer(Duration(milliseconds: DISCOVERY_TIME), () {
+      if (verbose) log(TAG, 'Discovery completed');
 
-        isDiscovering = false;
-        // Notify upper layer of the discovery process end
-        controller.add(AdHocEvent(DISCOVERY_END, _mapMacDevice));
-      }
-    );
+      isDiscovering = false;
+      // Notify upper layer of the discovery process end
+      controller.add(AdHocEvent(DISCOVERY_END, _mapMacDevice));
+    });
   }
-
 
   /// Updates the local adapter name of the device with [name].
   @override
   Future<bool> updateDeviceName(final String name) async {
     return await _methodCh.invokeMethod('updateDeviceName') as Future<bool>;
   }
-
 
   /// Resets the local adapter name of the device.
   @override
@@ -212,12 +199,11 @@ class WifiAdHocManager extends ServiceManager {
 /*-------------------------------Static methods-------------------------------*/
 
   /// Checks whether the Wi-Fi technology is enabled.
-  /// 
+  ///
   /// Returns true if it is, otherwise false.
   static Future<bool> isWifiEnabled() async {
     return await _methodCh.invokeMethod('isWifiEnabled') as bool;
   }
-
 
   /// Removes the device from a Wi-Fi Direct group.
   static Future<void> removeGroup() async {
@@ -225,19 +211,18 @@ class WifiAdHocManager extends ServiceManager {
   }
 }
 
-
 /// Class representing a Wi-Fi P2P devices.
 class _WifiP2PDevice {
   late String name;
   late String mac;
 
   /// Creates a [_WifiP2PDevice] object.
-  /// 
+  ///
   /// The device is named after [name] and has the MAC address [mac].
   _WifiP2PDevice(this.name, this.mac);
 
   /// Creates a [_WifiP2PDevice] object.
-  /// 
+  ///
   /// The object is filled with information from [map]. The map should be a map
   /// with the key type as [String] and value type as [dynamic]. The following
   /// key should exits: 'name' and 'mac'.
@@ -247,7 +232,6 @@ class _WifiP2PDevice {
   }
 }
 
-
 /// Class representing a Wi-Fi P2P connection information.
 class _WifiP2PInfo {
   late String groupOwnerAddress;
@@ -255,7 +239,7 @@ class _WifiP2PInfo {
   late bool isGroupOwner;
 
   /// Creates a [_WifiP2PInfo] object.
-  /// 
+  ///
   /// The object is filled with information from [map]. The map should be a map
   /// with the key type as [String] and value type as [dynamic]. The following
   /// key should exits: 'groupOwnerAddress', 'groupFormed', and 'isGroupOwner'.

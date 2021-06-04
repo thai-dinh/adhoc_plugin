@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/presentation/certificate.dart';
 
 

@@ -1,14 +1,13 @@
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 
-
-/// Class providing common interface for network operations regardless of the 
+/// Class providing common interface for network operations regardless of the
 /// technology employed.
 class NetworkManager {
   final Future<void> Function(MessageAdHoc) _sendMessage;
   final void Function() _disconnect;
 
   /// Creates a [NetworkManager] object.
-  /// 
+  ///
   /// The sending operation is given by [_sendMessage] and the connection
   /// abortion by [_disconnect].
   NetworkManager(this._sendMessage, this._disconnect);

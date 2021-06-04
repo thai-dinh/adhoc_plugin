@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
+import 'package:adhoc_plugin/src/appframework/constants.dart';
+import 'package:adhoc_plugin/src/appframework/event.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/device_failure.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
-import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
+import 'package:adhoc_plugin/src/presentation/constants.dart';
 import 'package:adhoc_plugin/src/presentation/presentation_manager.dart';
 
 
@@ -16,7 +20,8 @@ class TransferManager {
 
   late Config _config;
   late DataLinkManager _datalinkManager;
-  late PresentationManager _securityManager;
+  late PresentationManager _presentationManager;
+  late StreamController<Event> _controller;
 
   /// Creates a [TransferManager] object.
   /// 
@@ -26,17 +31,19 @@ class TransferManager {
   /// configurations.
   TransferManager(this._verbose, {Config? config}) {
     _config = config ?? Config();
-    _securityManager = PresentationManager(_verbose, _config);
-    _datalinkManager = _securityManager.datalinkManager;
+    _presentationManager = PresentationManager(_verbose, _config);
+    _datalinkManager = _presentationManager.datalinkManager;
+    _controller = StreamController.broadcast();
+    _initialize();
   }
 
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// List of direct neighors of this node ([List] of [AdHocDevice]).
-  List<AdHocDevice> get directNeighbors => _securityManager.directNeighbors;
+  List<AdHocDevice> get directNeighbors => _presentationManager.directNeighbors;
 
-  /// Stream of lower layers ad hoc events ([AdHocEvent]).
-  Stream<AdHocEvent> get eventStream => _securityManager.eventStream;
+  /// Stream of lower layers ad hoc events represented by [Event].
+  Stream<Event> get eventStream => _controller.stream;
 
   /// Current label ([String]) that identifies uniquely the device.
   String get ownAddress => _config.label;
@@ -67,49 +74,61 @@ class TransferManager {
   }
 
   /// Stance about joining group formation
-  set open(bool open) => _securityManager.groupController.open = open;
+  set open(bool open) => _presentationManager.groupController.open = open;
 
 /*-------------------------------Group Methods--------------------------------*/
 
   /// Creates a secure group.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void createGroup() {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.groupController.createGroup();
+    _presentationManager.groupController.createGroup();
   }
 
 
   /// Joins an existing secure group.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void joinGroup() {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.groupController.joinSecureGroup();
+    _presentationManager.groupController.joinSecureGroup();
   }
 
 
   /// Leaves an existing secure group.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void leaveGroup() {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.groupController.leaveSecureGroup();
+    _presentationManager.groupController.leaveSecureGroup();
   }
 
 
   /// Sends a confidential message to the secure group members.
   /// 
   /// The payload [data] is encrypted.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void sendMessageToGroup(Object data) {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.groupController.sendMessageToGroup(data);
+    _presentationManager.groupController.sendMessageToGroup(data);
   }
 
 /*------------------------------Network Methods------------------------------*/
@@ -118,12 +137,15 @@ class TransferManager {
   /// 
   /// The message payload is set to [data] and the message is sent to the remote
   /// node, which is specified by [destination].
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void sendMessageTo(Object data, String destination) {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.send(data, destination, false);
+    _presentationManager.send(data, destination, false);
   }
 
 
@@ -131,12 +153,15 @@ class TransferManager {
   /// 
   /// The message payload is set to [data] and is encrypted. The message is sent 
   /// to the remote node, which is specified by [destination].
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   void sendEncryptedMessageTo(Object data, String destination) {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _securityManager.send(data, destination, true);
+    _presentationManager.send(data, destination, true);
   }
 
 
@@ -145,12 +170,15 @@ class TransferManager {
   /// The message payload is set to [data].
   /// 
   /// Returns true upon successful broadcast, otherwise false.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   Future<bool> broadcast(Object data) async {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    return await _securityManager.broadcast(data, false);
+    return await _presentationManager.broadcast(data, false);
   }
 
 
@@ -160,12 +188,15 @@ class TransferManager {
   /// The message payload is set to [data] and is encrypted.
   /// 
   /// Returns true upon successful broadcast, otherwise false.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   Future<bool> encryptedBroadcast(Object data) async {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    return await _securityManager.broadcast(data, true);
+    return await _presentationManager.broadcast(data, true);
   }
 
 
@@ -177,12 +208,15 @@ class TransferManager {
   /// The node specified by [excluded] is not included in the broadcast.
   /// 
   /// Returns true upon successful broadcast, otherwise false.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   Future<bool> broadcastExcept(Object data, AdHocDevice excluded) async {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    return await _securityManager.broadcastExcept(data, excluded.label!, false);
+    return await _presentationManager.broadcastExcept(data, excluded.label!, false);
   }
 
 
@@ -194,12 +228,15 @@ class TransferManager {
   /// The node specified by [excluded] is not included in the broadcast.
   /// 
   /// Returns true upon successful broadcast, otherwise false.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   Future<bool> encryptedBroadcastExcept(Object data, AdHocDevice excluded) async {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    return await _securityManager.broadcastExcept(data, excluded.label!, true);
+    return await _presentationManager.broadcastExcept(data, excluded.label!, true);
   }
 
 /*-----------------------------Data-link Methods-----------------------------*/
@@ -217,6 +254,9 @@ class TransferManager {
   /// 
   /// if [attempts] is set, then it is done "attempts" times. Otherwise, the
   /// connection is only attempted once.
+  /// 
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
   Future<void> connect(AdHocDevice device, [int? attempts]) async {        
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
@@ -328,5 +368,76 @@ class TransferManager {
   /// Returns true if it is, otherwise false.
   bool isWifiGroupOwner() {
     return _datalinkManager.isWifiGroupOwner();
+  }
+
+/*------------------------------Private Methods------------------------------*/
+
+  void _initialize() {
+    _presentationManager.eventStream.listen((event) {
+      AdHocDevice? device;
+      late Object data;
+
+      switch (event.type) {
+        case DEVICE_DISCOVERED:
+          device = event.payload as AdHocDevice;
+
+          _controller.add(Event(AdHocType.onDeviceDiscovered, device: device));
+          break;
+
+        case DISCOVERY_START:
+          _controller.add(Event(AdHocType.onDiscoveryStarted));
+          break;
+
+        case DISCOVERY_END:
+          data = event.payload as HashMap<String, AdHocDevice>;
+
+          _controller.add(Event(AdHocType.onDiscoveryCompleted, data: data));
+          break;
+
+        case DATA_RECEIVED:
+          var payload = event.payload as List<dynamic>;
+
+          device = payload.first as AdHocDevice;
+          data = payload.last as Object;
+
+          _controller.add(Event(AdHocType.onDataReceived, device: device, data: data));
+          break;
+
+        case FORWARD_DATA:
+          var payload = event.payload as List<dynamic>;
+
+          device = payload.first as AdHocDevice;
+          data = payload.last as Object;
+
+          _controller.add(Event(AdHocType.onForwardData, device: device, data: data));
+          break;
+
+        case CONNECTION_PERFORMED:
+          device = event.payload as AdHocDevice;
+
+          _controller.add(Event(AdHocType.onConnection, device: device));
+          break;
+
+        case CONNECTION_ABORTED:
+          device = event.payload as AdHocDevice;
+
+          _controller.add(Event(AdHocType.onConnectionClosed, device: device));
+          break;
+
+        case INTERNAL_EXCEPTION:
+          data = event.payload as Object;
+
+          _controller.add(Event(AdHocType.onInternalException, data: data));
+          break;
+
+        case GROUP_STATUS:
+          break;
+
+        case GROUP_KEY_UPDATED:
+          break;
+
+        default:
+      }
+    });
   }
 }

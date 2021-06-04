@@ -5,8 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'adhoc_device.g.dart';
 
-
-/// Class representing a generic ad hoc device. It represents a remote device 
+/// Class representing a generic ad hoc device. It represents a remote device
 /// with  the Wi-Fi Direct, Bluetooth Low Energy, or both technology enabled.
 @JsonSerializable()
 class AdHocDevice {
@@ -21,21 +20,25 @@ class AdHocDevice {
 
   /// Creates an [AdHocDevice] object.
   ///
-  /// If [label] is given, then it is used as a unique identifier to represent 
+  /// If [label] is given, then it is used as a unique identifier to represent
   /// the remote device.
-  /// 
-  /// If [address] is given, then it is either used as an UUID in case of 
+  ///
+  /// If [address] is given, then it is either used as an UUID in case of
   /// Bluetooth Low Energy, or an IPv4 address in case of Wi-Fi Direct.
-  /// 
+  ///
   /// If [name] is given, then it is used to represent the name of the remote
   /// device.
-  /// 
+  ///
   /// If [mac] is given, then it represents the MAC address of the remote device.
-  /// 
+  ///
   /// If [type] is given, then it defines the type of technology used, i.e.,
   /// "0" stands for Wi-Fi Direct and "1" stands for Bluetooth Low Energy.
   AdHocDevice({
-    String? label, String? address, String? name, Identifier? mac, int type = -1,
+    String? label,
+    String? address,
+    String? name,
+    Identifier? mac,
+    int type = -1,
   }) {
     this.address = checkString(address);
     _label = checkString(label);
@@ -44,7 +47,7 @@ class AdHocDevice {
     _type = type;
   }
 
-  /// Factory constructor that creates an [AdHocDevice] object from a JSON 
+  /// Factory constructor that creates an [AdHocDevice] object from a JSON
   /// representation ([json]).
   factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
 
@@ -68,9 +71,6 @@ class AdHocDevice {
   Map<String, dynamic> toJson() => _$AdHocDeviceToJson(this);
 
   /// Returns a string representation of this remote device's type.
-  ///
-  /// The type of this instance can be Bluetooth Low Energy (BLE),
-  /// Wi-Fi Direct (WIFI), or unknown (UNKNOWN) if the type is not specified.
   String typeAsString() {
     switch (type) {
       case BLE:
@@ -87,11 +87,11 @@ class AdHocDevice {
   @override
   String toString() {
     return 'AdHocDevice{' +
-              'label=$label' +
-              ', name=$name' +
-              ', mac=$mac' +
-              ', address=$address' +
-              ', type=${typeAsString()}' +
-           '}';
+        'label=$label' +
+        ', name=$name' +
+        ', mac=$mac' +
+        ', address=$address' +
+        ', type=${typeAsString()}' +
+        '}';
   }
 }

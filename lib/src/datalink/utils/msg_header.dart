@@ -4,8 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'msg_header.g.dart';
 
-
-/// Class representing the header structure of messages exchanged by 
+/// Class representing the header structure of messages exchanged by
 /// applications using the plugin.
 @JsonSerializable()
 class Header {
@@ -19,29 +18,33 @@ class Header {
   int? deviceType;
 
   /// Creates a [Header] object.
-  /// 
+  ///
   /// The [messageType] indicates the type of message exchanged. The [label]
-  /// uniquely identifies the device along with its [name] and MAC address [mac]. 
-  /// 
-  /// The [address] represents the device logical address (UUID for Bluetooth LE 
+  /// uniquely identifies the device along with its [name] and MAC address [mac].
+  ///
+  /// The [address] represents the device logical address (UUID for Bluetooth LE
   /// and IP for Wi-Fi).
-  /// 
+  ///
   /// The type of technology used by the device is determined by [deviceType].
   /// It can be either Bluetooth Low Energy or Wi-Fi Direct.
   Header({
-    required int messageType, required String label, String? name, 
-    String? address, Identifier? mac, int? deviceType
+    required int messageType,
+    required String label,
+    String? name,
+    String? address,
+    Identifier? mac,
+    int? deviceType
   }) {
     this.address = address;
     this.deviceType = deviceType;
     this.messageType = messageType;
     _label = checkString(label);
     _name = checkString(name);
-    _mac = mac == null ? Identifier() : mac;
+    _mac = mac ?? Identifier();
   }
 
   /// Creates a [Header] object from a JSON representation.
-  /// 
+  ///
   /// Factory constructor that constructs a [Header] based on the information
   /// given by [json].
   factory Header.fromJson(Map<String, dynamic> json) => _$HeaderFromJson(json);
@@ -67,12 +70,12 @@ class Header {
   @override
   String toString() {
     return 'Header{' +
-              'messageType=$messageType' +
-              ', label=$_label' +
-              ', name=$_name' +
-              ', address=$address' +
-              ', mac=$_mac' +
-              ', deviceType=$deviceType' + 
-            '}';
+        'messageType=$messageType' +
+        ', label=$_label' +
+        ', name=$_name' +
+        ', address=$address' +
+        ', mac=$_mac' +
+        ', deviceType=$deviceType' +
+        '}';
   }
 }

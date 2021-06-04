@@ -226,13 +226,11 @@ void processEncryption(SendPort port) {
     Reply(CryptoTask.initialisation, [ENCRYPTION ,_receivePort.sendPort])
   );
 
-  final algorithm = crypto.Chacha20(
-    macAlgorithm: crypto.Hmac.sha256()
-  );
+  final algorithm = crypto.Chacha20.poly1305Aead();
 
   crypto.SecretKey secretKey;
   OAEPEncoding encryptor;
-  Uint8List? encryptedKey;
+  var encryptedKey = Uint8List(0);
 
   _receivePort.listen((request) async {
     var req = request as Request;
@@ -255,15 +253,9 @@ void processEncryption(SendPort port) {
       secretKey: secretKey,
     );
 
-    var encryptedData = List<List<int>>.empty(growable: true);
-    encryptedData.add(secretBox.cipherText);
-    encryptedData.add(secretBox.nonce);
-    encryptedData.add(secretBox.mac.bytes);
-    encryptedData.add(secretBox.concatenation());
-
-    var reply = List<dynamic>.filled(2, null);
+    var reply = List<Uint8List>.filled(2, Uint8List.fromList([]));
     reply[SECRET_KEY] = encryptedKey;
-    reply[SECRET_DATA] = encryptedData;
+    reply[SECRET_DATA] = secretBox.concatenation();
 
     port.send(Reply(CryptoTask.encryption, reply));
   });
@@ -277,9 +269,7 @@ void processDecryption(SendPort port) {
   var _receivePort = ReceivePort();
   port.send(Reply(CryptoTask.initialisation, [DECRYPTION ,_receivePort.sendPort]));
 
-  final algorithm = crypto.Chacha20(
-    macAlgorithm: crypto.Hmac.sha256()
-  );
+  final algorithm = crypto.Chacha20.poly1305Aead();
 
   crypto.SecretKey secretKey;
   OAEPEncoding decryptor;
@@ -304,15 +294,16 @@ void processDecryption(SendPort port) {
       secretKey = req.sharedKey!;
     }
 
+    var concatenation = Uint8List.fromList((reply[SECRET_DATA] as List<dynamic>).cast<int>());
+
+    final secretBox = crypto.SecretBox(
+      concatenation.sublist(12, concatenation.length - 16),
+      nonce: concatenation.sublist(0, 12),
+      mac: crypto.Mac(concatenation.sublist(concatenation.length - 16))
+    );
+
     final decrypted = Uint8List.fromList(
-      await algorithm.decrypt(
-        crypto.SecretBox(
-          (reply[SECRET_DATA][0] as List<dynamic>).cast<int>(),
-          nonce: (reply[SECRET_DATA][1] as List<dynamic>).cast<int>(), 
-          mac: crypto.Mac((reply[SECRET_DATA][2] as List<dynamic>).cast<int>()),
-        ),
-        secretKey: secretKey,
-      ),
+      await algorithm.decrypt(secretBox, secretKey: secretKey),
     );
 
     port.send(Reply(CryptoTask.decryption, decrypted));

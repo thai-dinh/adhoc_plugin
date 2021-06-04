@@ -4,7 +4,6 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/entry_routing_table.dart';
 import 'package:adhoc_plugin/src/network/aodv/routing_table.dart';
 
-
 /// Class helping the 'AodvManager' class by managing broadcast requests and 
 /// the routing table.
 /// 

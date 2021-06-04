@@ -12,8 +12,7 @@ import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 
-
-/// Class defining the server's logic for the Bluetooth Low Energy 
+/// Class defining the server's logic for the Bluetooth Low Energy
 /// implementation.
 class BleServer extends ServiceServer {
   static int id = 0;
@@ -21,7 +20,7 @@ class BleServer extends ServiceServer {
   late HashMap<String, int> _mapMacMTU;
 
   /// Creates a [BleServer] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
   BleServer(bool verbose) : super(verbose) {
     _mapMacMTU = HashMap();
@@ -30,8 +29,8 @@ class BleServer extends ServiceServer {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Starts the listening process for ad hoc events.
-  /// 
-  /// In this case, an ad hoc event can be a message received from a remote 
+  ///
+  /// In this case, an ad hoc event can be a message received from a remote
   /// host, or a connection establishment notification with a remote host.
   @override
   void listen() {
@@ -40,7 +39,7 @@ class BleServer extends ServiceServer {
     // Open the GATT server of the platform-specific side
     BleServices.openGATTServer();
 
-    // Listen to event from the platform-specific side for connections 
+    // Listen to event from the platform-specific side for connections
     // information, and data received.
     BleServices.platformEventStream.listen((map) async {
       switch (map['type']) {
@@ -67,21 +66,18 @@ class BleServer extends ServiceServer {
 
         case ANDROID_DATA:
           // Message received as bytes
-          var bytes = Uint8List.fromList(
-            (map['data'] as List<dynamic>).cast<int>()
-          );
+          var bytes = Uint8List.fromList((map['data'] as List<dynamic>).cast<int>());
 
           // Reconstruct the message
-          var message = 
-            MessageAdHoc.fromJson(
-              json.decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>
-            );
+          var message = MessageAdHoc.fromJson(
+            json.decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>
+          );
 
           // Update the header of the message
           if (message.header.mac.ble == '') {
-            var uuid = (map['mac'] as String)
-              .replaceAll(RegExp(':'), '').toLowerCase();
-            uuid = BLUETOOTHLE_UUID + uuid;
+            var uuid = BLUETOOTHLE_UUID + (map['mac'] as String)
+                .replaceAll(RegExp(':'), '')
+                .toLowerCase();
 
             message.header = Header(
               messageType: message.header.messageType,
@@ -117,7 +113,6 @@ class BleServer extends ServiceServer {
     state = STATE_LISTENING;
   }
 
-
   /// Stops the listening process for ad hoc events.
   @override
   void stopListening() {
@@ -132,7 +127,6 @@ class BleServer extends ServiceServer {
     state = STATE_NONE;
   }
 
-
   /// Sends a [message] to the remote device of MAC address [mac].
   @override
   Future<void> send(MessageAdHoc message, String mac) async {
@@ -143,12 +137,14 @@ class BleServer extends ServiceServer {
     );
   }
 
-
   /// Cancels an active connection with the remote device of MAC address [mac].
   @override
   Future<void> cancelConnection(String mac) async {
     if (verbose) log(ServiceServer.TAG, 'Server: cancelConnection() -> $mac');
 
     await BleServices.cancelConnection(mac);
+
+    // Notify upper layer of a connection aborted
+    controller.add(AdHocEvent(CONNECTION_ABORTED, mac));
   }
 }

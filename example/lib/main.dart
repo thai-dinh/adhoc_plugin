@@ -219,40 +219,43 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     );
   }
 
-  void _processAdHocEvent(AdHocEvent event) {
-    print(event.toString() + ' ' + event.type.toString());
+  void _processAdHocEvent(Event event) {
     switch (event.type) {
-      case DISCOVERY_END:
+      case AdHocType.onDeviceDiscovered:
+        break;
+      case AdHocType.onDiscoveryStarted:
+        break;
+      case AdHocType.onDiscoveryCompleted:
         setState(() {
-          (event.payload as Map).entries.forEach(
-            (element) => _discovered.add(element.value as AdHocDevice)
-          );
+          for (final discovered in (event.data as Map).values) {
+            _discovered.add(discovered as AdHocDevice);
+          }
         });
         break;
-
-      case CONNECTION_EVENT:
-        _processConnection(event.payload as AdHocDevice);
+      case AdHocType.onDataReceived:
+        _processDataReceived(event);
         break;
-
-      case DATA_RECEIVED:
-        _processDataReceived(event.payload as List);
+      case AdHocType.onForwardData:
+        _processDataReceived(event);
         break;
-
-      case FORWARD_DATA:
-        _processDataReceived(event.payload as List);
+      case AdHocType.onConnection:
+        _peers.add(event.data as AdHocDevice);
         break;
-
+      case AdHocType.onConnectionClosed:
+        break;
+      case AdHocType.onInternalException:
+        break;
+      case AdHocType.onGroupInfo:
+        break;
+      case AdHocType.onGroupDataReceived:
+        break;
       default:
     }
   }
 
-  void _processConnection(AdHocDevice device) {
-    _peers.add(device);
-  }
-
-  void _processDataReceived(List payload) {
-    var peer = payload.first as AdHocDevice;
-    var data = payload.last as Map;
+  void _processDataReceived(Event event) {
+    var peer = event.device;
+    var data = event.data as Map;
 
     switch (data['type'] as int) {
       case PLAYLIST:

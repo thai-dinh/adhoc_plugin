@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/service/service_server.dart';
 import 'package:adhoc_plugin/src/datalink/utils/identifier.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
@@ -15,12 +16,11 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/flood_msg.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/neighbors.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/network_manager.dart';
 
-
-/// Super abstract class defining the parameters and methods for managing 
-/// connections, messages received. It aims to serve as a common interface for 
+/// Super abstract class defining the parameters and methods for managing
+/// connections, messages received. It aims to serve as a common interface for
 /// the service classes 'WrapperBle' and 'WrapperWifi'.
-/// 
-/// NOTE: Most of the following source code has been borrowed and adapted from 
+///
+/// NOTE: Most of the following source code has been borrowed and adapted from
 /// the original codebase provided by Gaulthier Gain, which can be found at:
 /// https://github.com/gaulthiergain/AdHocLib
 abstract class WrapperNetwork {
@@ -54,16 +54,18 @@ abstract class WrapperNetwork {
   late StreamController<AdHocEvent> controller;
 
   /// Creates a [WrapperNetwork] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
-  /// This object is configured according to [config], which contains specific 
+  ///
+  /// This object is configured according to [config], which contains specific
   /// configurations.
-  /// 
-  /// This object maps a MAC address entry ([Identifier]) to an [AdHocDevice] object 
+  ///
+  /// This object maps a MAC address entry ([Identifier]) to an [AdHocDevice] object
   /// into [mapMacDevices].
   WrapperNetwork(
-    this.verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices,
+    this.verbose,
+    Config config,
+    HashMap<Identifier, AdHocDevice> mapMacDevices,
   ) {
     this.mapMacDevices = mapMacDevices;
     flood = config.flood;
@@ -86,9 +88,7 @@ abstract class WrapperNetwork {
 
 /*------------------------------Getters & Setters-----------------------------*/
 
-  /// Gets the direct neighbors of this node.
-  /// 
-  /// Returns a [List] of [AdHocDevice], which are direct neighbors of this node.
+  /// Direct neighbors of this node.
   List<AdHocDevice> get directNeighbors {
     var devices = List<AdHocDevice>.empty(growable: true);
     for (final mac in neighbors.labelMac.values) {
@@ -98,63 +98,54 @@ abstract class WrapperNetwork {
     return devices;
   }
 
-  /// Returns a [Stream] of [AdHocEvent] events of lower layers.
+  /// Stream of lower layer events
   Stream<AdHocEvent> get eventStream => controller.stream;
 
 /*------------------------------Abstract methods------------------------------*/
 
   /// Initializes internal parameters.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
-  /// This object is configured according to [config], which contains specific 
+  ///
+  /// This object is configured according to [config], which contains specific
   /// configurations.
   void init(bool verbose, Config? config);
 
-
   /// Enables a technology and sets it in discovery mode.
-  /// 
+  ///
   /// The discovery mode lasts for [duration] ms.
   void enable(int duration);
-
 
   /// Disables a technology.
   void disable();
 
-
   /// Triggers a discovery process.
   void discovery();
 
-
   /// Connects to a remote peer.
-  /// 
-  /// The remote peer is specified by [device] and the connection attempts is 
+  ///
+  /// The remote peer is specified by [device] and the connection attempts is
   /// set to [attempts].
   Future<void> connect(int attempts, AdHocDevice device);
 
-
   /// Gets all the Bluetooth devices which are already paired.
-  /// 
-  /// Returns a hash map (<[String], [AdHocDevice]>) containing the paired 
+  ///
+  /// Returns a hash map (<[String], [AdHocDevice]>) containing the paired
   /// devices.
   Future<HashMap<String, AdHocDevice>> getPaired();
 
-
   /// Gets the adapter name.
-  /// 
+  ///
   /// Returns a [String] representing the adapter name.
   Future<String> getAdapterName();
 
-
   /// Updates the adapter name of the device with [name].
-  /// 
+  ///
   /// Returns true if the name is successfully set, otherwise false.
   Future<bool> updateDeviceName(String name);
 
-
-
   /// Resets the adapter name of the device.
-  /// 
+  ///
   /// Returns true if the name is successfully reset, otherwise false.
   Future<bool> resetDeviceName();
 
@@ -165,13 +156,12 @@ abstract class WrapperNetwork {
     controller.close();
   }
 
-
-  /// Checks if a message has been already received if the connection flooding 
+  /// Checks if a message has been already received if the connection flooding
   /// option is enabled.
-  /// 
+  ///
   /// The identifier [id] represents a unique identifier to the flood message.
-  /// 
-  /// Returns true if the message is received for the first time, otherwise 
+  ///
+  /// Returns true if the message is received for the first time, otherwise
   /// false.
   bool checkFloodEvent(String id) {
     if (!setFloodEvents.contains(id)) {
@@ -182,17 +172,15 @@ abstract class WrapperNetwork {
     return false;
   }
 
-
   /// Checks if a node with address [label] is a direct neighbor.
-  /// 
+  ///
   /// Returns true if it is, otherwise false.
   bool isDirectNeighbor(String label) {
     return neighbors.neighbors.containsKey(label);
   }
 
-
   /// Send a message to a remote peer.
-  /// 
+  ///
   /// The message to sent is given by [message] and its destination address is
   /// set to [label]
   void sendMessage(String label, MessageAdHoc message) {
@@ -202,9 +190,8 @@ abstract class WrapperNetwork {
     }
   }
 
-
   /// Broadcasts a message to all directly connected nodes.
-  /// 
+  ///
   /// Returns true if the [message] has been successfully broadcasted, otherwise
   /// false.
   Future<bool> broadcast(MessageAdHoc message) async {
@@ -219,11 +206,10 @@ abstract class WrapperNetwork {
     return false;
   }
 
-
   /// Broadcasts a message to all directly connected nodes except the excluded
   /// node.
-  /// 
-  /// Returns true if the [message] has been successfully broadcasted to all 
+  ///
+  /// Returns true if the [message] has been successfully broadcasted to all
   /// direct neighbors except [excluded], otherwise false.
   bool broadcastExcept(MessageAdHoc message, String excluded) {
     if (neighbors.neighbors.isNotEmpty) {
@@ -239,10 +225,9 @@ abstract class WrapperNetwork {
     return false;
   }
 
-
   /// Processes a message received from a remote node.
-  /// 
-  /// The information of the remote node is determined by [header] and a 
+  ///
+  /// The information of the remote node is determined by [header] and a
   /// [network] ([NetworkManager]) object is used to perform network operations
   /// with the remote node.
   void receivedPeerMessage(Header header, NetworkManager network) {
@@ -273,7 +258,7 @@ abstract class WrapperNetwork {
       neighbors.addNeighbor(header.label, header.mac, network);
 
       // Notify upper layer of a connection establishment
-      controller.add(AdHocEvent(CONNECTION_EVENT, device));
+      controller.add(AdHocEvent(CONNECTION_PERFORMED, device));
 
       // Update the set
       setRemoteDevices.add(device);
@@ -287,11 +272,11 @@ abstract class WrapperNetwork {
           MessageAdHoc(header, FloodMsg(id, setRemoteDevices).toJson()),
         );
       }
-    } else { // Update MAC address if already present
+    } else {
+      // Update MAC address if already present
       neighbors.updateNeighbor(header.label, header.mac);
     }
   }
-
 
   /// Disconnects the node from a particular node denoted by [label].
   void disconnect(String label) {
@@ -301,7 +286,6 @@ abstract class WrapperNetwork {
       neighbors.remove(label);
     }
   }
-
 
   /// Disconnects the node from all remote node.
   void disconnectAll() {
@@ -315,7 +299,6 @@ abstract class WrapperNetwork {
       neighbors.clear();
     }
   }
-
 
   /// Processes the disconnection of a remote node with MAC address [mac].
   void connectionClosed(Identifier mac) {
@@ -339,7 +322,7 @@ abstract class WrapperNetwork {
       // Notify upper layer of a broken link detected as well as a disconnection
       // event
       controller.add(AdHocEvent(BROKEN_LINK, device.label));
-      controller.add(AdHocEvent(DISCONNECTION_EVENT, device));
+      controller.add(AdHocEvent(CONNECTION_ABORTED, device));
 
       // If the connection flooding option is enable, floods the disconnect event
       if (flood) {

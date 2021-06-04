@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
@@ -314,7 +314,7 @@ class AodvManager {
         if (retry == 0) {
           // The destination has not been found after all the attempts
           _controller.add(AdHocEvent(
-            datalink_constants.INTERNAL_EXCEPTION,
+            INTERNAL_EXCEPTION,
             AodvMessageException(
               'Unable to establish a communication with: $destAddr'
             )
@@ -733,9 +733,7 @@ class AodvManager {
       );
 
       // Notify upper layer of the data received
-      _controller.add(
-        AdHocEvent(datalink_constants.DATA_RECEIVED, [device, data.payload])
-      );
+      _controller.add(AdHocEvent(datalink_constants.DATA_RECEIVED, [device, data.payload]));
     } else {
       // Forward the DATA message to the destination with regards to the routing 
       // table

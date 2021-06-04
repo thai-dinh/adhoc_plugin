@@ -10,7 +10,6 @@ import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/datalink/wifi/wifi_adhoc_manager.dart';
 
-
 /// Class defining the client's logic for the Wi-Fi Direct implementation.
 class WifiClient extends ServiceClient {
   late final String _serverIP;
@@ -18,76 +17,75 @@ class WifiClient extends ServiceClient {
   late Socket _socket;
 
   /// Creates a [WifiClient] object.
-  /// 
+  ///
   /// The debug/verbose mode is set if [verbose] is true.
-  /// 
-  /// The listening port number is set to [_port] and the IP address of the 
+  ///
+  /// The listening port number is set to [_port] and the IP address of the
   /// server is set to [_serverIP].
-  /// 
+  ///
   /// Connection attempts to a remote device are done at most [attempts] times.
-  /// 
-  /// A connection attempt is said to be a failure if nothing happens after 
+  ///
+  /// A connection attempt is said to be a failure if nothing happens after
   /// [timeOut] ms.
   WifiClient(
-    bool verbose, this._port, this._serverIP, int attempts, int timeOut,
+    bool verbose,
+    this._port,
+    this._serverIP,
+    int attempts,
+    int timeOut,
   ) : super(verbose, attempts, timeOut);
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Starts the listening process for ad hoc events.
-  /// 
+  ///
   /// In this case, an ad hoc event is a message received from server.
   @override
   void listen() {
     // Initialize a buffer
     var buffer = StringBuffer();
     // Listen to messages sent by the server
-    _socket.listen(
-      (data) {
-        if (verbose) {
-          log(ServiceClient.TAG, 'bytes received from $_serverIP:${_socket.port}');
-        }
-
-        // Convert bytes to string
-        var msg = Utf8Decoder().convert(data);
-
-        if (msg[0].compareTo('{') == 0 && msg[msg.length-1].compareTo('}') == 0) {
-          for (var _msg in splitMessages(msg)) {
-            controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
-            if (verbose) {
-              log(ServiceClient.TAG, 
-                'received message from $_serverIP:${_socket.port}'
-              );
-            }
-          }
-        } else if (msg[msg.length-1].compareTo('}') == 0) {
-          buffer.write(msg);
-          for (var _msg in splitMessages(buffer.toString())) {
-            controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
-            if (verbose) {
-              log(ServiceClient.TAG, 
-                'received message from $_serverIP:${_socket.port}'
-              );
-            }
-          }
-          buffer.clear();
-        } else {
-          buffer.write(msg);
-        }
-      },
-      onError: (error) {
-        // Notify the upper layer of an connection exception
-        controller.add(AdHocEvent(CONNECTION_EXCEPTION, error));
-      },
-      onDone: () {
-        // Notify the upper layer of an connection aborted
-        controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
-        // Stop the listening process for ad hoc events.
-        stopListening();
+    _socket.listen((data) {
+      if (verbose) {
+        log(ServiceClient.TAG, 'bytes received from $_serverIP:${_socket.port}');
       }
-    );
-  }
 
+      // Convert bytes to string
+      var msg = Utf8Decoder().convert(data);
+
+      if (msg[0].compareTo('{') == 0 && msg[msg.length - 1].compareTo('}') == 0) {
+
+        for (var _msg in splitMessages(msg)) {
+          controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+          if (verbose) {
+            log(ServiceClient.TAG, 'received message from $_serverIP:${_socket.port}');
+          }
+        }
+
+      } else if (msg[msg.length - 1].compareTo('}') == 0) {
+
+        buffer.write(msg);
+        for (var _msg in splitMessages(buffer.toString())) {
+          controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
+          if (verbose) {
+            log(ServiceClient.TAG, 'received message from $_serverIP:${_socket.port}');
+          }
+        }
+        buffer.clear();
+
+      } else {
+        buffer.write(msg);
+      }
+    }, onError: (error) {
+      // Notify the upper layer of an connection exception
+      controller.add(AdHocEvent(INTERNAL_EXCEPTION, error));
+    }, onDone: () {
+      // Notify the upper layer of an connection aborted
+      controller.add(AdHocEvent(CONNECTION_ABORTED, _serverIP));
+      // Stop the listening process for ad hoc events.
+      stopListening();
+    });
+  }
 
   /// Stops the listening process for ad hoc events.
   @override
@@ -97,13 +95,11 @@ class WifiClient extends ServiceClient {
     _socket.close();
   }
 
-
   /// Initiates a connection with the remote device.
   @override
   Future<void> connect() async {
     await _connect(attempts, Duration(milliseconds: backOffTime));
   }
-
 
   /// Cancels the connection with the remote device.
   @override
@@ -114,7 +110,6 @@ class WifiClient extends ServiceClient {
     await WifiAdHocManager.removeGroup();
     stopListening();
   }
-
 
   /// Sends a [message] to the remote device.
   @override
@@ -133,10 +128,7 @@ class WifiClient extends ServiceClient {
     } on NoConnectionException {
       if (attempts > 0) {
         if (verbose) {
-          log(
-            ServiceClient.TAG, 
-            'Connection attempt failed (${attempts - 1} remaining)'
-          );
+          log(ServiceClient.TAG, 'Connection attempt failed (${attempts - 1} remaining)');
         }
 
         await Future.delayed(delay);
@@ -148,9 +140,8 @@ class WifiClient extends ServiceClient {
     }
   }
 
-
   /// Initiates a connection attempt.
-  /// 
+  ///
   /// Throws a [NoConnectionException] exception if a connection cannot be
   /// established with the remote device.
   Future<void> _connectionAttempt() async {
@@ -162,9 +153,7 @@ class WifiClient extends ServiceClient {
 
       try {
         // Start the connection
-        _socket = await Socket.connect(
-          _serverIP, _port, timeout: Duration(milliseconds: timeOut)
-        );
+        _socket = await Socket.connect(_serverIP, _port, timeout: Duration(milliseconds: timeOut));
       } on SocketException {
         state = STATE_NONE;
 
@@ -180,7 +169,7 @@ class WifiClient extends ServiceClient {
 
       if (verbose) log(ServiceClient.TAG, 'Connected to $_serverIP:$_port');
 
-      // Update state of the connection 
+      // Update state of the connection
       state = STATE_CONNECTED;
     }
   }

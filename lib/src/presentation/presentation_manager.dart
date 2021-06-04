@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:adhoc_plugin/src/appframework/config/config.dart';
+import 'package:adhoc_plugin/src/appframework/config.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
+import 'package:adhoc_plugin/src/datalink/service/constants.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
@@ -213,7 +214,7 @@ class PresentationManager {
   void _initialize() {
     _aodvManager.eventStream.listen((event) {
       switch (event.type) {
-        case CONNECTION_EVENT:
+        case CONNECTION_PERFORMED:
           // Forward notification to upper layer
           _controller.add(event);
 
@@ -235,7 +236,7 @@ class PresentationManager {
           var payload = event.payload as List;
           var sender = payload[0] as AdHocDevice;
           _processData(
-            sender, 
+            sender,
             SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>)
           );
           break;
@@ -248,7 +249,7 @@ class PresentationManager {
 
     _groupController.eventStream.listen((event) {
       switch (event.type) {
-        case DATA_RECEIVED:
+        case DATA_RECEIVED: // TODO: change to group data?
           _controller.add(event);
           break;
 
