@@ -4,6 +4,7 @@ const INIT_HOP_COUNT = 0;
 const RREQ_RETRIES = 5;
 const MAX_SINT_VAL = 4294967296;  // Max signed integer value
 
+
 // Sequence Numbers
 const MIN_VALID_SEQ_NUM = 0;
 const MAX_VALID_SEQ_NUM = MAX_SINT_VAL;

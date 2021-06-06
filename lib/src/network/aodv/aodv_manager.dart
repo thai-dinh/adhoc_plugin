@@ -10,12 +10,12 @@ import 'package:adhoc_plugin/src/datalink/utils/msg_adhoc.dart';
 import 'package:adhoc_plugin/src/datalink/utils/msg_header.dart';
 import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_helper.dart';
-import 'package:adhoc_plugin/src/network/aodv/constants.dart' as aodv_constants;
+import 'package:adhoc_plugin/src/network/aodv/constants.dart' as aodv;
 import 'package:adhoc_plugin/src/network/aodv/data.dart';
 import 'package:adhoc_plugin/src/network/aodv/rerr.dart';
 import 'package:adhoc_plugin/src/network/aodv/rrep.dart';
 import 'package:adhoc_plugin/src/network/aodv/rreq.dart';
-import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart' as datalink_constants;
+import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart' as datalink;
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_message.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_dest.dart';
@@ -61,7 +61,7 @@ class AodvManager {
     _ownMac = Identifier();
     _ownName = '';
     _ownLabel = config.label;
-    _ownSequenceNum = aodv_constants.FIRST_SEQUENCE_NUMBER;
+    _ownSequenceNum = aodv.FIRST_SEQUENCE_NUMBER;
     _aodvHelper = AodvHelper(_verbose);
     _datalinkManager = DataLinkManager(_verbose, config);
     _mapDestSeqNum = HashMap();
@@ -90,7 +90,7 @@ class AodvManager {
   void sendMessageTo(String address, Object pdu) {
     // Create the header of the message
     var header = Header(
-      messageType: aodv_constants.DATA,
+      messageType: aodv.DATA,
       label: _ownLabel,
       name: _ownName,
       mac: _ownMac,
@@ -105,11 +105,11 @@ class AodvManager {
   void _initialize() {
     _datalinkManager.eventStream.listen((event) {
       switch (event.type) {
-        case datalink_constants.BROKEN_LINK:
+        case datalink.BROKEN_LINK:
           _brokenLinkDetected(event.payload as String?);
           break;
 
-        case datalink_constants.MESSAGE_EVENT:
+        case datalink.MESSAGE_EVENT:
           _processAodvMsgReceived(event.payload as MessageAdHoc);
           break;
 
@@ -136,10 +136,10 @@ class AodvManager {
   /// PERIOD times.
   void _initTimerDebugRIB() {
     Timer.periodic(
-      Duration(milliseconds: aodv_constants.PERIOD), 
+      Duration(milliseconds: aodv.PERIOD), 
       (timer) {
         Future.delayed(
-          Duration(milliseconds: aodv_constants.DELAY), _displayRoutingTable
+          Duration(milliseconds: aodv.DELAY), _displayRoutingTable
         );
       }
     );
@@ -193,7 +193,7 @@ class AodvManager {
   void _send(MessageAdHoc message, String address) {
     if (_datalinkManager.isDirectNeighbor(address)) {
       var destNext = _aodvHelper.getNextfromDest(address);
-      if (destNext != null && message.header.messageType == aodv_constants.DATA) {
+      if (destNext != null && message.header.messageType == aodv.DATA) {
         // Update the data path
         destNext.updateDataPath(address);
       }
@@ -212,7 +212,7 @@ class AodvManager {
           log(TAG, 'Routing table contains ${destNext.next}');
         }
 
-        if (message.header.messageType == aodv_constants.DATA) {
+        if (message.header.messageType == aodv.DATA) {
           // Update the data path
           destNext.updateDataPath(address);
         }
@@ -220,7 +220,7 @@ class AodvManager {
         // Send to direct neighbor
         _sendDirect(message, destNext.next);
       }
-    } else if (message.header.messageType == aodv_constants.RERR) {
+    } else if (message.header.messageType == aodv.RERR) {
       if (_verbose) log(TAG, 'RERR sent');
     } else {
       _dataMessage = message;
@@ -229,7 +229,7 @@ class AodvManager {
       _getNextSequenceNumber();
 
       _startTimerRREQ(
-        address, aodv_constants.RREQ_RETRIES, aodv_constants.NET_TRANVERSAL_TIME
+        address, aodv.RREQ_RETRIES, aodv.NET_TRANVERSAL_TIME
       );
     }
   }
@@ -257,15 +257,15 @@ class AodvManager {
       return _mapDestSeqNum[dest]!;
     }
 
-    return aodv_constants.UNKNOWN_SEQUENCE_NUMBER;
+    return aodv.UNKNOWN_SEQUENCE_NUMBER;
   }
 
   /// Increments the sequence number
   void _getNextSequenceNumber() {
-    if (_ownSequenceNum < aodv_constants.MAX_VALID_SEQ_NUM) {
+    if (_ownSequenceNum < aodv.MAX_VALID_SEQ_NUM) {
       _ownSequenceNum = _ownSequenceNum + 1;
     } else {
-      _ownSequenceNum = aodv_constants.MIN_VALID_SEQ_NUM;
+      _ownSequenceNum = aodv.MIN_VALID_SEQ_NUM;
     }
   }
 
@@ -291,15 +291,15 @@ class AodvManager {
     // Contruct the RREQ message
     var message = MessageAdHoc(
       Header(
-        messageType: aodv_constants.RREQ, 
+        messageType: aodv.RREQ, 
         label: _ownLabel,
         name: _ownName,
         mac: _ownMac
       ),
       RREQ(
-        aodv_constants.RREQ, aodv_constants.INIT_HOP_COUNT, 
+        aodv.RREQ, aodv.INIT_HOP_COUNT, 
         _aodvHelper.getIncrementRreqId(), _getDestSequenceNumber(destAddr), 
-        destAddr, _ownSequenceNum, _ownLabel, aodv_constants.TTL[retry], 
+        destAddr, _ownSequenceNum, _ownLabel, aodv.TTL[retry], 
         List.empty(growable: true)
       )
     );
@@ -350,7 +350,7 @@ class AodvManager {
       // Update routing table
       var entry = _aodvHelper.addEntryRoutingTable(
         rreq.srcAddr, originateAddr, hop, rreq.srcSeqNum, 
-        aodv_constants.NO_LIFE_TIME, List.empty(growable: true)
+        aodv.NO_LIFE_TIME, List.empty(growable: true)
       );
 
       if (entry != null) {
@@ -362,8 +362,8 @@ class AodvManager {
 
         // Generate RREP to be sent
         var rrep = RREP(
-          aodv_constants.RREP, aodv_constants.INIT_HOP_COUNT, rreq.srcAddr, 
-          _ownSequenceNum, _ownLabel, aodv_constants.LIFE_TIME, 
+          aodv.RREP, aodv.INIT_HOP_COUNT, rreq.srcAddr, 
+          _ownSequenceNum, _ownLabel, aodv.LIFE_TIME, 
           List.empty(growable: true)
         );
 
@@ -373,7 +373,7 @@ class AodvManager {
         _send(
           MessageAdHoc(
             Header(
-              messageType: aodv_constants.RREP, 
+              messageType: aodv.RREP, 
               label: _ownLabel, 
               name: _ownName,
               mac: _ownMac
@@ -404,7 +404,7 @@ class AodvManager {
         rreq.incrementHopCount();
         message.pdu = rreq;
         message.header = Header(
-          messageType: aodv_constants.RREQ, 
+          messageType: aodv.RREQ, 
           label: _ownLabel,
           name: _ownName,
           mac: _ownMac
@@ -416,7 +416,7 @@ class AodvManager {
         // Update routing table
         _aodvHelper.addEntryRoutingTable(
           rreq.srcAddr, originateAddr, hop, rreq.srcSeqNum, 
-          aodv_constants.NO_LIFE_TIME, []
+          aodv.NO_LIFE_TIME, []
         );
 
         // Trigger timer for this reverse route
@@ -477,7 +477,7 @@ class AodvManager {
         _send(
           MessageAdHoc(
             Header(
-              messageType: aodv_constants.RREP, 
+              messageType: aodv.RREP, 
               label: _ownLabel,
               name: _ownName,
               mac: _ownMac
@@ -514,7 +514,7 @@ class AodvManager {
     // Add routing table entry
     _aodvHelper.addEntryRoutingTable(
       rreq.srcAddr, senderAddr, rreq.hopCount, rreq.srcSeqNum, 
-      aodv_constants.NO_LIFE_TIME, _addPrecursor(entry.next)
+      aodv.NO_LIFE_TIME, _addPrecursor(entry.next)
     );
 
     // Trigger timer
@@ -522,8 +522,8 @@ class AodvManager {
 
     // Generate gratuitous RREP for the next destination
     var rrep = RREP(
-      aodv_constants.RREP_GRATUITOUS, rreq.hopCount, rreq.dstAddr, 
-      _ownSequenceNum, rreq.srcAddr, aodv_constants.LIFE_TIME,
+      aodv.RREP_GRATUITOUS, rreq.hopCount, rreq.dstAddr, 
+      _ownSequenceNum, rreq.srcAddr, aodv.LIFE_TIME,
       List.empty(growable: true)
     );
 
@@ -531,7 +531,7 @@ class AodvManager {
     _send(
       MessageAdHoc(
         Header(
-          messageType: aodv_constants.RREP_GRATUITOUS,
+          messageType: aodv.RREP_GRATUITOUS,
           label: _ownLabel,
           name: _ownName,
           mac: _ownMac
@@ -545,15 +545,15 @@ class AodvManager {
 
     // Generate RREP message for the source
     rrep = RREP(
-      aodv_constants.RREP, entry.hop+ 1, rreq.srcAddr, entry.dstSeqNum, 
-      entry.dstAddr, aodv_constants.LIFE_TIME, List.empty(growable: true)
+      aodv.RREP, entry.hop+ 1, rreq.srcAddr, entry.dstSeqNum, 
+      entry.dstAddr, aodv.LIFE_TIME, List.empty(growable: true)
     );
 
     // Send RREP message to the source
     _send(
       MessageAdHoc(
         Header(
-          messageType: aodv_constants.RREP,
+          messageType: aodv.RREP,
           label: _ownLabel,
           name: _ownName,
           mac: _ownMac
@@ -601,7 +601,7 @@ class AodvManager {
 
         // Update header
         message.header = Header(
-          messageType: aodv_constants.RREP_GRATUITOUS,
+          messageType: aodv.RREP_GRATUITOUS,
           label: _ownLabel,
           name: _ownName,
           mac: _ownMac
@@ -629,7 +629,7 @@ class AodvManager {
         }
       } else {
         // Create the RERR message to send
-        var rrer = RERR(aodv_constants.RERR, dest, _ownSequenceNum);
+        var rrer = RERR(aodv.RERR, dest, _ownSequenceNum);
         // Send the RERR message to all precursors
         var precursors = _aodvHelper.getPrecursorsFromDest(dest);
         if (precursors.isNotEmpty) {
@@ -639,7 +639,7 @@ class AodvManager {
             _send(
               MessageAdHoc(
                 Header(
-                  messageType: aodv_constants.RERR, 
+                  messageType: aodv.RERR, 
                   label: _ownLabel, 
                   name: _ownName,
                   mac: _ownMac
@@ -676,7 +676,7 @@ class AodvManager {
     } else if (_aodvHelper.containsDest(rerr.unreachableDstAddr)) {
       // Update header of the message
       message.header = Header(
-        messageType: aodv_constants.RERR, 
+        messageType: aodv.RERR, 
         label: _ownLabel, 
         name: _ownName,
         mac: _ownMac
@@ -689,7 +689,7 @@ class AodvManager {
       if (precursors.isNotEmpty) {
         for (var precursor in precursors) {
           if (_verbose) log(TAG, ' Precursor: $precursor');
-            _send(message, precursor!);
+          _send(message, precursor!);
         }
       } else {
         if (_verbose) log(TAG, 'No precursors');
@@ -733,7 +733,7 @@ class AodvManager {
       );
 
       // Notify upper layer of the data received
-      _controller.add(AdHocEvent(datalink_constants.DATA_RECEIVED, [device, data.payload]));
+      _controller.add(AdHocEvent(datalink.DATA_RECEIVED, [device, data.payload]));
     } else {
       // Forward the DATA message to the destination with regards to the routing 
       // table
@@ -756,7 +756,7 @@ class AodvManager {
 
         // Notify upper layer of the data to be forwarded
         _controller.add(
-          AdHocEvent(datalink_constants.FORWARD_DATA, [device, data.payload])
+          AdHocEvent(datalink.FORWARD_DATA, [device, data.payload])
         );
 
         // Update the data path
@@ -817,7 +817,7 @@ class AodvManager {
   /// 
   /// The variable 'lifeTime' should be set to LIFE_TIME ms.
   void _timerFlushReverseRoute(String srcAddr, int seqNum) {
-    Timer(Duration(milliseconds: aodv_constants.EXPIRED_TABLE),
+    Timer(Duration(milliseconds: aodv.EXPIRED_TABLE),
       () {
         if (_verbose) {
           log(TAG, 'Add timer for $srcAddr - seq: $seqNum');
@@ -835,7 +835,7 @@ class AodvManager {
           if (_verbose) {
             log(TAG, 'No Data on $srcAddr');
           }
-        } else if (difference < aodv_constants.EXPIRED_TIME) {
+        } else if (difference < aodv.EXPIRED_TIME) {
           // Data on the path, restart timer
           _timerFlushReverseRoute(srcAddr, seqNum);
         } else {
@@ -856,27 +856,27 @@ class AodvManager {
   /// Throws an [AodvUnknownTypeException] for unknown AODV message type.
   void _processAodvMsgReceived(MessageAdHoc message) {
     switch (message.header.messageType) {
-      case aodv_constants.RREQ:
+      case aodv.RREQ:
         _processRREQ(message);
         _getNextSequenceNumber();
         break;
 
-      case aodv_constants.RREP:
+      case aodv.RREP:
         _processRREP(message);
         _getNextSequenceNumber();
         break;
 
-      case aodv_constants.RREP_GRATUITOUS:
+      case aodv.RREP_GRATUITOUS:
         _processRREP_GRATUITOUS(message);
         _getNextSequenceNumber();
         break;
 
-      case aodv_constants.RERR:
+      case aodv.RERR:
         _processRERR(message);
         _getNextSequenceNumber();
         break;
 
-      case aodv_constants.DATA:
+      case aodv.DATA:
         _processData(message);
         break;
 

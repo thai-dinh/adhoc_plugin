@@ -19,6 +19,7 @@ class BleServices {
         .asBroadcastStream();
 
   static int id = 0;
+  static int seqNum = 0;
 
   const BleServices();
 
@@ -161,6 +162,10 @@ class BleServices {
       characteristicId: _characteristicUuid,
       deviceId: mac
     );
+
+    // Avoid BLE to send twice the same message. More information can be found
+    // at https://www.forward.com.au/pfod/BLE/BLEProblems/index.html
+    message.header.seqNum = seqNum++;
 
     // Convert the MessageAdHoc into bytes
     var msg = Utf8Encoder().convert(json.encode(message.toJson()));

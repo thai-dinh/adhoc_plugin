@@ -48,15 +48,15 @@ class MockMessageAdHoc extends _i1.Mock implements _i6.MessageAdHoc {
   }
 
   @override
-  set header(_i2.Header? header) =>
-      super.noSuchMethod(Invocation.setter(#header, header),
-          returnValueForMissingStub: null);
-  @override
-  set pdu(Object? pdu) => super.noSuchMethod(Invocation.setter(#pdu, pdu),
-      returnValueForMissingStub: null);
-  @override
   _i2.Header get header => (super.noSuchMethod(Invocation.getter(#header),
       returnValue: _FakeHeader()) as _i2.Header);
+  @override
+  set header(_i2.Header? _header) =>
+      super.noSuchMethod(Invocation.setter(#header, _header),
+          returnValueForMissingStub: null);
+  @override
+  set pdu(Object? _pdu) => super.noSuchMethod(Invocation.setter(#pdu, _pdu),
+      returnValueForMissingStub: null);
   @override
   Map<String, dynamic> toJson() =>
       (super.noSuchMethod(Invocation.method(#toJson, []),
@@ -76,6 +76,21 @@ class MockHeader extends _i1.Mock implements _i2.Header {
   }
 
   @override
+  int get messageType =>
+      (super.noSuchMethod(Invocation.getter(#messageType), returnValue: 0)
+          as int);
+  @override
+  set messageType(int? _messageType) =>
+      super.noSuchMethod(Invocation.setter(#messageType, _messageType),
+          returnValueForMissingStub: null);
+  @override
+  int get seqNum =>
+      (super.noSuchMethod(Invocation.getter(#seqNum), returnValue: 0) as int);
+  @override
+  set seqNum(int? _seqNum) =>
+      super.noSuchMethod(Invocation.setter(#seqNum, _seqNum),
+          returnValueForMissingStub: null);
+  @override
   set address(String? _address) =>
       super.noSuchMethod(Invocation.setter(#address, _address),
           returnValueForMissingStub: null);
@@ -83,14 +98,6 @@ class MockHeader extends _i1.Mock implements _i2.Header {
   set deviceType(int? _deviceType) =>
       super.noSuchMethod(Invocation.setter(#deviceType, _deviceType),
           returnValueForMissingStub: null);
-  @override
-  set messageType(int? messageType) =>
-      super.noSuchMethod(Invocation.setter(#messageType, messageType),
-          returnValueForMissingStub: null);
-  @override
-  int get messageType =>
-      (super.noSuchMethod(Invocation.getter(#messageType), returnValue: 0)
-          as int);
   @override
   String get label =>
       (super.noSuchMethod(Invocation.getter(#label), returnValue: '')

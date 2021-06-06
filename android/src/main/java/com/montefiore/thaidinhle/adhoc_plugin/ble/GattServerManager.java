@@ -337,7 +337,7 @@ public class GattServerManager {
             // A peer has established a connection to the Gatt server
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mapInfoValue.put("state", true);
-                
+
                 HashMap<Integer, ByteArrayOutputStream> map = new HashMap<>();
                 data.put(mac, map);
                 mapMacDevice.put(mac, device);

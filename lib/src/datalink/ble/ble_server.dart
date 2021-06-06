@@ -18,12 +18,14 @@ class BleServer extends ServiceServer {
   static int id = 0;
 
   late HashMap<String, int> _mapMacMTU;
+  late HashMap<String, Set<int>> _duplicate;
 
   /// Creates a [BleServer] object.
   ///
   /// The debug/verbose mode is set if [verbose] is true.
   BleServer(bool verbose) : super(verbose) {
     _mapMacMTU = HashMap();
+    _duplicate = HashMap();
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -52,12 +54,14 @@ class BleServer extends ServiceServer {
           if (state) {
             addActiveConnection(mac);
             _mapMacMTU.putIfAbsent(mac, () => MIN_MTU);
+            _duplicate.putIfAbsent(mac, () => <int>{});
 
             // Notify upper layer of a connection performed
             controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
           } else {
             removeConnection(mac);
             _mapMacMTU.remove(mac);
+            _duplicate.remove(mac);
 
             // Notify upper layer of a connection aborted
             controller.add(AdHocEvent(CONNECTION_ABORTED, mac));
@@ -73,6 +77,13 @@ class BleServer extends ServiceServer {
             json.decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>
           );
 
+          var seqNum = message.header.seqNum!;
+          if (_duplicate[map['mac'] as String]!.contains(seqNum)) {
+            break;
+          } else {
+            _duplicate[map['mac'] as String]!.add(seqNum);
+          }
+
           // Update the header of the message
           if (message.header.mac.ble == '') {
             var uuid = BLUETOOTHLE_UUID + (map['mac'] as String)
@@ -80,6 +91,7 @@ class BleServer extends ServiceServer {
                 .toLowerCase();
 
             message.header = Header(
+              seqNum: message.header.seqNum,
               messageType: message.header.messageType,
               label: message.header.label,
               name: message.header.name,

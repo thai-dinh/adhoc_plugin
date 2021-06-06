@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
@@ -33,9 +34,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   final TransferManager _manager = TransferManager(true);
   final List<AdHocDevice> _discovered = List.empty(growable: true);
   final List<AdHocDevice> _peers = List.empty(growable: true);
+  final List<Pair<String, String>> _playlist = List.empty(growable: true);
   final HashMap<String, HashMap<String, PlatformFile>> _globalPlaylist = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
-  final List<Pair<String, String>> _playlist = List.empty(growable: true);
+  final Set<String> timestamps = <String>{};
 
   // bool _peerRequest = false;
   bool _requested = false;
@@ -45,7 +47,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
-    // _manager.enableBle(3600);
+    _manager.enableBle(3600);
     _manager.eventStream.listen(_processAdHocEvent);
     _manager.open = true;
   }
@@ -253,7 +255,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     }
   }
 
-  void _processDataReceived(Event event) {
+  Future<void> _processDataReceived(Event event) async {
     var peer = event.device;
     var data = event.data as Map;
 
@@ -261,9 +263,15 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
       case PLAYLIST:
         var peers = data['peers'] as List;
         var songs = data['songs'] as List;
+        var timestamp = data['timestamp'] as String;
+        if (timestamps.contains(timestamp)) {
+          break;
+        } else {
+          timestamps.add(timestamp);
+        }
+
         var peerName = peers.first as String;
-        var entry = 
-          _globalPlaylist[peerName];
+        var entry = _globalPlaylist[peerName];
         if (entry == null) {
           entry = HashMap();
         }
@@ -292,72 +300,68 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         _globalPlaylist[peerName] = entry;
 
         setState(() {});
+
+        _manager.broadcastExcept(data, peer);
         break;
 
       case REQUEST:
-        // TODO: if this node has the requested song, it can send instead of the originated node
         var name = data['name'] as String;
+        var found = false;
         Uint8List bytes;
-        // PlatformFile file;
+        PlatformFile file;
 
         if (_localPlaylist.containsKey(name)) {
           bytes = _localPlaylist[name].bytes;
+        } else {
+          for (final entry in _globalPlaylist.entries) {
+            var _playlist = entry.value;
+            if (_playlist.containsKey(name)) {
+              file = _playlist[name];
+              if (file == null) {
+                found = false;
+                break;
+              } else {
+                found = true;
+                bytes = file.bytes;
+              }
+            }
+          }
         }
 
-        // else {
-        //   for (int i = 0; i < _globalPlaylist.length; i++) {
-        //     Map entry = _globalPlaylist[i];
-        //     if (entry.containsKey(name)) {
-        //       file = entry[name];
-        //       if (file == null) {
-        //         HashMap<String, dynamic> message = HashMap();
-        //         message.putIfAbsent('type', () => REQUEST);
-        //         message.putIfAbsent('name', () => name);
-        //         // Send label of requester too so that originated node send directly
-        //         _manager.sendMessageTo(message, _globalPlaylist.keys.elementAt(i));
-        //         _peerRequest = true;
-        //       }
-
-        //       break;
-        //     }
-        //   }
-        // }
-
-        var message = HashMap<String, dynamic>();
-        message.putIfAbsent('type', () => REPLY);
-        message.putIfAbsent('name', () => name);
-        message.putIfAbsent('song', () => bytes);
-        // _manager.sendMessageTo(message, peer.label);
-        _manager.sendEncryptedMessageTo(message, peer.label);
+        if (found == false) {
+          break;
+        } else {
+          var message = HashMap<String, dynamic>();
+          message.putIfAbsent('type', () => REPLY);
+          message.putIfAbsent('name', () => name);
+          message.putIfAbsent('song', () => bytes);
+          _manager.sendEncryptedMessageTo(message, peer.label);
+        }
 
         break;
 
       case REPLY:
-        _processReply(peer, data);
+        print(data);
+        var name = data['name'] as String;
+        var song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
+
+        var tempDir = await getTemporaryDirectory();
+        var tempFile = File('${tempDir.path}/$name');
+        await tempFile.writeAsBytes(song, flush: true);
+
+        var entry = HashMap<String, PlatformFile>();
+        entry.putIfAbsent(
+          name, () => PlatformFile(
+            bytes: song, name: name, path: tempFile.path, size: song.length
+          )
+        );
+
+        _globalPlaylist.update(peer.label, (value) => entry, ifAbsent: () => entry);
+        setState(() => _requested = false);
         break;
 
       default:
     }
-  }
-
-  void _processReply(AdHocDevice peer, Map data) async {
-    // TODO: Requester node should wait for multiple possible request so check with name of file
-    var name = data['name'] as String;
-    var song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
-
-    var tempDir = await getTemporaryDirectory();
-    var tempFile = File('${tempDir.path}/$name');
-    await tempFile.writeAsBytes(song, flush: true);
-
-    var entry = HashMap<String, PlatformFile>();
-    entry.putIfAbsent(
-      name, () => PlatformFile(
-        bytes: song, name: name, path: tempFile.path, size: song.length
-      )
-    );
-
-    _globalPlaylist.update(peer.label, (value) => entry, ifAbsent: () => entry);
-    setState(() => _requested = false);
   }
 
   Future<void> _openFileExplorer() async {
@@ -407,6 +411,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
     message.putIfAbsent('type', () => PLAYLIST);
     message.putIfAbsent('peers', () => peers);
     message.putIfAbsent('songs', () => songs);
+    message.putIfAbsent('timestamp', () => DateTime.now().toIso8601String());
     _manager.broadcast(message);
   }
 
@@ -429,6 +434,12 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             _manager.broadcast(message);
 
             setState(() => _requested = true);
+
+            Timer(Duration(seconds: 450), () {
+              if (_requested == true) {
+                _manager.sendMessageTo(message, peerName);
+              }
+            });
           }
         }
       });

@@ -380,6 +380,8 @@ class WrapperWifi extends WrapperNetwork {
   ///
   /// The [message] represents a message send through the network.
   void _processMsgReceived(MessageAdHoc message) async {
+    print(message.toString());
+
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Save the mapping of remote IP address with its remote MAC address

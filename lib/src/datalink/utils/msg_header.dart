@@ -14,10 +14,15 @@ class Header {
   late String _label;
   late int messageType;
 
+  int? seqNum;
   String? address;
   int? deviceType;
 
   /// Creates a [Header] object.
+  ///
+  /// [seqNum] is needed to filter the data sent twice when using Bluetooth LE,
+  /// which can be observed. More information can be found at
+  /// https://www.forward.com.au/pfod/BLE/BLEProblems/index.html.
   ///
   /// The [messageType] indicates the type of message exchanged. The [label]
   /// uniquely identifies the device along with its [name] and MAC address [mac].
@@ -30,6 +35,7 @@ class Header {
   Header({
     required int messageType,
     required String label,
+    int? seqNum,
     String? name,
     String? address,
     Identifier? mac,
@@ -38,6 +44,7 @@ class Header {
     this.address = address;
     this.deviceType = deviceType;
     this.messageType = messageType;
+    this.seqNum = seqNum ?? 0;
     _label = checkString(label);
     _name = checkString(name);
     _mac = mac ?? Identifier();
@@ -76,6 +83,7 @@ class Header {
         ', address=$address' +
         ', mac=$_mac' +
         ', deviceType=$deviceType' +
+        ', seqNum=$seqNum' +
         '}';
   }
 }

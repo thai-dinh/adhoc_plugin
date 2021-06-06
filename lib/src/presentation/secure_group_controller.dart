@@ -45,7 +45,7 @@ class SecureGroupController {
   /// Time allowed for joining the group creation process
   late int _expiryTime;
   /// State of secure group
-  late bool _isFormationOn;
+  late bool _isGroupFormation;
   /// Group member's key share recovered
   late int _recovered;
   /// Label of the group initiator/owner
@@ -75,7 +75,7 @@ class SecureGroupController {
     _k = null;
     _d = null;
     _expiryTime = config.expiryTime;
-    _isFormationOn = false;
+    _isGroupFormation = false;
     _recovered = 0;
     _DHShare = HashMap();
     _memberShare = HashMap();
@@ -95,12 +95,12 @@ class SecureGroupController {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Initiates a secure group creation process
-  void createGroup() {
-    if (_isFormationOn) {
+  void createGroup([List<String>? members]) {
+    if (_isGroupFormation) {
       return;
     }
 
-    _isFormationOn = true;
+    _isGroupFormation = true;
 
     _groupOwner = _ownLabel;
     var timestamp = _ownLabel + DateTime.now().toIso8601String();
@@ -112,22 +112,31 @@ class SecureGroupController {
     _p = randomPrimeBigInt(seed);
     _g = randomPrimeBigInt(low);
 
+    _memberLabel.add(_ownLabel);
+
     var message = SecureData(
       SecureGroup.init.index, 
       [timestamp, _groupOwner, _p.toString(), _g.toString()]
     );
 
-    // Broadcast formation group advertisement
-    _memberLabel.add(_ownLabel);
-    _datalinkManager.broadcastObject(message);
+    if (members == null) {
+      // Broadcast formation group advertisement
+      _datalinkManager.broadcastObject(message);
 
-    Timer(Duration(seconds: _expiryTime), _timerExpired);
+      Timer(Duration(seconds: _expiryTime), _timerExpired);
+    } else {
+      for (final label in members) {
+        _aodvManager.sendMessageTo(label, message);
+      }
+
+      Timer(Duration(seconds: NET_DELAY), _timerExpired);
+    }
   }
 
 
   /// Joins an existing secure group
   void joinSecureGroup() {
-    if (!_isFormationOn) {
+    if (!_isGroupFormation) {
       return;
     }
 
@@ -139,7 +148,7 @@ class SecureGroupController {
 
   /// Leaves an existing secure group
   void leaveSecureGroup() {
-    if (!_isFormationOn) {
+    if (!_isGroupFormation) {
       return;
     }
 
@@ -156,7 +165,7 @@ class SecureGroupController {
     _memberShare.clear();
     _DHShare.clear();
     _CRTShare.clear();
-    _isFormationOn = false;
+    _isGroupFormation = false;
   }
 
 
@@ -205,7 +214,7 @@ class SecureGroupController {
     return _g!.modPow(_x!, _p!);
   }
 
-  
+
   /// Triggers the start of the group key agreement.
   void _timerExpired() {
     var message = SecureData(SecureGroup.list.index, [_memberLabel]);
@@ -438,9 +447,11 @@ class SecureGroupController {
             _datalinkManager.broadcastObjectExcept(pdu, senderLabel);
           }
 
-          if (_open == false) {
+          if (_open == false || _isGroupFormation == true) {
             return;
           }
+
+          _isGroupFormation = true;
 
           // Store group owner label
           _groupOwner = payload[1] as String;

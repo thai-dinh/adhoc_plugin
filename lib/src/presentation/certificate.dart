@@ -5,7 +5,6 @@ import 'package:pointycastle/export.dart';
 
 part 'certificate.g.dart';
 
-
 /// Class representing a digital certificate.
 @JsonSerializable()
 class Certificate {
@@ -18,14 +17,12 @@ class Certificate {
   late Uint8List signature;
 
   /// Creates a [Certificate] object.
-  /// 
+  ///
   /// The certificate is bound to the [owner] label, which has been issued by
   /// [issuer]. The certificate is valid until [validity] date time. This
-  /// certificate acknowledges the binding of identity of [owner] with the 
+  /// certificate acknowledges the binding of identity of [owner] with the
   /// public key [key].
-  Certificate(
-    String owner, String issuer, DateTime validity, RSAPublicKey key
-  ) {
+  Certificate(String owner, String issuer, DateTime validity, RSAPublicKey key) {
     _owner = owner;
     _issuer = issuer;
     _validity = validity;
@@ -34,8 +31,8 @@ class Certificate {
   }
 
   /// Creates a [Certificate] object from a JSON representation.
-  /// 
-  /// Factory constructor that creates a [Certificate] based on the information 
+  ///
+  /// Factory constructor that creates a [Certificate] based on the information
   /// given by [json].
   factory Certificate.fromJson(Map<String, dynamic> json) => _$CertificateFromJson(json);
 
@@ -60,7 +57,6 @@ class Certificate {
   Map<String, dynamic> toJson() => _$CertificateToJson(this);
 }
 
-
 class _PublicKeyConverter implements JsonConverter<RSAPublicKey, Map<String, dynamic>> {
   const _PublicKeyConverter();
 
@@ -81,7 +77,6 @@ class _PublicKeyConverter implements JsonConverter<RSAPublicKey, Map<String, dyn
     return map;
   }
 }
-
 
 class _Uint8ListConverter implements JsonConverter<Uint8List, List<int>> {
   const _Uint8ListConverter();
