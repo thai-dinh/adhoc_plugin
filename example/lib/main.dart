@@ -28,6 +28,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   static const PLAYLIST = 0;
   static const REQUEST = 1;
   static const REPLY = 2;
+  static const TRANSFER = 3;
 
   static const NONE = 'none';
 
@@ -37,9 +38,9 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   final List<Pair<String, String>> _playlist = List.empty(growable: true);
   final HashMap<String, HashMap<String, PlatformFile>> _globalPlaylist = HashMap();
   final HashMap<String, PlatformFile> _localPlaylist = HashMap();
+  final HashMap<String, bool> _isTransfering = HashMap();
   final Set<String> timestamps = <String>{};
 
-  // bool _peerRequest = false;
   bool _requested = false;
   bool _display = false;
   String _selected = NONE;
@@ -47,7 +48,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
-    _manager.enableBle(3600);
+    // _manager.enableBle(3600);
     _manager.eventStream.listen(_processAdHocEvent);
     _manager.open = true;
   }
@@ -311,6 +312,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         PlatformFile file;
 
         if (_localPlaylist.containsKey(name)) {
+          found = true;
           bytes = _localPlaylist[name].bytes;
         } else {
           for (final entry in _globalPlaylist.entries) {
@@ -332,6 +334,13 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
           break;
         } else {
           var message = HashMap<String, dynamic>();
+          message = HashMap<String, dynamic>();
+          message.putIfAbsent('type', () => TRANSFER);
+          message.putIfAbsent('name', () => name);
+          _manager.sendMessageTo(message, peer.label);
+
+          message.clear();
+
           message.putIfAbsent('type', () => REPLY);
           message.putIfAbsent('name', () => name);
           message.putIfAbsent('song', () => bytes);
@@ -341,7 +350,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
         break;
 
       case REPLY:
-        print(data);
         var name = data['name'] as String;
         var song = Uint8List.fromList((data['song'] as List<dynamic>).cast<int>());
 
@@ -358,6 +366,11 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
 
         _globalPlaylist.update(peer.label, (value) => entry, ifAbsent: () => entry);
         setState(() => _requested = false);
+        break;
+
+      case TRANSFER:
+        var name = data['name'] as String;
+        _isTransfering.putIfAbsent(name, () => true);
         break;
 
       default:
@@ -434,9 +447,10 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
             _manager.broadcast(message);
 
             setState(() => _requested = true);
+            _isTransfering.putIfAbsent(_selected, () => false);
 
-            Timer(Duration(seconds: 450), () {
-              if (_requested == true) {
+            Timer(Duration(seconds: 30), () {
+              if (_requested == true && _isTransfering[_selected] == false) {
                 _manager.sendMessageTo(message, peerName);
               }
             });

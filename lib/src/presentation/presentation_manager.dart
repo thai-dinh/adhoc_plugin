@@ -235,15 +235,11 @@ class PresentationManager {
 
     _groupController.eventStream.listen((event) {
       switch (event.type) {
-        case DATA_RECEIVED: // TODO: change to group data?
-          _controller.add(event);
+        case DATA_RECEIVED:
+          _controller.add(event..type = GROUP_DATA);
           break;
 
         case GROUP_STATUS:
-          _controller.add(event);
-          break;
-
-        case GROUP_KEY_UPDATED:
           _controller.add(event);
           break;
 

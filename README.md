@@ -18,11 +18,16 @@ The ad hoc library supports the following operations:
 - Broadcast data in plain-text to all directly connected neighbors
 - Broadcast encrypted data to all directly connected neighbors
 - Revoke its certificate (private key compromised)
-- Create a secure group in the ad hoc network
-- Join an existing secure group in the ad hoc network
-- Leave an existing secure group in the ad hoc network
+- Create a secure group
+- Join an existing secure group
+- Leave an existing secure group
+- Send encrypted data to an existing secure group
 - Provides notifications of specific events related to the library (e.g., connection established, or data received)
 
 ## Application Example
 
-See example.
+## example
+
+- [Source code](example)
+
+An example showing how to use the library APIs.

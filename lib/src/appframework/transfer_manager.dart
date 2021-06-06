@@ -425,15 +425,24 @@ class TransferManager {
           break;
 
         case INTERNAL_EXCEPTION:
-          data = event.payload as Object;
+          data = event.payload as Exception;
 
           _controller.add(Event(AdHocType.onInternalException, data: data));
           break;
 
         case GROUP_STATUS:
+          data = event.payload as int;
+
+          _controller.add(Event(AdHocType.onGroupInfo, data: data));
           break;
 
-        case GROUP_KEY_UPDATED:
+        case GROUP_DATA:
+          var payload = event.payload as List<dynamic>;
+
+          device = payload.first as AdHocDevice;
+          data = payload.last as Object;
+
+          _controller.add(Event(AdHocType.onGroupDataReceived, device: device, data: data));
           break;
 
         default:

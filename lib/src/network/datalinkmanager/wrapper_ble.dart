@@ -346,7 +346,6 @@ class WrapperBle extends WrapperNetwork {
   ///
   /// The [message] represents a message send through the network.
   void _processMsgReceived(final MessageAdHoc message) {
-    print(message.toString());
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Recover this own node MAC and BLE address

@@ -115,8 +115,7 @@ class SecureGroupController {
     _memberLabel.add(_ownLabel);
 
     var message = SecureData(
-      SecureGroup.init.index, 
-      [timestamp, _groupOwner, _p.toString(), _g.toString()]
+      GROUP_INIT, [timestamp, _groupOwner, _p.toString(), _g.toString()]
     );
 
     if (members == null) {
@@ -129,7 +128,7 @@ class SecureGroupController {
         _aodvManager.sendMessageTo(label, message);
       }
 
-      Timer(Duration(seconds: NET_DELAY), _timerExpired);
+      Timer(Duration(seconds: _expiryTime), _timerExpired);
     }
   }
 
@@ -141,7 +140,7 @@ class SecureGroupController {
     }
 
     // Send a group join request
-    var msg = SecureData(SecureGroup.join.index, []);
+    var msg = SecureData(GROUP_JOIN, []);
     _datalinkManager.broadcastObject(msg);
   }
 
@@ -155,7 +154,7 @@ class SecureGroupController {
     _isGroupFormed = false;
 
     // Send a leave group notification
-    var msg = SecureData(SecureGroup.leave.index, []);
+    var msg = SecureData(GROUP_LEAVE, []);
     _aodvManager.sendMessageTo(_groupOwner!, msg);
 
     // Reset cryptographic parameters
@@ -186,7 +185,7 @@ class SecureGroupController {
     );
 
     // Send encrypted message to group member
-    var _data = SecureData(SecureGroup.data.index, encrypted);
+    var _data = SecureData(GROUP_DATA, encrypted);
     for (final String? label in _memberLabel) {
       if (label != _ownLabel) {
         _aodvManager.sendMessageTo(label!, _data);
@@ -217,7 +216,7 @@ class SecureGroupController {
 
   /// Triggers the start of the group key agreement.
   void _timerExpired() {
-    var message = SecureData(SecureGroup.list.index, [_memberLabel]);
+    var message = SecureData(GROUP_LIST, [_memberLabel]);
 
     for (final label in _memberLabel) {
       if (label != _ownLabel) {
@@ -228,7 +227,7 @@ class SecureGroupController {
     var y = _computeDHShare();
     _DHShare.putIfAbsent(_ownLabel, () => y);
 
-    message = SecureData(SecureGroup.share.index, [y.toString()]);
+    message = SecureData(GROUP_SHARE, [y.toString()]);
 
     for (final label in _memberLabel) {
       if (label != _ownLabel) {
@@ -361,22 +360,19 @@ class SecureGroupController {
   /// Computes the group key.
   /// 
   /// The way the group key is computed is defined by [type].
-  void _computeGroupKey(SecureGroup type, [String? label]) async {
+  void _computeGroupKey(int type, [String? label]) async {
     var groupKeySum = BigInt.zero;
     var groupKeyHash = BigInt.zero;
-    var operation = '';
 
     switch (type) {
-      case SecureGroup.init:
+      case GROUP_INIT:
         groupKeySum += _k!;
         for (final label in _CRTShare.keys) {
           groupKeySum ^= (_CRTShare[label]! % _memberShare[label]!);
         }
-
-        operation = 'formation';
         break;
 
-      case SecureGroup.join:
+      case GROUP_JOIN:
         groupKeyHash = await _computeGroupKeyHash();
 
         if (label == null) {
@@ -384,18 +380,14 @@ class SecureGroupController {
         } else {
           groupKeySum = groupKeyHash ^ (_CRTShare[label]! % _memberShare[label]!);
         }
-
-        operation = 'join';
         break;
 
-      case SecureGroup.leave:
+      case GROUP_LEAVE:
         if (_groupOwner == _ownLabel) {
           groupKeySum ^= _k!;
         } else {
           groupKeySum ^= (_CRTShare[_groupOwner]! % _memberShare[_groupOwner]!);
         }
-
-        operation = 'leave';
         break;
 
       default:
@@ -416,10 +408,8 @@ class SecureGroupController {
 
     if (_isGroupFormed == false) {
       _isGroupFormed = true;
-      _controller.add(AdHocEvent(GROUP_STATUS, true));
+      _controller.add(AdHocEvent(GROUP_STATUS, type));
     }
-
-    _controller.add(AdHocEvent(GROUP_KEY_UPDATED, operation));
   }
 
 
@@ -427,20 +417,17 @@ class SecureGroupController {
   /// 
   /// The data is retrieved from the [event] payload.
   void _processDataReceived(AdHocEvent event) async {
+    var pdu = SecureData.fromJson((event.payload as List<dynamic>)[1] as Map<String, dynamic>);
     var sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
     var senderLabel = sender.label!;
-    var pdu = SecureData.fromJson(
-      (event.payload as List<dynamic>)[1] as Map<String, dynamic>
-    );
 
-    if (pdu.type > SecureGroup.values.length) {
+    if (pdu.type > GROUP_STATUS) {
       return;
     }
 
-    var type = SecureGroup.values[pdu.type];
     var payload = pdu.payload as List<dynamic>;
-    switch (type) {
-        case SecureGroup.init:
+    switch (event.type) {
+        case GROUP_INIT:
           var timestamp = payload[0] as String;
           if (!_setFloodEvents.contains(timestamp)) {
             _setFloodEvents.add(timestamp);
@@ -464,17 +451,17 @@ class SecureGroupController {
           _p = BigInt.parse(payload[2] as String);
           _g = BigInt.parse(payload[3] as String);
           // Reply to the group formation
-          var msg = SecureData(SecureGroup.reply.index, []);
+          var msg = SecureData(GROUP_REPLY, []);
           _aodvManager.sendMessageTo(senderLabel, msg);
           break;
 
-        case SecureGroup.reply:
+        case GROUP_REPLY:
           if (!_memberLabel.contains(senderLabel)) {
             _memberLabel.add(senderLabel);
           }
           break;
 
-        case SecureGroup.list:
+        case GROUP_LIST:
           // Get all the label of the group member
           _memberLabel.addAll((payload[0] as List<dynamic>).cast<String>());
 
@@ -483,7 +470,7 @@ class SecureGroupController {
           _DHShare.putIfAbsent(_ownLabel, () => y);
 
           // Broadcast it to group member
-          var msg = SecureData(SecureGroup.share.index, [y.toString()]);
+          var msg = SecureData(GROUP_SHARE, [y.toString()]);
           for (final label in _memberLabel) {
             if (label != _ownLabel) {
               _aodvManager.sendMessageTo(label, msg);
@@ -491,7 +478,7 @@ class SecureGroupController {
           }
           break;
 
-        case SecureGroup.share:
+        case GROUP_SHARE:
           // Store the public Diffie-Hellman share of group memeber
           var yj = BigInt.parse(payload[0] as String);
           _DHShare.putIfAbsent(senderLabel, () => yj);
@@ -505,35 +492,31 @@ class SecureGroupController {
               var mij = _computeMemberShare(senderLabel, yj);
               var crtij = _computeCRTShare(senderLabel, yj, mij);
 
-              var msg = SecureData(
-                SecureGroup.key.index, [SecureGroup.init.index, crtij.toString()]
-              );
+              var msg = SecureData(GROUP_KEY, [GROUP_INIT, crtij.toString()]);
 
               _aodvManager.sendMessageTo(senderLabel, msg);
             }
           }
           break;
 
-        case SecureGroup.key:
+        case GROUP_KEY:
           // Store the solution of the CRT system of congruence
-          var tag = SecureGroup.values[payload[0] as int];
           var crtji = BigInt.parse(payload[1] as String);
-          _CRTShare.putIfAbsent(senderLabel, () => crtji);
-          _recovered += 1;
+          _CRTShare.putIfAbsent(senderLabel, () { _recovered += 1; return crtji; });
 
           // Compute the group key
           if (_recovered == _memberLabel.length) {
-            _computeGroupKey(tag);
+            _computeGroupKey(GROUP_INIT);
           }
           break;
 
-        case SecureGroup.join:
+        case GROUP_JOIN:
           // Send the group join request to the group owner
-          var msg = SecureData(SecureGroup.join_req.index, [senderLabel]);
+          var msg = SecureData(GROUP_JOIN_REQ, [senderLabel]);
           _aodvManager.sendMessageTo(_groupOwner!, msg);
           break;
 
-        case SecureGroup.join_req:
+        case GROUP_JOIN_REQ:
           // Group owner responds to the group join request received
           var joiningMember = payload[0] as String;
           _memberLabel.add(joiningMember);
@@ -552,14 +535,12 @@ class SecureGroupController {
             values.add(value.toString());
           });
 
-          var msg = SecureData(
-            SecureGroup.join_rep.index, [groupKeyHash.toString(), labels, values]
-          );
+          var msg = SecureData(GROUP_JOIN_REP, [groupKeyHash.toString(), labels, values]);
 
           _aodvManager.sendMessageTo(joiningMember, msg);
           break;
 
-        case SecureGroup.join_rep:
+        case GROUP_JOIN_REP:
           // New member proceeds with the protocol from Step 3.
           if (payload.length == 3) {
             // Hash of group key
@@ -582,31 +563,30 @@ class SecureGroupController {
                 var mij = _computeMemberShare(label, _DHShare[label]!);
                 var crtij = _computeCRTShare(label, _DHShare[label]!, mij);
 
-                var msg = SecureData(
-                  SecureGroup.join_rep.index, [y.toString(), crtij.toString()]
-                );
+                var msg = SecureData(GROUP_JOIN_REP, [y.toString(), crtij.toString()]);
 
                 _aodvManager.sendMessageTo(label, msg);
               }
             }
             // Compute group key
-            _computeGroupKey(SecureGroup.join, null);
+            _computeGroupKey(GROUP_JOIN, null);
           } else { // Old member updating the group key
             var yj = BigInt.parse(payload[0] as String);
             var mij = _computeMemberShare(senderLabel, yj);
             var crtij = BigInt.parse(payload[1] as String);
+
             // Store the value send by the joining member
             _DHShare.putIfAbsent(senderLabel, () => yj);
             _memberShare.putIfAbsent(senderLabel, () => mij);
             _CRTShare.putIfAbsent(senderLabel, () => crtij);
+
             // Compute group key
-            _computeGroupKey(SecureGroup.join, senderLabel);
+            _computeGroupKey(GROUP_JOIN, senderLabel);
           }
           break;
 
-        case SecureGroup.leave:
-          // Group owner redraw new key share and broadcast it to remaining group
-          // member
+        case GROUP_LEAVE:
+          // Group owner redraw new key share and broadcast it to remaining group member
           if (_groupOwner == _ownLabel) {
             _memberLabel.remove(senderLabel);
             _k = null;
@@ -619,14 +599,14 @@ class SecureGroupController {
                 var crtij = _computeCRTShare(label, yj, mij);
 
                 var msg = SecureData(
-                  SecureGroup.leave.index, [senderLabel, crtij.toString()]
+                  GROUP_LEAVE, [senderLabel, crtij.toString()]
                 );
 
                 _aodvManager.sendMessageTo(label, msg);
               }
             }
             // Compute group key
-            _computeGroupKey(SecureGroup.leave);
+            _computeGroupKey(GROUP_LEAVE);
           } else {
             // Remove value of leaving member
             var leavingMember = payload[0] as String;
@@ -637,18 +617,16 @@ class SecureGroupController {
 
             // Compute group key
             _CRTShare[_groupOwner!] = BigInt.parse(payload[1] as String);
-            _computeGroupKey(SecureGroup.leave);
+            _computeGroupKey(GROUP_LEAVE);
           }
           break;
 
-        case SecureGroup.data:
+        case GROUP_DATA:
           // Decrypt group data received
-          var decrypted = await _engine.decrypt(
-            payload, sharedKey: _groupKey!
-          );
+          var decrypted = await _engine.decrypt(payload, sharedKey: _groupKey!);
 
           // Notify upper layers of group data received
-          _controller.add(AdHocEvent(DATA_RECEIVED, decrypted));
+          _controller.add(AdHocEvent(DATA_RECEIVED, [sender, decrypted]));
           break;
 
       default:

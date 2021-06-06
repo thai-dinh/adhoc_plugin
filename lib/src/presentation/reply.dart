@@ -1,10 +1,8 @@
-import 'package:adhoc_plugin/src/presentation/constants.dart';
-
 /// Class representing the reply of the encryption/decryption isolate to a
 /// request of encryption/decryption.
 class Reply {
-  Object data;
-  CryptoTask rep;
+  final int rep;
+  final Object data;
 
   /// Creates a [Reply] object.
   ///

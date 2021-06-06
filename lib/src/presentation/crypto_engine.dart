@@ -42,7 +42,7 @@ class CryptoEngine {
   /// Initializes internal parameters.
   Future<void> initialize() async {
     _stream.listen((reply) {
-      if (reply.rep == CryptoTask.initialisation) {
+      if (reply.rep == INITIALISATION) {
         _sendPorts[reply.data[0] as int] = reply.data[1] as SendPort;
       }
     });
@@ -62,11 +62,7 @@ class CryptoEngine {
 
     // Create and initialize a RSA key generator
     final keyGen = RSAKeyGenerator()
-      ..init(
-        ParametersWithRandom(RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64), 
-        _random(),
-      ),
-    );
+      ..init(ParametersWithRandom(RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64), _random()));
 
     // Generate the pair of key
     final pair = keyGen.generateKeyPair();
@@ -87,21 +83,15 @@ class CryptoEngine {
   /// performed.
   ///
   /// Returns the encrypted data as a list of dynamic objects.
-  Future<List<dynamic>> encrypt(
-    Uint8List data, {RSAPublicKey? publicKey, crypto.SecretKey? sharedKey}
-  ) {
+  Future<List<dynamic>> encrypt(Uint8List data, {RSAPublicKey? publicKey, crypto.SecretKey? sharedKey}) {
     Completer completer = Completer<List<dynamic>>();
 
     // Send request to encryption isolate
-    if (publicKey != null) {
-      _sendPorts[ENCRYPTION]!.send(Request(CryptoTask.encryption, data, publicKey: publicKey));
-    } else {
-      _sendPorts[ENCRYPTION]!.send(Request(CryptoTask.group_data, data, sharedKey: sharedKey));
-    }
+    _sendPorts[ENCRYPTION]!.send(Request(data, publicKey: publicKey, sharedKey: sharedKey));
 
     // Listen to the reply of the encryption isolate
     _stream.listen((reply) {
-      if (reply.rep == CryptoTask.encryption) {
+      if (reply.rep == ENCRYPTION) {
         try {
           completer.complete(reply.data as List<dynamic>);
         } catch (exception) {}
@@ -124,15 +114,11 @@ class CryptoEngine {
     Completer completer = Completer<Uint8List>();
 
     // Send request to decryption isolate
-    if (sharedKey == null) {
-      _sendPorts[DECRYPTION]!.send(Request(CryptoTask.decryption, data, privateKey: _privateKey));
-    } else {
-      _sendPorts[DECRYPTION]!.send(Request(CryptoTask.group_data, data, sharedKey: sharedKey));
-    }
+    _sendPorts[DECRYPTION]!.send(Request(data, privateKey: _privateKey, sharedKey: sharedKey));
 
     // Listen to the reply of the decryption isolate
     _stream.listen((reply) {
-      if (reply.rep == CryptoTask.decryption) {
+      if (reply.rep == DECRYPTION) {
         try {
           completer.complete(Uint8List.fromList((reply.data as List<dynamic>).cast<int>()));
         } catch (exception) {}
@@ -209,7 +195,7 @@ class CryptoEngine {
 /// The [port] is used to communicate with the isolate.
 void processEncryption(SendPort port) {
   var _receivePort = ReceivePort();
-  port.send(Reply(CryptoTask.initialisation, [ENCRYPTION, _receivePort.sendPort]));
+  port.send(Reply(INITIALISATION, [ENCRYPTION, _receivePort.sendPort]));
 
   final algorithm = crypto.Chacha20.poly1305Aead();
 
@@ -219,7 +205,7 @@ void processEncryption(SendPort port) {
 
   _receivePort.listen((request) async {
     var req = request as Request;
-    if (req.req == CryptoTask.encryption) {
+    if (req.sharedKey == null) {
       encryptor = OAEPEncoding(RSAEngine())
         ..init(true, PublicKeyParameter<RSAPublicKey>(request.publicKey!));
 
@@ -239,7 +225,7 @@ void processEncryption(SendPort port) {
     reply[SECRET_KEY] = encryptedKey;
     reply[SECRET_DATA] = secretBox.concatenation();
 
-    port.send(Reply(CryptoTask.encryption, reply));
+    port.send(Reply(ENCRYPTION, reply));
   });
 }
 
@@ -248,7 +234,7 @@ void processEncryption(SendPort port) {
 /// The [port] is used to communicate with the isolate.
 void processDecryption(SendPort port) {
   var _receivePort = ReceivePort();
-  port.send(Reply(CryptoTask.initialisation, [DECRYPTION, _receivePort.sendPort]));
+  port.send(Reply(INITIALISATION, [DECRYPTION, _receivePort.sendPort]));
 
   final algorithm = crypto.Chacha20.poly1305Aead();
 
@@ -259,7 +245,7 @@ void processDecryption(SendPort port) {
     var req = request as Request;
     var reply = request.data as List<dynamic>;
 
-    if (req.req == CryptoTask.decryption) {
+    if (req.sharedKey == null) {
       decryptor = OAEPEncoding(RSAEngine())
         ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
 
@@ -285,7 +271,7 @@ void processDecryption(SendPort port) {
       await algorithm.decrypt(secretBox, secretKey: secretKey),
     );
 
-    port.send(Reply(CryptoTask.decryption, decrypted));
+    port.send(Reply(DECRYPTION, decrypted));
   });
 }
 
