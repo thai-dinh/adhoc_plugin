@@ -16,7 +16,7 @@ class BleClient extends ServiceClient {
 
   late final BleAdHocDevice _device;
   late FlutterReactiveBle _reactiveBle;
-  late bool _isInitialized;
+  late bool _isInitialised;
 
   /// Creates a [BleClient] object.
   ///
@@ -26,10 +26,13 @@ class BleClient extends ServiceClient {
   ///
   /// Connection attempts to a remote device are done at most [attempts] times.
   /// A connection attempt waiting time is set to [timeOut] ms.
-  BleClient(bool verbose, this._device, int attempts, int timeOut)
-      : super(verbose, attempts, timeOut) {
+  BleClient(
+    bool verbose, this._device, int attempts, int timeOut
+  ) : super(
+    verbose, attempts, timeOut
+  ) {
     _reactiveBle = FlutterReactiveBle();
-    _isInitialized = false;
+    _isInitialised = false;
   }
 
 /*-------------------------------Public methods-------------------------------*/
@@ -70,7 +73,7 @@ class BleClient extends ServiceClient {
 
   /// Cancels the connection with the remote device.
   @override
-  void disconnect() {
+  Future<void> disconnect() async {
     stopListening();
     if (_connectionSub != null) {
       // Abort connection with the remote host
@@ -161,7 +164,7 @@ class BleClient extends ServiceClient {
 
   /// Initializes the environment upon a successful connection performed.
   Future<void> _initEnvironment() async {
-    if (_isInitialized) {
+    if (_isInitialised) {
       return;
     }
 
@@ -175,6 +178,6 @@ class BleClient extends ServiceClient {
     controller.add(AdHocEvent(CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]));
 
     state = STATE_CONNECTED;
-    _isInitialized = true;
+    _isInitialised = true;
   }
 }

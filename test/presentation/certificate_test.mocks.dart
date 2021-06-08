@@ -4,7 +4,8 @@
 
 import 'dart:typed_data' as _i4;
 
-import 'package:adhoc_plugin/src/presentation/certificate.dart' as _i3;
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart'
+    as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:pointycastle/asymmetric/api.dart' as _i2;
 

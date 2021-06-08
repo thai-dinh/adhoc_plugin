@@ -10,13 +10,13 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/presentation/certificate.dart';
-import 'package:adhoc_plugin/src/presentation/certificate_repository.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:adhoc_plugin/src/presentation/constants.dart';
-import 'package:adhoc_plugin/src/presentation/crypto_engine.dart';
+import 'package:adhoc_plugin/src/presentation/crypto/crypto_engine.dart';
 import 'package:adhoc_plugin/src/presentation/exceptions/verification_failed.dart';
 import 'package:adhoc_plugin/src/presentation/secure_data.dart';
-import 'package:adhoc_plugin/src/presentation/secure_group_controller.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_controller.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 /// Class representing the core of the secure data layer. It performs
@@ -30,7 +30,7 @@ class PresentationManager {
   late AodvManager _aodvManager;
   late DataLinkManager _datalinkManager;
   late CertificateRepository _repository;
-  late SecureGroupController _groupController;
+  late GroupController _groupController;
   late StreamController<AdHocEvent> _controller;
 
   late HashMap<String, List<Object>> _buffer;
@@ -49,7 +49,7 @@ class PresentationManager {
     _datalinkManager = _aodvManager.dataLinkManager;
     _engine = CryptoEngine();
     _engine.initialize();
-    _groupController = SecureGroupController(
+    _groupController = GroupController(
       _engine, _aodvManager, _datalinkManager, _aodvManager.eventStream, config
     );
     _controller = StreamController<AdHocEvent>.broadcast();
@@ -62,7 +62,7 @@ class PresentationManager {
 /*------------------------------Getters & Setters-----------------------------*/
 
   /// Secure group manager used by this instance.
-  SecureGroupController get groupController => _groupController;
+  GroupController get groupController => _groupController;
 
   /// Data-link manager used by the AODV manager.
   DataLinkManager get datalinkManager => _datalinkManager;
@@ -88,7 +88,7 @@ class PresentationManager {
       if (certificate == null) {
         // Request certificate as it is not in the certificate repository
         // (Certificate Chain Discovery)
-        _aodvManager.sendMessageTo(destination, SecureData(CERT_REQ, []).toJson());
+        _aodvManager.sendMessageTo(destination, SecureData(CERT_REQ, null).toJson());
 
         // Buffer the encrypted message to send
         _buffer.update(

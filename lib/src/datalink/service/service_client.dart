@@ -21,11 +21,7 @@ abstract class ServiceClient extends Service {
   ///
   /// A connection attempt is said to be a failure if nothing happens after
   /// [timeOut] ms.
-  ServiceClient(
-    bool verbose,
-    this._attempts,
-    this._timeOut,
-  ) : super(verbose) {
+  ServiceClient(bool verbose, this._attempts, this._timeOut) : super(verbose) {
     _backOffTime = Random().nextInt(HIGH - LOW) + LOW;
   }
 

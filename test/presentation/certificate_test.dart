@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/presentation/certificate.dart';
-import 'package:adhoc_plugin/src/presentation/certificate_repository.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';

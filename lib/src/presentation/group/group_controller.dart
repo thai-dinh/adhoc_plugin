@@ -11,23 +11,30 @@ import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/presentation/constants.dart';
-import 'package:adhoc_plugin/src/presentation/crypto_engine.dart';
+import 'package:adhoc_plugin/src/presentation/crypto/crypto_engine.dart';
 import 'package:adhoc_plugin/src/presentation/exceptions/group_not_formed.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_init.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_join.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_leave.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_list.dart';
+import 'package:adhoc_plugin/src/presentation/group/group_value.dart';
 import 'package:adhoc_plugin/src/presentation/secure_data.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:ninja_prime/ninja_prime.dart';
 
-
 /// Class managing the creation and maintenance of a secure group
-class SecureGroupController {
+class GroupController {
   final AodvManager _aodvManager;
   final DataLinkManager _datalinkManager;
   final CryptoEngine _engine;
   final Stream<AdHocEvent> _eventStream;
   late String _ownLabel;
   late StreamController<AdHocEvent> _controller;
+
   late bool _open;
+  late bool _timerExpired;
   late bool _isGroupFormed;
+  late bool _isFormationGoingOn;
   late Set<String> _setFloodEvents;
 
   /// Order of the finite cyclic group
@@ -44,8 +51,6 @@ class SecureGroupController {
   SecretKey? _groupKey;
   /// Time allowed for joining the group creation process
   late int _expiryTime;
-  /// State of secure group
-  late bool _isGroupFormation;
   /// Group member's key share recovered
   late int _recovered;
   /// Label of the group initiator/owner
@@ -59,23 +64,24 @@ class SecureGroupController {
   /// List containing the group member label
   late List<String> _memberLabel;
 
-  /// Creates a [SecureGroupController] object.
+  /// Creates a [GroupController] object.
   /// 
   /// This object is configured according to [config], which contains specific 
   /// configurations.
-  SecureGroupController(
+  GroupController(
     this._engine, this._aodvManager, this._datalinkManager, this._eventStream, 
     Config config
   ) {
     _ownLabel = _aodvManager.label;
     _controller = StreamController<AdHocEvent>.broadcast();
-    _open = config.open;
+    _open = config.public;
     _isGroupFormed = false;
     _setFloodEvents = <String>{};
     _k = null;
     _d = null;
     _expiryTime = config.expiryTime;
-    _isGroupFormation = false;
+    _isFormationGoingOn = false;
+    _timerExpired = false;
     _recovered = 0;
     _DHShare = HashMap();
     _memberShare = HashMap();
@@ -89,22 +95,27 @@ class SecureGroupController {
   /// Stream of ad hoc event notifications of lower layers.
   Stream<AdHocEvent> get eventStream => _controller.stream;
 
-  /// Stance about joining group formation
-  set open(bool open) => _open = open;
+  /// Stance about joining group formation for any init request
+  set public(bool state) => _open = state;
 
 /*-------------------------------Public methods-------------------------------*/
 
   /// Initiates a secure group creation process
+  /// 
+  /// If [members] is given, then the group formation request is send to every
+  /// member in the list.
   void createGroup([List<String>? members]) {
-    if (_isGroupFormation) {
+    if (_isFormationGoingOn || _isGroupFormed) {
       return;
     }
 
-    _isGroupFormation = true;
+    _isFormationGoingOn = true;
 
     _groupOwner = _ownLabel;
-    var timestamp = _ownLabel + DateTime.now().toIso8601String();
+    _memberLabel.add(_ownLabel);
 
+    // Timestamp for flood control
+    var timestamp = _ownLabel + DateTime.now().toIso8601String();
     var low = 32;
     var seed = max(low + low, Random(42).nextInt(192));
 
@@ -112,49 +123,51 @@ class SecureGroupController {
     _p = randomPrimeBigInt(seed);
     _g = randomPrimeBigInt(low);
 
-    _memberLabel.add(_ownLabel);
-
-    var message = SecureData(
-      GROUP_INIT, [timestamp, _groupOwner, _p.toString(), _g.toString()]
-    );
+    var info = GroupInit(timestamp, _p.toString(), _g.toString(), _ownLabel, false);
+    var message = SecureData(GROUP_INIT, info.toJson());
 
     if (members == null) {
       // Broadcast formation group advertisement
       _datalinkManager.broadcastObject(message);
-
-      Timer(Duration(seconds: _expiryTime), _timerExpired);
     } else {
+      info.invitation = true;
+      // Send to labels specified only
       for (final label in members) {
         _aodvManager.sendMessageTo(label, message);
       }
-
-      Timer(Duration(seconds: _expiryTime), _timerExpired);
     }
+
+    Timer(Duration(seconds: _expiryTime), _broadcastTimerExpired);
   }
 
 
   /// Joins an existing secure group
-  void joinSecureGroup() {
-    if (!_isGroupFormation) {
-      return;
-    }
-
+  /// 
+  /// If [label] is given, then the join group request is sent to label
+  void joinSecureGroup([String? label]) {
     // Send a group join request
-    var msg = SecureData(GROUP_JOIN, []);
-    _datalinkManager.broadcastObject(msg);
+    if (label == null) {
+      var msg = SecureData(GROUP_JOIN, []);
+
+      _datalinkManager.broadcastObject(msg);
+    } else {
+      var msg = SecureData(GROUP_JOIN_REQ, [_ownLabel]);
+
+      _aodvManager.sendMessageTo(label, msg);
+    }
   }
 
 
   /// Leaves an existing secure group
   void leaveSecureGroup() {
-    if (!_isGroupFormation) {
+    if (!_isFormationGoingOn || !_isGroupFormed) {
       return;
     }
 
     _isGroupFormed = false;
 
     // Send a leave group notification
-    var msg = SecureData(GROUP_LEAVE, []);
+    var msg = SecureData(GROUP_LEAVE, GroupLeave(_ownLabel, ));
     _aodvManager.sendMessageTo(_groupOwner!, msg);
 
     // Reset cryptographic parameters
@@ -164,7 +177,7 @@ class SecureGroupController {
     _memberShare.clear();
     _DHShare.clear();
     _CRTShare.clear();
-    _isGroupFormation = false;
+    _isFormationGoingOn = false;
   }
 
 
@@ -175,7 +188,7 @@ class SecureGroupController {
   /// Throws a [GroupNotFormedException] exception if the group is not formed
   /// or the device is not part of any secure group.
   void sendMessageToGroup(Object? data) async {
-    if (_isGroupFormed == false) {
+    if (!_isGroupFormed) {
       throw GroupNotFormedException();
     }
 
@@ -199,7 +212,12 @@ class SecureGroupController {
   void _initialize() {
     _eventStream.listen((event) {
       if (event.type == DATA_RECEIVED) {
-        _processDataReceived(event);
+        var sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
+        var payload = SecureData.fromJson(
+          (event.payload as List<dynamic>)[1] as Map<String, dynamic>
+        );
+
+        _processDataReceived(sender, payload);
       }
     });
   }
@@ -215,8 +233,10 @@ class SecureGroupController {
 
 
   /// Triggers the start of the group key agreement.
-  void _timerExpired() {
-    var message = SecureData(GROUP_LIST, [_memberLabel]);
+  void _broadcastTimerExpired() {
+    _timerExpired = true;
+
+    var message = SecureData(GROUP_LIST, GroupList(_memberLabel));
 
     for (final label in _memberLabel) {
       if (label != _ownLabel) {
@@ -227,7 +247,7 @@ class SecureGroupController {
     var y = _computeDHShare();
     _DHShare.putIfAbsent(_ownLabel, () => y);
 
-    message = SecureData(GROUP_SHARE, [y.toString()]);
+    message = SecureData(GROUP_SHARE, GroupValue(y.toString()));
 
     for (final label in _memberLabel) {
       if (label != _ownLabel) {
@@ -297,9 +317,9 @@ class SecureGroupController {
     // Bézout's identity to obtain crt_ij
     var coefficients = _solveBezoutIdentity(mij, pij);
     var crtij = (_k! * coefficients[1] * pij) + (_d! * coefficients[0] * mij);
-    // if (crtij < BigInt.zero) {
-    //   crtij % (mij * pij);
-    // }
+    if (crtij < BigInt.zero) {
+      crtij % (mij * pij);
+    }
 
     return crtij;
   }
@@ -357,6 +377,7 @@ class SecureGroupController {
     return BigInt.from(hash.bytes.reduce((a, b) => a + b));
   }
 
+
   /// Computes the group key.
   /// 
   /// The way the group key is computed is defined by [type].
@@ -397,8 +418,7 @@ class SecureGroupController {
     var keyBytes = _toBytes(groupKeySum);
     var length = keyBytes.length;
     if (length < keyLengthRequired) {
-      keyBytes = 
-        Uint8List.fromList(keyBytes.toList() + List.filled(keyLengthRequired - length, 42));
+      keyBytes = Uint8List.fromList(keyBytes.toList() + List.filled(keyLengthRequired - length, 42));
     } else if (length > keyLengthRequired) {
       keyBytes = keyBytes.sublist(0, keyLengthRequired);
     }
@@ -406,228 +426,263 @@ class SecureGroupController {
     final algorithm = Chacha20(macAlgorithm: Hmac.sha256());
     _groupKey = await algorithm.newSecretKeyFromBytes(keyBytes);
 
-    if (_isGroupFormed == false) {
+    if (!_isGroupFormed) {
       _isGroupFormed = true;
       _controller.add(AdHocEvent(GROUP_STATUS, type));
     }
+
+    _isFormationGoingOn = false;
   }
 
 
   /// Processes the data received.
   /// 
   /// The data is retrieved from the [event] payload.
-  void _processDataReceived(AdHocEvent event) async {
-    var pdu = SecureData.fromJson((event.payload as List<dynamic>)[1] as Map<String, dynamic>);
-    var sender = (event.payload as List<dynamic>)[0] as AdHocDevice;
+  void _processDataReceived(AdHocDevice sender, SecureData secureData) async {
     var senderLabel = sender.label!;
 
-    if (pdu.type > GROUP_STATUS) {
-      return;
-    }
+    switch (secureData.type) {
+      case GROUP_INIT:
+        // Retrieve group advertisement data
+        var data = GroupInit.fromJson(secureData.payload as Map<String, dynamic>);
 
-    var payload = pdu.payload as List<dynamic>;
-    switch (event.type) {
-        case GROUP_INIT:
-          var timestamp = payload[0] as String;
-          if (!_setFloodEvents.contains(timestamp)) {
-            _setFloodEvents.add(timestamp);
-            _datalinkManager.broadcastObjectExcept(pdu, senderLabel);
+        // Advertisement flood control
+        if (!_setFloodEvents.contains(data.timestamp)) {
+          _setFloodEvents.add(data.timestamp);
+          // If private invitation, then do not broadcast
+          if (!data.invitation) {
+            _datalinkManager.broadcastObjectExcept(secureData, senderLabel);
           }
+        }
 
-          if (_open == false || _isGroupFormation == true) {
-            return;
-          }
+        // Config specifies to reject all public advertisement
+        if (!_open && !data.invitation) {
+          return;
+        }
 
-          _isGroupFormation = true;
-
+        // Reject own advertisement
+        if (_ownLabel == data.initiator) {
+          return;
+        } else {
           // Store group owner label
-          _groupOwner = payload[1] as String;
-          // Reject own advertisement
-          if (_groupOwner == _ownLabel) {
-            return;
+          _groupOwner = data.initiator;
+        }
+
+        // Store Diffie-Hellman parameters
+        _p = BigInt.parse(data.modulo);
+        _g = BigInt.parse(data.generator);
+        // Reply to the group formation
+        var msg = SecureData(GROUP_REPLY, null);
+        _aodvManager.sendMessageTo(senderLabel, msg);
+        break;
+
+
+      case GROUP_REPLY:
+        if (_timerExpired) {
+          return;
+        }
+
+        if (!_memberLabel.contains(senderLabel)) {
+          _memberLabel.add(senderLabel);
+        }
+        break;
+
+
+      case GROUP_LIST:
+        // Retrieve group list data
+        var data = GroupList.fromJson(secureData.payload as Map<String, dynamic>);
+        // Get all the label of the group member
+        _memberLabel.addAll(data.labels);
+
+        // Compute own public Diffie-Hellman share
+        var y = _computeDHShare();
+        _DHShare.putIfAbsent(_ownLabel, () => y);
+
+        // Broadcast it to group member
+        var msg = SecureData(GROUP_SHARE, GroupValue(y.toString()).toJson());
+        for (final label in _memberLabel) {
+          if (label != _ownLabel) {
+            _aodvManager.sendMessageTo(label, msg.toJson());
           }
+        }
+        break;
 
-          // Store Diffie-Hellman parameters
-          _p = BigInt.parse(payload[2] as String);
-          _g = BigInt.parse(payload[3] as String);
-          // Reply to the group formation
-          var msg = SecureData(GROUP_REPLY, []);
-          _aodvManager.sendMessageTo(senderLabel, msg);
-          break;
 
-        case GROUP_REPLY:
-          if (!_memberLabel.contains(senderLabel)) {
-            _memberLabel.add(senderLabel);
+      case GROUP_SHARE:
+        // Retrieve group share data
+        var data = GroupValue.fromJson(secureData.payload as Map<String, dynamic>);
+        // Store the public Diffie-Hellman share of group memeber
+        var yj = BigInt.parse(data.value);
+        _DHShare.putIfAbsent(senderLabel, () => yj);
+
+        // Once received all, solve the CRT system of congruence for each
+        // group member
+        if (_DHShare.length == _memberLabel.length) {
+          for (var label in _memberLabel) {
+            if (label == _ownLabel) {
+              continue;
+            }
+
+            yj = _DHShare[label]!;
+
+            var mij = _computeMemberShare(label, yj);
+            var crtij = _computeCRTShare(label, yj, mij);
+            var msg = SecureData(GROUP_KEY, GroupValue(crtij.toString()).toJson());
+
+            _aodvManager.sendMessageTo(label, msg.toJson());
           }
+        }
+        break;
+
+
+      case GROUP_KEY:
+        // Retrieve group key share data
+        var data = GroupValue.fromJson(secureData.payload as Map<String, dynamic>);
+        var crtji = BigInt.parse(data.value);
+        // Store the solution of the CRT system of congruence
+        _CRTShare.putIfAbsent(senderLabel, () { _recovered += 1; return crtji; });
+
+        // Compute the group key
+        if (_recovered == _memberLabel.length) {
+          _computeGroupKey(GROUP_INIT);
+        }
+        break;
+
+
+      case GROUP_JOIN:
+        // Send the group join request to the group owner
+        var msg = SecureData(GROUP_JOIN_REQ, GroupValue(senderLabel).toJson());
+        _aodvManager.sendMessageTo(_groupOwner!, msg);
+        break;
+
+
+      case GROUP_JOIN_REQ:
+        // Retrieve joining member label data
+        var data = GroupValue.fromJson(secureData.payload as Map<String, dynamic>);
+        var joiningMember = data.value;
+        if (_memberLabel.contains(joiningMember)) {
           break;
+        } else {
+          _memberLabel.add(joiningMember);
+        }
 
-        case GROUP_LIST:
-          // Get all the label of the group member
-          _memberLabel.addAll((payload[0] as List<dynamic>).cast<String>());
+        // Compute hash of the group key and send it along public Diffie-Hellman
+        // shares of all group members to the joining member.
+        var groupKeyHash = await _computeGroupKeyHash();
+        var labels = List<String>.empty(growable: true);
+        var values = List<String>.empty(growable: true);
+        _DHShare.forEach((label, value) {
+          labels.add(label);
+          values.add(value.toString());
+        });
 
-          // Compute own public Diffie-Hellman share
+        var response = GroupJoin(
+          hash: groupKeyHash.toString(), labels: labels, values: values
+        );
+
+        var msg = SecureData(GROUP_JOIN_REP, response.toJson());
+
+        _aodvManager.sendMessageTo(joiningMember, msg.toJson());
+        break;
+
+
+      case GROUP_JOIN_REP:
+        // Retrieve joining member label data
+        var data = GroupJoin.fromJson(secureData.payload as Map<String, dynamic>);
+
+        // New member proceeds with the protocol from Step 3.
+        if (data.hash != null) {
+          // Hash of group key
+          _groupKey = SecretKey(_toBytes(BigInt.parse(data.hash!)));
+
+          // Public Diffie-Hellman shares of group members
+          var labels = data.labels;
+          var values = data.values;
           var y = _computeDHShare();
-          _DHShare.putIfAbsent(_ownLabel, () => y);
 
-          // Broadcast it to group member
-          var msg = SecureData(GROUP_SHARE, [y.toString()]);
+          // Broadcast own Diffie-Hellman public share
+          _DHShare.putIfAbsent(_ownLabel, () => y);
+          for (var i = 0; i < labels!.length; i++) {
+            _DHShare.putIfAbsent(labels[i], () => BigInt.parse(values![i]));
+          }
+
+          // Solve systems of congruences
           for (final label in _memberLabel) {
             if (label != _ownLabel) {
+              var mij = _computeMemberShare(label, _DHShare[label]!);
+              var crtij = _computeCRTShare(label, _DHShare[label]!, mij);
+
+              var response = GroupJoin(share: y.toString(), solution: crtij.toString());
+              var msg = SecureData(GROUP_JOIN_REP, response.toJson());
+
               _aodvManager.sendMessageTo(label, msg);
             }
           }
-          break;
+          // Compute group key
+          _computeGroupKey(GROUP_JOIN, null);
+        } else { // Old member updating the group key
+          var yj = BigInt.parse(data.share!);
+          var mij = _computeMemberShare(senderLabel, yj);
+          var crtij = BigInt.parse(data.solution!);
 
-        case GROUP_SHARE:
-          // Store the public Diffie-Hellman share of group memeber
-          var yj = BigInt.parse(payload[0] as String);
+          // Store the value send by the joining member
           _DHShare.putIfAbsent(senderLabel, () => yj);
+          _memberShare.putIfAbsent(senderLabel, () => mij);
+          _CRTShare.putIfAbsent(senderLabel, () => crtij);
 
-          // Once received all, solve the CRT system of congruence for each
-          // group member
-          if (_DHShare.length == _memberLabel.length) {
-            for (var label in _memberLabel) {
-              yj = _DHShare[label]!;
+          // Compute group key
+          _computeGroupKey(GROUP_JOIN, senderLabel);
+        }
+        break;
 
-              var mij = _computeMemberShare(senderLabel, yj);
-              var crtij = _computeCRTShare(senderLabel, yj, mij);
 
-              var msg = SecureData(GROUP_KEY, [GROUP_INIT, crtij.toString()]);
+      case GROUP_LEAVE:
+        // Retrieve joining member label data
+        var data = GroupLeave.fromJson(secureData.payload as Map<String, dynamic>);
 
-              _aodvManager.sendMessageTo(senderLabel, msg);
+        // Group owner redraw new key share and broadcast it to remaining group member
+        if (_groupOwner == _ownLabel) {
+          _memberLabel.remove(senderLabel);
+          _k = null;
+
+          for (var label in _memberLabel) {
+            if (label != _ownLabel) {
+              var yj = _DHShare[label]!;
+              var mij = _memberShare[label]!;
+              // Redraw new key share
+              var crtij = _computeCRTShare(label, yj, mij);
+
+              var response = GroupLeave(data.leavingLabel, newSolution: crtij.toString());
+              var msg = SecureData(GROUP_LEAVE, response.toJson());
+
+              _aodvManager.sendMessageTo(label, msg);
             }
           }
-          break;
+          // Compute group key
+          _computeGroupKey(GROUP_LEAVE);
+        } else {
+          // Remove value of leaving member
+          var leavingMember = data.leavingLabel;
+          _memberLabel.remove(leavingMember);
+          _DHShare.remove(leavingMember);
+          _memberShare.remove(leavingMember);
+          _CRTShare.remove(leavingMember);
 
-        case GROUP_KEY:
-          // Store the solution of the CRT system of congruence
-          var crtji = BigInt.parse(payload[1] as String);
-          _CRTShare.putIfAbsent(senderLabel, () { _recovered += 1; return crtji; });
+          // Compute group key
+          _CRTShare[_groupOwner!] = BigInt.parse(data.newSolution!);
+          _computeGroupKey(GROUP_LEAVE);
+        }
+        break;
 
-          // Compute the group key
-          if (_recovered == _memberLabel.length) {
-            _computeGroupKey(GROUP_INIT);
-          }
-          break;
 
-        case GROUP_JOIN:
-          // Send the group join request to the group owner
-          var msg = SecureData(GROUP_JOIN_REQ, [senderLabel]);
-          _aodvManager.sendMessageTo(_groupOwner!, msg);
-          break;
+      case GROUP_DATA:
+        // Decrypt group data received
+        var decrypted = await _engine.decrypt(secureData.payload as List<dynamic>, sharedKey: _groupKey!);
+        var processed = JsonCodec().decode(Utf8Decoder().convert(decrypted));
 
-        case GROUP_JOIN_REQ:
-          // Group owner responds to the group join request received
-          var joiningMember = payload[0] as String;
-          _memberLabel.add(joiningMember);
-
-          if (_memberLabel.contains(joiningMember)) {
-            return;
-          }
-
-          // Compute hash of the group key and send it along public Diffie-Hellman
-          // shares of all group members to the joining member.
-          var groupKeyHash = await _computeGroupKeyHash();
-          var labels = List<String>.empty(growable: true);
-          var values = List<String>.empty(growable: true);
-          _DHShare.forEach((label, value) {
-            labels.add(label);
-            values.add(value.toString());
-          });
-
-          var msg = SecureData(GROUP_JOIN_REP, [groupKeyHash.toString(), labels, values]);
-
-          _aodvManager.sendMessageTo(joiningMember, msg);
-          break;
-
-        case GROUP_JOIN_REP:
-          // New member proceeds with the protocol from Step 3.
-          if (payload.length == 3) {
-            // Hash of group key
-            _groupKey = SecretKey(_toBytes(BigInt.parse(payload[0] as String)));
-
-            // Public Diffie-Hellman shares of group members
-            var labels = (payload[1] as List).cast<String>();
-            var values = (payload[2] as List).cast<String>();
-            var y = _computeDHShare();
-
-            // Broadcast own Diffie-Hellman public share
-            _DHShare.putIfAbsent(_ownLabel, () => y);
-            for (var i = 0; i < labels.length; i++) {
-              _DHShare.putIfAbsent(labels[i], () => BigInt.parse(values[i]));
-            }
-
-            // Solve systems of congruences
-            for (final label in _memberLabel) {
-              if (label != _ownLabel) {
-                var mij = _computeMemberShare(label, _DHShare[label]!);
-                var crtij = _computeCRTShare(label, _DHShare[label]!, mij);
-
-                var msg = SecureData(GROUP_JOIN_REP, [y.toString(), crtij.toString()]);
-
-                _aodvManager.sendMessageTo(label, msg);
-              }
-            }
-            // Compute group key
-            _computeGroupKey(GROUP_JOIN, null);
-          } else { // Old member updating the group key
-            var yj = BigInt.parse(payload[0] as String);
-            var mij = _computeMemberShare(senderLabel, yj);
-            var crtij = BigInt.parse(payload[1] as String);
-
-            // Store the value send by the joining member
-            _DHShare.putIfAbsent(senderLabel, () => yj);
-            _memberShare.putIfAbsent(senderLabel, () => mij);
-            _CRTShare.putIfAbsent(senderLabel, () => crtij);
-
-            // Compute group key
-            _computeGroupKey(GROUP_JOIN, senderLabel);
-          }
-          break;
-
-        case GROUP_LEAVE:
-          // Group owner redraw new key share and broadcast it to remaining group member
-          if (_groupOwner == _ownLabel) {
-            _memberLabel.remove(senderLabel);
-            _k = null;
-
-            for (var label in _memberLabel) {
-              if (label != _ownLabel) {
-                var yj = _DHShare[label]!;
-                var mij = _memberShare[label]!;
-                // Redraw new key share
-                var crtij = _computeCRTShare(label, yj, mij);
-
-                var msg = SecureData(
-                  GROUP_LEAVE, [senderLabel, crtij.toString()]
-                );
-
-                _aodvManager.sendMessageTo(label, msg);
-              }
-            }
-            // Compute group key
-            _computeGroupKey(GROUP_LEAVE);
-          } else {
-            // Remove value of leaving member
-            var leavingMember = payload[0] as String;
-            _memberLabel.remove(leavingMember);
-            _DHShare.remove(leavingMember);
-            _memberShare.remove(leavingMember);
-            _CRTShare.remove(leavingMember);
-
-            // Compute group key
-            _CRTShare[_groupOwner!] = BigInt.parse(payload[1] as String);
-            _computeGroupKey(GROUP_LEAVE);
-          }
-          break;
-
-        case GROUP_DATA:
-          // Decrypt group data received
-          var decrypted = await _engine.decrypt(payload, sharedKey: _groupKey!);
-
-          // Notify upper layers of group data received
-          _controller.add(AdHocEvent(DATA_RECEIVED, [sender, decrypted]));
-          break;
+        // Notify upper layers of group data received
+        _controller.add(AdHocEvent(DATA_RECEIVED, [sender, processed]));
+        break;
 
       default:
     }

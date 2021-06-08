@@ -84,9 +84,6 @@ class MockHeader extends _i1.Mock implements _i2.Header {
       super.noSuchMethod(Invocation.setter(#messageType, _messageType),
           returnValueForMissingStub: null);
   @override
-  int get seqNum =>
-      (super.noSuchMethod(Invocation.getter(#seqNum), returnValue: 0) as int);
-  @override
   set seqNum(int? _seqNum) =>
       super.noSuchMethod(Invocation.setter(#seqNum, _seqNum),
           returnValueForMissingStub: null);

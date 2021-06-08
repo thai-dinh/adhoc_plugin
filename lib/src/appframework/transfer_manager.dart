@@ -74,33 +74,39 @@ class TransferManager {
   }
 
   /// Stance about joining group formation
-  set open(bool open) => _presentationManager.groupController.open = open;
+  set open(bool state) => _presentationManager.groupController.public = state;
 
 /*-------------------------------Group Methods--------------------------------*/
 
   /// Creates a secure group.
   /// 
+  /// If [labels] is given, then the group init request message is sent to those
+  /// particular addresses. Otherwise, the message is broadcasted.
+  /// 
   /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
   /// enabled.
-  void createGroup() {
+  void createGroup([List<String>? labels]) {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _presentationManager.groupController.createGroup();
+    _presentationManager.groupController.createGroup(labels);
   }
 
 
   /// Joins an existing secure group.
   /// 
+  /// If [label] is given, then the group join request message is sent to that
+  /// particular address. Otherwise, the join request message is broadcasted.
+  /// 
   /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
   /// enabled.
-  void joinGroup() {
+  void joinGroup([String? label]) {
     if (_datalinkManager.checkState() == 0) {
       throw DeviceFailureException('No wifi and bluetooth connectivity');
     }
 
-    _presentationManager.groupController.joinSecureGroup();
+    _presentationManager.groupController.joinSecureGroup(label);
   }
 
 
@@ -309,7 +315,10 @@ class TransferManager {
   }
 
 
-  /// Enables the Wi-Fi adapter.
+  /// Initialises the underlying Wi-Fi data structures.
+  /// 
+  /// Note: It is not possible to enable/disable Wi-Fi starting with Build.VERSION_CODES#Q.
+  /// https://developer.android.com/reference/android/net/wifi/WifiManager#setWifiEnabled(boolean)
   /// 
   /// The device is set into discovery mode for [duration] ms.
   /// 
@@ -372,6 +381,9 @@ class TransferManager {
 
 /*------------------------------Private Methods------------------------------*/
 
+  /// Listens to lower layers event stream.
+  /// 
+  /// Its main purpose is to encapsulate the data into Event object.
   void _initialize() {
     _presentationManager.eventStream.listen((event) {
       AdHocDevice? device;

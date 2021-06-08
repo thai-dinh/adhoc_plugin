@@ -4,7 +4,9 @@
 
 ## 2.0.0
 
-* Reformat code & minor public API changes
+* Add secure group communication APIs
 * Add documentations
-* Update documentations
-* Add unit testing & update of dependencies version
+* Add tests
+* Exposed public APIs
+* Update LICENSE
+* Update dependencies versions

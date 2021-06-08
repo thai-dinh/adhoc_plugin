@@ -24,6 +24,71 @@ The ad hoc library supports the following operations:
 - Send encrypted data to an existing secure group
 - Provides notifications of specific events related to the library (e.g., connection established, or data received)
 
+### TransferManager
+
+To initialise the library, it is done as follows:
+```dart
+bool verbose = true;
+TransferManager transferManager = TransferManager(verbose);
+```
+
+It is also possible to modify the behaviour of the library by configuring a __Config__ object.
+
+```dart
+bool verbose = false;
+Config config = Config();
+
+config.label = "Example name"; // Use for communication
+config.public = true; // Join any group formation
+
+TransferManager transferManager = TransferManager(verbose, config);
+```
+
+### Listen to events
+
+As different events can occurs in the ad hoc network, the broadcast stream exposed by __TransferManager__ can be listen to.
+
+```dart
+TransferManager transferManager = TransferManager(false);
+
+void _listen() {
+  _manager.eventStream.listen((event) {
+    switch (event.type) {
+      case AdHocType.onDeviceDiscovered:
+        var device = event.payload as AdHocDevice;
+        break;
+      case AdHocType.onDiscoveryStarted:
+        break;
+      case AdHocType.onDiscoveryCompleted:
+        var discovered = event.payload as Map<String, AdHocDevice>
+        break;
+      case AdHocType.onDataReceived:
+        var data = event.payload as Object;
+        break;
+      case AdHocType.onForwardData:
+        var data = event.payload as Object;
+        break;
+      case AdHocType.onConnection:
+        var device = event.payload as AdHocDevice;
+        break;
+      case AdHocType.onConnectionClosed:
+        var device = event.payload as AdHocDevice;
+        break;
+      case AdHocType.onInternalException:
+        var exception = event.payload as Exception;
+        break;
+      case AdHocType.onGroupInfo:
+        var info = event.payload as int;
+        break;
+      case AdHocType.onGroupDataReceived:
+        var data = event.payload as Object;
+        break;
+      default:
+    }
+  }
+}
+```
+
 ## Application Example
 
 ## example

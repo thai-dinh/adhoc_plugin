@@ -12,7 +12,7 @@ const DISCONNECT_BROADCAST = 204; // Broadcast a disconnection event
 const BROADCAST = 205; // Broadcast message
 
 // Constants for upper layer notifications
-const DATA_RECEIVED = 209; // Data received
-const FORWARD_DATA = 210; // Data to be forwarded to next hop
-const MESSAGE_EVENT = 211; // Message received
-const BROKEN_LINK = 212; // Broken link detected
+const DATA_RECEIVED = 206; // Data received
+const FORWARD_DATA = 207; // Data to be forwarded to next hop
+const MESSAGE_EVENT = 208; // Message received
+const BROKEN_LINK = 209; // Broken link detected

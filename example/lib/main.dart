@@ -15,7 +15,7 @@ import 'search_bar.dart';
 
 void main() => runApp(AdHocMusicClient());
 
-enum MenuOptions { add, search, display, group }
+enum MenuOptions { add, search, display }
 
 const platform = MethodChannel('adhoc.music.player/main');
 
@@ -48,7 +48,7 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
   @override
   void initState() {
     super.initState();
-    // _manager.enableBle(3600);
+    _manager.enableBle(3600);
     _manager.eventStream.listen(_processAdHocEvent);
     _manager.open = true;
   }
@@ -87,13 +87,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                     case MenuOptions.display:
                       setState(() => _display = !_display);
                       break;
-
-                    case MenuOptions.group:
-                      _manager.createGroup();
-                      Future.delayed(Duration(seconds: 30), () {
-                        _manager.sendMessageToGroup('Hello');
-                      });
-                      break;
                   }
                 },
                 itemBuilder: (context) => <PopupMenuEntry<MenuOptions>>[
@@ -118,13 +111,6 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       title: Text('Switch view'),
                     ),
                   ),
-                  const PopupMenuItem<MenuOptions>(
-                    value: MenuOptions.group,
-                    child: ListTile(
-                      leading: Icon(Icons.create),
-                      title: Text('Create a group'),
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -146,10 +132,17 @@ class _AdHocMusicClientState extends State<AdHocMusicClient> {
                       Expanded(
                         child: ListView(
                           children: _discovered.map((device) {
+                            var type = device.mac.ble == '' ? 'Wi-Fi' : 'BLE';
+                            var mac = device.mac.ble == '' ? device.mac.wifi : device.mac.ble;
+                            if (device.mac.ble != '' && device.mac.wifi != '') {
+                              type = 'Wi-Fi/BLE';
+                              mac = '${device.mac.wifi}/${device.mac.ble}';
+                            }
+
                             return Card(
                               child: ListTile(
                                 title: Center(child: Text(device.name)),
-                                subtitle: Center(child: Text('${device.mac}')),
+                                subtitle: Center(child: Text('$type: $mac')),
                                 onTap: () async {
                                   await _manager.connect(device);
                                   setState(() => _discovered.removeWhere((element) => (element.mac == device.mac)));

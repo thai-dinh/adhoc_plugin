@@ -28,12 +28,10 @@ class WifiClient extends ServiceClient {
   /// A connection attempt is said to be a failure if nothing happens after
   /// [timeOut] ms.
   WifiClient(
-    bool verbose,
-    this._port,
-    this._serverIP,
-    int attempts,
-    int timeOut,
-  ) : super(verbose, attempts, timeOut);
+    bool verbose, this._port, this._serverIP, int attempts, int timeOut,
+  ) : super(
+    verbose, attempts, timeOut
+  );
 
 /*-------------------------------Public methods-------------------------------*/
 

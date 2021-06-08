@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/presentation/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
 
 /// Class representing the certificate repository. It performs certificates
 /// management, i.e., certificate addition, removal, and periodic validity check.

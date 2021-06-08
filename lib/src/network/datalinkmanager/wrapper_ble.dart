@@ -35,6 +35,7 @@ class WrapperBle extends WrapperNetwork {
   StreamSubscription<AdHocEvent>? _eventSub;
 
   late BleAdHocManager _bleAdHocManager;
+  late HashMap<String, Set<int>> _duplicate;
 
   /// Creates a [WrapperBle] object.
   ///
@@ -45,6 +46,7 @@ class WrapperBle extends WrapperNetwork {
   WrapperBle(bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices) 
     : super(verbose, config, mapMacDevices) {
     type = BLE;
+    _duplicate = HashMap();
     init(verbose, null);
   }
 
@@ -268,6 +270,9 @@ class WrapperBle extends WrapperNetwork {
           var mac = data[0] as String;
           var uuid = data[1] as String;
           var serviceType = data[2] as int;
+
+          _duplicate.putIfAbsent(mac, () => <int>{});
+
           if (serviceType == SERVER) {
             break;
           }
@@ -346,6 +351,13 @@ class WrapperBle extends WrapperNetwork {
   ///
   /// The [message] represents a message send through the network.
   void _processMsgReceived(final MessageAdHoc message) {
+    var seqNum = message.header.seqNum!;
+    if (_duplicate[message.header.mac.ble]!.contains(seqNum)) {
+      return;
+    } else {
+      _duplicate[message.header.mac.ble]!.add(seqNum);
+    }
+
     switch (message.header.messageType) {
       case CONNECT_SERVER:
         // Recover this own node MAC and BLE address

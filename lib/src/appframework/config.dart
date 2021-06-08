@@ -1,19 +1,15 @@
+import 'package:adhoc_plugin/src/appframework/constants.dart';
 import 'package:adhoc_plugin/src/appframework/exceptions/bad_server_port.dart';
 import 'package:uuid/uuid.dart';
 
 
 /// Class allowing to modify the library's behaviour via parameters.
 class Config {
-  /// Minimum value allowed for the socket port (Wi-Fi Direct)
-  static const MIN_PORT = 1023;
-  /// Maximum value allowed for the socket port (Wi-Fi Direct)
-  static const MAX_PORT = 65535;
-
   late int _serverPort;
 
   late String label;
   late bool flood;
-  late bool open;
+  late bool public;
   late int timeOut;
   late int expiryTime;
   late int validityPeriod;
@@ -27,7 +23,7 @@ class Config {
   /// If [flood] is set to true, then internal flooding mechanisms are activated,
   /// e.g., flood new connection events.
   /// 
-  /// If [open] is set to true, then the current device will always join the
+  /// If [public] is set to true, then the current device will always join the
   /// first group formation message received.
   /// 
   /// If [serverPort] is given, then it is used instead of the default one 
@@ -43,13 +39,13 @@ class Config {
   /// If [validityCheck] is given, then it is used instead of the default one 
   /// (7200 seconds).
   Config({
-    String label = '', bool flood = false, bool open = false, 
+    String label = '', bool flood = false, bool public = false, 
     int serverPort = 52000, int expiryTime = 10, int validityPeriod = 7200, 
     int validityCheck = 7200
   }) {
     this.label = (label == '') ? Uuid().v4() : label;
     this.flood = flood;
-    this.open = open;
+    this.public = public;
     this.serverPort = serverPort;
     this.expiryTime = expiryTime;
     this.validityPeriod = validityPeriod;

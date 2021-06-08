@@ -1,5 +1,5 @@
 import 'package:adhoc_plugin/src/network/aodv/aodv_message.dart';
-import 'package:adhoc_plugin/src/presentation/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'rrep.g.dart';

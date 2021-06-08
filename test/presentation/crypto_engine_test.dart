@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adhoc_plugin/src/presentation/certificate.dart';
-import 'package:adhoc_plugin/src/presentation/crypto_engine.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/crypto/crypto_engine.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pointycastle/pointycastle.dart';
