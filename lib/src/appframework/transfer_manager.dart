@@ -78,6 +78,11 @@ class TransferManager {
 
 /*-------------------------------Group Methods--------------------------------*/
 
+  /// Revokes its certificate
+  void revoke() {
+    _presentationManager.revokeCertificate();
+  }
+
   /// Creates a secure group.
   /// 
   /// If [labels] is given, then the group init request message is sent to those

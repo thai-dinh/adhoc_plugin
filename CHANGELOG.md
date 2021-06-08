@@ -14,3 +14,7 @@
 ## 2.0.1
 
 * Fix export
+
+## 2.0.2
+
+* Update documentations
