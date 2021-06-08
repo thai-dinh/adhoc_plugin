@@ -1,5 +1,7 @@
 # Ad Hoc Library (adhoc_plugin)
 
+[![Pub Package](https://img.shields.io/pub/v/adhoc_plugin.svg)](https://pub.dev/packages/adhoc_plugin)
+
 Flutter plugin that handles ad hoc network operations for Android mobile devices.
 
 This library is a ported version in Dart of the AdHocLibrary project developed by [Gaulthier Gain](https://github.com/gaulthiergain). The original version works with both Bluetooth and Wi-Fi Direct whereas the ported version supports Bluetooth Low Energy (only) and Wi-Fi Direct. Some classes have been kept as-is with minor modifications as those were not available in the Flutter framework, e.g., Android Wi-Fi Direct APIs. The original project can be found at the following link [AdHocLib](https://github.com/gaulthiergain/AdHocLib).
