@@ -10,3 +10,7 @@
 * Exposed public APIs
 * Update LICENSE
 * Update dependencies versions
+
+## 2.0.1
+
+* Fix export
