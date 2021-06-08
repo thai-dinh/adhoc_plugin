@@ -2,11 +2,17 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'group_leave.g.dart';
 
+/// Class used for leave group request.
 @JsonSerializable()
 class GroupLeave {
   late final String leavingLabel;
   String? newSolution;
 
+  /// Creates a [GroupLeave] object.
+  /// 
+  /// The leaving members label is determined by [leavingLabel].
+  /// 
+  /// [newSolution] can be set to recompute the new group key.
   GroupLeave(this.leavingLabel, {this.newSolution});
 
   /// Creates a [GroupLeave] object from a JSON representation.

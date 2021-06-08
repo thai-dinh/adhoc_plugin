@@ -2,10 +2,14 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'group_list.g.dart';
 
+/// Class used sending the list of group members.
 @JsonSerializable()
 class GroupList {
   late final List<String> labels;
 
+  /// Creates a [GroupList] object.
+  /// 
+  /// [labels] is a list of members labels.
   GroupList(this.labels);
 
   /// Creates a [GroupList] object from a JSON representation.

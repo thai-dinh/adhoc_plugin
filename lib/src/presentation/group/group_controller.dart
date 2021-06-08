@@ -147,11 +147,11 @@ class GroupController {
   void joinSecureGroup([String? label]) {
     // Send a group join request
     if (label == null) {
-      var msg = SecureData(GROUP_JOIN, []);
+      var msg = SecureData(GROUP_JOIN, GroupValue(_ownLabel).toJson());
 
       _datalinkManager.broadcastObject(msg);
     } else {
-      var msg = SecureData(GROUP_JOIN_REQ, [_ownLabel]);
+      var msg = SecureData(GROUP_JOIN_REQ, GroupValue(_ownLabel).toJson());
 
       _aodvManager.sendMessageTo(label, msg);
     }
@@ -167,7 +167,7 @@ class GroupController {
     _isGroupFormed = false;
 
     // Send a leave group notification
-    var msg = SecureData(GROUP_LEAVE, GroupLeave(_ownLabel, ));
+    var msg = SecureData(GROUP_LEAVE, GroupLeave(_ownLabel));
     _aodvManager.sendMessageTo(_groupOwner!, msg);
 
     // Reset cryptographic parameters

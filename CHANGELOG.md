@@ -18,3 +18,8 @@
 ## 2.0.2
 
 * Update documentations
+
+## 2.0.3
+
+* Fix warnings of pubspec
+* Update documentations
