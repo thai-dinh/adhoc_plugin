@@ -88,7 +88,8 @@ class WifiAdHocManager extends ServiceManager {
             // Add the discovered device to the HashMap
             _mapMacDevice.putIfAbsent(wifiDevice.mac.wifi, () {
               if (verbose) {
-                log(TAG, 'Device found: Name=(${device.name}) - Address=(${device.mac})');
+                log(TAG,
+                    'Device found: Name=(${device.name}) - Address=(${device.mac})');
               }
 
               return wifiDevice;
@@ -108,9 +109,8 @@ class WifiAdHocManager extends ServiceManager {
           var info = _WifiP2PInfo.fromMap(map['info'] as Map);
 
           // Notify upper layer of the Wi-Fi connection information received
-          controller.add(AdHocEvent(
-            CONNECTION_INFORMATION, [info.groupFormed, info.isGroupOwner, info.groupOwnerAddress])
-          );
+          controller.add(AdHocEvent(CONNECTION_INFORMATION,
+              [info.groupFormed, info.isGroupOwner, info.groupOwnerAddress]));
           break;
 
         case ANDROID_CHANGES:
@@ -124,7 +124,8 @@ class WifiAdHocManager extends ServiceManager {
           }
 
           // Notify upper layer of this device Wi-Fi information received
-          controller.add(AdHocEvent(DEVICE_INFO_WIFI, [await ownIp, await mac]));
+          controller
+              .add(AdHocEvent(DEVICE_INFO_WIFI, [await ownIp, await mac]));
 
           // Update the current name on the platform-specific side
           currentName = _adapterName;

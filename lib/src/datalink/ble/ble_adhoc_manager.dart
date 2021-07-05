@@ -67,7 +67,8 @@ class BleAdHocManager extends ServiceManager {
     if (verbose) log(TAG, 'enableDiscovery()');
 
     if (duration < 0 || duration > 3600) {
-      throw BadDurationException('Duration must be between 0 and 3600 second(s)');
+      throw BadDurationException(
+          'Duration must be between 0 and 3600 second(s)');
     }
 
     // Start discovery mode
@@ -99,7 +100,8 @@ class BleAdHocManager extends ServiceManager {
         // Add the discovered device to the HashMap
         _mapMacDevice.putIfAbsent(bleDevice.mac.ble, () {
           if (verbose) {
-            log(TAG, 'Device found: Name: ${device.name} - Address: ${device.id}');
+            log(TAG,
+                'Device found: Name: ${device.name} - Address: ${device.id}');
           }
 
           // Notify upper layer of a device discovered
@@ -145,7 +147,8 @@ class BleAdHocManager extends ServiceManager {
     var btDevices = await BleServices.pairedDevices;
 
     for (final device in btDevices) {
-      pairedDevices.putIfAbsent(device['mac'] as String, () => BleAdHocDevice.fromMap(device));
+      pairedDevices.putIfAbsent(
+          device['mac'] as String, () => BleAdHocDevice.fromMap(device));
     }
 
     return pairedDevices;

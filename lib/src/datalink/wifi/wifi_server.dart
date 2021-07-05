@@ -45,10 +45,12 @@ class WifiServer extends ServiceServer {
 
       _mapIpSocket.putIfAbsent(remoteIPAddress, () => socket);
       _mapIpStream.putIfAbsent(
-          remoteIPAddress,
-          () => socket.listen((data) async {
+        remoteIPAddress,
+        () => socket.listen(
+          (data) async {
             if (verbose) {
-              log(ServiceServer.TAG, 'bytes received from $remoteIPAddress:${socket.remotePort}');
+              log(ServiceServer.TAG,
+                  'bytes received from $remoteIPAddress:${socket.remotePort}');
             }
 
             _mapNameData.putIfAbsent(remoteIPAddress, () => HashMap());
@@ -56,31 +58,36 @@ class WifiServer extends ServiceServer {
 
             var msg = Utf8Decoder().convert(data);
 
-            if (msg[0].compareTo('{') == 0 && msg[msg.length - 1].compareTo('}') == 0) {
+            if (msg[0].compareTo('{') == 0 &&
+                msg[msg.length - 1].compareTo('}') == 0) {
               for (var _msg in splitMessages(msg)) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
-                  log(ServiceServer.TAG, 'received message from $remoteIPAddress:${socket.remotePort}');
+                  log(ServiceServer.TAG,
+                      'received message from $remoteIPAddress:${socket.remotePort}');
                 }
               }
             } else if (msg[msg.length - 1].compareTo('}') == 0) {
-
               _mapIpBuffer[remoteIPAddress]!.write(msg);
-              for (var _msg in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
+              for (var _msg
+                  in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
-                  log(ServiceServer.TAG, 'received message from $remoteIPAddress:${socket.remotePort}');
+                  log(ServiceServer.TAG,
+                      'received message from $remoteIPAddress:${socket.remotePort}');
                 }
               }
-              
+
               _mapIpBuffer[remoteIPAddress]!.clear();
             } else {
               _mapIpBuffer[remoteIPAddress]!.write(msg);
             }
-          }, onError: (error) {
+          },
+          onError: (error) {
             // Error reported below as it is the same instance of 'error' below
             _closeSocket(remoteIPAddress);
-          }, onDone: () {
+          },
+          onDone: () {
             _closeSocket(remoteIPAddress);
             controller.add(AdHocEvent(CONNECTION_ABORTED, remoteIPAddress));
           },
@@ -89,9 +96,9 @@ class WifiServer extends ServiceServer {
 
       controller.add(AdHocEvent(CONNECTION_PERFORMED, remoteIPAddress));
     },
-      onDone: stopListening,
-      onError: (error) => controller.add(AdHocEvent(INTERNAL_EXCEPTION, error))
-    );
+        onDone: stopListening,
+        onError: (error) =>
+            controller.add(AdHocEvent(INTERNAL_EXCEPTION, error)));
 
     state = STATE_LISTENING;
   }

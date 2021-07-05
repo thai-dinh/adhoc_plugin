@@ -15,7 +15,8 @@ class NetworkManager {
 /*-------------------------------Public methods-------------------------------*/
 
   /// Sends a [message] to a remote node.
-  Future<void> sendMessage(MessageAdHoc message) async => await _sendMessage(message);
+  Future<void> sendMessage(MessageAdHoc message) async =>
+      await _sendMessage(message);
 
   /// Aborts a connection with a remote node.
   void disconnect() => _disconnect();

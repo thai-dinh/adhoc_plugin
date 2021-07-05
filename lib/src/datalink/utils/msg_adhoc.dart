@@ -30,7 +30,8 @@ class MessageAdHoc {
   ///
   /// Factory constructor that creates a [MessageAdHoc] based on the
   /// information given by [json].
-  factory MessageAdHoc.fromJson(Map<String, dynamic> json) => _$MessageAdHocFromJson(json);
+  factory MessageAdHoc.fromJson(Map<String, dynamic> json) =>
+      _$MessageAdHocFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

@@ -19,7 +19,8 @@ class SecureData {
   ///
   /// Factory constructor that creates a [SecureData] based on the information
   /// given by [json].
-  factory SecureData.fromJson(Map<String, dynamic> json) => _$SecureDataFromJson(json);
+  factory SecureData.fromJson(Map<String, dynamic> json) =>
+      _$SecureDataFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

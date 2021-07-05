@@ -8,7 +8,7 @@ class GroupValue {
   late final String value;
 
   /// Creates a [GroupValue] object.
-  /// 
+  ///
   /// [value] is a value (BigInt).
   GroupValue(this.value);
 
@@ -16,7 +16,8 @@ class GroupValue {
   ///
   /// Factory constructor that creates a [GroupValue] based on the information
   /// given by [json].
-  factory GroupValue.fromJson(Map<String, dynamic> json) => _$GroupValueFromJson(json);
+  factory GroupValue.fromJson(Map<String, dynamic> json) =>
+      _$GroupValueFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

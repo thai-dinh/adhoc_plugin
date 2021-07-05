@@ -54,7 +54,8 @@ class BleServer extends ServiceServer {
             _mapMacMTU.putIfAbsent(mac, () => MIN_MTU);
 
             // Notify upper layer of a connection performed
-            controller.add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
+            controller
+                .add(AdHocEvent(CONNECTION_PERFORMED, [mac, uuid, SERVER]));
           } else {
             removeConnection(mac);
             _mapMacMTU.remove(mac);
@@ -66,32 +67,33 @@ class BleServer extends ServiceServer {
 
         case ANDROID_DATA:
           // Message received as bytes
-          var bytes = Uint8List.fromList((map['data'] as List<dynamic>).cast<int>());
+          var bytes =
+              Uint8List.fromList((map['data'] as List<dynamic>).cast<int>());
 
           // Reconstruct the message
-          var message = MessageAdHoc.fromJson(
-            json.decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>
-          );
+          var message = MessageAdHoc.fromJson(json
+              .decode(Utf8Decoder().convert(bytes)) as Map<String, dynamic>);
 
           // Update the header of the message
           if (message.header.mac.ble == '') {
-            var uuid = BLUETOOTHLE_UUID + (map['mac'] as String)
-                .replaceAll(RegExp(':'), '')
-                .toLowerCase();
+            var uuid = BLUETOOTHLE_UUID +
+                (map['mac'] as String)
+                    .replaceAll(RegExp(':'), '')
+                    .toLowerCase();
 
             message.header = Header(
-              seqNum: message.header.seqNum,
-              messageType: message.header.messageType,
-              label: message.header.label,
-              name: message.header.name,
-              address: uuid,
-              mac: Identifier(ble: map['mac'] as String),
-              deviceType: message.header.deviceType
-            );
+                seqNum: message.header.seqNum,
+                messageType: message.header.messageType,
+                label: message.header.label,
+                name: message.header.name,
+                address: uuid,
+                mac: Identifier(ble: map['mac'] as String),
+                deviceType: message.header.deviceType);
           }
 
           if (verbose) {
             log(ServiceServer.TAG, 'Message received from ${map['mac']}');
+            print(message);
           }
 
           // Notify upper layer of message received
@@ -134,8 +136,7 @@ class BleServer extends ServiceServer {
     if (verbose) log(ServiceServer.TAG, 'Server: send() -> $mac');
 
     BleServices.writeToCharacteristic(
-      message, mac, _mapMacMTU[mac] == null ? MIN_MTU : MAX_MTU
-    );
+        message, mac, _mapMacMTU[mac] == null ? MIN_MTU : MAX_MTU);
   }
 
   /// Cancels an active connection with the remote device of MAC address [mac].

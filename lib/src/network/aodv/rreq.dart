@@ -4,7 +4,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'rreq.g.dart';
 
-
 /// Class representing the RREQ message for the AODV protocol.
 @JsonSerializable()
 class RREQ extends AodvMessage {
@@ -19,19 +18,18 @@ class RREQ extends AodvMessage {
   late List<Certificate> chain;
 
   /// Creates a [RREQ] object.
-  /// 
-  /// The type of message is specified by [type], the hops number of the RREQ 
-  /// message is given by [hopCount], the broadcast ID [rreqId] of the RREQ 
-  /// message, the destination address is set to [dstAddr], the destination 
-  /// sequence number is set to [dstSeqNum], the source address is given by 
+  ///
+  /// The type of message is specified by [type], the hops number of the RREQ
+  /// message is given by [hopCount], the broadcast ID [rreqId] of the RREQ
+  /// message, the destination address is set to [dstAddr], the destination
+  /// sequence number is set to [dstSeqNum], the source address is given by
   /// [srcAddr], and its source sequence number by [srcSeqNum].
-  /// 
-  /// The list of certificate chain [chain] is used for the certificate 
+  ///
+  /// The list of certificate chain [chain] is used for the certificate
   /// chain discovery process.
-  RREQ(
-    int type, int hopCount, int rreqId, this.dstSeqNum, String dstAddr, 
-    int srcSeqNum, String srcAddr, int ttl, List<Certificate> chain
-  ) : super(type) {
+  RREQ(int type, int hopCount, int rreqId, this.dstSeqNum, String dstAddr,
+      int srcSeqNum, String srcAddr, int ttl, List<Certificate> chain)
+      : super(type) {
     this.ttl = ttl;
     this.chain = chain;
     _hopCount = hopCount;
@@ -42,8 +40,8 @@ class RREQ extends AodvMessage {
   }
 
   /// Creates a [RREQ] object from a JSON representation.
-  /// 
-  /// Factory constructor that creates a [RREQ] based on the information given 
+  ///
+  /// Factory constructor that creates a [RREQ] based on the information given
   /// by [json].
   factory RREQ.fromJson(Map<String, dynamic> json) => _$RREQFromJson(json);
 
@@ -80,13 +78,13 @@ class RREQ extends AodvMessage {
   @override
   String toString() {
     return 'RREQ{' +
-            'type=$type' +
-            ', hopCount=$_hopCount' +
-            ', rreqId=$_rreqId' +
-            ', dstSeqNum=$dstSeqNum' +
-            ', dstAddr=$_dstAddr' +
-            ', srcSeqNum=$_srcSeqNum' +
-            ', srcAddr=$_srcAddr' +
-          '}';
+        'type=$type' +
+        ', hopCount=$_hopCount' +
+        ', rreqId=$_rreqId' +
+        ', dstSeqNum=$dstSeqNum' +
+        ', dstAddr=$_dstAddr' +
+        ', srcSeqNum=$_srcSeqNum' +
+        ', srcAddr=$_srcAddr' +
+        '}';
   }
 }

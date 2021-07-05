@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class SearchBar extends SearchDelegate<String> {
   final List<String> _playlist;
 
-  List<String> _recentPick;
+  late List<String> _recentPick;
   String _selected = '';
 
   SearchBar(this._playlist) {
@@ -30,7 +30,7 @@ class SearchBar extends SearchDelegate<String> {
   @override
   Widget buildResults(BuildContext context) {
     close(context, _selected);
-    return null;
+    return Container();
   }
 
   @override

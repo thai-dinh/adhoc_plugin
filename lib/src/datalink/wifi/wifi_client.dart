@@ -28,10 +28,12 @@ class WifiClient extends ServiceClient {
   /// A connection attempt is said to be a failure if nothing happens after
   /// [timeOut] ms.
   WifiClient(
-    bool verbose, this._port, this._serverIP, int attempts, int timeOut,
-  ) : super(
-    verbose, attempts, timeOut
-  );
+    bool verbose,
+    this._port,
+    this._serverIP,
+    int attempts,
+    int timeOut,
+  ) : super(verbose, attempts, timeOut);
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -45,32 +47,32 @@ class WifiClient extends ServiceClient {
     // Listen to messages sent by the server
     _socket.listen((data) {
       if (verbose) {
-        log(ServiceClient.TAG, 'bytes received from $_serverIP:${_socket.port}');
+        log(ServiceClient.TAG,
+            'bytes received from $_serverIP:${_socket.port}');
       }
 
       // Convert bytes to string
       var msg = Utf8Decoder().convert(data);
 
-      if (msg[0].compareTo('{') == 0 && msg[msg.length - 1].compareTo('}') == 0) {
-
+      if (msg[0].compareTo('{') == 0 &&
+          msg[msg.length - 1].compareTo('}') == 0) {
         for (var _msg in splitMessages(msg)) {
           controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
           if (verbose) {
-            log(ServiceClient.TAG, 'received message from $_serverIP:${_socket.port}');
+            log(ServiceClient.TAG,
+                'received message from $_serverIP:${_socket.port}');
           }
         }
-
       } else if (msg[msg.length - 1].compareTo('}') == 0) {
-
         buffer.write(msg);
         for (var _msg in splitMessages(buffer.toString())) {
           controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
           if (verbose) {
-            log(ServiceClient.TAG, 'received message from $_serverIP:${_socket.port}');
+            log(ServiceClient.TAG,
+                'received message from $_serverIP:${_socket.port}');
           }
         }
         buffer.clear();
-
       } else {
         buffer.write(msg);
       }
@@ -126,7 +128,8 @@ class WifiClient extends ServiceClient {
     } on NoConnectionException {
       if (attempts > 0) {
         if (verbose) {
-          log(ServiceClient.TAG, 'Connection attempt failed (${attempts - 1} remaining)');
+          log(ServiceClient.TAG,
+              'Connection attempt failed (${attempts - 1} remaining)');
         }
 
         await Future.delayed(delay);
@@ -151,7 +154,8 @@ class WifiClient extends ServiceClient {
 
       try {
         // Start the connection
-        _socket = await Socket.connect(_serverIP, _port, timeout: Duration(milliseconds: timeOut));
+        _socket = await Socket.connect(_serverIP, _port,
+            timeout: Duration(milliseconds: timeOut));
       } on SocketException {
         state = STATE_NONE;
 

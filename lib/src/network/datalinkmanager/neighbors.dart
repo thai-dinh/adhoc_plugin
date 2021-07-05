@@ -19,7 +19,7 @@ class Neighbors {
   /// Direct neighbors of a node as a [HashMap] of <[String], [NetworkManager]>.
   HashMap<String, NetworkManager> get neighbors => _neighbors;
 
-  /// Direct neighbors of a node as a [HashMap] of <[String], [Identifier]>, 
+  /// Direct neighbors of a node as a [HashMap] of <[String], [Identifier]>,
   /// where the key is the label and the value the MAC address of the neighbor.
   HashMap<String, Identifier> get labelMac => _mapLabelMac;
 

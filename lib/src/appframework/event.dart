@@ -8,7 +8,7 @@ class Event {
   late Object? data;
 
   /// Creates an [Event] object.
-  /// 
+  ///
   /// The event is determined by its [type], which in turn indicates if this
   /// object has a payload [data] or a sender ad hoc device representation [device].
   Event(this.type, {this.device, this.data});

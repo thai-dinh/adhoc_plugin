@@ -22,7 +22,8 @@ class Certificate {
   /// [issuer]. The certificate is valid until [validity] date time. This
   /// certificate acknowledges the binding of identity of [owner] with the
   /// public key [key].
-  Certificate(String owner, String issuer, DateTime validity, RSAPublicKey key) {
+  Certificate(
+      String owner, String issuer, DateTime validity, RSAPublicKey key) {
     _owner = owner;
     _issuer = issuer;
     _validity = validity;
@@ -34,7 +35,8 @@ class Certificate {
   ///
   /// Factory constructor that creates a [Certificate] based on the information
   /// given by [json].
-  factory Certificate.fromJson(Map<String, dynamic> json) => _$CertificateFromJson(json);
+  factory Certificate.fromJson(Map<String, dynamic> json) =>
+      _$CertificateFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
 
@@ -57,7 +59,8 @@ class Certificate {
   Map<String, dynamic> toJson() => _$CertificateToJson(this);
 }
 
-class _PublicKeyConverter implements JsonConverter<RSAPublicKey, Map<String, dynamic>> {
+class _PublicKeyConverter
+    implements JsonConverter<RSAPublicKey, Map<String, dynamic>> {
   const _PublicKeyConverter();
 
   @override

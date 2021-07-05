@@ -4,7 +4,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'rrep.g.dart';
 
-
 /// Class representing the RREP message for the AODV protocol.
 @JsonSerializable()
 class RREP extends AodvMessage {
@@ -17,19 +16,18 @@ class RREP extends AodvMessage {
   late List<Certificate> chain;
 
   /// Creates a [RREP] object.
-  /// 
-  /// The type of message is specified by [type], the hops number of the RREP 
-  /// message is given by [hopCount], the destination address is set to 
+  ///
+  /// The type of message is specified by [type], the hops number of the RREP
+  /// message is given by [hopCount], the destination address is set to
   /// [dstAddr], the sequence number is set to [seqNum], the source address
   /// is given by [srcAddr], and the lifetime of the RREP message is set
   /// to [lifetime].
-  /// 
-  /// The list of certificate [chain] is used for the certificate 
+  ///
+  /// The list of certificate [chain] is used for the certificate
   /// chain discovery process.
-  RREP(
-    int type, int hopCount, String dstAddr, int seqNum, 
-    String srcAddr, int lifetime, List<Certificate> chain
-  ) : super(type) {
+  RREP(int type, int hopCount, String dstAddr, int seqNum, String srcAddr,
+      int lifetime, List<Certificate> chain)
+      : super(type) {
     this.chain = chain;
     _seqNum = seqNum;
     _hopCount = hopCount;
@@ -39,8 +37,8 @@ class RREP extends AodvMessage {
   }
 
   /// Creates a [RREP] object from a JSON representation.
-  /// 
-  /// Factory constructor that creates a [RREP] based on the information given 
+  ///
+  /// Factory constructor that creates a [RREP] based on the information given
   /// by [json].
   factory RREP.fromJson(Map<String, dynamic> json) => _$RREPFromJson(json);
 
@@ -65,7 +63,7 @@ class RREP extends AodvMessage {
   int incrementHopCount() => _hopCount = _hopCount + 1;
 
 /*-------------------------------Public methods-------------------------------*/
-  
+
   /// Returns the JSON representation as a [Map] of this [RREP] instance.
   Map<String, dynamic> toJson() => _$RREPToJson(this);
 
@@ -73,13 +71,13 @@ class RREP extends AodvMessage {
 
   @override
   String toString() {
-      return 'RREP{' +
-                'type=$type' +
-                ', hopCount=$_hopCount' +
-                ', dstAddr=$_dstAddr' +
-                ', destSeqNum=$_seqNum' +
-                ', srcAddr=$_srcAddr' +
-                ', lifetime=$_lifetime' +
-              '}';
+    return 'RREP{' +
+        'type=$type' +
+        ', hopCount=$_hopCount' +
+        ', dstAddr=$_dstAddr' +
+        ', destSeqNum=$_seqNum' +
+        ', srcAddr=$_srcAddr' +
+        ', lifetime=$_lifetime' +
+        '}';
   }
 }

@@ -235,12 +235,11 @@ abstract class WrapperNetwork {
 
     // Recover the AdHocDevice of the remote node
     var device = AdHocDevice(
-      label: header.label,
-      address: header.address,
-      name: header.name,
-      mac: header.mac,
-      type: header.deviceType!
-    );
+        label: header.label,
+        address: header.address,
+        name: header.name,
+        mac: header.mac,
+        type: header.deviceType!);
 
     // Add mapping MAC address (String) - device (AdHocDevice)
     for (final id in mapMacDevices.keys) {
@@ -330,13 +329,12 @@ abstract class WrapperNetwork {
         setFloodEvents.add(id);
 
         var header = Header(
-          messageType: DISCONNECT_BROADCAST,
-          label: label,
-          name: device.name,
-          mac: device.mac,
-          address: device.address,
-          deviceType: device.type
-        );
+            messageType: DISCONNECT_BROADCAST,
+            label: label,
+            name: device.name,
+            mac: device.mac,
+            address: device.address,
+            deviceType: device.type);
 
         broadcastExcept(MessageAdHoc(header, id), label);
 
@@ -345,8 +343,6 @@ abstract class WrapperNetwork {
           setRemoteDevices.remove(device);
         }
       }
-    } else {
-      throw NoConnectionException('Error while closing connection');
     }
   }
 }

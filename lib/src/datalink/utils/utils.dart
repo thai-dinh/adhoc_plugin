@@ -22,13 +22,17 @@ List<MessageAdHoc> splitMessages(String strMessages) {
 
   for (var i = 0; i < _strMessages.length; i++) {
     if (_strMessages.length == 1) {
-      messages.add(MessageAdHoc.fromJson(json.decode(_strMessages[i]) as Map<String, dynamic>));
+      messages.add(MessageAdHoc.fromJson(
+          json.decode(_strMessages[i]) as Map<String, dynamic>));
     } else if (i == 0) {
-      messages.add(MessageAdHoc.fromJson(json.decode(_strMessages[i] + '}') as Map<String, dynamic>));
+      messages.add(MessageAdHoc.fromJson(
+          json.decode(_strMessages[i] + '}') as Map<String, dynamic>));
     } else if (i == _strMessages.length - 1) {
-      messages.add(MessageAdHoc.fromJson(json.decode('{' + _strMessages[i]) as Map<String, dynamic>));
+      messages.add(MessageAdHoc.fromJson(
+          json.decode('{' + _strMessages[i]) as Map<String, dynamic>));
     } else {
-      messages.add(MessageAdHoc.fromJson(json.decode('{' + _strMessages[i] + '}') as Map<String, dynamic>));
+      messages.add(MessageAdHoc.fromJson(
+          json.decode('{' + _strMessages[i] + '}') as Map<String, dynamic>));
     }
   }
 

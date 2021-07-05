@@ -2,8 +2,7 @@
 const TTL = [100, 50, 25, 10, 5, 3];
 const INIT_HOP_COUNT = 0;
 const RREQ_RETRIES = 5;
-const MAX_SINT_VAL = 4294967296;  // Max signed integer value
-
+const MAX_SINT_VAL = 4294967296; // Max signed integer value
 
 // Sequence Numbers
 const MIN_VALID_SEQ_NUM = 0;
@@ -19,7 +18,7 @@ const NO_LIFE_TIME = -1;
 const LIFE_TIME = EXPIRED_TIME; // Life time of a route
 
 // Constants for displaying the routing table
-const DELAY  = 60000;
+const DELAY = 60000;
 const PERIOD = DELAY;
 
 // AODV PDU types

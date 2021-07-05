@@ -12,8 +12,8 @@ Certificate _$CertificateFromJson(Map<String, dynamic> json) {
     json['issuer'] as String,
     DateTime.parse(json['validity'] as String),
     const _PublicKeyConverter().fromJson(json['key'] as Map<String, dynamic>),
-  )..signature =
-      const _Uint8ListConverter().fromJson(json['signature'] as List<int>);
+  )..signature = const _Uint8ListConverter()
+      .fromJson((json['signature'] as List<dynamic>).cast<int>());
 }
 
 Map<String, dynamic> _$CertificateToJson(Certificate instance) =>

@@ -8,7 +8,8 @@ class DestinationUnreachableException implements Exception {
   ///
   /// Displays the exception [_message] if it is given, otherwise "Destination
   /// not reachable" is set.
-  DestinationUnreachableException([this._message = 'Destination not reachable']);
+  DestinationUnreachableException(
+      [this._message = 'Destination not reachable']);
 
   @override
   String toString() => _message;

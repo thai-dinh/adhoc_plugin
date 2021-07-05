@@ -11,13 +11,14 @@ class BleAdHocDevice extends AdHocDevice {
   ///
   /// The information of the created object is filled according to the
   /// information given by [device].
-  BleAdHocDevice(DiscoveredDevice device) : super(
-    label: '',
-    address: '',
-    name: device.name,
-    mac: Identifier(ble: device.id),
-    type: BLE,
-  ) {
+  BleAdHocDevice(DiscoveredDevice device)
+      : super(
+          label: '',
+          address: '',
+          name: device.name,
+          mac: Identifier(ble: device.id),
+          type: BLE,
+        ) {
     mtu = MIN_MTU;
     address = device.id.replaceAll(RegExp(':'), '').toLowerCase();
     address = BLUETOOTHLE_UUID + address!;
@@ -29,13 +30,13 @@ class BleAdHocDevice extends AdHocDevice {
   /// information given by [map].
   ///
   /// The map should contain a key 'name' and 'mac'.
-  BleAdHocDevice.fromMap(Map<dynamic, dynamic> map) : super(
-    label: '',
-    address: '',
-    name: map['name'] as String,
-    mac: map['mac'] as Identifier,
-    type: BLE
-  ) {
+  BleAdHocDevice.fromMap(Map<dynamic, dynamic> map)
+      : super(
+            label: '',
+            address: '',
+            name: map['name'] as String,
+            mac: map['mac'] as Identifier,
+            type: BLE) {
     mtu = MIN_MTU;
     address = (map['mac'] as Identifier).ble.replaceAll(RegExp(':'), '');
     address = BLUETOOTHLE_UUID + address!.toLowerCase();

@@ -49,9 +49,8 @@ class PresentationManager {
     _datalinkManager = _aodvManager.dataLinkManager;
     _engine = CryptoEngine();
     _engine.initialize();
-    _groupController = GroupController(
-      _engine, _aodvManager, _datalinkManager, _aodvManager.eventStream, config
-    );
+    _groupController = GroupController(_engine, _aodvManager, _datalinkManager,
+        _aodvManager.eventStream, config);
     _controller = StreamController<AdHocEvent>.broadcast();
     _buffer = HashMap();
     _setFloodEvents = <String>{};
@@ -88,14 +87,12 @@ class PresentationManager {
       if (certificate == null) {
         // Request certificate as it is not in the certificate repository
         // (Certificate Chain Discovery)
-        _aodvManager.sendMessageTo(destination, SecureData(CERT_REQ, null).toJson());
+        _aodvManager.sendMessageTo(
+            destination, SecureData(CERT_REQ, null).toJson());
 
         // Buffer the encrypted message to send
-        _buffer.update(
-          destination, 
-          (msg) => msg..add(data), 
-          ifAbsent: () => List.empty(growable: true)..add(data)
-        );
+        _buffer.update(destination, (msg) => msg..add(data),
+            ifAbsent: () => List.empty(growable: true)..add(data));
         return;
       }
 
@@ -109,10 +106,12 @@ class PresentationManager {
       if (_verbose) log(TAG, 'send(): end encryption');
 
       // Send encrypted data
-      _aodvManager.sendMessageTo(destination, SecureData(ENCRYPTED_DATA, encryptedData).toJson());
+      _aodvManager.sendMessageTo(
+          destination, SecureData(ENCRYPTED_DATA, encryptedData).toJson());
     } else {
       // Send unencrypted data
-      _aodvManager.sendMessageTo(destination, SecureData(UNENCRYPTED_DATA, data).toJson());
+      _aodvManager.sendMessageTo(
+          destination, SecureData(UNENCRYPTED_DATA, data).toJson());
     }
   }
 
@@ -134,7 +133,8 @@ class PresentationManager {
       return true;
     } else {
       // Broadcast unencrypted data
-      return await _datalinkManager.broadcastObject(SecureData(UNENCRYPTED_DATA, data).toJson());
+      return await _datalinkManager
+          .broadcastObject(SecureData(UNENCRYPTED_DATA, data).toJson());
     }
   }
 
@@ -162,8 +162,7 @@ class PresentationManager {
     } else {
       // Encrypt and send unencrypted data to direct neighbors except excluded
       return await _datalinkManager.broadcastObjectExcept(
-        SecureData(UNENCRYPTED_DATA, data).toJson(), excluded
-      );
+          SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
     }
   }
 
@@ -186,13 +185,12 @@ class PresentationManager {
 
     // Construct a SecureData message for certificate notification
     var msg = SecureData(
-      CERT_REVOCATION,
-      List.empty(growable: true)
-        ..add(timestamp)
-        ..add(_aodvManager.label)
-        ..add(_engine.publicKey.modulus.toString())
-        ..add(_engine.publicKey.exponent.toString())
-    );
+        CERT_REVOCATION,
+        List.empty(growable: true)
+          ..add(timestamp)
+          ..add(_aodvManager.label)
+          ..add(_engine.publicKey.modulus.toString())
+          ..add(_engine.publicKey.exponent.toString()));
 
     // Broadcast certificate revocation notification to direct neighbors
     _datalinkManager.broadcastObject(msg.toJson());
@@ -224,7 +222,8 @@ class PresentationManager {
           // Process data received
           var payload = event.payload as List;
           var sender = payload[0] as AdHocDevice;
-          _processData(sender, SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>));
+          _processData(sender,
+              SecureData.fromJson((payload[1] as Map) as Map<String, dynamic>));
           break;
 
         default:
@@ -309,9 +308,8 @@ class PresentationManager {
         var data = await _engine.decrypt(pdu.payload as List<dynamic>);
 
         // Notify upper layer of data received
-        _controller.add(
-          AdHocEvent(DATA_RECEIVED, [sender, JsonCodec().decode(Utf8Decoder().convert(data))])
-        );
+        _controller.add(AdHocEvent(DATA_RECEIVED,
+            [sender, JsonCodec().decode(Utf8Decoder().convert(data))]));
         break;
 
       case UNENCRYPTED_DATA:
@@ -322,9 +320,8 @@ class PresentationManager {
       case CERT_EXCHANGE:
         var _pdu = (pdu.payload as List<dynamic>).cast<String>();
         // Issue a certificate
-        _issueCertificate(
-          senderLabel, RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last))
-        );
+        _issueCertificate(senderLabel,
+            RSAPublicKey(BigInt.parse(_pdu.first), BigInt.parse(_pdu.last)));
         break;
 
       case CERT_REQ:
@@ -337,7 +334,8 @@ class PresentationManager {
         try {
           _processCertificateReply(_pdu);
         } on VerificationFailedException {
-          _controller.add(AdHocEvent(INTERNAL_EXCEPTION, VerificationFailedException()));
+          _controller.add(
+              AdHocEvent(INTERNAL_EXCEPTION, VerificationFailedException()));
         }
         break;
 
@@ -357,8 +355,11 @@ class PresentationManager {
 
         // Check if the sender is a directly trusted neighbor, if it is, then
         // generate a new certificate
-        if (directNeighbors.where((neighbor) => neighbor.label! == label).isNotEmpty) {
-          _issueCertificate(label, RSAPublicKey(BigInt.parse(modulus), BigInt.parse(exponent)));
+        if (directNeighbors
+            .where((neighbor) => neighbor.label! == label)
+            .isNotEmpty) {
+          _issueCertificate(label,
+              RSAPublicKey(BigInt.parse(modulus), BigInt.parse(exponent)));
         }
 
         // Flood control

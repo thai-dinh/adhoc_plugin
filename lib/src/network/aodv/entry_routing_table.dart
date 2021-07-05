@@ -1,9 +1,8 @@
 import 'dart:collection';
 
-
 /// Class representing a routing table entry for AODV protocol.
-/// 
-/// NOTE: Most of the following source code has been borrowed and adapted from 
+///
+/// NOTE: Most of the following source code has been borrowed and adapted from
 /// the original codebase provided by Gaulthier Gain, which can be found at:
 /// https://github.com/gaulthiergain/AdHocLib
 class EntryRoutingTable {
@@ -16,20 +15,18 @@ class EntryRoutingTable {
   late HashMap<String, int> _activesDataPath;
 
   /// Creates an [EntryRoutingTable] object.
-  /// 
+  ///
   /// An entry requires the following parameters:
   /// - [_dstAddr]      String value representing the destination address.
-  /// - [_next]         String value representing the next hop to reach the 
+  /// - [_next]         String value representing the next hop to reach the
   ///                   destination address.
-  /// - [_hop]          Integer value representing the hops number of the 
+  /// - [_hop]          Integer value representing the hops number of the
   ///                   destination.
   /// - [_dstSeqNum]    Integer value representing the sequence number.
   /// - [_lifetime]     Integer value representing the lifetime of the entry.
   /// - [_precursors]   List containing the precursors of the current node.
-  EntryRoutingTable(
-    this._dstAddr, this._next, this._hop, this._dstSeqNum, this._lifetime, 
-    this._precursors
-  ) {
+  EntryRoutingTable(this._dstAddr, this._next, this._hop, this._dstSeqNum,
+      this._lifetime, this._precursors) {
     _activesDataPath = HashMap();
   }
 
@@ -56,15 +53,14 @@ class EntryRoutingTable {
 
 /*------------------------------Public methods-------------------------------*/
 
-  /// Updates the data path (active data flow) with the address of a remote 
+  /// Updates the data path (active data flow) with the address of a remote
   /// device [address].
   void updateDataPath(String address) {
     _activesDataPath.putIfAbsent(address, () => DateTime.now().millisecond);
   }
 
-
   /// Returns the timestamp where data was forwarded for a particular [address].
-  /// 
+  ///
   /// Returns 0 if the [address] is not found in the active data path.
   int getActivesDataPath(String address) {
     if (_activesDataPath.containsKey(address)) {
@@ -74,7 +70,6 @@ class EntryRoutingTable {
     return 0;
   }
 
-
   /// Updates the precursors list by adding a node's address [senderAddr] as
   /// a precursor of the current node.
   void updatePrecursors(String senderAddr) {
@@ -82,7 +77,6 @@ class EntryRoutingTable {
       _precursors.add(senderAddr);
     }
   }
-
 
   /// Displays the list of the precursors of the current node.
   String displayPrecursors() {
@@ -103,9 +97,9 @@ class EntryRoutingTable {
   @override
   String toString() {
     return 'dst: $_dstAddr' +
-            ' nxt: $_next' +
-            ' hop: $_hop' +
-            ' seq: $_dstSeqNum ${displayPrecursors()}' +
-            ' dataPath ${_activesDataPath[_dstAddr]}';
+        ' nxt: $_next' +
+        ' hop: $_hop' +
+        ' seq: $_dstSeqNum ${displayPrecursors()}' +
+        ' dataPath ${_activesDataPath[_dstAddr]}';
   }
 }

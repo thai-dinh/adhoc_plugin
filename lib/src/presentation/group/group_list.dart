@@ -8,7 +8,7 @@ class GroupList {
   late final List<String> labels;
 
   /// Creates a [GroupList] object.
-  /// 
+  ///
   /// [labels] is a list of members labels.
   GroupList(this.labels);
 
@@ -16,7 +16,8 @@ class GroupList {
   ///
   /// Factory constructor that creates a [GroupList] based on the information
   /// given by [json].
-  factory GroupList.fromJson(Map<String, dynamic> json) => _$GroupListFromJson(json);
+  factory GroupList.fromJson(Map<String, dynamic> json) =>
+      _$GroupListFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

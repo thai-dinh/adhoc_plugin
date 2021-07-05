@@ -9,9 +9,9 @@ class GroupLeave {
   String? newSolution;
 
   /// Creates a [GroupLeave] object.
-  /// 
+  ///
   /// The leaving members label is determined by [leavingLabel].
-  /// 
+  ///
   /// [newSolution] can be set to recompute the new group key.
   GroupLeave(this.leavingLabel, {this.newSolution});
 
@@ -19,7 +19,8 @@ class GroupLeave {
   ///
   /// Factory constructor that creates a [GroupLeave] based on the information
   /// given by [json].
-  factory GroupLeave.fromJson(Map<String, dynamic> json) => _$GroupLeaveFromJson(json);
+  factory GroupLeave.fromJson(Map<String, dynamic> json) =>
+      _$GroupLeaveFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

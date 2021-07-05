@@ -26,11 +26,8 @@ class BleClient extends ServiceClient {
   ///
   /// Connection attempts to a remote device are done at most [attempts] times.
   /// A connection attempt waiting time is set to [timeOut] ms.
-  BleClient(
-    bool verbose, this._device, int attempts, int timeOut
-  ) : super(
-    verbose, attempts, timeOut
-  ) {
+  BleClient(bool verbose, this._device, int attempts, int timeOut)
+      : super(verbose, attempts, timeOut) {
     _reactiveBle = FlutterReactiveBle();
     _isInitialised = false;
   }
@@ -128,11 +125,13 @@ class BleClient extends ServiceClient {
 
     if (state == STATE_NONE || state == STATE_CONNECTING) {
       // Start the connection
-      _connectionSub = _reactiveBle.connectToDevice(
+      _connectionSub = _reactiveBle
+          .connectToDevice(
         id: _device.mac.ble,
         servicesWithCharacteristicsToDiscover: {},
         connectionTimeout: Duration(seconds: timeOut),
-      ).listen((event) async {
+      )
+          .listen((event) async {
         // Listen to the connection state changes
         switch (event.connectionState) {
           case DeviceConnectionState.connected:
@@ -156,7 +155,9 @@ class BleClient extends ServiceClient {
 
           default:
             state = STATE_NONE;
-            throw NoConnectionException('Unable to connect to ${_device.address}');
+            _isInitialised = false;
+            throw NoConnectionException(
+                'Unable to connect to ${_device.address}');
         }
       });
     }
@@ -172,10 +173,12 @@ class BleClient extends ServiceClient {
     listen();
 
     // Request maximum MTU
-    _device.mtu = await _reactiveBle.requestMtu(deviceId: _device.mac.ble, mtu: MAX_MTU);
+    _device.mtu =
+        await _reactiveBle.requestMtu(deviceId: _device.mac.ble, mtu: MAX_MTU);
 
     // Notify upper layer of a successful connection performed
-    controller.add(AdHocEvent(CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]));
+    controller.add(AdHocEvent(
+        CONNECTION_PERFORMED, [_device.mac.ble, _device.address, CLIENT]));
 
     state = STATE_CONNECTED;
     _isInitialised = true;

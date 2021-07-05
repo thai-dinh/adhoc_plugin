@@ -9,13 +9,13 @@ class WifiAdHocDevice extends AdHocDevice {
   /// Creates a [WifiAdHocDevice] object.
   ///
   /// The name of the Wi-Fi device is set to [name] and its MAC addresss to [mac].
-  WifiAdHocDevice(String name, String mac) : super(
-    label: '',
-    address: '',
-    name: name,
-    mac: Identifier(wifi: mac),
-    type: WIFI
-  ) {
+  WifiAdHocDevice(String name, String mac)
+      : super(
+            label: '',
+            address: '',
+            name: name,
+            mac: Identifier(wifi: mac),
+            type: WIFI) {
     port = 0;
   }
 

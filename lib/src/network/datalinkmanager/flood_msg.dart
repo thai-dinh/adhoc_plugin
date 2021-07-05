@@ -23,7 +23,8 @@ class FloodMsg {
   ///
   /// Factory constructor that creates a [FloodMsg] based on the information given
   /// by [json].
-  factory FloodMsg.fromJson(Map<String, dynamic> json) => _$FloodMsgFromJson(json);
+  factory FloodMsg.fromJson(Map<String, dynamic> json) =>
+      _$FloodMsgFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 
@@ -31,7 +32,8 @@ class FloodMsg {
   Map<String, dynamic> toJson() => _$FloodMsgToJson(this);
 }
 
-class _HashSetConverter implements JsonConverter<HashSet<AdHocDevice>, Map<String, dynamic>> {
+class _HashSetConverter
+    implements JsonConverter<HashSet<AdHocDevice>, Map<String, dynamic>> {
   const _HashSetConverter();
 
   @override

@@ -57,33 +57,33 @@ void _listen() {
   _manager.eventStream.listen((event) {
     switch (event.type) {
       case AdHocType.onDeviceDiscovered:
-        var device = event.payload as AdHocDevice;
+        var device = event.device as AdHocDevice;
         break;
       case AdHocType.onDiscoveryStarted:
         break;
       case AdHocType.onDiscoveryCompleted:
-        var discovered = event.payload as Map<String, AdHocDevice>
+        var discovered = event.data as Map<String?, AdHocDevice?>
         break;
       case AdHocType.onDataReceived:
-        var data = event.payload as Object;
+        var data = event.data as Object;
         break;
       case AdHocType.onForwardData:
-        var data = event.payload as Object;
+        var data = event.data as Object;
         break;
       case AdHocType.onConnection:
-        var device = event.payload as AdHocDevice;
+        var device = event.device as AdHocDevice;
         break;
       case AdHocType.onConnectionClosed:
-        var device = event.payload as AdHocDevice;
+        var device = event.device as AdHocDevice;
         break;
       case AdHocType.onInternalException:
-        var exception = event.payload as Exception;
+        var exception = event.data as Exception;
         break;
       case AdHocType.onGroupInfo:
-        var info = event.payload as int;
+        var info = event.data as int;
         break;
       case AdHocType.onGroupDataReceived:
-        var data = event.payload as Object;
+        var data = event.data as Object;
         break;
       default:
     }
@@ -93,8 +93,22 @@ void _listen() {
 
 ## Application Example
 
-## example
+### Music App Sharing
 
 - [Source code](example)
 
 An example showing how to use the library APIs.
+
+### Video (demo)
+
+- [Demo](https://vimeo.com/571293323)
+
+Example of message app.
+
+## Notes
+
+Note that some mobile devices might support partially Bluetooth Low Energy (support BLE GATT server, but not advertisement) or in some case not at all (transfering big file with BLE takes very long time).
+
+Further information about the implementation and library architecture can be found at the following [address (master thesis)](https://matheo.uliege.be/handle/2268.2/11450) (https://matheo.uliege.be/handle/2268.2/11450)
+
+This library will not be updated anymore, but feel free to submit bug reports, feature requests, or pull requests, which will be handled.

@@ -48,8 +48,10 @@ class CryptoEngine {
     });
 
     // Spawn the isolate for decryption and encryption
-    _isolates[ENCRYPTION] = await Isolate.spawn(processEncryption, _mainPort.sendPort);
-    _isolates[DECRYPTION] = await Isolate.spawn(processDecryption, _mainPort.sendPort);
+    _isolates[ENCRYPTION] =
+        await Isolate.spawn(processEncryption, _mainPort.sendPort);
+    _isolates[DECRYPTION] =
+        await Isolate.spawn(processDecryption, _mainPort.sendPort);
   }
 
   /// Generates a pair of public and private key using the RSA algorithm.
@@ -62,14 +64,17 @@ class CryptoEngine {
 
     // Create and initialize a RSA key generator
     final keyGen = RSAKeyGenerator()
-      ..init(ParametersWithRandom(RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64), _random()));
+      ..init(ParametersWithRandom(
+          RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64),
+          _random()));
 
     // Generate the pair of key
     final pair = keyGen.generateKeyPair();
     final publicKey = pair.publicKey as RSAPublicKey;
     final privateKey = pair.privateKey as RSAPrivateKey;
 
-    return AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(publicKey, privateKey);
+    return AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(
+        publicKey, privateKey);
   }
 
   /// Encrypts the given data using a specified public key.
@@ -83,11 +88,13 @@ class CryptoEngine {
   /// performed.
   ///
   /// Returns the encrypted data as a list of dynamic objects.
-  Future<List<dynamic>> encrypt(Uint8List data, {RSAPublicKey? publicKey, crypto.SecretKey? sharedKey}) {
+  Future<List<dynamic>> encrypt(Uint8List data,
+      {RSAPublicKey? publicKey, crypto.SecretKey? sharedKey}) {
     Completer completer = Completer<List<dynamic>>();
 
     // Send request to encryption isolate
-    _sendPorts[ENCRYPTION]!.send(Request(data, publicKey: publicKey, sharedKey: sharedKey));
+    _sendPorts[ENCRYPTION]!
+        .send(Request(data, publicKey: publicKey, sharedKey: sharedKey));
 
     // Listen to the reply of the encryption isolate
     _stream.listen((reply) {
@@ -114,13 +121,15 @@ class CryptoEngine {
     Completer completer = Completer<Uint8List>();
 
     // Send request to decryption isolate
-    _sendPorts[DECRYPTION]!.send(Request(data, privateKey: _privateKey, sharedKey: sharedKey));
+    _sendPorts[DECRYPTION]!
+        .send(Request(data, privateKey: _privateKey, sharedKey: sharedKey));
 
     // Listen to the reply of the decryption isolate
     _stream.listen((reply) {
       if (reply.rep == DECRYPTION) {
         try {
-          completer.complete(Uint8List.fromList((reply.data as List<dynamic>).cast<int>()));
+          completer.complete(
+              Uint8List.fromList((reply.data as List<dynamic>).cast<int>()));
         } catch (exception) {}
       }
     });
@@ -159,9 +168,8 @@ class CryptoEngine {
 
     // Verify the signature
     return verifier.verifySignature(
-      Utf8Encoder().convert(certificate.key.toString()),
-      RSASignature(signature)
-    );
+        Utf8Encoder().convert(certificate.key.toString()),
+        RSASignature(signature));
   }
 
   /// Releases the ressource used by the isolates.
@@ -211,7 +219,8 @@ void processEncryption(SendPort port) {
 
       secretKey = await algorithm.newSecretKey();
 
-      encryptedKey = _processData(encryptor, Uint8List.fromList(await secretKey.extractBytes()));
+      encryptedKey = _processData(
+          encryptor, Uint8List.fromList(await secretKey.extractBytes()));
     } else {
       secretKey = req.sharedKey!;
     }
@@ -249,23 +258,21 @@ void processDecryption(SendPort port) {
       decryptor = OAEPEncoding(RSAEngine())
         ..init(false, PrivateKeyParameter<RSAPrivateKey>(request.privateKey!));
 
-      var secretKeyBytes = _processData(
-        decryptor,
-        Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>())
-      );
+      var secretKeyBytes = _processData(decryptor,
+          Uint8List.fromList((reply[SECRET_KEY] as List<dynamic>).cast<int>()));
 
       secretKey = crypto.SecretKey(secretKeyBytes);
     } else {
       secretKey = req.sharedKey!;
     }
 
-    var concatenation = Uint8List.fromList((reply[SECRET_DATA] as List<dynamic>).cast<int>());
+    var concatenation =
+        Uint8List.fromList((reply[SECRET_DATA] as List<dynamic>).cast<int>());
 
     final secretBox = crypto.SecretBox(
-      concatenation.sublist(12, concatenation.length - 16),
-      nonce: concatenation.sublist(0, 12),
-      mac: crypto.Mac(concatenation.sublist(concatenation.length - 16))
-    );
+        concatenation.sublist(12, concatenation.length - 16),
+        nonce: concatenation.sublist(0, 12),
+        mac: crypto.Mac(concatenation.sublist(concatenation.length - 16)));
 
     final decrypted = Uint8List.fromList(
       await algorithm.decrypt(secretBox, secretKey: secretKey),
@@ -277,8 +284,8 @@ void processDecryption(SendPort port) {
 
 /// Process the data give an encryption engine.
 Uint8List _processData(AsymmetricBlockCipher engine, Uint8List data) {
-  final numBlocks = data.length ~/ engine.inputBlockSize + 
-    ((data.length % engine.inputBlockSize != 0) ? 1 : 0);
+  final numBlocks = data.length ~/ engine.inputBlockSize +
+      ((data.length % engine.inputBlockSize != 0) ? 1 : 0);
 
   final output = Uint8List(numBlocks * engine.outputBlockSize);
   var inputOffset = 0;

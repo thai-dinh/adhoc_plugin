@@ -13,10 +13,11 @@ class BleServices {
   static const String _eventName = 'ad.hoc.lib/ble.event.channel';
   static const MethodChannel _methodChannel = MethodChannel(_methodName);
   static const EventChannel _eventChannel = EventChannel(_eventName);
-  static final Stream<Map<dynamic, dynamic>> _platformEventStream = _eventChannel
-        .receiveBroadcastStream()
-        .cast<Map<dynamic, dynamic>>()
-        .asBroadcastStream();
+  static final Stream<Map<dynamic, dynamic>> _platformEventStream =
+      _eventChannel
+          .receiveBroadcastStream()
+          .cast<Map<dynamic, dynamic>>()
+          .asBroadcastStream();
 
   static int id = 0;
   static int seqNum = 0;
@@ -40,7 +41,8 @@ class BleServices {
   ///
   /// Returns a list of [Map] representing the information of the paired devices.
   static Future<List<Map<dynamic, dynamic>>> get pairedDevices async {
-    return await _methodChannel.invokeMethod('getPairedDevices') as List<Map<dynamic, dynamic>>;
+    return await _methodChannel.invokeMethod('getPairedDevices')
+        as List<Map<dynamic, dynamic>>;
   }
 
   /// Sets the verbose/debug mode if [verbose] is true.
@@ -151,17 +153,17 @@ class BleServices {
   /// The remote host is identified by [mac].
   ///
   /// The data is fragmented into smaller chunk of [mtu] bytes size.
-  static Future<void> writeToCharacteristic(MessageAdHoc message, String mac, int mtu) async {
+  static Future<void> writeToCharacteristic(
+      MessageAdHoc message, String mac, int mtu) async {
     var _reactiveBle = FlutterReactiveBle();
     var _characteristicUuid = Uuid.parse(CHARACTERISTIC_UUID);
     var _serviceUuid = Uuid.parse(SERVICE_UUID);
 
     // Get the characteristic of the remote host GATT server
     final characteristic = QualifiedCharacteristic(
-      serviceId: _serviceUuid,
-      characteristicId: _characteristicUuid,
-      deviceId: mac
-    );
+        serviceId: _serviceUuid,
+        characteristicId: _characteristicUuid,
+        deviceId: mac);
 
     // Avoid BLE to send twice the same message. More information can be found
     // at https://www.forward.com.au/pfod/BLE/BLEProblems/index.html
@@ -186,7 +188,8 @@ class BleServices {
     do {
       var _chunk = [_id, flag] + List.from(msg.getRange(i, end));
 
-      await _reactiveBle.writeCharacteristicWithoutResponse(characteristic, value: _chunk);
+      await _reactiveBle.writeCharacteristicWithoutResponse(characteristic,
+          value: _chunk);
 
       flag = MESSAGE_FRAG;
       i += _mtu;

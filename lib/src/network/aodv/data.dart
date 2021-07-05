@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'data.g.dart';
 
-
 /// Class representing a DATA message for the AODV protocol.
 @JsonSerializable()
 class Data {
@@ -10,14 +9,14 @@ class Data {
   Object? payload;
 
   /// Creates a [Data] object.
-  /// 
+  ///
   /// The destination address is specified by [dstAddr] and its payload is
   /// given by [payload].
   Data(this.dstAddr, this.payload);
 
   /// Creates a [Data] object from a JSON representation.
-  /// 
-  /// Factory constructor that creates a [Data] based on the information given 
+  ///
+  /// Factory constructor that creates a [Data] based on the information given
   /// by [json].
   factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
@@ -31,8 +30,8 @@ class Data {
   @override
   String toString() {
     return 'Data{' +
-            'dstAddr=$dstAddr' +
-            ', payload=${payload.toString()}' +
-          '}';
+        'dstAddr=$dstAddr' +
+        ', payload=${payload.toString()}' +
+        '}';
   }
 }

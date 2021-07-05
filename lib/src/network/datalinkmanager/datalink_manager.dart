@@ -103,7 +103,9 @@ class DataLinkManager {
   void disable(int type) {
     var wrapper = _wrappers[type];
     if (wrapper != null && wrapper.enabled) {
-      wrapper..stopListening()..disable();
+      wrapper
+        ..stopListening()
+        ..disable();
     }
   }
 
@@ -286,7 +288,9 @@ class DataLinkManager {
   /// Returns true if it is a direct neightbour, otherwise false.
   bool isDirectNeighbor(String address) {
     for (var wrapper in _wrappers) {
-      if (wrapper != null && wrapper.enabled && wrapper.isDirectNeighbor(address)) {
+      if (wrapper != null &&
+          wrapper.enabled &&
+          wrapper.isDirectNeighbor(address)) {
         return true;
       }
     }
@@ -365,7 +369,8 @@ class DataLinkManager {
     if (wrapper != null && wrapper.enabled) {
       return await _wrappers[type]!.updateDeviceName(newName);
     } else {
-      throw DeviceFailureException('${_typeAsString(type)} adapter is not enabled');
+      throw DeviceFailureException(
+          '${_typeAsString(type)} adapter is not enabled');
     }
   }
 
@@ -378,7 +383,8 @@ class DataLinkManager {
     if (wrapper != null && wrapper.enabled) {
       wrapper.resetDeviceName();
     } else {
-      throw DeviceFailureException('${_typeAsString(type)} adapter is not enabled');
+      throw DeviceFailureException(
+          '${_typeAsString(type)} adapter is not enabled');
     }
   }
 

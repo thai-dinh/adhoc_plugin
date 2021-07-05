@@ -32,10 +32,14 @@ class Header {
   ///
   /// The type of technology used by the device is determined by [deviceType].
   /// It can be either Bluetooth Low Energy or Wi-Fi Direct.
-  Header({
-    required int messageType, required String label, int? seqNum, String? name,
-    String? address, Identifier? mac, int? deviceType
-  }) {
+  Header(
+      {required int messageType,
+      required String label,
+      int? seqNum,
+      String? name,
+      String? address,
+      Identifier? mac,
+      int? deviceType}) {
     this.address = address;
     this.deviceType = deviceType;
     this.messageType = messageType;

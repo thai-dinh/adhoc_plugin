@@ -34,7 +34,11 @@ class AdHocDevice {
   /// If [type] is given, then it defines the type of technology used, i.e.,
   /// "0" stands for Wi-Fi Direct and "1" stands for Bluetooth Low Energy.
   AdHocDevice({
-    String? label, String? address, String? name, Identifier? mac, int type = -1,
+    String? label,
+    String? address,
+    String? name,
+    Identifier? mac,
+    int type = -1,
   }) {
     this.address = checkString(address);
     _label = checkString(label);
@@ -45,7 +49,8 @@ class AdHocDevice {
 
   /// Factory constructor that creates an [AdHocDevice] object from a JSON
   /// representation ([json]).
-  factory AdHocDevice.fromJson(Map<String, dynamic> json) => _$AdHocDeviceFromJson(json);
+  factory AdHocDevice.fromJson(Map<String, dynamic> json) =>
+      _$AdHocDeviceFromJson(json);
 
 /*------------------------------Getters & Setters-----------------------------*/
 

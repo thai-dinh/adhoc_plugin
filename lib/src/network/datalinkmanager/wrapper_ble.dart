@@ -43,8 +43,9 @@ class WrapperBle extends WrapperNetwork {
   ///
   /// The given hash map [mapMacDevices] is used to map a MAC address entry to
   /// an [AdHocDevice] object.
-  WrapperBle(bool verbose, Config config, HashMap<Identifier, AdHocDevice> mapMacDevices) 
-    : super(verbose, config, mapMacDevices) {
+  WrapperBle(bool verbose, Config config,
+      HashMap<Identifier, AdHocDevice> mapMacDevices)
+      : super(verbose, config, mapMacDevices) {
     type = BLE;
     _duplicate = HashMap();
     init(verbose, null);
@@ -140,7 +141,8 @@ class WrapperBle extends WrapperNetwork {
       if (!serviceServer.containConnection(bleAdHocDevice.mac.ble)) {
         await _connect(attempts, bleAdHocDevice);
       } else {
-        throw DeviceFailureException('${device.name} (${device.mac.ble}) is already connected');
+        throw DeviceFailureException(
+            '${device.name} (${device.mac.ble}) is already connected');
       }
     }
   }
@@ -280,28 +282,23 @@ class WrapperBle extends WrapperNetwork {
           // Store remote node's NetworkManager
           mapAddrNetwork.putIfAbsent(
             uuid,
-            () => NetworkManager(
-              (msg) async {
-                msg.header.address = _ownBleUUID;
-                msg.header.deviceType = BLE;
-                (service as ServiceClient).send(msg);
-              },
-              () => (service as ServiceClient).disconnect()
-            ),
+            () => NetworkManager((msg) async {
+              msg.header.address = _ownBleUUID;
+              msg.header.deviceType = BLE;
+              (service as ServiceClient).send(msg);
+            }, () => (service as ServiceClient).disconnect()),
           );
 
           // Send message control containing MAC address of the remote node
           (service as ServiceClient).send(MessageAdHoc(
-            Header(
-              messageType: CONNECT_SERVER,
-              label: ownLabel,
-              name: ownName,
-              mac: ownMac,
-              address: _ownBleUUID,
-              deviceType: BLE
-            ),
-            mac
-          ));
+              Header(
+                  messageType: CONNECT_SERVER,
+                  label: ownLabel,
+                  name: ownName,
+                  mac: ownMac,
+                  address: _ownBleUUID,
+                  deviceType: BLE),
+              mac));
           break;
 
         case CONNECTION_ABORTED:
@@ -373,45 +370,45 @@ class WrapperBle extends WrapperNetwork {
         serviceServer.send(
           MessageAdHoc(
             Header(
-              messageType: CONNECT_CLIENT,
-              label: ownLabel,
-              name: ownName,
-              mac: ownMac,
-              address: _ownBleUUID,
-              deviceType: type
-            ),
+                messageType: CONNECT_CLIENT,
+                label: ownLabel,
+                name: ownName,
+                mac: ownMac,
+                address: _ownBleUUID,
+                deviceType: type),
             mac,
           ),
           mac,
         );
 
         // Process received message from remote nodes
-        receivedPeerMessage(message.header,
-          NetworkManager(
-            (msg) async {
-              msg.header.address = _ownBleUUID;
-              msg.header.deviceType = BLE;
-              await serviceServer.send(msg, mac);
-            }, 
-            () => serviceServer.cancelConnection(mac)
-          ),
+        receivedPeerMessage(
+          message.header,
+          NetworkManager((msg) async {
+            msg.header.address = _ownBleUUID;
+            msg.header.deviceType = BLE;
+            await serviceServer.send(msg, mac);
+          }, () => serviceServer.cancelConnection(mac)),
         );
         break;
 
       case CONNECT_CLIENT:
         // Recover this own node MAC and BLE address
         ownMac = Identifier(ble: message.pdu as String);
-        _ownBleUUID = BLUETOOTHLE_UUID + ownMac.ble.replaceAll(RegExp(':'), '').toLowerCase();
+        _ownBleUUID = BLUETOOTHLE_UUID +
+            ownMac.ble.replaceAll(RegExp(':'), '').toLowerCase();
 
         // Notify upper layer of the recovery of this node's information
         controller.add(AdHocEvent(DEVICE_INFO_BLE, [ownMac.ble, ownName]));
 
         // Process received message from remote nodes
-        receivedPeerMessage(message.header, mapAddrNetwork[message.header.address]!);
+        receivedPeerMessage(
+            message.header, mapAddrNetwork[message.header.address]!);
         break;
 
       case CONNECT_BROADCAST:
-        var floodMsg = FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
+        var floodMsg =
+            FloodMsg.fromJson((message.pdu as Map) as Map<String, dynamic>);
         // If the flooding option is enabled, then flood the connection event
         if (checkFloodEvent(floodMsg.id)) {
           // Rebroadcast the message to this node direct neighbors
@@ -420,9 +417,9 @@ class WrapperBle extends WrapperNetwork {
           // Get message information
           HashSet<AdHocDevice?> hashSet = floodMsg.devices;
           for (var device in hashSet) {
-            if (device!.label != ownLabel && !setRemoteDevices.contains(device) &&
+            if (device!.label != ownLabel &&
+                !setRemoteDevices.contains(device) &&
                 !isDirectNeighbor(device.label!)) {
-
               // Notify upper layer of a new remote connection established
               controller.add(AdHocEvent(CONNECTION_PERFORMED, device));
 
@@ -441,11 +438,10 @@ class WrapperBle extends WrapperNetwork {
           var header = message.header;
           // Get the sender information
           var device = AdHocDevice(
-            label: header.label,
-            name: header.name,
-            mac: header.mac,
-            type: header.deviceType!
-          );
+              label: header.label,
+              name: header.name,
+              mac: header.mac,
+              type: header.deviceType!);
 
           // Notify upper layer of a remote connection closed
           controller.add(AdHocEvent(CONNECTION_ABORTED, device));
@@ -462,11 +458,10 @@ class WrapperBle extends WrapperNetwork {
         var header = message.header;
         // Get the sender information
         var device = AdHocDevice(
-          label: header.label,
-          name: header.name,
-          mac: header.mac,
-          type: header.deviceType!
-        );
+            label: header.label,
+            name: header.name,
+            mac: header.mac,
+            type: header.deviceType!);
 
         // Notify upper layer of a message received that contains data
         controller.add(AdHocEvent(DATA_RECEIVED, [device, message.pdu]));

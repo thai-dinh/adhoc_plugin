@@ -13,13 +13,13 @@ class GroupJoin {
   String? solution;
 
   /// Creates a [GroupJoin] object.
-  /// 
+  ///
   /// [hash] represents the hash of the group key.
-  /// 
+  ///
   /// [labels] is the list of members' labels.
-  /// 
+  ///
   /// [values] is the members' public shares.
-  /// 
+  ///
   /// [solution] is the CRT solution value.
   GroupJoin({this.hash, this.labels, this.values, this.share, this.solution});
 
@@ -27,7 +27,8 @@ class GroupJoin {
   ///
   /// Factory constructor that creates a [GroupJoin] based on the information
   /// given by [json].
-  factory GroupJoin.fromJson(Map<String, dynamic> json) => _$GroupJoinFromJson(json);
+  factory GroupJoin.fromJson(Map<String, dynamic> json) =>
+      _$GroupJoinFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

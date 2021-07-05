@@ -1,6 +1,23 @@
-## 1.0.0
+## 2.0.4
 
-* Flutter plugin: Public APIs availables for creating and managing an ad hoc network
+* Final version (no more updates)
+* Update example app to Null Safety version
+* Update pubspec.yaml
+* Update README.md
+* Format code to comply with dartfmt
+
+## 2.0.3
+
+* Fix warnings of pubspec
+* Update documentations
+
+## 2.0.2
+
+* Update documentations
+
+## 2.0.1
+
+* Fix export
 
 ## 2.0.0
 
@@ -11,15 +28,6 @@
 * Update LICENSE
 * Update dependencies versions
 
-## 2.0.1
+## 1.0.0
 
-* Fix export
-
-## 2.0.2
-
-* Update documentations
-
-## 2.0.3
-
-* Fix warnings of pubspec
-* Update documentations
+* Flutter plugin: Public APIs availables for creating and managing an ad hoc network

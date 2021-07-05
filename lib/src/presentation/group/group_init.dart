@@ -12,22 +12,24 @@ class GroupInit {
   late final bool invitation;
 
   /// Creates a [GroupInit] object.
-  /// 
+  ///
   /// [timestamp] allows to control the flood of advertisement.
-  /// 
+  ///
   /// [modulo] prime value of the cyclic group, where [generator] is a value of it.
-  /// 
+  ///
   /// [initiator] represents the label of the node that initiates a group formation.
-  /// 
+  ///
   /// If [invitation] is set to true, then the advertisement is to be sent to a particular peer.
   /// Otherwise, it is broadcasted.
-  GroupInit(this.timestamp, this.modulo, this.generator, this.initiator, this.invitation);
+  GroupInit(this.timestamp, this.modulo, this.generator, this.initiator,
+      this.invitation);
 
   /// Creates a [GroupInit] object from a JSON representation.
   ///
   /// Factory constructor that creates a [GroupInit] based on the information
   /// given by [json].
-  factory GroupInit.fromJson(Map<String, dynamic> json) => _$GroupInitFromJson(json);
+  factory GroupInit.fromJson(Map<String, dynamic> json) =>
+      _$GroupInitFromJson(json);
 
 /*-------------------------------Public methods-------------------------------*/
 

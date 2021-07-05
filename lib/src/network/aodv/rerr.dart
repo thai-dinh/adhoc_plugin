@@ -3,7 +3,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'rerr.g.dart';
 
-
 /// Class representing the RERR message for the AODV protocol.
 @JsonSerializable()
 class RERR extends AodvMessage {
@@ -11,20 +10,19 @@ class RERR extends AodvMessage {
   late int _unreachableDstSeqNum;
 
   /// Creates a [RERR] object.
-  /// 
-  /// The type of message is specified by [type], the unreachable destination 
+  ///
+  /// The type of message is specified by [type], the unreachable destination
   /// address is given by [unreachableDstAddr], and its sequence number by
   /// [unreachableDstSeqNum].
-  RERR(
-    int type, String unreachableDstAddr, int unreachableDstSeqNum
-  ) : super(type) {
+  RERR(int type, String unreachableDstAddr, int unreachableDstSeqNum)
+      : super(type) {
     _unreachableDstAddr = unreachableDstAddr;
     _unreachableDstSeqNum = unreachableDstSeqNum;
   }
 
   /// Creates a [RERR] object from a JSON representation.
-  /// 
-  /// Factory constructor that creates a [RERR] based on the information given 
+  ///
+  /// Factory constructor that creates a [RERR] based on the information given
   /// by [json].
   factory RERR.fromJson(Map<String, dynamic> json) => _$RERRFromJson(json);
 
@@ -46,10 +44,9 @@ class RERR extends AodvMessage {
   @override
   String toString() {
     return 'RERR{' +
-              'type=$type' +
-              ', unreachableDstAddr=$_unreachableDstAddr' +
-              ', unreachableDstSeqNum=$_unreachableDstSeqNum'  +
-            '}';
+        'type=$type' +
+        ', unreachableDstAddr=$_unreachableDstAddr' +
+        ', unreachableDstSeqNum=$_unreachableDstSeqNum' +
+        '}';
   }
 }
-
