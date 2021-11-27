@@ -10,13 +10,13 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
-import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:adhoc_plugin/src/presentation/constants.dart';
 import 'package:adhoc_plugin/src/presentation/crypto/crypto_engine.dart';
 import 'package:adhoc_plugin/src/presentation/exceptions/verification_failed.dart';
-import 'package:adhoc_plugin/src/presentation/secure_data.dart';
 import 'package:adhoc_plugin/src/presentation/group/group_controller.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
+import 'package:adhoc_plugin/src/presentation/secure_data.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 /// Class representing the core of the secure data layer. It performs

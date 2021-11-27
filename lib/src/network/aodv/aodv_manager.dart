@@ -21,8 +21,8 @@ import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_message.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_dest.dart';
 import 'package:adhoc_plugin/src/network/exceptions/aodv_unknown_type.dart';
-import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:adhoc_plugin/src/presentation/constants.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:flutter/foundation.dart';
 
 /// Class representing the core of the AODV protocol. It manages all the
