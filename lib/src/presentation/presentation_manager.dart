@@ -166,6 +166,34 @@ class PresentationManager {
     }
   }
 
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// ones in the list.
+  ///
+  /// The message payload is set to [data] and it is encrypted if [encrypted] is
+  /// set to true.
+  ///
+  /// The nodes specified by [excluded] are not included in the broadcast.
+  ///
+  /// Returns true upon successful broadcast, otherwise false.
+  Future<bool> broadcastExceptList(
+      Object data, List<String> excluded, bool encrypted) async {
+    if (_verbose) log(TAG, 'broadcastExceptList() - encrypted: $encrypted');
+
+    if (encrypted) {
+      // Encrypt and send encrypted data to direct neighbors except excluded
+      for (final neighbor in _datalinkManager.directNeighbors) {
+        if (!excluded.contains(neighbor.label)) {
+          send(data, neighbor.label!, true);
+        }
+      }
+      return true;
+    } else {
+      // Encrypt and send unencrypted data to direct neighbors except excluded
+      return await _datalinkManager.broadcastObjectExceptList(
+          SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
+    }
+  }
+
   /// Revokes this node certificate.
   ///
   /// Calling this method will send a certificate revocation notification to the

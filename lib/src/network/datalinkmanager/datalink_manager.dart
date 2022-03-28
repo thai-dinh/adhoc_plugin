@@ -243,6 +243,19 @@ class DataLinkManager {
   }
 
   /// Broadcasts a message to all directly connected nodes except the excluded
+  /// nodes in the list.
+  ///
+  /// The message to be broadcast is specified by [message] and the excluded
+  /// nodes are specified by [excluded].
+  void broadcastExceptList(MessageAdHoc message, List<String> excluded) {
+    for (var wrapper in _wrappers) {
+      if (wrapper != null && wrapper.enabled) {
+        wrapper.broadcastExceptList(message, excluded);
+      }
+    }
+  }
+
+  /// Broadcasts a message to all directly connected nodes except the excluded
   /// node.
   ///
   /// The message payload is set to [object] and the excluded node is specified
@@ -261,6 +274,35 @@ class DataLinkManager {
         );
 
         if (wrapper.broadcastExcept(MessageAdHoc(header, object), excluded)) {
+          sent = true;
+        }
+      }
+    }
+
+    return sent;
+  }
+
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// nodes in the list.
+  ///
+  /// The message payload is set to [object] and the excluded nodes are
+  /// specified by [excluded].
+  ///
+  /// Returns true if the broadcast is successful, otherwise false.
+  Future<bool> broadcastObjectExceptList(
+      Object object, List<String> excluded) async {
+    var sent = false;
+    for (var wrapper in _wrappers) {
+      if (wrapper != null && wrapper.enabled) {
+        var header = Header(
+          messageType: BROADCAST,
+          label: _ownLabel,
+          name: await wrapper.getAdapterName(),
+          deviceType: wrapper.type,
+        );
+
+        if (wrapper.broadcastExceptList(
+            MessageAdHoc(header, object), excluded)) {
           sent = true;
         }
       }
