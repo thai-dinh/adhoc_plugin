@@ -31,7 +31,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   private BluetoothManager bluetoothManager;
   private GattServerManager gattServerManager;
 
-  private WifiAdHocManager WifiAdHocManager;
+  private WifiAdHocManager wifiAdHocManager;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
@@ -41,16 +41,17 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
       (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
     // Attach this plugin to the Flutter environment
-    methodChannel = new MethodChannel(messenger, METHOD_NAME);
-    methodChannel.setMethodCallHandler(this);
+    this.methodChannel = new MethodChannel(this.messenger, METHOD_NAME);
+    this.methodChannel.setMethodCallHandler(this);
 
     // GattServerManager and BleManager (BLE)
-    gattServerManager = new GattServerManager(context);
-    bleManager = new BleManager();
+    this.gattServerManager = new GattServerManager(this.context);
+    this.gattServerManager.setupEventChannel(this.messenger);
+    this.bleManager = new BleManager();
 
     // WifiAdHocManager (Wi-Fi Direct)
-    WifiAdHocManager = new WifiAdHocManager(context);
-    WifiAdHocManager.initMethodCallHandler(messenger);
+    this.wifiAdHocManager = new WifiAdHocManager(this.context);
+    this.wifiAdHocManager.initMethodCallHandler(this.messenger);
   }
 
   @Override
@@ -67,7 +68,6 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "openGattServer":
         gattServerManager.openGattServer(bluetoothManager, context);
-        gattServerManager.setupEventChannel(messenger);
         break;
       case "closeGattServer":
         gattServerManager.closeGattServer();
@@ -123,7 +123,7 @@ public class AdhocPlugin implements FlutterPlugin, MethodCallHandler {
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     bleManager.stopAdvertise();
     gattServerManager.closeGattServer();
-    WifiAdHocManager.close();
+    wifiAdHocManager.close();
     methodChannel.setMethodCallHandler(null);
   }
 }
