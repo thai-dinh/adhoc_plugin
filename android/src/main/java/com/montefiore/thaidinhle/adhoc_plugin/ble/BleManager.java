@@ -14,13 +14,13 @@ import java.util.UUID;
  * Class managing the peripheral role in Bluetooth Low Energy.
  */
 public class BleManager {
-    private static final String TAG = "[AdHocPlugin][BleManager]";
+    private static final String TAG = "[AdHocPlugin][Ble]";
 
     private final BluetoothAdapter bluetoothAdapter;
 
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private boolean verbose;
-    private String initialName;
+    private final String initialName;
 
     /**
      * Default constructor
@@ -33,11 +33,11 @@ public class BleManager {
     }
 
     // Interface callback for notification about the discovery mode (advertisement)
-    private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
+    private final AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure (int errorCode) {
             if (verbose) 
-                Log.d(TAG, "Start advertise failure: " + Integer.toString(errorCode));
+                Log.d(TAG, "Start advertise failure: " + errorCode);
             super.onStartFailure(errorCode);
         }
 

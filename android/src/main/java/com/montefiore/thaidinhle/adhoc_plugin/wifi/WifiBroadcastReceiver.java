@@ -3,10 +3,6 @@ package com.montefiore.thaidinhle.adhoc_plugin.wifi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.ConnectivityManager.NetworkCallback;
-import android.net.Network;
-import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
@@ -26,7 +22,7 @@ import java.util.List;
  * Class defining a BroadcastReceiver that notifies of Wi-Fi Direct events.
  */
 public class WifiBroadcastReceiver extends BroadcastReceiver {
-    private static final String TAG = "[AdHocPlugin][BroadcastReceiver]";
+    private static final String TAG = "[AdHocPlugin][BR]";
 
     // Constants for communication with the Flutter platform barrier
     private static final byte ANDROID_DISCOVERY  = 120;
@@ -35,9 +31,9 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
     private static final byte ANDROID_CHANGES    = 123;
 
     private boolean verbose;
-    private Channel channel;
-    private EventSink eventSink;
-    private WifiP2pManager wifiP2pManager;
+    private final Channel channel;
+    private final EventSink eventSink;
+    private final WifiP2pManager wifiP2pManager;
 
     /**
      * Default constructor
@@ -110,8 +106,8 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
             case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: {
                 if (verbose) Log.d(TAG, "onReceive(): THIS_DEVICE_CHANGED");
                 // Device information changed
-                WifiP2pDevice wifiP2pDevice = 
-                    (WifiP2pDevice) intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+                WifiP2pDevice wifiP2pDevice =
+                        intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
                 
                 mapInfoValue.put("type", ANDROID_CHANGES);
                 mapInfoValue.put("name", wifiP2pDevice.deviceName);
@@ -128,7 +124,7 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
     }
 
     // Interface for callback invocation when the peer list is available
-    private PeerListListener peerListListener = new PeerListListener() {
+    private final PeerListListener peerListListener = new PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             if (verbose) Log.d(TAG, "onPeersAvailable()");
@@ -152,7 +148,7 @@ public class WifiBroadcastReceiver extends BroadcastReceiver {
     };
 
     // Interface for callback invocation when the connection info is available
-    private WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+    private final WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(final WifiP2pInfo info) {
             if (verbose) Log.d(TAG, "onConnectionInfoAvailable()");

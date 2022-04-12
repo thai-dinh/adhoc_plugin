@@ -8,7 +8,6 @@ import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 import androidx.annotation.NonNull;
 
@@ -27,9 +26,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static android.net.wifi.p2p.WifiP2pManager.BUSY;
 import static android.net.wifi.p2p.WifiP2pManager.ERROR;
@@ -44,21 +40,21 @@ import static android.os.Looper.getMainLooper;
  * https://github.com/gaulthiergain/AdHocLib
  */
 public class WifiAdHocManager implements MethodCallHandler {
-    private static final String TAG = "[AdHocPlugin][WifiAdHocManager]";
+    private static final String TAG = "[AdHocPlugin][Wifi]";
     private static final String METHOD_NAME = "ad.hoc.lib/wifi.method.channel";
     private static final String EVENT_NAME = "ad.hoc.lib/wifi.event.channel";
 
     private boolean verbose;
     private boolean registered;
-    private Channel channel;
-    private Context context;
+    private final Channel channel;
+    private final Context context;
     private MethodChannel methodChannel;
     private EventChannel eventChannel;
     private EventSink eventSink;
     private String initialName;
     private String currentAdapterName;
     private WifiBroadcastReceiver receiver;
-    private WifiP2pManager wifiP2pManager;
+    private final WifiP2pManager wifiP2pManager;
 
     /**
      * Default constructor
@@ -88,8 +84,7 @@ public class WifiAdHocManager implements MethodCallHandler {
             result.success(isWifiEnabled());
             break;
         case "currentName":
-            final String currentName = call.arguments();
-            currentAdapterName = currentName;
+            currentAdapterName = call.arguments();
             break;
         case "updateDeviceName":
             final String name = call.arguments();
@@ -154,7 +149,7 @@ public class WifiAdHocManager implements MethodCallHandler {
     }
 
     /** 
-     * Method allowing to release the ressources used.
+     * Method allowing to release the resources used.
      */
     public void close() {
         if (verbose) Log.d(TAG, "close()");
@@ -236,22 +231,15 @@ public class WifiAdHocManager implements MethodCallHandler {
         try {
             Method method = wifiP2pManager.getClass().getMethod(
                 "setDeviceName",
-                new Class[] {
                     channel.getClass(),
                     String.class,
-                    WifiP2pManager.ActionListener.class
-                }
-            );
+                    WifiP2pManager.ActionListener.class);
 
             method.invoke(wifiP2pManager, channel, name, null);
             currentAdapterName = name;
 
             return true;
-        } catch (IllegalAccessException e) {
-            return false;
-        } catch (InvocationTargetException e) {
-            return false;
-        } catch (NoSuchMethodException e) {
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return false;
         }
     }
@@ -260,15 +248,13 @@ public class WifiAdHocManager implements MethodCallHandler {
      * Method allowing to reset the name of the device Wi-Fi adapter.
      */
     private boolean resetDeviceName() {
-        return (initialName != null) ? updateDeviceName(initialName) : false;
+        return initialName != null && updateDeviceName(initialName);
     }
 
     /**
      * Method allowing to retrieve the MAC address of the Wi-Fi Direct adapter.
      *  
-     * @return String value representing the MAC address.
-     * 
-     * @throws SocketException if an I/O error occurs.
+     * @return String value representing the MAC address, empty String if an I/O error occurs.
      */
     private String getMacAddress() {
         try {
@@ -294,7 +280,7 @@ public class WifiAdHocManager implements MethodCallHandler {
             }
         } catch (SocketException exception) {
             if (verbose) 
-                Log.d(TAG, "Error while fetching MAC address" + exception.toString());
+                Log.d(TAG, "Error while fetching MAC address" + exception);
         }
 
         return "";
