@@ -174,13 +174,13 @@ class WifiAdHocManager extends ServiceManager {
   /// Updates the local adapter name of the device with [name].
   @override
   Future<bool> updateDeviceName(final String name) async {
-    return await _methodCh.invokeMethod('updateDeviceName') as Future<bool>;
+    return await _methodCh.invokeMethod('updateDeviceName') as bool;
   }
 
   /// Resets the local adapter name of the device.
   @override
   Future<bool> resetDeviceName() async {
-    return await _methodCh.invokeMethod('resetDeviceName') as Future<bool>;
+    return await _methodCh.invokeMethod('resetDeviceName') as bool;
   }
 
 /*-------------------------------Public methods-------------------------------*/
