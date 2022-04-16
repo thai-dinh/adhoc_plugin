@@ -49,6 +49,8 @@ class WifiAdHocManager extends ServiceManager {
   /// Returns the Wi-Fi Direct IP address of the device.
   Future<String> get ownIp async {
     var ipAddress = '';
+
+    // TODO: Does not find the p2p interface
     for (var interface in await NetworkInterface.list()) {
       if (interface.name.compareTo('p2p-wlan0-0') == 0) {
         ipAddress = interface.addresses.first.address;
