@@ -10,13 +10,13 @@ import 'package:adhoc_plugin/src/datalink/utils/utils.dart';
 import 'package:adhoc_plugin/src/network/aodv/aodv_manager.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/constants.dart';
 import 'package:adhoc_plugin/src/network/datalinkmanager/datalink_manager.dart';
-import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
-import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
 import 'package:adhoc_plugin/src/presentation/constants.dart';
 import 'package:adhoc_plugin/src/presentation/crypto/crypto_engine.dart';
 import 'package:adhoc_plugin/src/presentation/exceptions/verification_failed.dart';
-import 'package:adhoc_plugin/src/presentation/secure_data.dart';
 import 'package:adhoc_plugin/src/presentation/group/group_controller.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate.dart';
+import 'package:adhoc_plugin/src/presentation/key_mgnmt/certificate_repository.dart';
+import 'package:adhoc_plugin/src/presentation/secure_data.dart';
 import 'package:pointycastle/pointycastle.dart';
 
 /// Class representing the core of the secure data layer. It performs
@@ -162,6 +162,34 @@ class PresentationManager {
     } else {
       // Encrypt and send unencrypted data to direct neighbors except excluded
       return await _datalinkManager.broadcastObjectExcept(
+          SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
+    }
+  }
+
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// ones in the list.
+  ///
+  /// The message payload is set to [data] and it is encrypted if [encrypted] is
+  /// set to true.
+  ///
+  /// The nodes specified by [excluded] are not included in the broadcast.
+  ///
+  /// Returns true upon successful broadcast, otherwise false.
+  Future<bool> broadcastExceptList(
+      Object data, List<String> excluded, bool encrypted) async {
+    if (_verbose) log(TAG, 'broadcastExceptList() - encrypted: $encrypted');
+
+    if (encrypted) {
+      // Encrypt and send encrypted data to direct neighbors except excluded
+      for (final neighbor in _datalinkManager.directNeighbors) {
+        if (!excluded.contains(neighbor.label)) {
+          send(data, neighbor.label!, true);
+        }
+      }
+      return true;
+    } else {
+      // Encrypt and send unencrypted data to direct neighbors except excluded
+      return await _datalinkManager.broadcastObjectExceptList(
           SecureData(UNENCRYPTED_DATA, data).toJson(), excluded);
     }
   }

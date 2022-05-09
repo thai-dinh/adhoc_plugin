@@ -61,6 +61,9 @@ class WifiServer extends ServiceServer {
             if (msg[0].compareTo('{') == 0 &&
                 msg[msg.length - 1].compareTo('}') == 0) {
               for (var _msg in splitMessages(msg)) {
+                // The client does not know its own IP address
+                // -> Add it manually from the socket info
+                _msg.header.address = remoteIPAddress;
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG,
@@ -71,6 +74,9 @@ class WifiServer extends ServiceServer {
               _mapIpBuffer[remoteIPAddress]!.write(msg);
               for (var _msg
                   in splitMessages(_mapIpBuffer[remoteIPAddress].toString())) {
+                // The client does not know its own IP address
+                // -> Add it manually from the socket info
+                _msg.header.address = remoteIPAddress;
                 controller.add(AdHocEvent(MESSAGE_RECEIVED, _msg));
                 if (verbose) {
                   log(ServiceServer.TAG,

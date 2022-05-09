@@ -223,6 +223,26 @@ class TransferManager {
         data, excluded.label!, false);
   }
 
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// ones in the list.
+  ///
+  /// The message payload is set to [data].
+  ///
+  /// The nodes specified by [excluded] are not included in the broadcast.
+  ///
+  /// Returns true upon successful broadcast, otherwise false.
+  ///
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
+  Future<bool> broadcastExceptList(Object data, List<String> excluded) async {
+    if (_datalinkManager.checkState() == 0) {
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
+
+    return await _presentationManager.broadcastExceptList(
+        data, excluded, false);
+  }
+
   /// Broadcasts a message, whose payload is encrypted, to all directly
   /// connected nodes except the excluded one.
   ///
@@ -242,6 +262,26 @@ class TransferManager {
 
     return await _presentationManager.broadcastExcept(
         data, excluded.label!, true);
+  }
+
+  /// Broadcasts a message, whose payload is encrypted, to all directly
+  /// connected nodes except the excluded ones in the list.
+  ///
+  /// The message payload is set to [data] and is encrypted.
+  ///
+  /// The nodes specified by [excluded] are not included in the broadcast.
+  ///
+  /// Returns true upon successful broadcast, otherwise false.
+  ///
+  /// Throws a [DeviceFailureException] if the Wi-Fi/Bluetooth adapter is not
+  /// enabled.
+  Future<bool> encryptedBroadcastExceptList(
+      Object data, List<String> excluded) async {
+    if (_datalinkManager.checkState() == 0) {
+      throw DeviceFailureException('No wifi and bluetooth connectivity');
+    }
+
+    return await _presentationManager.broadcastExceptList(data, excluded, true);
   }
 
 /*-----------------------------Data-link Methods-----------------------------*/

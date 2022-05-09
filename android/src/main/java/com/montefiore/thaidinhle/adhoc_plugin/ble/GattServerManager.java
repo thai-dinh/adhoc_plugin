@@ -33,7 +33,7 @@ import java.util.UUID;
  * Class managing the Gatt server used by Bluetooth Low Energy.
  */
 public class GattServerManager {
-    private static final String TAG = "[AdHocPlugin][GattServer]";
+    private static final String TAG = "[AdHocPlugin][Gatt]";
     private static final String EVENT_NAME = "ad.hoc.lib/ble.event.channel";
 
     // Constants for communication with the Flutter platform barrier
@@ -46,13 +46,13 @@ public class GattServerManager {
     private static final byte ANDROID_MTU        = 126;
 
     private boolean verbose;
-    private Context context;
+    private final Context context;
 
     private BluetoothGattServer gattServer;
     private BluetoothManager bluetoothManager;
 
-    private HashMap<String, HashMap<Integer, ByteArrayOutputStream>> data;
-    private HashMap<String, BluetoothDevice> mapMacDevice;
+    private final HashMap<String, HashMap<Integer, ByteArrayOutputStream>> data;
+    private final HashMap<String, BluetoothDevice> mapMacDevice;
 
     private EventChannel eventChannel;
     private MainThreadEventSink eventSink;
@@ -274,7 +274,7 @@ public class GattServerManager {
     };
 
     // Interface callback for events related to the Gatt server
-    private BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
+    private final BluetoothGattServerCallback bluetoothGattServerCallback = new BluetoothGattServerCallback() {
         @Override
         public void onCharacteristicWriteRequest(
             BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic,
@@ -285,7 +285,7 @@ public class GattServerManager {
             }
 
             String mac = device.getAddress();
-            Integer id = new Integer(value[0]);
+            Integer id = (int) value[0];
             byte flag = value[1];
 
             HashMap<Integer, ByteArrayOutputStream> buffer = data.get(mac);
@@ -294,10 +294,10 @@ public class GattServerManager {
                 byteBuffer = new ByteArrayOutputStream();
             }
 
-            // Process the fragmentated data by removing the flags from data
+            // Process the fragmented data by removing the flags from data
             try {
                 byteBuffer.write(Arrays.copyOfRange(value, 2, value.length));
-            } catch (IOException exception) {
+            } catch (IOException ignored) {
 
             }
 
@@ -375,9 +375,9 @@ public class GattServerManager {
      * NOTE: The solution has been borrowed from:
      * https://github.com/flutter/flutter/issues/34993
      */
-    private class MainThreadEventSink implements EventSink {
-        private EventSink eventSink;
-        private Handler handler;
+    private static class MainThreadEventSink implements EventSink {
+        private final EventSink eventSink;
+        private final Handler handler;
 
         /**
          * Default constructor

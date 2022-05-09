@@ -49,6 +49,8 @@ class WifiAdHocManager extends ServiceManager {
   /// Returns the Wi-Fi Direct IP address of the device.
   Future<String> get ownIp async {
     var ipAddress = '';
+
+    // TODO: Does not find the p2p interface
     for (var interface in await NetworkInterface.list()) {
       if (interface.name.compareTo('p2p-wlan0-0') == 0) {
         ipAddress = interface.addresses.first.address;
@@ -174,13 +176,13 @@ class WifiAdHocManager extends ServiceManager {
   /// Updates the local adapter name of the device with [name].
   @override
   Future<bool> updateDeviceName(final String name) async {
-    return await _methodCh.invokeMethod('updateDeviceName') as Future<bool>;
+    return await _methodCh.invokeMethod('updateDeviceName') as bool;
   }
 
   /// Resets the local adapter name of the device.
   @override
   Future<bool> resetDeviceName() async {
-    return await _methodCh.invokeMethod('resetDeviceName') as Future<bool>;
+    return await _methodCh.invokeMethod('resetDeviceName') as bool;
   }
 
 /*-------------------------------Public methods-------------------------------*/

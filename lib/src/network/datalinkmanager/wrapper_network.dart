@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:adhoc_plugin/src/appframework/config.dart';
-import 'package:adhoc_plugin/src/datalink/exceptions/no_connection.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_device.dart';
 import 'package:adhoc_plugin/src/datalink/service/adhoc_event.dart';
 import 'package:adhoc_plugin/src/datalink/service/constants.dart';
@@ -215,6 +214,25 @@ abstract class WrapperNetwork {
     if (neighbors.neighbors.isNotEmpty) {
       neighbors.neighbors.forEach((label, network) async {
         if (excluded.compareTo(label) != 0) {
+          await network.sendMessage(message);
+        }
+      });
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Broadcasts a message to all directly connected nodes except the excluded
+  /// nodes in the list.
+  ///
+  /// Returns true if the [message] has been successfully broadcasted to all
+  /// direct neighbors except [excluded], otherwise false.
+  bool broadcastExceptList(MessageAdHoc message, List<String> excluded) {
+    if (neighbors.neighbors.isNotEmpty) {
+      neighbors.neighbors.forEach((label, network) async {
+        if (!excluded.contains(label)) {
           await network.sendMessage(message);
         }
       });

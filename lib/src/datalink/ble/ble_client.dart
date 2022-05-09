@@ -71,13 +71,13 @@ class BleClient extends ServiceClient {
   /// Cancels the connection with the remote device.
   @override
   Future<void> disconnect() async {
-    stopListening();
     if (_connectionSub != null) {
       // Abort connection with the remote host
       _connectionSub!.cancel();
       // Notify upper layer of a connection aborted
       controller.add(AdHocEvent(CONNECTION_ABORTED, _device.mac));
     }
+    stopListening();
   }
 
   /// Sends a [message] to the remote device.
